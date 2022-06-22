@@ -2,6 +2,8 @@
 
 Party members, NPCs and monsters.
 
+**Note:** This is **WIP** and many values are not present yet as they are not decoded.
+
 Offset | Type | Name | Description
 --- | --- | --- | ---
 0002 | Byte | Type | 0: NPC/Player, 1: Monster ?
