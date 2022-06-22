@@ -6,7 +6,7 @@ The Amiga palettes have a total size of 66 (0x42) bytes. They start with a word 
 
 After that the colors themselves follow. Each color is represented by 4 bytes. The first byte gives alpha, then red, then green and last blue. But alpha seems to be unused and always has a value of 0. The other color components are given by very low values in the range 0 to 7. You have to mulitply them by 32 to get the right color value. Maybe even add 16 in the end as well.
 
-Another approach would be (value | (value << 4)) << 2.
+Another approach would be `(value | (value << 4)) << 2`.
 
 First approach color components:
 
