@@ -70,3 +70,5 @@ Offset | Type | Name | Description
 08D0 | Byte | Number of NPC events? (not present for monsters), I think if this is 0, 3 zero bytes are appended to ensure long-word boundary but can also have different meaning
 
 **Note**: Item slots may keep their data even if the slot is empty. The amount value at the top is important. Even if it is 0, the char data might still contain the item data.
+
+Each item is stored as 40 bytes so in contrast to Ambermoon, not only an item slot with a reference to the item is stored but the whole item data for each slot.
