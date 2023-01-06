@@ -133,17 +133,17 @@ There are always precisely 24 (`0x18`) NPCs declared.  NPC declarations are chun
 | `a8c` (= `a14` + 24 * 5) | u8[24]  | npc[i].flags[2]    | Unknown: `00` (only on 2D maps) or `01`                         |
 | `aa4` (= `a14` + 24 * 6) | u8[24]  | npc[i].flags[3]    | Unknown: `00` (only on 2D maps) or `01`                         |
 
-| Flags             | Name       | Exclusivity  | Meaning                        |
-|-------------------|------------|--------------|--------------------------------|
-| flags[0] & `0x01` |            |              |                                |
-| flags[0] & `0x02` |            |              |                                |
-| flags[1] & `0x01` | attack     | A            | stays put                      |
-| flags[1] & `0x02` | stationary | A            | moves toward player, attacks   |
-| flags[1] & `0x04` |            | 3D maps only |                                |
-| flags[1] & `0x08` | n/a        |              | (never used)                   |
-| flags[1] & `0x10` | popup-only |              | talking to NPC pops up message |
-| flags[2] & `0x01` |            |              |                                |
-| flags[3] & `0x01` |            |              |                                |
+| Flags             | Name        | Exclusivity  | Meaning                        |
+|-------------------|-------------|--------------|--------------------------------|
+| flags[0] & `0x01` |             |              |                                |
+| flags[0] & `0x02` |             |              |                                |
+| flags[1] & `0x01` | attack      | A            | moves toward player, attacks   |
+| flags[1] & `0x02` | random-walk | A            | walks around randomly          |
+| flags[1] & `0x04` |             | 3D maps only |                                |
+| flags[1] & `0x08` | n/a         |              | (never used)                   |
+| flags[1] & `0x10` | popup-only  |              | talking to NPC pops up message |
+| flags[2] & `0x01` |             |              |                                |
+| flags[3] & `0x01` |             |              |                                |
 
 ### Talking to NPCs
 
@@ -158,15 +158,21 @@ When the player talks to an NPC, the following happens:
 For each NPC with a nonzero personality, the map stores some number of bytes for their position and/or movement route.
 There seem to be three possible movment modes for NPCs, which determine how many coordinates the movment routes table store:
 
-| Movement mode  | Indication                               | # coordinates |
-|----------------|------------------------------------------|---------------|
-| **ATTACK**     | *attack* is set                          | `1`           |
-| **STATIONARY** | *stationary* is set                      | `1`           |
-| **CIRCUIT**    | neither *attack* nor *stationary* is set | `0x120` = 288 |
+| Movement mode   | Indication                               | # coordinates |
+|-----------------|------------------------------------------|---------------|
+| **ATTACK**      | *attack* is set                          | `1`           |
+| **RANDOM-WALK** | *random-walk* is set                     | `1`           |
+| **CIRCUIT**     | neither *attack* nor *stationary* is set | `0x120` = 288 |
 
 The movement routes are stored in the same order in which the NPCs are stored:
 - first all x coordinates for the NPC
 - then all y coordinates for the NPC
+
+Note:
+- All coordinates are +1 relative to map positions.
+- Coordinate values of `6` mean tha tthe NPC disappears.
+- NPCs that enter a chair or a bed are drawn suitably.  The party cannot chat with NPCs that are in bed.
+- The coordinates might plausibly be broken up across the day cycle.
 
 For instance, if we have two stationary NPCs, then one circuit NPC, and another stationary NPC, the game will store
 * NPC[0].x (`1` byte)
@@ -180,7 +186,7 @@ For instance, if we have two stationary NPCs, then one circuit NPC, and another 
 
 Movement algorithm:
 
-* **STATIONARY**: trivial
+* **RANDOM-WALK**: Every four party movements (?), move into one direction at random.
 * **ATTACK**: move one field (incl. diagonally) closer to the player.  Unknown: do the NPCs see the player through walls?
 * **CIRCUIT**: Iterate over the coordinates in the coordinate table.  Coordinates may repeat, indicating that the NPC stays still for a few rounds before moving on.
 
