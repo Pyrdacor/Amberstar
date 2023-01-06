@@ -38,7 +38,7 @@ Contain information about decoded game data formats.
 | `INTRO.UDO`    | `LOB`     | 1        |                                                                                                 |                               |                                  |
 | `LABBLOCK.AMB` | `AMPC`    | 68       |                                                                                                 |                               |                                  |
 | `LAB_DATA.AMB` | `AMBR`    | 23       |                                                                                                 |                               |                                  |
-| `MAP_DATA.AMB` | `AMPC`    | 152      |                                                                                                 |                               |                                  |
+| `MAP_DATA.AMB` | `AMPC`    | 152      | [Maps](FileSpecs/Maps.md)                                                                       | Maps                          | partly                           |
 | `MAPTEXT.AMB`  | `AMBC`    | 152      | [Compressed Text](FileSpecs/CompressedText.md)                                                  | Map-specific text             | yes                              |
 | `MON_DATA.AMB` | `AMBR`    | 67       |                                                                                                 |                               |                                  |
 | `MON_GFX.AMB`  | `AMPC`    | 21       |                                                                                                 |                               |                                  |

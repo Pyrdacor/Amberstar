@@ -17,7 +17,8 @@ Offset | Type | Name | Description
 12 | Byte | Equip slot | See below
 22 | Word | Buy price |
 24 | Word | Weight | In grams
-
+26 | Word | |
+28 | Word | Name | Item name, as index into the global string table
 
 ## Item types
 

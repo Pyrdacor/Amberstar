@@ -18,15 +18,15 @@ A CoSo record starts with the following header:
 | `pos_samples`          | u32    |                                |
 | `total_length`         | u32    |                                |
 | magic number           | u8[4]  | always  `TFMX`                 |
-| `num_instruments - 1`  | u2     |                                |
-| `num_timbres - 1`      | u2     | 1 less than the actual count   |
-| `num_monopatterns - 1` | u2     | 1 less than the actual count   |
-| `num_divisions - 1`    | u2     | 1 less than the actual count   |
-| `0x40`                 | u2     | unknown / unused               |
-| `0`                    | u2     | unknown / unused               |
-| `num_songs`            | u2     |                                |
-| `num_samples`          | u2     |                                |
-| `0`                    | u2[6]  | unknown / unused (!unverified) |
+| `num_instruments - 1`  | u16     |                                |
+| `num_timbres - 1`      | u16     | 1 less than the actual count   |
+| `num_monopatterns - 1` | u16     | 1 less than the actual count   |
+| `num_divisions - 1`    | u16     | 1 less than the actual count   |
+| `0x40`                 | u16     | unknown / unused               |
+| `0`                    | u16     | unknown / unused               |
+| `num_songs`            | u16     |                                |
+| `num_samples`          | u16     |                                |
+| `0`                    | u16[6]  | unknown / unused (!unverified) |
 
 All `pos_` references are relative to the first byte of the header.
 
