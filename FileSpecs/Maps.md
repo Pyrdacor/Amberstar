@@ -104,28 +104,10 @@ Going by similarity of the numbers observed in the various bytes, they seem to b
 
 | Labinfo    | Meaning            | Notes                                                                                           |
 |------------|--------------------|-------------------------------------------------------------------------------------------------|
-| `flags`    | `flags`            | See below                                                                                       |
+| `flags`    | `flags`            | [Tile Flags](TileFlags.md)                                                                      |
 | `fg_image` | foreground pixmaps | Foreground image; index into the `labblock_ref` table for LabData.  This image is drawn second. |
 | `bg_image` | background pixmaps | Background image; index into the `labblock_ref` table for LabData.  This image is drawn first.  |
 | rest       | ?                  | observed values: [`00-0c`, `0e-0f`]                                                             |
-
-
-| head flags | Meaning                                              |
-|------------|------------------------------------------------------|
-| 10000000   |                                                      |
-| 04000000   |                                                      |
-| 02000000   |                                                      |
-| 01000000   |                                                      |
-| 00800000   |                                                      |
-| 00010000   |                                                      |
-| 00000400   |                                                      |
-| 00000200   |                                                      |
-| 00000100   |                                                      |
-| 00000080   | Wall (shows up as wall on automap, cannot be passed) |
-| 00000020   |                                                      |
-| 00000010   | Used for NPCs                                        |
-| 00000002   |                                                      |
-| 00000001   |                                                      |
 
 
 ## NPCs

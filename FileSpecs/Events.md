@@ -45,7 +45,7 @@ Teleports the party to the specified *map* - 1, coordinates (*x*, *y*).
 Unknown: *map*=0 might teleport the player to a different location in the same map (?)
 
 ### Unknowns
-* U01.3: [`00-03`]
+* U01.3: [`00-03`]  (Likely the direction)
 
 <!-- ---------------------------------------- -->
 ## Event 02: Door
@@ -62,7 +62,7 @@ Party encounters a locked door.  The lock-picking difficulty seems to be indicat
 
 <!-- ---------------------------------------- -->
 ## Event 03: Message
-*Trigger*: Entering, if U03.3 is 0, or Looking if U03.3 is 1.  (Other values for U03.3: Unknown.)
+*Trigger*: Entering, if U03.3 is 0, or Looking if U03.3 is 1.  (Other values for U03.3: Unknown.  Following Amberstar semantics, `02` could be the flag for looking, and `00` is the default for "everything")
 
 Displays message *msg*, from the local `MAPTEXT.AMB` resources, and possibly shows image *img* - 1 from `PICS80.AMB`, if *img* is nonzero.
 The party learns the dictionary keyword *kw* for use in conversation with NPCs.
