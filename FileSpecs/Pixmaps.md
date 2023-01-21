@@ -4,6 +4,39 @@ Pixmaps describe pixel graphics.  The format in Amberstar is analogous to Amberm
 
 Amberstar seems to mainly (exclusively?) use 4-bit (16 colour) graphics.
 
+Pixmaps are collected as one of
+- Pixmap Lists, containing multiple "Pixmap with Header" entries
+- Pixmap with Header, containing a Pixmap Header followed by a Raw Pixmap
+- Raw Pixmap
+
+## Pixmap List
+
+A pixmap list starts with a list header:
+
+| name        | size | meaning                                                                                          |
+|-------------|------|--------------------------------------------------------------------------------------------------|
+| total_size  | u32  | Total number of bytes, excluding total_size, num_pixmaps, padding_0, and the pixmap_size entries |
+| num_pixmaps | u8   | Number of "Pixmap with Header" entries that follow                                               |
+| padding_0   | u8   | = `0x00`                                                                                         |
+
+
+followed by `num_pixmap` entries of:
+- pixmap_size : u32 that encodes size of the following Pixmap with Header entry
+- Pixmap with Header
+
+## Pixmap with Header
+
+A Pixmap with Header has the format:
+
+| name          | size | meaning                                                           |
+|---------------|------|-------------------------------------------------------------------|
+| width_m1      | u16  | image height, minus one (i.e., the header stores 15 for width 16) |
+| height_m1     | u16  | image width, minus one                                            |
+| num_bitplanes | u16  | number of bitplanes                                               |
+| raw_pixmap    |      | Raw Pixmap                                                        |
+
+## Raw Pixmap
+
 Brief summary below:
 For an image of dimensions `width`x`height` with `4` bitplanes, the pixmap data is encoded as a sequence of lines that contain bitplanes, which in turn contain 16-bit words:
 

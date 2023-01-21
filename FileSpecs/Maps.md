@@ -3,13 +3,13 @@
 **Note:** This is **WIP**. Some data structures are incomplete, others may be incorrect.
 
 Maps are stored in `MAP_DATA.AMB`.  Each resource describes one
-in-game map, with 2D and 3D maps sharing much of the file structure.
+in-game map, with 2D maps and Labyrinths sharing much of the file structure.
 The files consist of the following sections:
 * Header
 * Event descriptions (e.g., popup messages, chests, locked doors, or transitions to other maps)
 * NPC references (not including the actual NPC descriptions, which are in `CHARDATA.AMB`)
 * A magic 9 byte sequence
-* **3D maps only**: LabInfo blocks (meaning currently unclear)
+* **3D maps / Labyrinths only**: LabInfo blocks (meaning currently unclear)
 * The actual map
 * **2D maps only**: An overlay tile map, drawn over the preceding map
 * A hotspot map, which maps map locations to event descriptions
@@ -18,43 +18,43 @@ The files consist of the following sections:
 
 ## Map Header and Structure
 
-| Offset   | Format             | Name                 | Description                                                                      |
-|----------|--------------------|----------------------|----------------------------------------------------------------------------------|
-| `0`      | u8                 | magic number         | = `0xff`                                                                         |
-| `1`      | u8                 | magic number         | = `0x00`                                                                         |
-| `2`      | u8                 | magic number         | = `0x00`                                                                         |
-| `3`      | u8                 | tileset / background | 2D maps: tileset (`1` or `2`).  3D maps: background image (?) (`0x01`-`0x17`)    |
-| `4`      | u8                 | 3D map marer         | `00` for top-down 2D maps, `01` for first-person 3D maps (dungeons, towns)       |
-| `5`      | u8                 | flags                | See below                                                                        |
-| `6`      | u8                 | song                 | If ≠ `00`, set active song to this one                                           |
-| `7`      | u8                 | width                | in # tiles                                                                       |
-| `8`      | u8                 | height               | in # tiles                                                                       |
-| `9`      | char[30]           | name                 | map name, padded with `0x20`, and `0x00`-terminated                              |
-| `38`     | event[254]         | events               | `10` bytes per [event](Events.md)                                                 |
-| `a14`    | npc[24]            | NPCs                 | NPC list, See below                                                                        |
-| `abc`    | u8[9]              | magic number         | = [`01` `20` `0c` `1e` `18` `3c` `05` `0c` `0c`]                                 |
-| `ac5`... |                    |                      | varies between 2D and 3D maps, see below                                         |
-|          | LabInfo[..]        | labinfo              | 3D only: probably `LAB_DATA` references (?)                                      |
-|          | u8[width * height] | map[0]               | map data                                                                         |
-|          | u8[width * height] | map[1]               | 2D only: overlay map                                                             |
-|          | u8[width * height] | hotspots             | hotspot map.  If hotspot[`pos`] = `n` > 0, then event[`n - 1`] triggers at `pos` |
-|          | u8[..]             | NPC coordinates      | See below                                                                                 |
+| Offset   | Format             | Name                 | Description                                                                                             |
+|----------|--------------------|----------------------|---------------------------------------------------------------------------------------------------------|
+| `0`      | u8                 | magic number         | = `0xff`                                                                                                |
+| `1`      | u8                 | magic number         | = `0x00`                                                                                                |
+| `2`      | u8                 | magic number         | = `0x00`                                                                                                |
+| `3`      | u8                 | tileset / background | 2D maps: tileset (`1` or `2`).  Labyrinths: [LabData](LabData.md) resource describing the graphics, + 1 |
+| `4`      | u8                 | labyrinth marker     | `00` for top-down 2D maps, `01` for Labyrinths (dungeons, towns)                                        |
+| `5`      | u8                 | flags                | See below                                                                                               |
+| `6`      | u8                 | song                 | If ≠ `00`, set active song to this one                                                                  |
+| `7`      | u8                 | width                | in # tiles                                                                                              |
+| `8`      | u8                 | height               | in # tiles                                                                                              |
+| `9`      | char[30]           | name                 | map name, padded with `0x20`, and `0x00`-terminated                                                     |
+| `38`     | event[254]         | events               | `10` bytes per [event](Events.md)                                                                       |
+| `a14`    | npc[24]            | NPCs                 | NPC list, See below                                                                                     |
+| `abc`    | u8[9]              | magic number         | = [`01` `20` `0c` `1e` `18` `3c` `05` `0c` `0c`]                                                        |
+| `ac5`... |                    |                      | varies between 2D maps and Labyrinths, see below                                                        |
+|          | LabInfo[..]        | labinfo              | Labyrinth only: Labyrinth tile descriptions                                                             |
+|          | u8[width * height] | map[0]               | map data                                                                                                |
+|          | u8[width * height] | map[1]               | 2D only: overlay map                                                                                    |
+|          | u8[width * height] | hotspots             | hotspot map.  If hotspot[`pos`] = `n` > 0, then event[`n - 1`] triggers at `pos`                        |
+|          | u8[..]             | NPC coordinates      | See below                                                                                               |
 
 
 ## Map Flags
 
 The map flags likely indicate light sources, whether resting is possible etc.:
 
-| Flag | Name | Exclusivity                                   | Meaning            | Example maps                                                                        |
-|------|------|-----------------------------------------------|--------------------|-------------------------------------------------------------------------------------|
-| 0x01 |      | A: not with `02`,`04`, `20`, not in 3D        |                    | Sir Marillon's Tomb, Family home                                                    |
-| 0x02 |      | A: not with `01`,`04`                         |                    | Overworld, Twinlake Graveyard, Twinlake city                                        |
-| 0x04 |      | A: not with `01`, `02`, `20`, `40`            |                    | Lord Drebin's Cellar, Twinlake Sewers                                               |
-| 0x08 |      |                                               |                    | Most maps.  NOT some advanced dungeons, such as Castle of Manyeye (minus the Tower) |
-| 0x10 |      |                                               |                    | Overworld, Twinlake sewers, Family home. NOT Twinlake city or graveyard.            |
-| 0x20 |      | B: not with `01`, `04`, `40`, `80`, not in 3D | Lyramion Overworld | All overworld maps                                                                  |
-| 0x40 |      | B: not with `04`, `20`, `40`                  |                    | Twinlake Graveyard, Twinlake City                                                   |
-| 0x80 |      | B: not with `20`, `40`                        |                    | Sir Marillon's Tomb, Twinlake Sewers                                                |
+| Flag | Name | Exclusivity                                           | Meaning             | Example maps                                                                        |
+|------|------|-------------------------------------------------------|---------------------|-------------------------------------------------------------------------------------|
+| 0x01 |      | A: not with `02`,`04`, `20`, not in Labyrinths        | Indoors?            | Sir Marillon's Tomb, Family home                                                    |
+| 0x02 |      | A: not with `01`,`04`                                 | Outdoors?           | Overworld, Twinlake Graveyard, Twinlake city                                        |
+| 0x04 |      | A: not with `01`, `02`, `20`, `40`                    | Dungeon / no light? | Lord Drebin's Cellar, Twinlake Sewers                                               |
+| 0x08 |      |                                                       |                     | Most maps.  NOT some advanced dungeons, such as Castle of Manyeye (minus the Tower) |
+| 0x10 |      |                                                       |                     | Overworld, Twinlake sewers, Family home. NOT Twinlake city or graveyard.            |
+| 0x20 |      | B: not with `01`, `04`, `40`, `80`, not in Labyrinths | Lyramion Overworld  | All overworld maps                                                                  |
+| 0x40 |      | B: not with `04`, `20`, `40`                          |                     | Twinlake Graveyard, Twinlake City                                                   |
+| 0x80 |      | B: not with `20`, `40`                                |                     | Sir Marillon's Tomb, Twinlake Sewers                                                |
 
 * A: Precisely one of {`01`, `02`, `04`} is set on every map
 * B: Precisely one of {`20`, `40`, `80`} is set on every map
@@ -74,7 +74,7 @@ where:
 * mapsize = height * width
 
 
-## 3D maps
+## Labyrinths
 
 | Offset                            | Format             | Name               | Description                    |
 |-----------------------------------|--------------------|--------------------|--------------------------------|
@@ -94,25 +94,39 @@ where:
 
 ### LabInfo blocks
 
-LabInfo blocks consist of 7 bytes each and most likely reference `LAB_DATA` and/or `LABBLOCK` resources.
+LabInfo blocks consist of 7 bytes each and describe the meaning of the tile numbers on the map.
+They reference the Labyrinth's associated [LabData](LabData.md) resource.
+
 Going by similarity of the numbers observed in the various bytes, they seem to be grouped into four chunks:
 
-* One chunk of u8[4] blocks (labinfo.head, below)
-* Three chunks of u8 blocks (labinfo.rest[0], labinfo.rest[1], and labinfo.rest[2], respectively, below)
+* One chunk of u32 flags (`labinfo.flags`, below)
+* Three chunks of u8 blocks (`labinfo.fg_image`, `labinfo.bg_image`, and `labinfo.rest`, respectively, below)
 
-| Labinfo | Meaning | Notes                                                                |
-|---------|---------|----------------------------------------------------------------------|
-| head[0] | ?       | observed values: [`00-02`, `04`, `10`]                               |
-| head[1] | ?       | observed values: [`00-01`, `80`]                                     |
-| head[2] | ?       | observed values: [`00-01`, `03`, `07`]                               |
-| head[3] | ?       | observed values: [`00-02`, `10`, `11`, `20`, `22`, `80`, `82`, `a0`] |
-| rest[0] | ?       | observed values: [`01-16`]                                           |
-| rest[1] | ?       | observed values: [`01-03`]                                           |
-| rest[2] | ?       | observed values: [`00-0c`, `0e-0f`]                                  |
+| Labinfo    | Meaning            | Notes                                                                                           |
+|------------|--------------------|-------------------------------------------------------------------------------------------------|
+| `flags`    | `flags`            | See below                                                                                       |
+| `fg_image` | foreground pixmaps | Foreground image; index into the `labblock_ref` table for LabData.  This image is drawn second. |
+| `bg_image` | background pixmaps | Background image; index into the `labblock_ref` table for LabData.  This image is drawn first.  |
+| rest       | ?                  | observed values: [`00-0c`, `0e-0f`]                                                             |
 
-The "head" values are likely flags.
 
-Speculation: `LAB_DATA` goes from 0 to 22 = `0x16`, may be related to rest[0]?|
+| head flags | Meaning                                              |
+|------------|------------------------------------------------------|
+| 10000000   |                                                      |
+| 04000000   |                                                      |
+| 02000000   |                                                      |
+| 01000000   |                                                      |
+| 00800000   |                                                      |
+| 00010000   |                                                      |
+| 00000400   |                                                      |
+| 00000200   |                                                      |
+| 00000100   |                                                      |
+| 00000080   | Wall (shows up as wall on automap, cannot be passed) |
+| 00000020   |                                                      |
+| 00000010   | Used for NPCs                                        |
+| 00000002   |                                                      |
+| 00000001   |                                                      |
+
 
 ## NPCs
 
@@ -133,17 +147,17 @@ There are always precisely 24 (`0x18`) NPCs declared.  NPC declarations are chun
 | `a8c` (= `a14` + 24 * 5) | u8[24]  | npc[i].flags[2]    | Unknown: `00` (only on 2D maps) or `01`                         |
 | `aa4` (= `a14` + 24 * 6) | u8[24]  | npc[i].flags[3]    | Unknown: `00` (only on 2D maps) or `01`                         |
 
-| Flags             | Name        | Exclusivity  | Meaning                        |
-|-------------------|-------------|--------------|--------------------------------|
-| flags[0] & `0x01` |             |              |                                |
-| flags[0] & `0x02` |             |              |                                |
-| flags[1] & `0x01` | attack      | A            | moves toward player, attacks   |
-| flags[1] & `0x02` | random-walk | A            | walks around randomly          |
-| flags[1] & `0x04` |             | 3D maps only |                                |
-| flags[1] & `0x08` | n/a         |              | (never used)                   |
-| flags[1] & `0x10` | popup-only  |              | talking to NPC pops up message |
-| flags[2] & `0x01` |             |              |                                |
-| flags[3] & `0x01` |             |              |                                |
+| Flags             | Name        | Exclusivity     | Meaning                        |
+|-------------------|-------------|-----------------|--------------------------------|
+| flags[0] & `0x01` |             |                 |                                |
+| flags[0] & `0x02` |             |                 |                                |
+| flags[1] & `0x01` | attack      | A               | moves toward player, attacks   |
+| flags[1] & `0x02` | random-walk | A               | walks around randomly          |
+| flags[1] & `0x04` |             | Labyrinths only |                                |
+| flags[1] & `0x08` | n/a         |                 | (never used)                   |
+| flags[1] & `0x10` | popup-only  |                 | talking to NPC pops up message |
+| flags[2] & `0x01` |             |                 |                                |
+| flags[3] & `0x01` |             |                 |                                |
 
 ### Talking to NPCs
 
