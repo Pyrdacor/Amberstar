@@ -63,13 +63,11 @@ The perspectives have different for the different `format`s.
 Each perspective describes a different view on the same entity, depending on where it is positioned relative to the player's view port.
 In the following, we will describe this using tables that assume a right-facing player/party, marked as `@>`:
 
-|--------|---|---|
-|        |   | 2 |
-|--------|---|---|
-| `@>` 3 | 0 | 1 |
-|--------|---|---|
 |        |   |   |
 |--------|---|---|
+|        |   | 2 |
+| `@>` 3 | 0 | 1 |
+|        |   |   |
 
 This table would mean that:
 - perspective 0 is "one step ahead of the player" (in the direction the player is facing)
@@ -79,17 +77,13 @@ This table would mean that:
 
 ### Perspectives for **Solid** blocks
 
+|      |   |   |   |
 |------|---|---|---|
 |      |   |   | 0 |
-|------|---|---|---|
 | 9    | 6 | 3 | 0 |
-|------|---|---|---|
 | `@>` | 8 | 5 | 2 |
-|------|---|---|---|
 | A    | 7 | 4 | 1 |
-|------|---|---|---|
 |      |   |   | 1 |
-|------|---|---|---|
 
 
 Note:
@@ -105,33 +99,29 @@ If the decoration is visible from more than one side, it may have to be drawn mu
 
 The table below is used for decorations that are facing towards the player/party:
 
+|      |   |   |   |
 |------|---|---|---|
 |      | 6 | 3 | 0 |
-|------|---|---|---|
 | `@>` | 8 | 5 | 2 |
-|------|---|---|---|
 |      | 7 | 4 | 1 |
-|------|---|---|---|
 
 
 The table below is used for decorations that
 - are to the left of the player, facing right (9, F, D, B)
 - are to the right of the player, facing left (A, 10, E, C)
 
+|      |    |   |   |
 |------|----|---|---|
 | 9    | F  | D | B |
-|------|----|---|---|
 | `@>` |    |   |   |
-|------|----|---|---|
 | A    | 10 | E | C |
-|------|----|---|---|
 
 
 ### Perspectives for **Furniture/NPC** blocks
 
 Furniture/decoration blocks are the only blocks that are drawn when on the same tile as the player.
 
+|        |   |   |   |
 |--------|---|---|---|
 | `@>` 3 | 2 | 1 | 0 |
-|--------|---|---|---|
 
