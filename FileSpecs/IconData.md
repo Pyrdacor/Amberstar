@@ -13,10 +13,21 @@ Offset | Type | Name | Description
 0000 | Word | Player sprite index | The index of the player tile. For world map this is 237, for indoor maps it is 249.
 0002 | Byte[250] | Frame counts | Gives the number of frames for each tile (1 = single frame)
 00FC | Word[250] | Image index | Index of the first frame's image index
-02F0 | Long[250] | Tile flags | Flags for each tile (bitfield, not yet checked each bit but most likely movement blocking etc)
+02F0 | Long[250] | Tile flags | [Tile Flags](TileFlags.md)
 06D8 | Byte[250] | Colors | Most likely the colors of each tile displayed on the minimap (indices into the palette)
 07D2 | Palette | Tile palette | See [Palettes](Palettes.md)
 0814 | Image[\*] | Images | See below
+
+## Player tile
+
+For the world map, the player tile marks the tile of the player while walking.  Other travel methods follow behind:
+- +0: walking
+- +1: horseback
+- +2: raft
+- +3: boat
+- +4: disk
+- +5: eagles
+- +6: red triangle boat thing?
 
 ## Images
 

@@ -4,31 +4,31 @@ Events are part of [Maps](Maps.md), tied to "hotspots" on particular map tiles a
 Unless noted otherwise, the condition is that the player enters the hotspot tile.
 Events are encoded in 10 bytes, summarised below, with the byte at offset `00` in column ID:
 
-| Name          | Where | ID   | `01`  | `02`  | `03`  | `04`  | `05`   | `06`  | `07`    | `08`  | `09`  |
-|---------------|-------|------|-------|-------|-------|-------|--------|-------|---------|-------|-------|
-| **Teleport**  |       | `01` | *x*   | *y*   | U01.3 | `00`  | `00`   | `00`  | *map*   | `00`  | `00`  |
-| **Door**      |       | `02` | *cr*  | U02.2 | U02.3 | `00`  | U2.5   | U2.6  | U2.7    | `00`  | `00`  |
-| **Message**   |       | `03` | *img* | *msg* | U03.3 | `00`  | U3.5   | *kw*  | *kw*    | `00`  | `00`  |
-| **Chest**     |       | `04` | U04.1 | U04.2 | U04.3 | U04.4 | *flag* | `00`  | *chest* | `00`  | *msg* |
-|               |       | `05` | U05.1 | U05.2 | U05.3 | U05.4 | U05.5  | `00`  | U05.7   | `00`  | U05.9 |
-|               |       | `06` | U06.1 | U06.2 | U06.3 | U06.4 | U06.5  | `00`  | U06.7   | `00`  | `00`  |
-|               |       | `07` | U07.1 | U07.2 | U07.3 | U07.4 | `00`   | `00`  | U07.7   | `00`  | `00`  |
-|               | 3D    | `08` | U08.1 | `00`  | `00`  | U08.4 | U08.5  | `00`  | `00`    | `00`  | `00`  |
-|               |       | `09` | U09.1 | U09.2 | U09.3 | U09.4 | U09.5  | U09.6 | U09.7   | U09.8 | U09.9 |
-|               |       | `0a` | U0a.1 | U0a.2 | `00`  | U0a.4 | `00`   | `00`  | `00`    | `00`  | `00`  |
-| **RestoreLP** | 2D    | `0b` | `00`  | `00`  | `00`  | *msg* | `00`   | `00`  | `00`    | `00`  | `00`  |
-| **RestoreSP** | 2D    | `0c` | `00`  | `00`  | `00`  | *msg* | `00`   | `00`  | `00`    | `00`  | `00`  |
-|               |       | `0d` | U0d.1 | `00`  | U0d.3 | `1a`  | U0d.5  | `00`  | `00`    | `00`  | `00`  |
-|               |       | `0e` | U0e.1 | U0e.2 | U0e.3 | U0e.4 | U0e.5  | U0e.6 | U0e.7   | U0e.8 | `00`  |
-|               |       | `0f` | U0f.1 | `01`  | U0f.3 | U0f.4 | U0f.5  | `00`  | `00`    | `00`  | U0f.9 |
-|               |       | `10` | U10.1 | U10.2 | `00`  | U10.4 | U10.5  | `00`  | U10.7   | `00`  | `00`  |
-|               |       | `11` | U11.1 | `00`  | U11.3 | U11.4 | U11.5  | `0`   | U11.7   | `00`  | `00`  |
-|               |       | `12` | U12.1 | U12.2 | U12.3 | U12.4 | `00`   | `00`  | U12.7   | `00`  | U12.9 |
-|               |       | `13` | U13.1 | U13.2 | `00`  | U13.4 | U13.5  | U13.6 | U13.7   | `00`  | U13.9 |
-| **Door3D**    | 3D    | `14` | `01`  | `00`  | `00`  | U14.4 | U14.5  | `00`  | U14.7   | `00`  | `00`  |
-|               | 2D    | `15` | U15.1 | U15.2 | U15.3 | `00`  | `00`   | `00`  | U15.7   | `00`  | `00`  |
-|               | 2D    | `16` | `00`  | `00`  | `00`  | `00`  | `00`   | `00`  | `00`    | `00`  | `00`  |
-| **Win**       | 2D    | `17` | `00`  | `00`  | `00`  | `00`  | `00`   | `00`  | `00`    | `00`  | `00`  |
+| Name                   | Where | ID   | `01`   | `02`    | `03`    | `04`    | `05`     | `06`  | `07`      | `08` | `09`      | Automap     |
+|------------------------|-------|------|--------|---------|---------|---------|----------|-------|-----------|------|-----------|-------------|
+| **ChangeMap**          |       | `01` | *x*    | *y*     | *dir*   | `00`    | `00`     | `00`  | *map*     | `00` | `00`      | Exit        |
+| **Door**               |       | `02` | *cr*   | U02.2   | U02.3   | `00`    | U2.5     | U2.6  | U2.7      | `00` | `00`      | Door        |
+| **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *flagID* | *kw*  | *kw*      | `00` | `00`      | /           |
+| **Chest**              |       | `04` | U04.1  | U04.2   | U04.3   | U04.4   | *flagID* | `00`  | *chest*   | `00` | *msg*     | Treasure    |
+| **Trapdoor**           |       | `05` | U05.1  | U05.2   | U05.3   | U05.4   | U05.5    | `00`  | *map*     | `00` | U05.9     | /           |
+| **Teleport**           |       | `06` | *x*    | *y*     | U06.3   | U06.4   | U06.5    | `00`  | *map*     | `00` | `00`      | Teleporter  |
+|                        |       | `07` | U07.1  | U07.2   | U07.3   | U07.4   | `00`     | `00`  | U07.7     | `00` | `00`      |             |
+| **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | U08.4   | U08.5    | `00`  | `00`      | `00` | `00`      |             |
+| **TakeDamage**         |       | `09` | *max*  | U09.2   | `00`    | U09.4   | `00`     | `00`  | `00`      | `00` | `00`      |             |
+|                        |       | `0a` | U0a.1  | U0a.2   | `00`    | U0a.4   | `00`     | `00`  | `00`      | `00` | `00`      |             |
+| **RestoreLP**          | 2D    | `0b` | `00`   | `00`    | `00`    | *msg*   | `00`     | `00`  | `00`      | `00` | `00`      | /           |
+| **RestoreSP**          | 2D    | `0c` | `00`   | `00`    | `00`    | *msg*   | `00`     | `00`  | `00`      | `00` | `00`      | /           |
+| **Trap**               |       | `0d` | U0d.1  | `00`    | U0d.3   | `1a`    | U0d.5    | `00`  | `00`      | `00` | `00`      | /           |
+| **Riddlemouth**        |       | `0e` | U0e.1  | U0e.2   | *greet* | *reply* | U0e.5    | *kw*  | *kw*      | `00` | U0e.9     | Riddlemouth |
+| **RaiseStat**          |       | `0f` | *stat* | U0f.2   | `01`    | *msg*   | U0f.5    | `00`  | `00`      | `00` | U0f.9     |             |
+| **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *flagID* | `00`  | *tile*    | `00` | `00`      |             |
+| **Fight**              |       | `11` | U11.1  | `00`    | U11.3   | U11.4   | U11.5    | `0`   | U11.7     | `00` | `00`      |             |
+| **Merchant**           |       | `12` | *open* | *close* | *type*  | *msg*   | `00`     | `00`  | *merchID* | `00` | *waresID* | Merchant    |
+| **ChangeTileWithTool** |       | `13` | *x*    | *y*     | `00`    | *msg*   | U13.5    | U13.6 | U13.7     | `00` | U13.9     |             |
+| **Door3D**             | 3D    | `14` | `01`   | `00`    | `00`    | U14.4   | U14.5    | `00`  | U14.7     | `00` | `00`      |             |
+| **ChangeMapAlt**       | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | `00`     | `00`  | *map*     | `00` | `00`      |             |
+| **Altar**              | 2D    | `16` | `00`   | `00`    | `00`    | `00`    | `00`     | `00`  | `00`      | `00` | `00`      |             |
+| **Win**                | 2D    | `17` | `00`   | `00`    | `00`    | `00`    | `00`     | `00`  | `00`      | `00` | `00`      |             |
 
 
 * Column `Where` indicates whether the event only appears in 2D or 3D maps.
@@ -38,14 +38,18 @@ Events are encoded in 10 bytes, summarised below, with the byte at offset `00` i
 This information is observational: the Amberstar *engine* might support more options values, but the *game* does not seeem to use them (unless events can be triggered in other ways than observed so far).
 
 <!-- ---------------------------------------- -->
-## Event 01: Teleport
+## Event 01: ChangeMap
 
 Teleports the party to the specified *map* - 1, coordinates (*x*, *y*).
 
-Unknown: *map*=0 might teleport the player to a different location in the same map (?)
+`dir` is the direction that the player will be facing:
 
-### Unknowns
-* U01.3: [`00-03`]
+| `dir` | Direction |
+|-------|-----------|
+| `0`   | North     |
+| `1`   | East      |
+| `2`   | South     |
+| `3`   | West      |
 
 <!-- ---------------------------------------- -->
 ## Event 02: Door
@@ -62,21 +66,25 @@ Party encounters a locked door.  The lock-picking difficulty seems to be indicat
 
 <!-- ---------------------------------------- -->
 ## Event 03: Message
-*Trigger*: Entering, if U03.3 is 0, or Looking if U03.3 is 1.  (Other values for U03.3: Unknown.)
+*Trigger*:
+- if *act* = `0`: enter tile
+- if *act* = `1`: look at tile
+- if *act* >= `2`: looking or entering
+
+*Precondition*
+- Either *flagID* = `0`, or message flag ID *flagID* is not set
 
 Displays message *msg*, from the local `MAPTEXT.AMB` resources, and possibly shows image *img* - 1 from `PICS80.AMB`, if *img* is nonzero.
-The party learns the dictionary keyword *kw* for use in conversation with NPCs.
+The party learns the dictionary keywords *kw* for use in conversation with NPCs.
 
-### Unknowns
-* U03.3: [`00`, `02`, `07`, `09`, `0a`, `14`, `19`, `32`] (migt be flags?)
-* U03.5: [`00-28`]
+If *flagID* is nonzero, set message flag ID *flagID* so that this message will not be shown again.
 
 <!-- ---------------------------------------- -->
 ## Event 04: Chest
 *Trigger*: Looking
 
 The party accesses the that contains the items from `CHESTDAT.AMB` resource number *chest*, while displaying message *msg*.  Once the chest is empty,
-the game records this fact with chest flag *flag* and no longer allows chest access.
+the game records this fact with chest flag *flagID* and no longer allows chest access.
 
 The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `00001ef0` for chest `01`.
 
@@ -87,10 +95,12 @@ The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `
 * U04.4: [`00-2a`]
 
 <!-- ---------------------------------------- -->
-## Event 05
+## Event 05: Trapdoor
+
+When looking at this field, the game reports it as a trapdoor.
+Works similarly to ChangeMap (Event `01`).
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
 2D    INCOMPLETE event op type 05 [0a,1a]        [1a,23]              [01]     [00,05]  [00-01]  [00]  [4b,6f]              [00]  [03,0a]
@@ -98,10 +108,11 @@ The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `
 -->
 
 <!-- ---------------------------------------- -->
-## Event 06
+## Event 06: Teleport
+
+Works similarly to ChangeMap (Event `01`).
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 
 <!--
@@ -111,6 +122,8 @@ The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `
 <!-- ---------------------------------------- -->
 ## Event 07
 
+Possibly used for windgate teleporters (only operational once the corresponding quest is complete)
+
 ### Unknowns
 * What does this do?
 * What do the unknown parameters do?
@@ -119,7 +132,10 @@ The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `
     INCOMPLETE event op type 07                                                                                      [14]  [0d]  [03]  [1a]  [00]  [00]  [33]  [00]  [00]
 -->
 <!-- ---------------------------------------- -->
-## Event 08
+## Event 08: Spinner
+
+When entering or leaving this tile, the party is rotated to face direction *dir* (cf. Event 01).
+If *dir* is `4`, the direction is randomly selected every time the party enters or leaves the tile..
 
 ### Unknowns
 * What does this do?
@@ -128,17 +144,20 @@ The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `
 3D    INCOMPLETE event op type 08 [00-04]  [00]  [00]  [1a]  [00-01,06-07]  [00]  [00]  [00]  [00]
 -->
 <!-- ---------------------------------------- -->
-## Event 09
+## Event 09: TakeDamage
+
+The players take between 1..*max* damage.
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
     INCOMPLETE event op type 09 {mask:3f/exclusive:05,12,2c}  [02]  [00]  [01-02,1a]  [00]  [00]  [00]  [00]  [00]
-    INCOMPLETE event op type 09                            [19,1e]  [00]  [00]  [1a]  [00]  [00]  [00]  [00]  [00]
+    INCOMPLETE event op type 09 [19,1e]                       [00]  [00]  [1a]        [00]  [00]  [00]  [00]  [00]
 -->
 <!-- ---------------------------------------- -->
 ## Event 0a
+
+Seems to cause darkness, but might be a general debuff / anti-magic event.
 
 ### Unknowns
 * What does this do?
@@ -162,60 +181,100 @@ Restores all spell points and displays *msg* as a popup message in the style of 
 Only used in Sir Marillon's Tomb.
 
 <!-- ---------------------------------------- -->
-## Event 0d
+## Event 0d: Trap
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
     INCOMPLETE event op type 0d [03-04,07]  [00]  [00]     [1a]                    [1e-20]  [00]  [00]  [00]  [00]
     INCOMPLETE event op type 0d [01,03-05]  [00]  [00,0f]  [1a]  {mask:17/exclusive:07,16}  [00]  [00]  [00]  [00]
 -->
 <!-- ---------------------------------------- -->
-## Event 0e
+## Event 0e: Riddlemouth
+
+Greets party with message *greet*.  If the party replies with *kw*, the Riddlemouth gives its *reply*.
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
-    INCOMPLETE event op type 0e {mask:3f/exclusive:11,22,24,28}  {mask:1f/exclusive:09,18}  [00-04]  [01-03,05,08]  [01-04]  [01,06]  [49,4f-52,56,87]  [00]  [4a-4b,52,af,e9]
-    INCOMPLETE event op type 0e {mask:3f/exclusive:21,22,30}  {mask:3f/exclusive:28}  {mask:1f/exclusive:06,18,12}  [01-07,0c,0e,12,16]  {mask:3f/exclusive:32,34,18}  [01-04,07,09,0b-0d]  {mask:ff}  [00]  [00-02,04-05]
+    INCOMPLETE event op type 0e {mask:3f/exclusive:11,22,24,28}  {mask:1f/exclusive:09,18}  [00-04]                       [01-03,05,08]  [01-04]  [01,06]  [49,4f-52,56,87]  [00]  [4a-4b,52,af,e9]
+    INCOMPLETE event op type 0e {mask:3f/exclusive:21,22,30}     {mask:3f/exclusive:28}     {mask:1f/exclusive:06,18,12}  [01-07,0c,0e,12,16]  {mask:3f/exclusive:32,34,18}  [01-04,07,09,0b-0d]  {mask:ff}  [00]  [00-02,04-05]
 -->
 <!-- ---------------------------------------- -->
-## Event 0f
+## Event 0f: RaiseStat
+
+* Raises one of the stats of some party member (the first? random?) by one point and shows message *msg*
+  - *stat* 1 means "strength", 2 means "intelligence" etc.
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
     INCOMPLETE event op type 0f [03,05-06]  [00-01]  [01]  [18-19]  [1b-1d]  [00]  [00]  [00]  [0f,14]
     INCOMPLETE event op type 0f [01-02]        [00]  [01]  [08-09]  [0a,12]  [00]  [00]  [00]  [0a]
 -->
 <!-- ---------------------------------------- -->
-## Event 10
+## Event 10: ChangeTile
+
+- If *flagID* is not `0` and the corresponding state flag is already set, does nothing
+- Shows *msg*
+- Replaces the tile at coordiantes (*x*, *y*) on the current map by tile number *tile*
+- If *flagID* is not `0`, set the state flag indicated by *flagID*
 
 ### Unknowns
-* What does this do?
-* What do the unknown parameters do?
+* Which other event types are the *flagID* shared with?
 <!--
     INCOMPLETE event op type 10 [0b,11-12,14,16,1a,1c,1f]  [0d-0f,13,22]  [00]  [02,04,13,1a]           [00-01,04-07,10-11]  [00]  [13,19,4b,52,ef]  [00]  [00]
     INCOMPLETE event op type 10 {mask:3f/exclusive:28,30}  {mask:3f}      [00]  [01-04,0b,0e-11,1a]  [00-02,08,0e-10,19-20]  [00]  [01-02,04-05]  [00]  [00]
 -->
 <!-- ---------------------------------------- -->
-## Event 11
+## Event 11: Fight
+
+Starts a fight
+- U11.1 seems to be the probability (in percent)?
+- U11.7 might be the `MON_DATA.AMB` encounter reference
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
     INCOMPLETE event op type 11 {mask:7f}  [00]  [00,1a]  [01,1a]  [00-07]     [00]  {mask:7f/exclusive:12,44,48,60}  [00]  [00]
     INCOMPLETE event op type 11 [64]       [00]  [00]  [01,07,1a]  [03,06,08]  [00]  [04,33,3d]                       [00]  [00]
 -->
 <!-- ---------------------------------------- -->
-## Event 12
+## Event 12: Merchant
+
+Merchant open from *open*-*close*, or around the clock if both are `00`.
+- If the party tries to enter outside of the opening hours, shows *msg* and pushes the player back to the previous tile.
+
+The merchant's name and further details are stored in `AMBERDEV.UDO` and indexed by *merchID*.  For late versions of the (English version of the) game, the offsets are:
+- Name: index 1 starts at `4b238`, each name is 30 characters long and padded with blanks
+- Details: index 1 starts at `4add0`, each entry is `18` (hex) / 24 (decimal) bytes in length
+  - `00`: u16: cost for basic services
+  - `02`: for raft seller: raft location x
+  - `04`: for raft seller: raft location y
+  - `06`: for raft seller: raft map
+
+- The shop *type* is one of:
+  - `01`: Guild of Warriors
+  - `02`: Guild of Paladines
+  - `03`: Guild of Rangers
+  - `04`: Guild of Thieves
+  - `05`: Guild of Monks
+  - `06`: Guild of the White Wizards
+  - `07`: Guild of the Grey Wizards
+  - `08`: Guild of the Black Wizards
+  - `09`: Merchant
+  - `0a`: Food shop
+  - `0b`: **unused and invalid**
+  - `0c`: Horse Merchant
+  - `0d`: Healer
+  - `0e`: Sage
+  - `0f`: Raft Merchant
+  - `10`: Boat Merchant
+  - `11`: Guest House
+  - `12`: Library (same as `09`, but with different picture)
+- To be verified: *waresID* is likely the `WARESDAT.AMB` reference
 
 ### Unknowns
-* What does this do?
 * What do the unknown parameters do?
 <!--
     INCOMPLETE event op type 12 {mask:1f/exclusive:14,18}  [00,0f,12,14,16]  [00,02-0a,0d,10-12]  [00-04,1a]  [00]  [00]  {mask:3f/exclusive:30}     [00]  [00,02-08,0c-0d]
@@ -223,7 +282,9 @@ Only used in Sir Marillon's Tomb.
 -->
 
 <!-- ---------------------------------------- -->
-## Event 13
+## Event 13: UnblockWithTool
+
+Seems to be used to allow players to change a tile if they have the right tool (probably with key U13.7, and probably into tile U13.9).
 
 ### Unknowns
 * What does this do?
@@ -245,20 +306,20 @@ Only used twice, in the `CITY OF TWINLAKE` map (`0x42`).
 - U14.07: [`97`, `9b`]
 
 <!-- ---------------------------------------- -->
-## Event 15
+## Event 15: ChangeMapAlt
+
+Seems to operate the same as Event 01.
+Perhaps this event has different behaviour when flying?
 
 ### Unknowns
-* What does this do?
-* U15.01:
-* U15.02:
-* U15.03: [`00-03`]
-* U15.07: [`43-8c`]
+* How is this different from Event 01?
 
 <!-- ---------------------------------------- -->
-## Event 16
+## Event 16: Altar
 
-### Unknowns
-* What does this do?
+Checks for whether the player has all pieces of the Amberstar.
+If so, allows them to try to assemble it.
+Otherwise, pushes the player back to the previous tile.
 
 <!-- ---------------------------------------- -->
 ## Event 17: Win
