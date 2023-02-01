@@ -15,10 +15,10 @@ Offset | Type | Name | Description
 10 | Byte | Shield | Defense
 11 | Byte | Damage |
 12 | Byte | Equip slot | See below
-22 | Word | Buy price |
-24 | Word | Weight | In grams
-26 | Word | |
-28 | Word | Name | Item name, as index into the global string table
+20 | Word | Buy price |
+22 | Word | Weight | In grams
+24 | Word | KeyID | Special marker for quest items (e.g., door keys)
+26 | Word | Name | Item name, as index into the global string table
 
 ## Item types
 
