@@ -30,8 +30,8 @@ A Pixmap with Header has the format:
 
 | name          | size | meaning                                                           |
 |---------------|------|-------------------------------------------------------------------|
-| width_m1      | u16  | image height, minus one (i.e., the header stores 15 for width 16) |
-| height_m1     | u16  | image width, minus one                                            |
+| width_m1      | u16  | image width minus one (i.e., the header stores 15 for width 16) |
+| height_m1     | u16  | image height minus one                                            |
 | num_bitplanes | u16  | number of bitplanes                                               |
 | raw_pixmap    |      | Raw Pixmap                                                        |
 
