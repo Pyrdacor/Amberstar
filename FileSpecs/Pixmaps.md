@@ -1,6 +1,6 @@
 # Pixmaps
 
-Pixmaps describe pixel graphics.  The format in Amberstar is analogous to Ambermoon, described here (*FIXME*)
+Pixmaps describe pixel graphics.  The format in Amberstar is analogous to Ambermoon, described [here](https://github.com/Pyrdacor/Ambermoon/blob/master/FileSpecs/Graphics.md).
 
 Amberstar seems to mainly (exclusively?) use 4-bit (16 colour) graphics.
 
