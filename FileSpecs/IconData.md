@@ -31,6 +31,8 @@ For the world map, the player tile marks the tile of the player while walking.  
 
 ## Images
 
+See also: [Pixmaps](Pixmaps.md)
+
 Each image starts with a header of 3 words. The first word gives the width, the second the height and the third the bits per pixel.
 
 Width and height are stored 1 lower than the real value. So a value of 0 means 1 and a value of 0xF means 16.
