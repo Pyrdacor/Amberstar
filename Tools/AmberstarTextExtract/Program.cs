@@ -1,8 +1,8 @@
-﻿// args[0]: Data directory (most likely called Amberfiles) containing AMBERDEV.udo etc
+﻿// args[0]: Data directory (most likely called Amberfiles) containing AMBERDEV.UDO etc
 // args[1]: Optional output directory (if missing, prints to console)
 
-using System.IO;
 using Ambermoon.Data;
+using Ambermoon.Data.Legacy;
 using Ambermoon.Data.Legacy.Serialization;
 using Amberstar.Data.Legacy;
 

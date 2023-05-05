@@ -1,4 +1,4 @@
-﻿namespace Amberstar.Data.Common
+﻿namespace Amberstar.Data
 {
     public interface ITextList
     {

@@ -1,5 +1,4 @@
 ﻿using Ambermoon.Data.Serialization;
-using Amberstar.Data.Common;
 
 namespace Amberstar.Data.Legacy
 {

@@ -7,9 +7,7 @@
             "AMBERDEV.UDO", // all kind of stuff
             "AUTOMAP.AMB", // 3D automaps
             "BACKGRND.AMB", // background graphics
-            "CHARDATA.AMB", // male savegame character data
-            "CHARDATA_FEMALE.AMB", // female savegame character data
-            "CHARDATA_INIT.AMB", // initial savegame character data
+            "CHARDATA.AMB", // character data (party members, NPCs and monsters)
             "CHESTDAT.AMB", // chest data
             "CODETXT.AMB", // item texts
             "COL_PALL.AMB", // color palettes
@@ -32,7 +30,7 @@
             "SAMPLEDA.IMG", // music samples
             "TACTIC.ICN", // ?
             "TH_LOGO.UDO", // Thalion fantasy intro
-            "WARESDAT.AMB" // merchant data?
+            "WARESDAT.AMB" // merchant data (up to 12 slots with only 1 item)
         };
 
         public static readonly string[] TextFileEntries = new string[]
