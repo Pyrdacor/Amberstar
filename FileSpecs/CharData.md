@@ -80,14 +80,14 @@ Offset | Type | Name | Description
 Each item is stored as 40 bytes so in contrast to Ambermoon, not only an item slot with a reference to the item is stored but the whole item data for each slot.
 
 ## Language Flags
-|------|----------|
-| `01` | Human    |
-| `02` | Elf      |
-| `04` | Dwarf    |
-| `08` | Gnome    |
-| `10` | Halfling |
-| `20` | Orc      |
-| `40` | Animal   |
+------|----------
+ `01` | Human
+ `02` | Elf
+ `04` | Dwarf
+ `08` | Gnome
+ `10` | Halfling
+ `20` | Orc
+ `40` | Animal
 
 ## NPC Interactions
 
