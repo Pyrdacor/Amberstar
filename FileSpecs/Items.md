@@ -29,7 +29,9 @@ Offset | Type | Name | Description
 13 | Byte | M-B-W | Magic weapon level
 14 | Byte | M-B-A | Magic armor level
 15 | Byte | Special index | For special items it gives the type (see below), for text scrolls it is the text list index inside CODETXT.AMB (1 or 2)
-16 | Byte[7] | **Unknown** |
+16 | Byte[2] | **Unknown** |
+18 | Byte | Item flags (see below)
+19 | Byte[4] | **Unknown** |
 1D | Byte | Text index | For text scrolls the index inside the given text list (0 is the first)
 1E | Word | Usable classes | Bitfield
 20 | Word | Buy price |
@@ -57,15 +59,13 @@ Offset | Type | Name | Description
 - 0F: Key
 - 10: Normal item (quest items, etc)
 
-## Special item types
+## Item flags
 
-- 0: None
-- 1: Compass
-- 2: **Unknown**
-- 3: Magical picture
-- 4: Wind chain
-- 5: Map locator
-- 6: Clock
+- 01: Cursed
+- 02: Not important (can be dropped or left)
+- 04: Stackable
+- 08: Destroy after usage (keys and some quest items, potions and spell scrolls seem to omit this though)
+- 10: Removable during fight (some equipment has this)
 
 ## Equip slots
 
@@ -86,3 +86,14 @@ Offset | Type | Name | Description
 - 1: Stone
 - 2: Arrow
 - 3: Bolt
+
+## Special item types
+
+- 0: None
+- 1: Compass
+- 2: **Unknown**
+- 3: Magical picture
+- 4: Wind chain
+- 5: Map locator
+- 6: Clock
+- 
