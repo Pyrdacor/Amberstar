@@ -30,7 +30,7 @@ Offset | Type | Name | Description
 14 | Byte | M-B-A | Magic armor level
 15 | Byte | Special index | For special items it gives the type (see below), for text scrolls it is the text list index inside CODETXT.AMB (1 or 2)
 16 | Byte[7] | **Unknown** |
-1D | Byte | Text index | For text scrolls the index inside the given text list
+1D | Byte | Text index | For text scrolls the index inside the given text list (0 is the first)
 1E | Word | Usable classes | Bitfield
 20 | Word | Buy price |
 22 | Word | Weight | In grams
