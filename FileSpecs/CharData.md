@@ -80,6 +80,7 @@ Offset | Type | Name | Description
 Each item is stored as 40 bytes so in contrast to Ambermoon, not only an item slot with a reference to the item is stored but the whole item data for each slot.
 
 ## Language Flags
+      | Name 
 ------|----------
  `01` | Human
  `02` | Elf
