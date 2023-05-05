@@ -10,7 +10,7 @@ Offset | Type | Name | Description
 00 | Byte | Graphic index |
 01 | Byte | Item type | See below
 02 | Byte | Used ammunition type | See below (slings, bows or crossbows use this)
-03 | Byte | **Unknown** |
+03 | Byte | **Unknown** | Only the 3 Sansri items have a value of 2 here
 04 | Byte | Number of hands |
 05 | Byte | Number of fingers |
 06 | Byte | Hit points | Adds to max HP
@@ -28,12 +28,14 @@ Offset | Type | Name | Description
 12 | Byte | Equip slot | See below
 13 | Byte | M-B-W | Magic weapon level
 14 | Byte | M-B-A | Magic armor level
-15 | Byte[9] | **Unknown** |
-18 | Word | Usable classes | Bitfield
+15 | Byte | Special index | For special items it gives the type (see below), for text scrolls it is the text list index inside CODETXT.AMB (1 or 2)
+16 | Byte[7] | **Unknown** |
+1D | Byte | Text index | For text scrolls the index inside the given text list
+1E | Word | Usable classes | Bitfield
 20 | Word | Buy price |
 22 | Word | Weight | In grams
 24 | Word | KeyID | Special marker for quest items (e.g., door keys)
-26 | Word | Name | Item name, as index into the global string table
+26 | Word | NameID | Item name, as index into the global string table
 
 ## Item types
 
@@ -54,6 +56,16 @@ Offset | Type | Name | Description
 - 0E: Magical item (torch, etc)
 - 0F: Key
 - 10: Normal item (quest items, etc)
+
+## Special item types
+
+- 0: None
+- 1: Compass
+- 2: **Unknown**
+- 3: Magical picture
+- 4: Wind chain
+- 5: Map locator
+- 6: Clock
 
 ## Equip slots
 
