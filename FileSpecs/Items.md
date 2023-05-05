@@ -13,12 +13,22 @@ Offset | Type | Name | Description
 03 | Byte | **Unknown** |
 04 | Byte | Number of hands |
 05 | Byte | Number of fingers |
-06 | Byte[9] | **Unknown** |
+06 | Byte | Hit points | Adds to max HP
+07 | Byte | Spell points | Adds to max SP
+08 | Byte | Attribute | 0: None, 1+: Strength, ...
+09 | Byte | Attribute value | Value to add to the given attribute
+0A | Byte | Skill | 0: None, 1+: Attack, ...
+0B | Byte | Skill value | Value to add to the given skill
+0C | Byte | Spell school | 0: None, 1: White, 2: Gray, 3: Black
+0D | Byte | Spell index | 0: None, 1+ is the index inside the given school
+0E | Byte | Spell charges | Number of spells one can cast from the item
 0F | Byte | Ammunition type | See below (ammo itself uses this)
 10 | Byte | Defense |
 11 | Byte | Damage |
 12 | Byte | Equip slot | See below
-13 | Byte[11] | **Unknown** |
+13 | Byte | M-B-W | Magic weapon level
+14 | Byte | M-B-A | Magic armor level
+15 | Byte[9] | **Unknown** |
 18 | Word | Usable classes | Bitfield
 20 | Word | Buy price |
 22 | Word | Weight | In grams
