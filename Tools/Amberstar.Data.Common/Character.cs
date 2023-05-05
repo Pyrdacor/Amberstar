@@ -34,8 +34,14 @@
         public byte MaxSkillSearch { get; set; }
         public byte MaxSkillReadMagic { get; set; }
         public byte MaxSkillUseMagic { get; set; }
-        public byte NumFreeHands { get; set; } // TODO: or used hands?
-        public byte NumFreeFingers { get; set; } // TODO: or used fingers?
+        public byte Unk1A { get; set; }
+        public byte Unk1B { get; set; }
+        public byte NumUsedHands { get; set; }
+        public byte NumUsedFingers { get; set; }
+        public byte Unk1E { get; set; }
+        public byte Unk1F { get; set; }
+        public byte Unk20 { get; set; }
+        public byte Unk21 { get; set; }
         /// <summary>
         /// 9 slots
         /// </summary>
@@ -46,11 +52,17 @@
         /// </summary>
         public byte[] ItemCounts { get; } = new byte[12];
         public Languages Languages { get; set; }
+        public byte Unk38 { get; set; }
+        public byte Unk39 { get; set; }
+        public byte Unk3A { get; set; }
+        public byte Unk3B { get; set; }
+        public byte Unk3C { get; set; }
         /// <summary>
         /// Specifies an ID of a flag which controls which of
         /// the two conversation reactions are used.
         /// </summary>
         public byte QuestCompletionFlag { get; set; }
+        public byte[]? Unk3ETo47 { get; set; }
         public word CurrentAttributeStrength { get; set; }
         public word CurrentAttributeIntelligence { get; set; }
         public word CurrentAttributeDexterity { get; set; }
@@ -71,28 +83,34 @@
         public word MaxAttributeMagicResistance { get; set; }
         public word MaxAttributeAge { get; set; }
         public word MaxAttributeUnused { get; set; }
+        public byte[]? Unk70To85 { get; set; }
         public word CurrentHitPoints { get; set; }
         public word MaxHitPoints { get; set; }
         public word CurrentSpellPoints { get; set; }
         public word MaxSpellPoints { get; set; }
+        public byte Unk8E { get; set; }
+        public byte Unk8F { get; set; }
         public word Gold { get; set; }
         public word Food { get; set; }
         public word Defense { get; set; }
         public word Damage { get; set; }
+        public byte[]? Unk98ToCD { get; set; }
         public word ExperiencePoints { get; set; }
+        public byte[]? UnkD0ToEB { get; set; }
         public dword TotalWeight { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
+        public byte[]? Unk100To131 { get; set; }
         /// <summary>
         /// 9 slots
         /// </summary>
-        public Item[] Equipment { get; set; } = new Item[9];
+        public Item[] Equipment { get; } = new Item[9];
         /// <summary>
         /// Inventory
         /// 12 slots
         /// </summary>
-        public Item[] Items { get; set; } = new Item[12];
-        public byte[]? Interactions { get; set; } // TODO, 560 bytes
+        public Item[] Items { get; } = new Item[12];
+        public List<Interaction> Interactions { get; } = new();
         public Graphic? Portrait { get; set; }
-        public string[]? Texts { get; set; }
+        public string[] Texts { get; set; } = Array.Empty<string>();
     }
 }

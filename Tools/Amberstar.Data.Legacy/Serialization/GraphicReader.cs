@@ -45,8 +45,8 @@ namespace Amberstar.Data.Legacy.Serialization
 
         public static Graphic ReadWithHeader(IDataReader dataReader)
         {
-            int width = dataReader.ReadWord();
-            int height = dataReader.ReadWord();
+            int width = dataReader.ReadWord() + 1;
+            int height = dataReader.ReadWord() + 1;
             int bpp = dataReader.ReadWord();
 
             return ReadWithoutHeader(dataReader, width, height, bpp);
