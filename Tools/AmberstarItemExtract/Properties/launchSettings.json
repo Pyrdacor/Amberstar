@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AmberstarItemExtract": {
+      "commandName": "Project",
+      "commandLineArgs": "\"D:\\Projekte\\Amberstar\\Amberstar_v1.2_De\\AmberstarDe\\Amberfiles\""
+    }
+  }
+}

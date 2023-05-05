@@ -4,7 +4,7 @@ namespace Amberstar.Data.Legacy
 {
     public class TextList : ITextList
     {
-        public TextList(IDataReader textInfoReader, TextFragmentList textFragmentList)
+        public TextList(IDataReader textInfoReader, ITextFragmentList textFragmentList)
         {
             int count = textInfoReader.ReadByte();
             ++textInfoReader.Position;
