@@ -1,7 +1,5 @@
 # Items
 
-**Note:** This is **WIP** and many values are not present yet as they are not decoded.
-
 
 Size: 40 Bytes (0x28)
 
@@ -10,7 +8,7 @@ Offset | Type | Name | Description
 00 | Byte | Graphic index |
 01 | Byte | Item type | See below
 02 | Byte | Used ammunition type | See below (slings, bows or crossbows use this)
-03 | Byte | **Unknown** | Only the 3 Sansri items have a value of 2 here
+03 | Byte | Gender | 0: Both, 1: Male, 2: Female (Only the 3 Sansri items have a value of 2, rest 0)
 04 | Byte | Number of hands |
 05 | Byte | Number of fingers |
 06 | Byte | Hit points | Adds to max HP
@@ -29,14 +27,18 @@ Offset | Type | Name | Description
 13 | Byte | M-B-W | Magic weapon level
 14 | Byte | M-B-A | Magic armor level
 15 | Byte | Special index | For special items it gives the type (see below), for text scrolls it is the text list index inside CODETXT.AMB (1 or 2)
-16 | Byte[2] | **Unknown** |
+16 | Byte | Initial charges |
+17 | Byte | Max charge
 18 | Byte | Item flags (see below)
-19 | Byte[4] | **Unknown** |
+19 | Byte | Skill 1 for malus |
+1A | Byte | Skill 2 for malus |
+1B | Byte | Malus 1
+1C | Byte | Malus 2
 1D | Byte | Text index | For text scrolls the index inside the given text list (0 is the first)
 1E | Word | Usable classes | Bitfield
 20 | Word | Buy price |
 22 | Word | Weight | In grams
-24 | Word | KeyID | Special marker for quest items (e.g., door keys)
+24 | Word | ItemID | Special marker for quest items (e.g., door keys)
 26 | Word | NameID | Item name, as index into the global string table
 
 ## Item types
