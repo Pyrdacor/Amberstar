@@ -91,6 +91,7 @@ Offset | Type | Name | Description
 0100 | Byte[25] | Monster spell schools | See below
 0119 | Byte[25] | Monster spell ids | See below
 0132 | Item[9] | Equipped items |
+0270 | Item[21] | Items | kermitfrog: my notes say this is the start for all Items - which one is correct?
 029A | Item[12] | Inventory items |
 047A | Byte[560] | Interactions | Up to 20 NPC Interactions (see below)
 06AA | [Pixmap](Pixmaps.md)) | Portrait (optional) | Portrait [Pixmap](Pixmaps.md) with full header.
