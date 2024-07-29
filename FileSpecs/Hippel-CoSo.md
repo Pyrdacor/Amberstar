@@ -130,7 +130,14 @@ Program elements may have a duration, expressed in **ticks**. One tick has a dur
     
     Let **period** = slope / depth (rounded up). Then the saw-tooth function has the form:
     
-    $ v(t) = \left \{ \begin{array}{l[]lcl} \max&(-\frac{\textsf{depth}}{2}, \phantom{-}\frac{depth}{2} - \textsf{slope} * (t \mod (\textbf{period} \times 2))) &\iff& t \mod \textbf{period}\textrm{ is even} \\ \min&(\phantom{-}\frac{\textsf{depth}}{2}, -\frac{depth}{2} + \textsf{slope} * (t \mod (\textbf{period} \times 2))) &\iff& t \mod \textbf{period}\textrm{ is odd} \\ \end{array} \right .$ $
+    $ v(t) = \left \{ \begin{array}{l[]lcl} \max&(-\frac{\textsf{depth}}{2}, \phantom{-}\frac{depth}{2} - \textsf{slope} * (t \mod (\textbf{period} \times 2))) &\iff& \lfloor \frac{t}{\textbf{period}} \rfloor\textrm{ is even} \\ \min&(\phantom{-}\frac{\textsf{depth}}{2}, -\frac{depth}{2} + \textsf{slope} * (t \mod (\textbf{period} \times 2))) &\iff& \lfloor \frac{t}{\textbf{period}} \rfloor\textrm{ is odd} \\ \end{array} \right . $
+
+    Or, expressed in a form that GitHub's markdown renderer can handle:
+
+    | Condition                                            | $v(t) = $                                                                                                   |
+    |------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+    | $\lfloor \frac{t}{\textbf{period}} \rfloor$ is even: | $\max(-\frac{\textsf{depth}}{2}, \ \frac{depth}{2} - \textsf{slope} * (t \mod (\textbf{period} \times 2)))$ |
+    | $\lfloor \frac{t}{\textbf{period}} \rfloor$ is odd:  | $\min(\ \frac{\textsf{depth}}{2}, -\frac{depth}{2} + \textsf{slope} * (t \mod (\textbf{period} \times 2)))$ |
     
     (though tick counting seems to start at 1, meaning that v(0) is never used).
     
@@ -138,11 +145,11 @@ Program elements may have a duration, expressed in **ticks**. One tick has a dur
     
     $\textbf{period}'(t) = \textbf{period} \times \left (1 + \frac{v(t)}{1024} \right )$
 
-3.  Portando
+4.  Portando
 
     CoSo supports a linear variant of **Portando**, parameterised by **portando_slope**. The effect is defined as follows:
     
-    $p(t) = 1 - \frac{t \times \text{portando\_delta}}{1024}$
+    $p(t) = 1 - \frac{t \times \text{portando\\_delta}}{1024}$
     
     such that
     
@@ -150,7 +157,7 @@ Program elements may have a duration, expressed in **ticks**. One tick has a dur
     
     The Portando effect always applies after Vibrato.
 
-4.  Volume
+5.  Volume
 
     CoSo uses Amiga volume levels, which range from 0 to 64. A volume of 0 means "mute", and volumes between 1 and 64 progress logarithmically wrt their dB values:
     
@@ -171,7 +178,7 @@ Program elements may have a duration, expressed in **ticks**. One tick has a dur
     -   **Volume Envelope** volume
     -   **Division** `channel_volume`, interpreted as a percentage
 
-5.  Channels
+6.  Channels
 
     CoSo supports four audio channels:
     
@@ -267,29 +274,27 @@ The volume envelope follows immediately, and consists of bytes with the followin
 
 Monopatterns encode a sequence of notes to play. They again use a sequential variable-length encoding:
 
-| First Byte       | Parameters                   | Operations                                                                   | Duration | Notes                             |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| `ff`             |                              | `END-PATTERN`                                                                | 0        |                                   |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| `fe`             | [`ticks`:u8]                 | `SET-SPEED(ticks + 1)`                                                       | 0        | `pattern_speed := ticks + 1`      |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| `fd`             | [`ticks`:u8]                 | `SET-SPEED(ticks + 1)`                                                       | `speed`  | `pattern_speed := ticks + 1`      |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| [`note`:i8]      | [`_info`:u8]                 | `NOTE(note)`                                                                 | `speed`  | only note=0 appears in Amberstar  |
-| (if `note` <= 0) | (if NOT (`_info` & 0xe0)     |                                                                              |          |                                   |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| [`note`:i8]      | [`_info`:u8]  [`info2`:u8]   | `NOTE(note)`                                                                 | `speed`  | only note=0 appears in Amberstar  |
-| (if `note` <= 0) | (if (`_info` & 0xe0)         |                                                                              |          |                                   |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| [`note`:u8]      | [`timbre`:u8]                | `NOTE(note)`                                                                 | `speed`  | Default case (1)                  |
-|                  | (if NOT (`timbre & 0xe0`)    | `TIMBRE(timbre + timbre_adjust, DEFAULT)`                                    |          | `timbre_adjust` from **Division** |
-|------------------|------------------------------|------------------------------------------------------------------------------|----------|-----------------------------------|
-| [`note`:u8]      | [`timbre`:u8]  [`effect`:i8] | `NOTE(note)`                                                                 | `speed`  | Default case (2)                  |
-|                  | (if (`timbre & 0xe0`)        | \_if NOT `timbre & 0x40`: `TIMBRE((timbre & 0x1f) + timbre_adjust, DEFAULT)` |          | `timbre_adjust` from **Division** |
-|                  |                              | \_if     `timbre & 0x40`: `TIMBRE((timbre & 0x1f) + timbre_adjust, effect)`  |          |                                   |
-|                  |                              | \_if `timbre & 0x20`: `PORTANDO(effect)`                                     |          |                                   |
+| First Byte                         | Parameters                                              | Operations                                                  | Duration | Notes                            |
+|------------------------------------|---------------------------------------------------------|-------------------------------------------------------------|----------|----------------------------------|
+| `ff`                               |                                                         | `END-PATTERN`                                               | 0        |                                  |
+| `fe`                               | [`ticks`:u8]                                            | `SET-SPEED(ticks + 1)`                                      | 0        | `pattern_speed := ticks + 1`     |
+| `fd`                               | [`ticks`:u8]                                            | `SET-SPEED(ticks + 1)` <br> `PATTERN-DELAY`                 | `speed`  | `pattern_speed := ticks + 1`     |
+| [`note`:i8] <br> (if `note` <= 0)  | [`_info`:u8] <br> (if NOT (`_info` & 0xe0))             | `NOTE(note)`                                                | `speed`  | only note=0 appears in Amberstar |
+| [`note`:i8] <br> (if `note` <= 0)  | [`_info`:u8]  [`_info2`:u8] <br> (if `_info` & 0xe0)    | `NOTE(note)`                                                | `speed`  | only note=0 appears in Amberstar |
+| [`note`:u8]                        | [`timbre`:u8] <br> (if NOT `timbre` & 0xe0)             | `NOTE(note)` <br> `TIMBRE(timbre + timbre_adjust, DEFAULT)` | `speed`  | Default case (1)                 |
+| [`note`:u8]                        | [`timbre`:u8]  [`effect`:i8] <br> (if `timbre` & 0xe0`) | `NOTE(note)` <br> + **Extra Effects**                       | `speed`  | Default case (2)                 |
 
-Note that the `speed` in the above table is defined as:
+Here, `timbre_adjust` is from **Division**.
+**Extra Effects** for Default Case (2) are:
+
+| Condition              | Operations                                         |
+|------------------------|----------------------------------------------------|
+| if NOT `timbre & 0x40` | `TIMBRE((timbre & 0x1f) + timbre_adjust, DEFAULT)` |
+| if     `timbre & 0x40` | `TIMBRE((timbre & 0x1f) + timbre_adjust, effect)`  |
+| if     `timbre & 0x20` | `PORTANDO(effect)`                                 |
+
+
+Note that the `speed` in the *Duration* column in the table above is defined as:
 
 `speed = pattern_speed * channel_speed`
 
@@ -318,13 +323,15 @@ Each division takes up twelve bytes; three for each channel `c`, from 0 to 3 (in
 | `transpose[c]`   | i8     | Transpose for monopattern notes            |
 | `effect[c]`      | u8     |                                            |
 
-The effect can be one of the following:
+The effect can be one of the following, depending on the bit pattern matched by `effect[c]`:
 
-| \_if `effect[c] = 0b0xxxxxxx` | `timbre_adjust := effect[c]`         |
-| \_if `effect[c] = 0b1000yyyy` | `FULL-STOP`                          |
-| \_if `effect[c] = 0b1110yyyy` | `channel_speed := 1 + 0byyyy`        |
-| \_if `effect[c] = 0b11110000` | `channel_volume := 100`              |
-| \_if `effect[c] = 0b1111yyyy` | `channel_volume := (16 - 0byyy) * 6` |
+| `effect[c]` = `... | Effect                               | Notes                                               |
+|--------------------|--------------------------------------|-----------------------------------------------------|
+| `0b0xxxxxxx`       | `timbre_adjust := effect[c]`         | NOT `(effect & 0x80)`                               |
+| `0b1000yyyy`       | `FULL-STOP`                          | `(effect & 0xf0) == 0x80`                           |
+| `0b1110yyyy`       | `channel_speed := 1 + 0byyyy`        | `(effect & 0xf0) == 0xe0`                           |
+| `0b11110000`       | `channel_volume := 100`              | `effect == 0xf0`                                    |
+| `0b1111yyyy`       | `channel_volume := (16 - 0byyy) * 6` | `(effect & 0xf0) == 0xf0` and `(effect & 0x0f) > 0` |
 
 - `timbre_adjust` shifts the **Timbres** selected by the **Monopattern** up by the given amount.
 - `channel_speed` gives a factor for slowing down the notes across **all** channels
