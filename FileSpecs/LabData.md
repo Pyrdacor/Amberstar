@@ -72,8 +72,8 @@ In the following, we will describe this using tables that assume a right-facing 
 This table would mean that:
 - perspective 0 is "one step ahead of the player" (in the direction the player is facing)
 - perspective 1 is "two steps ahead of the player"
-- perspective 3 is "two steps ahead of the player and one to the left"
-- perspective 4 is "same tile as the player"
+- perspective 2 is "two steps ahead of the player and one to the left"
+- perspective 3 is "same tile as the player"
 
 ### Perspectives for **Solid** blocks
 
