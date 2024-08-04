@@ -43,18 +43,18 @@ The files consist of the following sections:
 
 ## Map Flags
 
-The map flags likely indicate light sources, whether resting is possible etc.:
+The map flags indicate light sources, whether resting is possible etc.:
 
-| Flag | Name | Exclusivity                                           | Meaning            | Example maps                                                                        |
-|------|------|-------------------------------------------------------|--------------------|-------------------------------------------------------------------------------------|
-| 0x01 |      | A: not with `02`,`04`, `20`, not in Labyrinths        | Indoors?           | Sir Marillon's Tomb, Family home                                                    |
-| 0x02 |      | A: not with `01`,`04`                                 | Outdoors?          | Overworld, Twinlake Graveyard, Twinlake city                                        |
-| 0x04 |      | A: not with `01`, `02`, `20`, `40`                    | No light           | Lord Drebin's Cellar, Twinlake Sewers                                               |
-| 0x08 |      |                                                       |                    | Most maps.  NOT some advanced dungeons, such as Castle of Manyeye (minus the Tower) |
-| 0x10 |      |                                                       | Can rest here      | Overworld, Twinlake sewers, Family home. NOT Twinlake city or graveyard.            |
-| 0x20 |      | B: not with `01`, `04`, `40`, `80`, not in Labyrinths | Lyramion Overworld | All overworld maps                                                                  |
-| 0x40 |      | B: not with `04`, `20`, `40`                          |                    | Twinlake Graveyard, Twinlake City                                                   |
-| 0x80 |      | B: not with `20`, `40`                                |                    | Sir Marillon's Tomb, Twinlake Sewers                                                |
+| Flag | Name | Exclusivity | Meaning                 | Example maps                                                                        |
+|------|------|-------------|-------------------------|-------------------------------------------------------------------------------------|
+| 0x01 |      | A           | Light: always           | Sir Marillon's Tomb, Family home                                                    |
+| 0x02 |      | A           | Light: sunlight only    | Overworld, Twinlake Graveyard, Twinlake city                                        |
+| 0x04 |      | A           | Light: none             | Lord Drebin's Cellar, Twinlake Sewers                                               |
+| 0x08 |      |             | "Mapshow" spell allowed | Most maps.  NOT some advanced dungeons, such as Castle of Manyeye (minus the Tower) |
+| 0x10 |      |             | Can rest here           | Overworld, Twinlake sewers, Family home. NOT Twinlake city or graveyard.            |
+| 0x20 |      | B           | Wilderness              | All overworld maps                                                                  |
+| 0x40 |      | B           | City                    | Twinlake Graveyard, Twinlake City                                                   |
+| 0x80 |      | B           | Dungeon                 | Sir Marillon's Tomb, Twinlake Sewers                                                |
 
 * A: Precisely one of {`01`, `02`, `04`} is set on every map
 * B: Precisely one of {`20`, `40`, `80`} is set on every map
