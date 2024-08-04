@@ -58,3 +58,27 @@ Stored value | Result
 05 | AA (170)
 06 | CC (204)
 07 | EE (238)
+
+
+## The Combat Palettes
+
+The palettes for combat graphics are stored in the
+[AMBERDEV](Amberdev.md) resource (see there for the exact offsets).
+They are encoded as compact palettes and split into two parts:
+
+- `Combat palette template`: A 16 colour compact palette, with colour indices `c`, `d`, and `e` mapped to black.
+- `Combat palette variants`: A sequence of 14 compact palette colour triplets; in other words, an array of 14 entries of 6 bytes each.
+
+The fourteen variants override the r/g/b components of the combat palette template:
+
+| offset | meaning                                      |
+|--------|----------------------------------------------|
+| 0      | red component for colour index `c`           |
+| 1      | green / blue components for colour index `c` |
+| 2      | red component for colour index `d`           |
+| 3      | green / blue components for colour index `d` |
+| 4      | red component for colour index `e`           |
+| 5      | green / blue components for colour index `e` |
+
+Each variant provides the palette for the corresponding `COM_BACK.AMB` record.
+

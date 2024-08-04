@@ -75,3 +75,27 @@ The palette index of a pixel at index `x`, `y` is now given by the combination (
 - `line[y].bitplane[0].xword[x >> 4] & (0x8000 > (x & 0xf))` << 2
 - `line[y].bitplane[0].xword[x >> 4] & (0x8000 > (x & 0xf))` << 3
 
+
+## Interpreting Pixels: Palettes
+
+The table below lists the palettes for each pixmap.  For some pixmaps,
+index 0 is not drawn (transparent), also marked below.
+
+| File                       | Index 0                                    | Palette                                                                |
+|----------------------------|--------------------------------------------|------------------------------------------------------------------------|
+| `BACKGRND.AMB`             | drawn                                      | Defined in the referencing [LAB_DATA.AMB](LabData.md)                  |
+| `CHARDATA.AMB` (portraits) | ?                                          | ?                                                                      |
+| `COM_BACK.AMB`             | drawn                                      | [Combat Palettes](Palettes.md)                                         |
+| `F_T_ANIM.ICN`             | transparent                                | [Combat Palettes](Palettes.md) (see below)                             |
+| `ICON_DAT.AMB`             | drawn unless in the [overlay map](Maps.md) | Embedded in the [IconData](IconData.md)                                |
+| `LABBLOCK.AMB`             | transparent                                | Defined in the referencing [LAB_DATA.AMB](LabData.md)                  |
+| `MON_GFX.AMB`              | transparent                                | [Combat Palettes](Palettes.md) (any)                                   |
+| `PICS80.AMB`               | drawn                                      | Stored in same file in the next record, after the corresponding pixmap |
+| `PUZZLE.ICN`               | ?                                          | ?                                                                      |
+| `TACTIC.ICN`               | transparent                                | [Combat Palettes](Palettes.md) (any)                                   |
+
+Several pixmaps us the [Combat Palettes](Palettes.md):
+- `TACTIC.ICN`: only uses palette indices that are identical across combat palettes, so any combat palette is fine.
+- `F_T_ANIM.ICN`: Same as `TACTIC.ICN`.
+- `MON-GFX.AMB`: mostly only use palette indices that are identical across combat palettes, with one exception (water demon). Presumably the extra colour is the one dictated by the background that this monster appears in.
+- `COM_BACK.AMB`: each entry uses the associated combat palette (in order).
