@@ -146,7 +146,7 @@ There are always precisely 24 (`0x18`) NPCs declared.  NPC declarations are chun
 When the player talks to an NPC, the following happens:
 
 * If *popup-only* is set, then pop up the `MAPTEXT` message indexed by  *personality* - `1`.
-* If *attack* is set... : unknown
+* If *attack* is set, enter combat for the [combat layout](CombatLayout.md) (`MON_DATA`) indexed by *personality* - `1`.
 * Otherwise, enter chat mode for NPC from `CHARDATA`, indexed by *personality* - `1`.
 
 ### NPC Positions and Movement Routes
