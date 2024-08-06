@@ -22,8 +22,7 @@ These resources are stored in `LAB_DATA.AMB`.
 | 0xa + `num_labblock_refs`    | `palette` + 1         | u8   | Index into the list of [Palettes](Palettes.md), plus 1                               |
 
 - Ceiling and floor images, as well as all indexed LabBlock resources, use the specified palette.
-- For outdoor maps, the ceiling graphics show the sky; the image lacks the background colour gradient used for sunset and sunrise.  Most likely the ceiling images here use colour index 0xb for transparency and have
-  something special drawn behind them.
+- For 3D city views, the colour `11`/`0x0b` has a special meaning: transparency relative to the day/night sky gradient (see below)
 - When moving around in a Labyrinth, the floor and ceiling images are flipped after every step, except for outdoors images, where the ceiling image is flipped only when rotating.
 - When rotating, the ceiling image is also flipped (UNKNOWN: outdoors only or also in dungeons?)
 - When rotating, the floor images is not flipped outdoors (UNKNOWN: how about in dungeons?)
@@ -125,3 +124,22 @@ Furniture/decoration blocks are the only blocks that are drawn when on the same 
 |--------|---|---|---|
 | `@>` 3 | 2 | 1 | 0 |
 
+
+## Sky Gradient
+
+Cities have a background sky gradient.  This gradient is stored in [AMBERDEV.UDO](Amberdev.mc) and consists of three [Compact palettes](Palettes.md), in order:
+- Day gradient
+- Night gradient
+- Twilight gradient (dawn/dusk)
+Each gradient has 83 palette entries.  The gradients are stored without any intervening separator.
+Each palette entry specifies the sky colour for the corresponding scanline in the first-person view, going downwards.
+The game selects the gradients based on the time of day:
+
+| Time of day | Gradient |
+|-------------|----------|
+| 06:00-08:00 | Twilight |
+| 08:00-18:00 | Day      |
+| 06:00-08:00 | Twilight |
+| 20:00-06:00 | Night    |
+
+During twilight hours, there is some blending between the gradients; details tbd.
