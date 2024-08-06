@@ -76,23 +76,27 @@ The palette index of a pixel at index `x`, `y` is now given by the combination (
 - `line[y].bitplane[0].xword[x >> 4] & (0x8000 > (x & 0xf))` << 3
 
 
-## Interpreting Pixels: Palettes
+## Interpreting Pixels: Palettes and Transparency
 
 The table below lists the palettes for each pixmap.  For some pixmaps,
-index 0 is not drawn (transparent), also marked below.
+some pixels are transparent (not drawn):
 
-| File                       | Index 0                                    | Palette                                                                |
-|----------------------------|--------------------------------------------|------------------------------------------------------------------------|
-| `BACKGRND.AMB`             | drawn                                      | Defined in the referencing [LAB_DATA.AMB](LabData.md)                  |
-| `CHARDATA.AMB` (portraits) | ?                                          | ?                                                                      |
-| `COM_BACK.AMB`             | drawn                                      | [Combat Palettes](Palettes.md)                                         |
-| `F_T_ANIM.ICN`             | transparent                                | [Combat Palettes](Palettes.md) (see below)                             |
-| `ICON_DAT.AMB`             | drawn unless in the [overlay map](Maps.md) | Embedded in the [IconData](IconData.md)                                |
-| `LABBLOCK.AMB`             | transparent                                | Defined in the referencing [LAB_DATA.AMB](LabData.md)                  |
-| `MON_GFX.AMB`              | transparent                                | [Combat Palettes](Palettes.md) (any)                                   |
-| `PICS80.AMB`               | drawn                                      | Stored in same file in the next record, after the corresponding pixmap |
-| `PUZZLE.ICN`               | ?                                          | ?                                                                      |
-| `TACTIC.ICN`               | transparent                                | [Combat Palettes](Palettes.md) (any)                                   |
+| File                       | Transparent indices                       | Palette                                                                |
+|----------------------------|-------------------------------------------|------------------------------------------------------------------------|
+| `BACKGRND.AMB`             | 11 (see below)                            | Defined in the referencing [LAB_DATA.AMB](LabData.md)                  |
+| `CHARDATA.AMB` (portraits) | ?                                         | ?                                                                      |
+| `COM_BACK.AMB`             | none                                      | [Combat Palettes](Palettes.md)                                         |
+| `F_T_ANIM.ICN`             | 0                                         | [Combat Palettes](Palettes.md) (see below)                             |
+| `ICON_DAT.AMB`             | 0 for icons in the [overlay map](Maps.md) | Embedded in the [IconData](IconData.md)                                |
+| `LABBLOCK.AMB`             | 0, 11 (see below)                         | Defined in the referencing [LAB_DATA.AMB](LabData.md)                  |
+| `MON_GFX.AMB`              | 0                                         | [Combat Palettes](Palettes.md) (any)                                   |
+| `PICS80.AMB`               | none                                      | Stored in same file in the next record, after the corresponding pixmap |
+| `PUZZLE.ICN`               | ?                                         | ?                                                                      |
+| `TACTIC.ICN`               | 0                                         | [Combat Palettes](Palettes.md) (any)                                   |
+
+Colour `11`/`0x0b`: For first-person `LABBLOCK` and `BACKGRND` views drawn in 3D views of cities,
+the colour `11` is used as a colour key for transparency relative to the [sky gradient](LabData.md).
+This allows e.g. the Twinlake graveyard gate to show parts of the sky instead of the stone wall that would normally be behind the gate.
 
 Several pixmaps us the [Combat Palettes](Palettes.md):
 - `TACTIC.ICN`: only uses palette indices that are identical across combat palettes, so any combat palette is fine.
