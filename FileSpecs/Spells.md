@@ -79,7 +79,7 @@ The English spell names are tentative, based on their order in the dictionary fi
 |  1 |      `2` | Feuerstrahl     | Beam of Fire   |
 |  2 |      `4` | Feuerstoß       | Wall of Fire   |
 |  3 |      `8` | Feuerball       | Fireball       |
-|  4 |     `10` | Feuersturm      | Firestorm      |
+|  4 |     `10` | Feuersturm      | Fire Storm     |
 |  5 |     `20` | Feuerwalze      | Fire Cascade   |
 |  6 |     `40` | Wasserloch      | Waterhole      |
 |  7 |     `80` | Wasserfall      | Waterfall      |
@@ -102,15 +102,15 @@ The English spell names are tentative, based on their order in the dictionary fi
 ## Special spells (items & monsters)
 | Id |      Bit | Name (German)  | Name (English) |
 |---:|---------:|----------------|----------------|
-|  1 |      `2` | Lähmen         | Stun           |
+|  1 |      `2` | Lähmen         | Stunned        |
 |  2 |      `4` | Vergiften      | Poison         |
 |  3 |      `8` | Versteinern    | Flesh to Stone |
 |  4 |     `10` | Krankheit      | Make Ill       |
-|  5 |     `20` | Altern         | Age            |
+|  5 |     `20` | Altern         | Ageing         |
 |  6 |     `40` | Irritieren     | Irritation     |
 |  7 |     `80` | Verrücktheit   | Make Mad       |
 |  8 |    `100` | Schlaf         | Sleep          |
-|  9 |    `200` | Angst          | Fear           |
+|  9 |    `200` | Angst          | Panik          |
 | 10 |    `400` | Blindheit      | Blinding Flash |
 | 11 |    `800` | Versteinern    | Flesh To Stone |
 | 12 |   `1000` | Kartenschau    | Mapshow        |
@@ -119,9 +119,10 @@ The English spell names are tentative, based on their order in the dictionary fi
 | 15 |   `8000` | Spruchpunkte 2 | Spellpoints 2  |
 | 16 |  `10000` | Waffen Balsam  | Weapon Balm    |
 | 17 |  `20000` | Jugend         | Youth          |
-| 18 |  `40000` | Schloss Öffnen | Open           |
+| 18 |  `40000` | Schloss Öffnen | Pick Lock      |
 | 19 |  `80000` | Adlerruf       | Eagle Call     |
 | 20 | `100000` | Musik          | Music          |
 
-
-Unclear: two "Flesh to Stone" spells?
+In at least some versions of the English AMBERDEV data file, the string indices for
+the special spell names `18` and `20` seem to point to the wrong entries, with
+`18` pointing to the string "POTIONS?" and `20` pointing to an invalid index.
