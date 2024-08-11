@@ -123,22 +123,18 @@ There are always precisely 24 (`0x18`) NPCs declared.  NPC declarations are chun
 |--------------------------|---------|--------------------|-----------------------------------------------------------------|
 | `a14`                    | u16[24] | npc[i].personality | `0` if disabled, otherwise NPC ID or popup message **plus `1`** |
 | `a44` (= `a14` + 24 * 2) | u8[24]  | npc[i].sprite      | NPC sprite (on the active tile map)                             |
-| `a5c` (= `a14` + 24 * 3) | u8[24]  | npc[i].flags[0]    | Unknown: `00`, `01`, or `02`                                    |
-| `a74` (= `a14` + 24 * 4) | u8[24]  | npc[i].flags[1]    | See below                                                       |
-| `a8c` (= `a14` + 24 * 5) | u8[24]  | npc[i].flags[2]    | Unknown: `00` (only on 2D maps) or `01`                         |
-| `aa4` (= `a14` + 24 * 6) | u8[24]  | npc[i].flags[3]    | Unknown: `00` (only on 2D maps) or `01`                         |
+| `a5c` (= `a14` + 24 * 3) | u8[24]  | npc[i].move        | Travel mode of the NPC (basically collision classes)            |
+| `a74` (= `a14` + 24 * 4) | u8[24]  | npc[i].flags       | See below                                                       |
+| `a8c` (= `a14` + 24 * 5) | u8[24]  | npc[i].day         | Spawn day (see flags, must match current day of month)          |
+| `aa4` (= `a14` + 24 * 6) | u8[24]  | npc[i].month       | Spawn month (see flags, must match current month)               |
 
-| Flags             | Name        | Exclusivity     | Meaning                        |
-|-------------------|-------------|-----------------|--------------------------------|
-| flags[0] & `0x01` |             |                 |                                |
-| flags[0] & `0x02` |             |                 |                                |
-| flags[1] & `0x01` | attack      | A               | moves toward player, attacks   |
-| flags[1] & `0x02` | random-walk | A               | walks around randomly          |
-| flags[1] & `0x04` |             | Labyrinths only |                                |
-| flags[1] & `0x08` | n/a         |                 | (never used)                   |
-| flags[1] & `0x10` | popup-only  |                 | talking to NPC pops up message |
-| flags[2] & `0x01` |             |                 |                                |
-| flags[3] & `0x01` |             |                 |                                |
+| Flags          | Name        | Exclusivity   | Meaning                                   |
+|----------------|-------------|---------------|-------------------------------------------|
+| flags & `0x01` | type        | -             | 0: person, 1: monster                     |
+| flags & `0x02` | random/path | Persons only  | 0: path, 1: walk around randomly          |
+| flags & `0x04` | hunt/stay   | Monsters only | 0: stay, 1: hunt player                   |
+| flags & `0x08` | spawn date  | Persons only  | 0: always there, 1: only on specific date |
+| flags & `0x10` | popup-only  | Persons only  | talking to NPC pops up message            |
 
 ### Talking to NPCs
 
