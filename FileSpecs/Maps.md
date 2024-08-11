@@ -31,7 +31,14 @@ The files consist of the following sections:
 | `9`      | char[30]           | name                 | map name, padded with `0x20`, and `0x00`-terminated                                                     |
 | `38`     | event[254]         | events               | `10` bytes per [event](Events.md)                                                                       |
 | `a14`    | npc[24]            | NPCs                 | NPC list, See below                                                                                     |
-| `abc`    | u8[9]              | magic number         | = [`01` `20` `0c` `1e` `18` `3c` `05` `0c` `0c`]                                                        |
+| `abc`    | u16                | max steps per day    | = 0x120 (288), total amount of 5-minute steps per day                                                   |
+| `abe`    | u8                 | months per year      | = 12                                                                                                    |
+| `abf`    | u8                 | days per month       | = 30                                                                                                    |
+| `ac0`    | u8                 | hours per day        | = 24                                                                                                    |
+| `ac1`    | u8                 | minutes per hour     | = 60                                                                                                    |
+| `ac2`    | u8                 | minutes per step     | = 5                                                                                                     |
+| `ac3`    | u8                 | hours per daytime    | = 12                                                                                                    |
+| `ac4`    | u8                 | hours per nighttime  | = 12                                                                                                    |
 | `ac5`... |                    |                      | varies between 2D maps and Labyrinths, see below                                                        |
 |          | LabInfo[..]        | labinfo              | Labyrinth only: Labyrinth tile descriptions                                                             |
 |          | u8[width * height] | map[0]               | map data                                                                                                |
