@@ -42,3 +42,15 @@ The following heuristic seems to produce decent results:
     - The next fragment is NOT the first fragment in the text
     - The previous fragment was NOT a newline
     - The next fragment starts with a letter, a number, a dash or a tilde symbol
+
+## Character Set
+
+Amberstar seems to use the Atari ST character set (even on the Amiga).  This is not relevant for the English version of the game, but it affects the German version,
+due to the placement of the `ß` character.  Concretely, the German release of Amberstar uses the following characters that are outside the ASCII character range:
+
+| Character | Codepoint |
+|-----------|-----------|
+| Ä         | `8e`      |
+| Ö         | `99`      |
+| Ü         | `9a`      |
+| ß         | `9e`      |
