@@ -21,9 +21,8 @@ The files consist of the following sections:
 | Offset   | Format             | Name                 | Description                                                                                             |
 |----------|--------------------|----------------------|---------------------------------------------------------------------------------------------------------|
 | `0`      | u8                 | magic number         | = `0xff`                                                                                                |
-| `1`      | u8                 | magic number         | = `0x00`                                                                                                |
-| `2`      | u8                 | magic number         | = `0x00`                                                                                                |
-| `3`      | u8                 | tileset / background | 2D maps: tileset (`1` or `2`).  Labyrinths: [LabData](LabData.md) resource describing the graphics, + 1 |
+| `1`      | u8                 | fill byte            | = `0x00`                                                                                                |                                                                                        |
+| `2`      | u16                | tileset / background | 2D maps: tileset (`1` or `2`).  Labyrinths: [LabData](LabData.md) resource describing the graphics, + 1 |
 | `4`      | u8                 | labyrinth marker     | `00` for top-down 2D maps, `01` for Labyrinths (dungeons, towns)                                        |
 | `5`      | u8                 | flags                | See below                                                                                               |
 | `6`      | u8                 | song                 | If ≠ `00`, set active song to this one                                                                  |
