@@ -65,6 +65,21 @@ The map flags indicate light sources, whether resting is possible etc.:
 * A: Precisely one of {`01`, `02`, `04`} is set on every map
 * B: Precisely one of {`20`, `40`, `80`} is set on every map
 
+## Light
+
+The light is calculated as follows:
+
+- If active character is blind, all dark.
+- Otherwise if Light bit is 1 (flags & 0x01 != 0), just show full brightness.
+- Otherwise if Light bit is 0 (flags & 0x01 == 0), check for LightChange bit (flags & 0x02).
+- If set, get the light radius by the hour.
+  - Use this table: `16,16,16,16,16,16,40,64,200,200,200,200,200,200,200,200,200,64,64,40,16,16,16,16,16`.
+  - Any active light spell will add its effect (multiplied by 8) to the radius.
+- If the change bit was 0 instead, check the dark bit (flags & 0x04).
+- If this is not set, just do nothing (no change). I guess no map uses this (all 3 bits would be 0).
+- Otherwise check travel type first. Superchicken mode (cheat) grants full light.
+- Otherwise if no light spell is active, use full darkness.
+- Otherwise use a radius of 16 + (the light spell effect multiplied by 8).
 
 ## 2D Maps
 
