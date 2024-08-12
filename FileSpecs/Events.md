@@ -2,33 +2,39 @@
 
 Events are part of [Maps](Maps.md), tied to "hotspots" on particular map tiles and triggered under certain conditions.
 Unless noted otherwise, the condition is that the player enters the hotspot tile.
-Events are encoded in 10 bytes, summarised below, with the byte at offset `00` in column ID:
+- Events are encoded in 10 bytes, summarised below, with the byte at offset `00` in column ID.
+- At offsets 6 and 8 there are words, in all other offsets single bytes.
+- At offset 5 there is always an event index which specifies an event to be saved.
+Saving means that the event is disabled. This is useful for one-time events. There are two exceptions:
+  - Chest events are always executed, even if disabled. Most likely to allow checking chests for more items and because empty chests won't show anything anyways.
+  - Disabled door exit events will not be executed but their linked additional event is.
+- We won't include offset 5 in the following table as it has the same meaning for all events.
 
-| Name                   | Where | ID   | `01`   | `02`    | `03`    | `04`    | `05`     | `06`  | `07`      | `08` | `09`      | Automap     |
-|------------------------|-------|------|--------|---------|---------|---------|----------|-------|-----------|------|-----------|-------------|
-| **ChangeMap**          |       | `01` | *x*    | *y*     | *dir*   | `00`    | `00`     | `00`  | *map*     | `00` | `00`      | Exit        |
-| **Door**               |       | `02` | *cr*   | U02.2   | U02.3   | `00`    | U2.5     | U2.6  | U2.7      | `00` | `00`      | Door        |
-| **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *flagID* | *kw*  | *kw*      | `00` | `00`      | /           |
-| **Chest**              |       | `04` | U04.1  | U04.2   | U04.3   | U04.4   | *flagID* | `00`  | *chest*   | `00` | *msg*     | Treasure    |
-| **Trapdoor**           |       | `05` | U05.1  | U05.2   | U05.3   | U05.4   | U05.5    | `00`  | *map*     | `00` | U05.9     | /           |
-| **Teleport**           |       | `06` | *x*    | *y*     | U06.3   | U06.4   | U06.5    | `00`  | *map*     | `00` | `00`      | Teleporter  |
-|                        |       | `07` | U07.1  | U07.2   | U07.3   | U07.4   | `00`     | `00`  | U07.7     | `00` | `00`      |             |
-| **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | U08.4   | U08.5    | `00`  | `00`      | `00` | `00`      |             |
-| **TakeDamage**         |       | `09` | *max*  | U09.2   | `00`    | U09.4   | `00`     | `00`  | `00`      | `00` | `00`      |             |
-|                        |       | `0a` | U0a.1  | U0a.2   | `00`    | U0a.4   | `00`     | `00`  | `00`      | `00` | `00`      |             |
-| **RestoreLP**          | 2D    | `0b` | `00`   | `00`    | `00`    | *msg*   | `00`     | `00`  | `00`      | `00` | `00`      | /           |
-| **RestoreSP**          | 2D    | `0c` | `00`   | `00`    | `00`    | *msg*   | `00`     | `00`  | `00`      | `00` | `00`      | /           |
-| **Trap**               |       | `0d` | U0d.1  | `00`    | U0d.3   | `1a`    | U0d.5    | `00`  | `00`      | `00` | `00`      | /           |
-| **Riddlemouth**        |       | `0e` | U0e.1  | U0e.2   | *greet* | *reply* | U0e.5    | *kw*  | *kw*      | `00` | U0e.9     | Riddlemouth |
-| **RaiseStat**          |       | `0f` | *stat* | U0f.2   | `01`    | *msg*   | U0f.5    | `00`  | `00`      | `00` | U0f.9     |             |
-| **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *flagID* | `00`  | *tile*    | `00` | `00`      |             |
-| **Fight**              |       | `11` | U11.1  | `00`    | U11.3   | U11.4   | U11.5    | `0`   | U11.7     | `00` | `00`      |             |
-| **Merchant**           |       | `12` | *open* | *close* | *type*  | *msg*   | `00`     | `00`  | *merchID* | `00` | *waresID* | Merchant    |
-| **ChangeTileWithTool** |       | `13` | *x*    | *y*     | `00`    | *msg*   | U13.5    | U13.6 | U13.7     | `00` | U13.9     |             |
-| **Door3D**             | 3D    | `14` | `01`   | `00`    | `00`    | U14.4   | U14.5    | `00`  | U14.7     | `00` | `00`      |             |
-| **ChangeMapAlt**       | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | `00`     | `00`  | *map*     | `00` | `00`      |             |
-| **Altar**              | 2D    | `16` | `00`   | `00`    | `00`    | `00`    | `00`     | `00`  | `00`      | `00` | `00`      |             |
-| **Win**                | 2D    | `17` | `00`   | `00`    | `00`    | `00`    | `00`     | `00`  | `00`      | `00` | `00`      |             |
+| Name                   | Where | ID   | `01`   | `02`    | `03`    | `04`    | `06`      | `08`     | Automap     |
+|------------------------|-------|------|--------|---------|---------|---------|-----------|-----------|-------------|
+| **ChangeMap**          |       | `01` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    | Exit        |
+| **Door**               |       | `02` | *cr*   | *trap*  | *dmg*   | `00`    | U2.6      | `0000`    | Door        |
+| **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *kw*      | `0000`    | /           |
+| **Chest**              |       | `04` | U04.1  | U04.2   | U04.3   | U04.4   | *chest*   | *msg*     | Treasure    |
+| **Trapdoor**           |       | `05` | U05.1  | U05.2   | U05.3   | U05.4   | *map*     | U05.9     | /           |
+| **Teleport**           |       | `06` | *x*    | *y*     | U06.3   | U06.4   | *map*     | `0000`    | Teleporter  |
+| **WindGate**           |       | `07` | U07.1  | U07.2   | U07.3   | U07.4   | U07.7     | `0000`    |             |
+| **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | U08.4   | `0000`    | `0000`    |             |
+| **TakeDamage**         |       | `09` | *max*  | U09.2   | `00`    | U09.4   | `0000`    | `0000`    |             |
+|                        |       | `0a` | U0a.1  | U0a.2   | `00`    | U0a.4   | `0000`    | `0000`    |             |
+| **RestoreLP**          | 2D    | `0b` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
+| **RestoreSP**          | 2D    | `0c` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
+| **Trap**               |       | `0d` | U0d.1  | `00`    | U0d.3   | `1a`    | `0000`    | `0000`    | /           |
+| **Riddlemouth**        |       | `0e` | U0e.1  | U0e.2   | *greet* | *reply* | *kw*      | U0e.9     | Riddlemouth |
+| **RaiseStat**          |       | `0f` | *stat* | U0f.2   | `01`    | *msg*   | `0000`    | U0f.9     |             |
+| **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *tile*    | `0000`    |             |
+| **Fight**              |       | `11` | U11.1  | `00`    | U11.3   | U11.4   | U11.7     | `0000`    |             |
+| **Merchant**           |       | `12` | *open* | *close* | *type*  | *msg*   | *merchID* | *waresID* | Merchant    |
+| **ChangeTileWithTool** |       | `13` | *x*    | *y*     | `00`    | *msg*   | U13.6     | U13.9     |             |
+| **Door3D**             | 3D    | `14` | `01`   | `00`    | `00`    | U14.4   | U14.7     | `0000`    |             |
+| **ChangeMapAlt**       | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    |             |
+| **Altar**              | 2D    | `16` | `00`   | `00`    | `00`    | `00`    | `0000`    | `0000`    |             |
+| **Win**                | 2D    | `17` | `00`   | `00`    | `00`    | `00`    | `0000`    | `0000`    |             |
 
 
 * Column `Where` indicates whether the event only appears in 2D or 3D maps.
