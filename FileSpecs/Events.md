@@ -4,8 +4,11 @@ Events are part of [Maps](Maps.md), tied to "hotspots" on particular map tiles a
 Unless noted otherwise, the condition is that the player enters the hotspot tile.
 - Events are encoded in 10 bytes, summarised below, with the byte at offset `00` in column ID.
 - At offsets 6 and 8 there are words, in all other offsets single bytes.
-- At offset 5 there is always an event index which specifies an event to be saved.
-Saving means that the event is disabled. This is useful for one-time events. There are two exceptions:
+- At offset 5 there is always a save index which specifies an index inside the savegame.
+Saving means that the event is disabled if the associated save index bit is set. This is useful for one-time events.
+If the byte is non-zero the event will disable itself after execution. When triggered again and the save bit is already
+set, the event is not executed anymore.
+There are two exceptions:
   - Chest events are always executed, even if disabled. Most likely to allow checking chests for more items and because empty chests won't show anything anyways.
   - Disabled door exit events will not be executed but their linked additional event is.
 - We won't include offset 5 in the following table as it has the same meaning for all events.
@@ -15,7 +18,7 @@ Saving means that the event is disabled. This is useful for one-time events. The
 | **ChangeMap**          |       | `01` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    | Exit        |
 | **Door**               |       | `02` | *cr*   | *trap*  | *dmg*   | `00`    | *item*    | `0000`    | Door        |
 | **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *kw*      | `0000`    | /           |
-| **Chest**              |       | `04` | U04.1  | U04.2   | U04.3   | U04.4   | *chest*   | *msg*     | Treasure    |
+| **Chest**              |       | `04` | *cr*   | *trap*  | *dmg*   | *hid*   | *chest*   | *msg*     | Treasure    |
 | **Trapdoor**           |       | `05` | U05.1  | U05.2   | U05.3   | U05.4   | *map*     | U05.9     | /           |
 | **Teleport**           |       | `06` | *x*    | *y*     | U06.3   | U06.4   | *map*     | `0000`    | Teleporter  |
 | **WindGate**           |       | `07` | U07.1  | U07.2   | U07.3   | U07.4   | U07.7     | `0000`    |             |
@@ -78,28 +81,24 @@ If *trap* is non-zero it specifies a trap type (see the Trap event). Only then *
 - if *act* = `1`: look at tile
 - if *act* >= `2`: looking or entering
 
-*Precondition*
-- Either *flagID* = `0`, or message flag ID *flagID* is not set
-
 Displays message *msg*, from the local `MAPTEXT.AMB` resources, and possibly shows image *img* - 1 from `PICS80.AMB`, if *img* is nonzero.
 The party learns the dictionary keywords *kw* for use in conversation with NPCs.
-
-If *flagID* is nonzero, set message flag ID *flagID* so that this message will not be shown again.
 
 <!-- ---------------------------------------- -->
 ## Event 04: Chest
 *Trigger*: Looking
 
-The party accesses the that contains the items from `CHESTDAT.AMB` resource number *chest*, while displaying message *msg*.  Once the chest is empty,
+The party accesses the that contains the items from `CHESTDAT.AMB` resource number *chest*, while displaying message *msg*. Once the chest is empty,
 the game records this fact with chest flag *flagID* and no longer allows chest access.
 
 The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `00001ef0` for chest `01`.
 
-### Unknowns
-* U04.1: [`00`, `01`, `0a`]: Lockpick difficulty?  `0a` only in 3D maps.
-* U04.2: [`00-07`]
-* U04.3: [`00`], or [`01`, `05`] in 3D maps
-* U04.4: [`00-2a`]
+*cr* reduces the lock-picking chance. If it is 100, the lock can't be picked by the skill at all. Chests can not specify
+a key item. They can only be opened by the lockpick item or the skill. If below 100, the value is subtracted from the active player's lockpicking skill
+and then a random check against the remaining value is performed. The lockpick item can be used to open the lock with 100% chance regardless of the value.
+A value of 0 means that the chest is initially opened and no lock has to be picked.
+
+If *trap* is non-zero it specifies a trap type (see the Trap event). Only then *dmg* gives the maximum damage of the trap.
 
 <!-- ---------------------------------------- -->
 ## Event 05: Trapdoor
