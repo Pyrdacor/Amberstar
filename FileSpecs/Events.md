@@ -19,7 +19,7 @@ There are two exceptions:
 | **Door**               |       | `02` | *cr*   | *trap*  | *dmg*   | `00`    | *item*    | `0000`    | Door        |
 | **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *kw*      | `0000`    | /           |
 | **Chest**              |       | `04` | *cr*   | *trap*  | *dmg*   | *hid*   | *chest*   | *msg*     | Treasure    |
-| **Trapdoor**           |       | `05` | U05.1  | U05.2   | U05.3   | U05.4   | *map*     | U05.9     | /           |
+| **Trapdoor**           |       | `05` | *x*    | *y*     | *floor* | *msg*   | *map*     | *dmg*     | /           |
 | **Teleport**           |       | `06` | *x*    | *y*     | U06.3   | U06.4   | *map*     | `0000`    | Teleporter  |
 | **WindGate**           |       | `07` | U07.1  | U07.2   | U07.3   | U07.4   | U07.7     | `0000`    |             |
 | **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | U08.4   | `0000`    | `0000`    |             |
@@ -91,6 +91,8 @@ The party learns the dictionary keywords *kw* for use in conversation with NPCs.
 The party accesses the that contains the items from `CHESTDAT.AMB` resource number *chest*, while displaying message *msg*. Once the chest is empty,
 the game records this fact with chest flag *flagID* and no longer allows chest access.
 
+If *hid* is non-zero the chest is hidden and a skill check against the active player's search skill is performed. If it fails, the chest is not shown.
+
 The gold for this chest is stored in u16 values in `PARTYDAT.SAV`, starting at `00001ef0` for chest `01`.
 
 *cr* reduces the lock-picking chance. If it is 100, the lock can't be picked by the skill at all. Chests can not specify
@@ -106,12 +108,13 @@ If *trap* is non-zero it specifies a trap type (see the Trap event). Only then *
 When looking at this field, the game reports it as a trapdoor.
 Works similarly to ChangeMap (Event `01`).
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-2D    INCOMPLETE event op type 05 [0a,1a]        [1a,23]              [01]     [00,05]  [00-01]  [00]  [4b,6f]              [00]  [03,0a]
-3D    INCOMPLETE event op type 05 [09,10-11,1f]  [09,15-16,19-1a,1f]  [00-01]  [00,1a]  [00-01]  [00]  [5d,69,6c,80,92-93]  [00]  [00,0a,0f]
--->
+Teleports the party to the given location (*x* and *y*) on the given *map*.
+
+If *msg* is non-zero it is displayed before the fall.
+
+If *floor* is set, the party falls down and receives random damage in the range of 1 to *dmg*.
+
+If *floor* is not set, the party climbs up but receives *no damage*. Most likely only triggered if the levitation spell is used.
 
 <!-- ---------------------------------------- -->
 ## Event 06: Teleport
