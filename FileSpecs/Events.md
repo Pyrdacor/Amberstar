@@ -23,8 +23,8 @@ There are two exceptions:
 | **Teleport**           |       | `06` | *x*    | *y*     | *dir*   | *msg*   | *map*     | `0000`    | Teleporter  |
 | **WindGate**           |       | `07` | *x*    | *y*     | *dir*   | *msg*   | *map*     | `0000`    |             |
 | **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | *msg*   | `0000`    | `0000`    |             |
-| **TakeDamage**         |       | `09` | *max*  | U09.2   | `00`    | U09.4   | `0000`    | `0000`    |             |
-|                        |       | `0a` | U0a.1  | U0a.2   | `00`    | U0a.4   | `0000`    | `0000`    |             |
+| **TakeDamage**         |       | `09` | *max*  | *sex*   | `00`    | *msg*   | `0000`    | `0000`    |             |
+| **AntiMagic**          |       | `0a` | *buf*  | U0a.2   | `00`    | *msg*   | `0000`    | `0000`    |             |
 | **RestoreLP**          | 2D    | `0b` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
 | **RestoreSP**          | 2D    | `0c` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
 | **Trap**               |       | `0d` | U0d.1  | `00`    | U0d.3   | `1a`    | `0000`    | `0000`    | /           |
@@ -126,7 +126,7 @@ But it can display an optional *msg* before the teleport.
 If the map index is the current map, there will be no fading.
 
 <!-- ---------------------------------------- -->
-## Event 07: Wind Gate
+## Event 07: WindGate
 
 Exactly the same as Teleport (Event `06`) but will abort early if you don't possess the wind chain item.
 
@@ -143,16 +143,30 @@ The optional *msg* can be shown before the spin.
 
 The players take between 1..*max* damage.
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 09 {mask:3f/exclusive:05,12,2c}  [02]  [00]  [01-02,1a]  [00]  [00]  [00]  [00]  [00]
-    INCOMPLETE event op type 09 [19,1e]                       [00]  [00]  [1a]        [00]  [00]  [00]  [00]  [00]
--->
-<!-- ---------------------------------------- -->
-## Event 0a
+| `sex` | Affected    |
+|-------|-------------|
+| `0`   | Male only   |
+| `1`   | Female only |
+| `2`   | Both        |
 
-Seems to cause darkness, but might be a general debuff / anti-magic event.
+The optional *msg* can be shown before the damaging.
+
+<!-- ---------------------------------------- -->
+## Event 0a: AntiMagic
+
+Removes one or all active spells (buffs).
+
+| `buf` | Meaning      |
+|-------|--------------|
+| `0`   | All spells   |
+| `1`   | Light        |
+| `2`   | Magic Armor  |
+| `3`   | Magic Weapon |
+| `4`   | Anti Magic   |
+| `5`   | Clairvoyance |
+| `6`   | Invisibility |
+
+The optional *msg* can be shown before the debuff.
 
 ### Unknowns
 * What does this do?
