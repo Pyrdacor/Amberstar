@@ -28,8 +28,8 @@ There are two exceptions:
 | **RestoreLP**          | 2D    | `0b` | *hp*   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
 | **RestoreSP**          | 2D    | `0c` | *sp*   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
 | **Trap**               |       | `0d` | *trap* | `00`    | *dmg*   | *msg*   | `0000`    | `0000`    | /           |
-| **Riddlemouth**        |       | `0e` | U0e.1  | U0e.2   | *greet* | *reply* | *kw*      | U0e.9     | Riddlemouth |
-| **RaiseStat**          |       | `0f` | *stat* | U0f.2   | `01`    | *msg*   | `0000`    | U0f.9     |             |
+| **Riddlemouth**        |       | `0e` | *x*    | *y*     | *greet* | *reply* | *kw*      | *tile*    | Riddlemouth |
+| **ChangeStat**         |       | `0f` | *stat* | *add*   | *rnd*   | *msg*   | *target*  | *amount*  |             |
 | **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *tile*    | `0000`    |             |
 | **Fight**              |       | `11` | U11.1  | `00`    | U11.3   | U11.4   | U11.7     | `0000`    |             |
 | **Merchant**           |       | `12` | *open* | *close* | *type*  | *msg*   | *merchID* | *waresID* | Merchant    |
@@ -211,24 +211,22 @@ The optional *msg* can be shown before the trap is triggered. However each trap 
 
 Greets party with message *greet*.  If the party replies with *kw*, the Riddlemouth gives its *reply*.
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 0e {mask:3f/exclusive:11,22,24,28}  {mask:1f/exclusive:09,18}  [00-04]                       [01-03,05,08]  [01-04]  [01,06]  [49,4f-52,56,87]  [00]  [4a-4b,52,af,e9]
-    INCOMPLETE event op type 0e {mask:3f/exclusive:21,22,30}     {mask:3f/exclusive:28}     {mask:1f/exclusive:06,18,12}  [01-07,0c,0e,12,16]  {mask:3f/exclusive:32,34,18}  [01-04,07,09,0b-0d]  {mask:ff}  [00]  [00-02,04-05]
--->
+If *tile* is non-zero the map tile at *x*, *y* will be changed to *tile* after solving the riddle.
+
 <!-- ---------------------------------------- -->
-## Event 0f: RaiseStat
+## Event 0f: ChangeStat
 
-* Raises one of the stats of some party member (the first? random?) by one point and shows message *msg*
-  - *stat* 1 means "strength", 2 means "intelligence" etc.
+- If *add* is non-zero, increases the given *stat* of the targets by *amount*.
+- If *add* is zero, decreases the given *stat* of the targets by *amount*.
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 0f [03,05-06]  [00-01]  [01]  [18-19]  [1b-1d]  [00]  [00]  [00]  [0f,14]
-    INCOMPLETE event op type 0f [01-02]        [00]  [01]  [08-09]  [0a,12]  [00]  [00]  [00]  [0a]
--->
+If *target* is 0, all party members are affected, otherwise only the active player.
+
+*stat* 1 means "strength", 2 means "intelligence" etc.
+
+If *rnd* is non-zero the actual amount will be a random value in the range of 1..*amount* instead.
+
+The optional *msg* can be shown before the stat is changed.
+
 <!-- ---------------------------------------- -->
 ## Event 10: ChangeTile
 
