@@ -10,10 +10,10 @@ Saving means that the event is disabled. This is useful for one-time events. The
   - Disabled door exit events will not be executed but their linked additional event is.
 - We won't include offset 5 in the following table as it has the same meaning for all events.
 
-| Name                   | Where | ID   | `01`   | `02`    | `03`    | `04`    | `06`      | `08`     | Automap     |
+| Name                   | Where | ID   | `01`   | `02`    | `03`    | `04`    | `06`      | `08`      | Automap     |
 |------------------------|-------|------|--------|---------|---------|---------|-----------|-----------|-------------|
 | **ChangeMap**          |       | `01` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    | Exit        |
-| **Door**               |       | `02` | *cr*   | *trap*  | *dmg*   | `00`    | U2.6      | `0000`    | Door        |
+| **Door**               |       | `02` | *cr*   | *trap*  | *dmg*   | `00`    | *item*    | `0000`    | Door        |
 | **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *kw*      | `0000`    | /           |
 | **Chest**              |       | `04` | U04.1  | U04.2   | U04.3   | U04.4   | *chest*   | *msg*     | Treasure    |
 | **Trapdoor**           |       | `05` | U05.1  | U05.2   | U05.3   | U05.4   | *map*     | U05.9     | /           |
@@ -56,19 +56,20 @@ Teleports the party to the specified *map* - 1, coordinates (*x*, *y*).
 | `1`   | East      |
 | `2`   | South     |
 | `3`   | West      |
+| `4`   | Keep      |
 
 <!-- ---------------------------------------- -->
 ## Event 02: Door
 
-Party encounters a locked door.  The lock-picking difficulty seems to be indicated by *cr*, which is 1, 10, or 100.
+Party encounters a locked door.
 
-### Unknowns
-* Exact meaning of the challenge rating *cr*
-* U02.2: [`00`, `01`, `03` (only 3D maps)]
-* U02.3: [`00`, `0a`], on 3D maps also possibly [`05`, `0f`, `23`]
-* U02.5: [`01-0f`], but not `0c-0d`.
-* U02.6: `00`, but may be `01` on 3D maps
-* U02.7: `00` or special number, likely the key ID?  Is nonzero iff *cr* = 100
+*cr* reduces the lock-picking chance. If it is 100, the lock can't be picked at all (not even with a lockpick item)
+and requires a special item given in *item*. If below 100, the value is subtracted from the active player's lockpicking skill
+and then a random check against the remaining value is performed. The lockpick item can be used to open the lock with 100% chance
+if *cr* is below 100 regardless of the value.
+
+If *trap* is non-zero it specifies a trap type (see the Trap event). Only then *dmg* gives the maximum damage of the trap.
+
 
 <!-- ---------------------------------------- -->
 ## Event 03: Message
