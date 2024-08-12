@@ -286,17 +286,17 @@ The library is almost the same as the merchant (`09`), but with different pictur
 The healer place data is shown here as it is quite big:
 
 | Offset | Meaning
-|--------|----------------------
-| `00`   | Price to heal XY
-| `02`   | Price to heal XY
-| `04`   | Price to heal XY
-| `06`   | Price to heal XY
-| `08`   | Price to heal XY
-| `0a`   | Price to heal XY
-| `0c`   | Price to heal XY
-| `0e`   | Price to heal XY
-| `10`   | Price to heal XY
-| `12`   | Price to heal XY
+|--------|------------------------
+| `00`   | Price to heal stunned
+| `02`   | Price to heal poison
+| `04`   | Price to heal petrify
+| `06`   | Price to heal disease
+| `08`   | Price to heal aging
+| `0a`   | Price to heal madness
+| `0c`   | Price to heal blindness
+| `0e`   | Price to heal death
+| `10`   | Price to heal ashes
+| `12`   | Price to heal dust
 | `14`   | Price to remove curse
 
 <!-- ---------------------------------------- -->
