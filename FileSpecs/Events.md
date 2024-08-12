@@ -33,8 +33,8 @@ There are two exceptions:
 | **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *tile*    | `0000`    |             |
 | **Fight**              |       | `11` | *ch*   | *quest* | *msg1*  | *msg2*  | *mgroup*  | `0000`    |             |
 | **Place**              |       | `12` | *open* | *close* | *type*  | *msg*   | *placeID* | *waresID* | Merchant    |
-| **ChangeTileWithTool** |       | `13` | *x*    | *y*     | `00`    | *msg*   | U13.6     | U13.9     |             |
-| **Door3D**             | 3D    | `14` | `01`   | `00`    | `00`    | U14.4   | U14.7     | `0000`    |             |
+| **UseItem**            |       | `13` | *x*    | *y*     | `00`    | *msg*   | *item*    | *tile*    |             |
+| **DoorExit**           | 3D    | `14` | *cr*   | *trap*  | *dmg*   | *evt*   | *item*    | `0000`    | Door        |
 | **ChangeMapAlt**       | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    |             |
 | **Altar**              | 2D    | `16` | `00`   | `00`    | `00`    | `00`    | `0000`    | `0000`    |             |
 | **Win**                | 2D    | `17` | `00`   | `00`    | `00`    | `00`    | `0000`    | `0000`    |             |
@@ -300,28 +300,24 @@ The healer place data is shown here as it is quite big:
 | `14`   | Price to remove curse
 
 <!-- ---------------------------------------- -->
-## Event 13: UnblockWithTool
+## Event 13: UseItem
 
-Seems to be used to allow players to change a tile if they have the right tool (probably with key U13.7, and probably into tile U13.9).
+Change the tile at *x*, *y* to *tile* if the player uses item *item*.
 
-### Unknowns
-* What does this do?
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 13 {mask:1f/exclusive:12,14,18}  [06,08,10-12]        [00]  [00,02-05,1a]  [01,03,05-08]  [00]        [d2-d6,ea,fd]                          [00]  [8d,ae,b0,d9]
-    INCOMPLETE event op type 13 {mask:3f/exclusive:30}  {mask:3f/exclusive:24,30}  [00]  [00-01,03-14,1a]  [01-18,2b]  [00-01]  [02,06,18,1e-1f,aa,ad,ba-c1,c4-cb,cf,fe]  [00]  [01,04-06]
--->
+Mostly used to remove walls (for example with a pickaxe). But this can be used with all items and tile locations on the same map.
+
+The optional *msg* can be shown before the tile is changed.
 
 <!-- ---------------------------------------- -->
-## Event 14: Door3D
+## Event 14: DoorExit
 
 Only used twice, in the `CITY OF TWINLAKE` map (`0x42`).
 
-## Unknowns
-* What does this do?  How is it different from **Door**?
-* U14.04: [`11`, `1c`]
-- U14.05: [`03`, `04`]
-- U14.07: [`97`, `9b`]
+Basically the same as Door (`02`) but has an additional *evt* parameter which references another event
+which should be called if the door is open.
+
+This can trigger an additional event after the door was opened or is already open. This additional event
+is even called if the DoorExit event itself is disabled.
 
 <!-- ---------------------------------------- -->
 ## Event 15: ChangeMapAlt
