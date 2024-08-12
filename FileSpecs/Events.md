@@ -35,7 +35,7 @@ There are two exceptions:
 | **Place**              |       | `12` | *open* | *close* | *type*  | *msg*   | *placeID* | *waresID* | Merchant    |
 | **UseItem**            |       | `13` | *x*    | *y*     | `00`    | *msg*   | *item*    | *tile*    |             |
 | **DoorExit**           | 3D    | `14` | *cr*   | *trap*  | *dmg*   | *evt*   | *item*    | `0000`    | Door        |
-| **ChangeMapAlt**       | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    |             |
+| **TravelExit**         | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    |             |
 | **Altar**              | 2D    | `16` | `00`   | `00`    | `00`    | `00`    | `0000`    | `0000`    |             |
 | **Win**                | 2D    | `17` | `00`   | `00`    | `00`    | `00`    | `0000`    | `0000`    |             |
 
@@ -320,13 +320,11 @@ This can trigger an additional event after the door was opened or is already ope
 is even called if the DoorExit event itself is disabled.
 
 <!-- ---------------------------------------- -->
-## Event 15: ChangeMapAlt
+## Event 15: TravelExit
 
-Seems to operate the same as Event 01.
-Perhaps this event has different behaviour when flying?
+This is exactly as Event 01 (ChangeMap). The only difference is that it resets the travel type to "walking" before the map change.
 
-### Unknowns
-* How is this different from Event 01?
+Most likely useful to allow the party to enter dungeons and cities from the world map while ensuring the correct travel type on the new map.
 
 <!-- ---------------------------------------- -->
 ## Event 16: Altar
