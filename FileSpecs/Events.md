@@ -31,8 +31,8 @@ There are two exceptions:
 | **Riddlemouth**        |       | `0e` | *x*    | *y*     | *greet* | *reply* | *kw*      | *tile*    | Riddlemouth |
 | **ChangeStat**         |       | `0f` | *stat* | *add*   | *rnd*   | *msg*   | *target*  | *amount*  |             |
 | **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *tile*    | `0000`    |             |
-| **Fight**              |       | `11` | U11.1  | `00`    | U11.3   | U11.4   | U11.7     | `0000`    |             |
-| **Merchant**           |       | `12` | *open* | *close* | *type*  | *msg*   | *merchID* | *waresID* | Merchant    |
+| **Fight**              |       | `11` | *ch*   | *quest* | *msg1*  | *msg2*  | *mgroup*  | `0000`    |             |
+| **Place**              |       | `12` | *open* | *close* | *type*  | *msg*   | *placeID* | *waresID* | Merchant    |
 | **ChangeTileWithTool** |       | `13` | *x*    | *y*     | `00`    | *msg*   | U13.6     | U13.9     |             |
 | **Door3D**             | 3D    | `14` | `01`   | `00`    | `00`    | U14.4   | U14.7     | `0000`    |             |
 | **ChangeMapAlt**       | 2D    | `15` | *x*    | *y*     | *dir*   | `00`    | *map*     | `0000`    |             |
@@ -230,71 +230,74 @@ The optional *msg* can be shown before the stat is changed.
 <!-- ---------------------------------------- -->
 ## Event 10: ChangeTile
 
-- If *flagID* is not `0` and the corresponding state flag is already set, does nothing
-- Shows *msg*
-- Replaces the tile at coordiantes (*x*, *y*) on the current map by tile number *tile*
-- If *flagID* is not `0`, set the state flag indicated by *flagID*
+Replaces the tile at coordiantes (*x*, *y*) on the current map by tile number *tile*.
 
-### Unknowns
-* Which other event types are the *flagID* shared with?
-<!--
-    INCOMPLETE event op type 10 [0b,11-12,14,16,1a,1c,1f]  [0d-0f,13,22]  [00]  [02,04,13,1a]           [00-01,04-07,10-11]  [00]  [13,19,4b,52,ef]  [00]  [00]
-    INCOMPLETE event op type 10 {mask:3f/exclusive:28,30}  {mask:3f}      [00]  [01-04,0b,0e-11,1a]  [00-02,08,0e-10,19-20]  [00]  [01-02,04-05]  [00]  [00]
--->
+The optional *msg* can be shown before the tile is changed.
+
 <!-- ---------------------------------------- -->
 ## Event 11: Fight
 
-Starts a fight
-- U11.1 seems to be the probability (in percent)?
-- U11.7 might be the `MON_DATA.AMB` encounter reference
+Starts a fight with the monster group *mgroup* (`MON_DATA.AMB` encounter reference).
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 11 {mask:7f}  [00]  [00,1a]  [01,1a]  [00-07]     [00]  {mask:7f/exclusive:12,44,48,60}  [00]  [00]
-    INCOMPLETE event op type 11 [64]       [00]  [00]  [01,07,1a]  [03,06,08]  [00]  [04,33,3d]                       [00]  [00]
--->
+*ch* gives the chance in percent of starting the fight. A random check is performed against that value.
+
+If *quest* is non-zero this specifies a quest bit inside the savegame. The fight only starts if the quest bit is set.
+
+The message *msg1* is shown for quests, and *msg2* otherwise.
+
 <!-- ---------------------------------------- -->
-## Event 12: Merchant
+## Event 12: Place
 
-Merchant open from *open*-*close*, or around the clock if both are `00`.
+Place open from *open*-*close*, or around the clock if *open* is `00`.
 - If the party tries to enter outside of the opening hours, shows *msg* and pushes the player back to the previous tile.
 
-The merchant's name and further details are stored in `AMBERDEV.UDO` and indexed by *merchID*.  For late versions of the (English version of the) game, the offsets are:
+The place's name and further details are stored in `AMBERDEV.UDO` and indexed by *placeID*.  For late versions of the (English version of the) game, the offsets are:
 - Name: index 1 starts at `4b238`, each name is 30 characters long and padded with blanks
 - Details: index 1 starts at `4add0`, each entry is `18` (hex) / 24 (decimal) bytes in length
-  - `00`: u16: cost for basic services
-  - `02`: for raft seller: raft location x
-  - `04`: for raft seller: raft location y
-  - `06`: for raft seller: raft map
 
-- The shop *type* is one of:
-  - `01`: Guild of Warriors
-  - `02`: Guild of Paladines
-  - `03`: Guild of Rangers
-  - `04`: Guild of Thieves
-  - `05`: Guild of Monks
-  - `06`: Guild of the White Wizards
-  - `07`: Guild of the Grey Wizards
-  - `08`: Guild of the Black Wizards
-  - `09`: Merchant
-  - `0a`: Food shop
-  - `0b`: **unused and invalid**
-  - `0c`: Horse Merchant
-  - `0d`: Healer
-  - `0e`: Sage
-  - `0f`: Raft Merchant
-  - `10`: Boat Merchant
-  - `11`: Guest House
-  - `12`: Library (same as `09`, but with different picture)
-- To be verified: *waresID* is likely the `WARESDAT.AMB` reference
+The place data consists of 12 words (24 bytes) which has different meaning for each place. In the following table the relevant
+data is shown in the `Place data` column. The numbers give the byte offsets into the place data and each value is a word.
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 12 {mask:1f/exclusive:14,18}  [00,0f,12,14,16]  [00,02-0a,0d,10-12]  [00-04,1a]  [00]  [00]  {mask:3f/exclusive:30}     [00]  [00,02-08,0c-0d]
-    INCOMPLETE event op type 12 [00-01,06-0a,0c-0d]  [00,07,0f-12,14,16]  [01,09-0a,0c-10]  [00,05,0b-0c,10]  [00]  [00]  {mask:3f/exclusive:18,30}  [00]  [00-01,07,09-0b,0e-10]
--->
+| *type* | Name                       | Place data
+|--------|----------------------------|-------------------------------------------------------------
+| `01`   | Guild of Warriors          | `0`: Join price, `2`: Level up price
+| `02`   | Guild of Paladines         | `0`: Join price, `2`: Level up price
+| `03`   | Guild of Rangers           | `0`: Join price, `2`: Level up price
+| `04`   | Guild of Thieves           | `0`: Join price, `2`: Level up price
+| `05`   | Guild of Monks             | `0`: Join price, `2`: Level up price
+| `06`   | Guild of the White Wizards | `0`: Join price, `2`: Level up price
+| `07`   | Guild of the Grey Wizards  | `0`: Join price, `2`: Level up price
+| `08`   | Guild of the Black Wizards | `0`: Join price, `2`: Level up price
+| `09`   | Merchant                   | **unused**
+| `0a`   | Food shop                  | `0`: Price per food
+| `0b`   | **unused and invalid**     |
+| `0c`   | Horse Merchant             | `0`: Price, `2`: X, `4`: Y, `6`: Map, `8`: Transport Type
+| `0d`   | Healer                     | See below
+| `0e`   | Sage                       | `0`: Price for identification
+| `0f`   | Raft Merchant              | `0`: Price, `2`: X, `4`: Y, `6`: Map, `8`: Transport Type
+| `10`   | Boat Merchant              | `0`: Price, `2`: X, `4`: Y, `6`: Map, `8`: Transport Type
+| `11`   | Guest House / Inn          | `0`: Price for a room
+| `12`   | Library                    | **unused**
+
+The library is almost the same as the merchant (`09`), but with different picture and he usually sells scrolls instead of other items.
+
+*waresID* is the `WARESDAT.AMB` reference and is only used for place type `09` and `12`.
+
+The healer place data is shown here as it is quite big:
+
+| Offset | Meaning
+|--------|----------------------
+| `00`   | Price to heal XY
+| `02`   | Price to heal XY
+| `04`   | Price to heal XY
+| `06`   | Price to heal XY
+| `08`   | Price to heal XY
+| `0a`   | Price to heal XY
+| `0c`   | Price to heal XY
+| `0e`   | Price to heal XY
+| `10`   | Price to heal XY
+| `12`   | Price to heal XY
+| `14`   | Price to remove curse
 
 <!-- ---------------------------------------- -->
 ## Event 13: UnblockWithTool
