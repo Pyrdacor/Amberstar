@@ -20,9 +20,9 @@ There are two exceptions:
 | **Message**            |       | `03` | *img*  | *msg*   | *act*   | `00`    | *kw*      | `0000`    | /           |
 | **Chest**              |       | `04` | *cr*   | *trap*  | *dmg*   | *hid*   | *chest*   | *msg*     | Treasure    |
 | **Trapdoor**           |       | `05` | *x*    | *y*     | *floor* | *msg*   | *map*     | *dmg*     | /           |
-| **Teleport**           |       | `06` | *x*    | *y*     | U06.3   | U06.4   | *map*     | `0000`    | Teleporter  |
-| **WindGate**           |       | `07` | U07.1  | U07.2   | U07.3   | U07.4   | U07.7     | `0000`    |             |
-| **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | U08.4   | `0000`    | `0000`    |             |
+| **Teleport**           |       | `06` | *x*    | *y*     | *dir*   | *msg*   | *map*     | `0000`    | Teleporter  |
+| **WindGate**           |       | `07` | *x*    | *y*     | *dir*   | *msg*   | *map*     | `0000`    |             |
+| **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | *msg*   | `0000`    | `0000`    |             |
 | **TakeDamage**         |       | `09` | *max*  | U09.2   | `00`    | U09.4   | `0000`    | `0000`    |             |
 |                        |       | `0a` | U0a.1  | U0a.2   | `00`    | U0a.4   | `0000`    | `0000`    |             |
 | **RestoreLP**          | 2D    | `0b` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
@@ -121,37 +121,23 @@ If *floor* is not set, the party climbs up but receives *no damage*. Most likely
 
 Works similarly to ChangeMap (Event `01`).
 
-### Unknowns
-* What do the unknown parameters do?
+But it can display an optional *msg* before the teleport.
 
-<!--
-    INCOMPLETE event op type 06 [09,0b,0e-0f,11,16]  [06,09,0f-10,14,18]  {mask:06/exclusive:06}                                      [02,1a]  [00]  [00]  [3d,40,4d,6d,97]           [00]  [00]
-    INCOMPLETE event op type 06 [02,07-12,14-15,17-1d,1f-23,25-27]  [07-14,18-1b,1d-1f,21-23,25,27,2c,33]  [00-04]  [00-01,05,08-0d,1a]  [00,03,13]  [00]  {mask:ff/exclusive:a0,c0}  [00]  [00]
--->
+If the map index is the current map, there will be no fading.
+
 <!-- ---------------------------------------- -->
-## Event 07
+## Event 07: Wind Gate
 
-Possibly used for windgate teleporters (only operational once the corresponding quest is complete)
+Exactly the same as Teleport (Event `06`) but will abort early if you don't possess the wind chain item.
 
-### Unknowns
-* What does this do?
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 07 [0c,0e,11-15,17,19-1a,1c-1d,2c,2f-30]  {mask:3f/exclusive:12,30}  [00-03]  [00,1a]  [00]  [00]  {mask:7f/exclusive:41,42,48}  [00]  [00]
-    INCOMPLETE event op type 07                                                                                      [14]  [0d]  [03]  [1a]  [00]  [00]  [33]  [00]  [00]
--->
 <!-- ---------------------------------------- -->
 ## Event 08: Spinner
 
 When entering or leaving this tile, the party is rotated to face direction *dir* (cf. Event 01).
-If *dir* is `4`, the direction is randomly selected every time the party enters or leaves the tile..
+If *dir* is `4`, the direction is randomly selected every time the party enters or leaves the tile. This random direction can never be the same as the initial direction.
 
-### Unknowns
-* What does this do?
-* What do the unknown parameters do?
-<!--
-3D    INCOMPLETE event op type 08 [00-04]  [00]  [00]  [1a]  [00-01,06-07]  [00]  [00]  [00]  [00]
--->
+The optional *msg* can be shown before the spin.
+
 <!-- ---------------------------------------- -->
 ## Event 09: TakeDamage
 
