@@ -5,13 +5,14 @@ The start offsets are approximate and may vary across releases of the game; in p
 
 | Start offset      | Description                             | Format                                                                     |
 |-------------------|-----------------------------------------|----------------------------------------------------------------------------|
-| `2170b`           | String Fragment Table                   | Described for [Compressed Text](CompressedText.md)               |
+| `21614`           | Glyph mapping                           | 224 bytes for chars 0x20 to 0xff                                           |
+| `2170b`           | String Fragment Table                   | Described for [Compressed Text](CompressedText.md)                         |
 | `31a46`           | Background song names                   | 0-terminated string, terminated by another 0                               |
 | `31eda`           | [Combat Palette](Palettes.md): template | A palette used in combat with three "holes" (colours that are left black)  |
 | `31efa`           | [Combat Palette](Palettes.md): variants | List of colour triplets to fill the "holes" in the combat palette template |
 | `33d70` (approx.) | Graphics                                | 16x16, details tbd                                                         |
 | `473a4`           | [Sky gradients](LabData.md)             | Palette gradients for in-city sky day/night cycle                          |
-| `4ac0a`           | Spell names                             | individual u16 words of [Compressed Text](CompressedText.md)     |
+| `4ac0a`           | Spell names                             | individual u16 words of [Compressed Text](CompressedText.md)               |
 | `4cdc0`           | Songs, starting with "City Walk"        | [Background Music](Hippel-CoSo.md)                                         |
 
 ## Finding the offsets
