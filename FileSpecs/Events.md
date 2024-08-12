@@ -24,10 +24,10 @@ There are two exceptions:
 | **WindGate**           |       | `07` | *x*    | *y*     | *dir*   | *msg*   | *map*     | `0000`    |             |
 | **Spinner**            | 3D    | `08` | *dir*  | `00`    | `00`    | *msg*   | `0000`    | `0000`    |             |
 | **TakeDamage**         |       | `09` | *max*  | *sex*   | `00`    | *msg*   | `0000`    | `0000`    |             |
-| **AntiMagic**          |       | `0a` | *buf*  | U0a.2   | `00`    | *msg*   | `0000`    | `0000`    |             |
-| **RestoreLP**          | 2D    | `0b` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
-| **RestoreSP**          | 2D    | `0c` | `00`   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
-| **Trap**               |       | `0d` | U0d.1  | `00`    | U0d.3   | `1a`    | `0000`    | `0000`    | /           |
+| **AntiMagic**          |       | `0a` | *buf*  | `00`    | `00`    | *msg*   | `0000`    | `0000`    |             |
+| **RestoreLP**          | 2D    | `0b` | *hp*   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
+| **RestoreSP**          | 2D    | `0c` | *sp*   | `00`    | `00`    | *msg*   | `0000`    | `0000`    | /           |
+| **Trap**               |       | `0d` | *trap* | `00`    | *dmg*   | *msg*   | `0000`    | `0000`    | /           |
 | **Riddlemouth**        |       | `0e` | U0e.1  | U0e.2   | *greet* | *reply* | *kw*      | U0e.9     | Riddlemouth |
 | **RaiseStat**          |       | `0f` | *stat* | U0f.2   | `01`    | *msg*   | `0000`    | U0f.9     |             |
 | **ChangeTile**         |       | `10` | *x*    | *y*     | `00`    | *msg*   | *tile*    | `0000`    |             |
@@ -168,36 +168,44 @@ Removes one or all active spells (buffs).
 
 The optional *msg* can be shown before the debuff.
 
-### Unknowns
-* What does this do?
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 0a [00]  [00]  [00]  [00]  [01]  [00]  [00]  [00]  [00]
-    INCOMPLETE event op type 0a [00]  [00]  [00]  [1a]  [00]  [00]  [00]  [00]  [00]
--->
 <!-- ---------------------------------------- -->
 ## Event 0b: RestoreLP
 
-Restores all life points and displays *msg* as a popup message in the style of **Message**.
+Restores *hp* life points and displays *msg* as a popup message in the style of **Message**.
 
-Only used in Sir Marillon's Tomb.
+If *hp* is zero, the full hp is filled up instead.
+
+Only used in Sir Marillon's Tomb. And there with *hp* = 0.
 
 <!-- ---------------------------------------- -->
 ## Event 0c: RestoreSP
 
-Restores all spell points and displays *msg* as a popup message in the style of **Message**.
+Restores *sp* spell points and displays *msg* as a popup message in the style of **Message**.
 
-Only used in Sir Marillon's Tomb.
+If *sp* is zero, the full sp is filled up instead.
+
+Only used in Sir Marillon's Tomb. And there with *sp* = 0.
 
 <!-- ---------------------------------------- -->
 ## Event 0d: Trap
 
-### Unknowns
-* What do the unknown parameters do?
-<!--
-    INCOMPLETE event op type 0d [03-04,07]  [00]  [00]     [1a]                    [1e-20]  [00]  [00]  [00]  [00]
-    INCOMPLETE event op type 0d [01,03-05]  [00]  [00,0f]  [1a]  {mask:17/exclusive:07,16}  [00]  [00]  [00]  [00]
--->
+Triggers a trap of type *trap*. There are 7 predefined traps.
+
+| `trap` | Meaning              | Affected      | Message
+|--------|----------------------|---------------|--------
+| `0`    | _none_               |               |
+| `1`    | Damage Trap          | All members   | 7
+| `2`    | Poison Needle        | Active player | 8
+| `3`    | Poison Gas Cloud     | All members   | 9
+| `4`    | Blinding Flash       | All members   | 10
+| `5`    | Paralyzing Gas Cloud | All members   | 11
+| `6`    | Stone Gaze           | Active player | 12
+| `7`    | Disease              | Active player | 13
+
+Only the Damage Trap will deal damage in the range 1..*dmg*. All other traps will just add some condition.
+
+The optional *msg* can be shown before the trap is triggered. However each trap will display a fixed message as well shown in the table above.
+
 <!-- ---------------------------------------- -->
 ## Event 0e: Riddlemouth
 
