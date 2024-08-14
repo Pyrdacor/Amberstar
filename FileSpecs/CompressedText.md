@@ -42,6 +42,16 @@ The following heuristic seems to produce decent results:
     - The next fragment is NOT the first fragment in the text
     - The previous fragment was NOT a newline
     - The next fragment starts with a letter, a number, a dash or a tilde symbol
+ 
+- The original code does it like this:
+  - Is it an opening bracket? Yes? Just add.
+  - Else if it is a carriage return, add a newline.
+  - Else if it is a paragraph marker, add a newline and increase the paragraph counter.
+  - Else if it is **not** a punctuation, add it and an additional space.
+  - If it is a punctuation, check if start of line. If so, add it and an additional space.
+  - If a punctuation is not the start of line, check if last character is a space. If not, add and an additional space.
+  - And if there was a space before a punctuation, just go 1 char back, add it and an additional space.
+- So in short: For most cases just add them and an additional space and remove previous spaces if a punctuation is encountered which does not start a new line.
 
 ## Character Set
 
