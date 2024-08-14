@@ -54,6 +54,28 @@ The following heuristic seems to produce decent results:
 - So in short: For most cases just add them and an additional space and remove previous spaces if a punctuation is encountered which does not start a new line.
 - Whenever a space is added, there is a check if the line is or would be too long. If so the previous space is searched and replaced by a carriage return. I guess this would even crash or access other memory parts if there would be no previous space as there are no additional security checks for that.
 
+The following text fragments have special meaning (index as decimal):
+
+Index | Meaning
+------|--------
+1580  | OpenBracket
+1576  | CarrReturn
+1577  | ParaMark
+631   | !
+1581  | )
+1300  | '
+166   | ,
+155   | :
+1302  | ;
+170   | .
+743   | ?
+
+The last 8 are used as "end punctuation" to determine if a previous space should be removed.
+
+All those offsets must never change when creating other text fragment lists! Note that those indices are 1-based. The first entry ("Human"/"Mensch") has index 1. I guess index 0 is just an empty string.
+
+The maximum textblock size is 1000\*21. The maximum number of paragraphs is 16.
+
 ## Character Set
 
 Amberstar seems to use the Atari ST character set (even on the Amiga).  This is not relevant for the English version of the game, but it affects the German version,
