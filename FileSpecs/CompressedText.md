@@ -52,6 +52,7 @@ The following heuristic seems to produce decent results:
   - If a punctuation is not the start of line, check if last character is a space. If not, add and an additional space.
   - And if there was a space before a punctuation, just go 1 char back, add it and an additional space.
 - So in short: For most cases just add them and an additional space and remove previous spaces if a punctuation is encountered which does not start a new line.
+- Whenever a space is added, there is a check if the line is or would be too long. If so the previous space is searched and replaced by a carriage return. I guess this would even crash or access other memory parts if there would be no previous space as there are no additional security checks for that.
 
 ## Character Set
 
