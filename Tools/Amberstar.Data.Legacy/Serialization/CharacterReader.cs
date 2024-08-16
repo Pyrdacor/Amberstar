@@ -1,4 +1,4 @@
-﻿using Ambermoon.Data.Serialization;
+﻿using Amberstar.Data.Serialization;
 using Amberstar.Data.Enumerations;
 
 namespace Amberstar.Data.Legacy.Serialization
@@ -7,7 +7,7 @@ namespace Amberstar.Data.Legacy.Serialization
     using word = UInt16;
 #pragma warning restore CS8981
 
-    public class CharacterReader : Data.Serialization.ICharacterReader
+    public class CharacterReader : ICharacterReader
     {
         public void ReadCharacter(Character character, IDataReader dataReader, ITextFragmentList textFragmentList)
         {
