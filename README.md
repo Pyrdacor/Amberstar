@@ -6,6 +6,8 @@ Information and resources for the Amiga classic Amberstar
 
 Contain information about decoded game data formats.
 
+There is a reference implementation of data loaders now at https://GitHub.com/Pyrdacor/Amber.
+
 - [FileSpecs](FileSpecs/)
   - [Background Music](FileSpecs/Hippel-CoSo.md) (In-game music)
   - [Containers](FileSpecs/Containers.md) (Container file formats, which encode the resources below)
@@ -19,6 +21,7 @@ Contain information about decoded game data formats.
 - [Graphics](Graphics/)
   - [Indoor](Graphics/Indoor/) (Indoor 2D tile graphics)
   - [Worldmap](Graphics/Worldmap/) (Worldmap tile graphics)
+  - [Layouts](Graphics/Layouts/) (UI layouts)
 
 ## Container files overview
 
