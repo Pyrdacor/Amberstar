@@ -106,11 +106,11 @@ The English spell names are tentative, based on their order in the dictionary fi
 |  2 |      `4` | Vergiften      | Poison         |
 |  3 |      `8` | Versteinern    | Flesh to Stone |
 |  4 |     `10` | Krankheit      | Make Ill       |
-|  5 |     `20` | Altern         | Ageing         |
+|  5 |     `20` | Altern         | Aging         |
 |  6 |     `40` | Irritieren     | Irritation     |
 |  7 |     `80` | Verrücktheit   | Make Mad       |
 |  8 |    `100` | Schlaf         | Sleep          |
-|  9 |    `200` | Angst          | Panik          |
+|  9 |    `200` | Angst          | Panic          |
 | 10 |    `400` | Blindheit      | Blinding Flash |
 | 11 |    `800` | Versteinern    | Flesh To Stone |
 | 12 |   `1000` | Kartenschau    | Mapshow        |
