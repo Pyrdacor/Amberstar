@@ -34,6 +34,6 @@ There are the layout block images which are located inside the file `LAYOUT.ICN`
 
 The layout definitions are a sequence of 220 bytes. Each is the index of a layout block image. Index 1 is the first image, index 132 would be the last one.
 
-There are 20 such images per screen row (20*16 = 320 pixels).
+There are 20 such images per screen row (20\*16 = 320 pixels) and 11 rows. So you have 11\*20 images (thus the 220 bytes).
 
-The first row only uses the lower 12 pixels of each image. The last row only uses the upper 7 pixels of each image. So you have 11*20 images (thus the 220 bytes). The total height is 12+9\*16+7 = 163 pixels. So a layout is 320x163 pixels which is displayed at 0,37 (right below the portrait area).
+The first row only uses the lower 12 pixels of each image. The last row only uses the upper 7 pixels of each image. The total height is 12+9\*16+7 = 163 pixels. So a layout is 320x163 pixels which is displayed at 0,37 (right below the portrait area).
