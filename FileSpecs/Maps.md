@@ -101,10 +101,10 @@ where:
 |-----------------------------------|--------------------|--------------------|--------------------------------|
 | ...                               |                    |                    | (cf. Map Header and Structure) |
 | `ac5`                             | u8                 | #labinfo           | Number of LabInfo blocks       |
-| `ac6`                             | u8[4 * #labinfo]   | labinfo[i].head    | See below                      |
-| `ac6` + #labinfo * 4              | u8[#labinfo]       | labinfo[i].rest[0] | See below                      |
-| `ac6` + #labinfo * 5              | u8[#labinfo]       | labinfo[i].rest[1] | See below                      |
-| `ac6` + #labinfo * 6              | u8[#labinfo]       | labinfo[i].rest[2] | See below                      |
+| `ac6`                             | u8[4 * #labinfo]   | labinfo[i].flags    | See below                      |
+| `ac6` + #labinfo * 4              | u8[#labinfo]       | labinfo[i].primary | See below                      |
+| `ac6` + #labinfo * 5              | u8[#labinfo]       | labinfo[i].secondary | See below                      |
+| `ac6` + #labinfo * 6              | u8[#labinfo]       | labinfo[i].color | See below                      |
 | `ac6` + labinfosize               | u8[width * height] | map[0]             | map data                       |
 | `ac6` + labinfosize + mapsize     | u8[width * height] | hotspots           | hotspot map                    |
 | `ac6` + labinfosize + mapsize * 2 | u8[..]             | NPC coordinates    | See below                      |
@@ -118,17 +118,15 @@ where:
 LabInfo blocks consist of 7 bytes each and describe the meaning of the tile numbers on the map.
 They reference the Labyrinth's associated [LabData](LabData.md) resource.
 
-Going by similarity of the numbers observed in the various bytes, they seem to be grouped into four chunks:
-
 * One chunk of u32 flags (`labinfo.flags`, below)
-* Three chunks of u8 blocks (`labinfo.fg_image`, `labinfo.bg_image`, and `labinfo.rest`, respectively, below)
+* Three chunks of u8 blocks (`labinfo.primary`, `labinfo.secondary`, and `labinfo.color`, respectively, below)
 
 | Labinfo    | Meaning            | Notes                                                                                           |
 |------------|--------------------|-------------------------------------------------------------------------------------------------|
 | `flags`    | `flags`            | [Tile Flags](TileFlags.md)                                                                      |
-| `fg_image` | foreground pixmaps | Foreground image; index into the `labblock_ref` table for LabData.  This image is drawn second. |
-| `bg_image` | background pixmaps | Background image; index into the `labblock_ref` table for LabData.  This image is drawn first.  |
-| rest       | ?                  | observed values: [`00-0c`, `0e-0f`]                                                             |
+| `primary` | primary lab block | Index into the `labblock_ref` table for LabData. If overlay, secondary gives the underlay. |
+| `secondary` | secondary lab block | Only used if primary was an overlay. Index into the `labblock_ref` table for LabData.   |
+| `color`       | Minimap color index                  | Color on thr minimap, observed values: [`00-0c`, `0e-0f`]                                                            |
 
 
 ## NPCs
