@@ -27,7 +27,7 @@ For the world map, the player tile marks the tile of the player while walking.  
 - +3: boat
 - +4: disk
 - +5: eagles
-- +6: red triangle boat thing?
+- +6: swimming
 
 ## Images
 
