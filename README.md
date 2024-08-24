@@ -1,6 +1,6 @@
 # Amberstar
 
-Information and resources for the Amiga classic Amberstar
+Information and resources for the AtariST/Amiga/DOS classic Amberstar
 
 ## File specs
 
