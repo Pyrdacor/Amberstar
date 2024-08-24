@@ -131,15 +131,16 @@ Cities have a background sky gradient.  This gradient is stored in [AMBERDEV.UDO
 - Day gradient
 - Night gradient
 - Twilight gradient (dawn/dusk)
+
 Each gradient has 83 palette entries.  The gradients are stored without any intervening separator.
 Each palette entry specifies the sky colour for the corresponding scanline in the first-person view, going downwards.
 The game selects the gradients based on the time of day:
 
 | Time of day | Gradient |
 |-------------|----------|
-| 06:00-08:00 | Twilight |
-| 08:00-18:00 | Day      |
-| 06:00-08:00 | Twilight |
-| 20:00-06:00 | Night    |
+| 06:00-07:59 | Twilight |
+| 08:00-17:59 | Day      |
+| 18:00-19:59 | Twilight |
+| 20:00-05:59 | Night    |
 
 During twilight hours, there is some blending between the gradients; details tbd.
