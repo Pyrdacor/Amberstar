@@ -39,7 +39,7 @@ These resources are stored in `LABBLOCK.AMB`.
 | 0x02                                      | `num_perspectives` | u8                | Number of perspectives for this block.  For **Solid**: 13 decimal, for **Decoration**: 17 decimal, for **Furniture/NPC**: 4 |
 | 0x03                                      | `num_frames`       | u8                | Number of animation frames (same for all perspectives, but see note about **Furniture/NPC** below                           |
 | 0x04..0x04+`num_offsets`                  | `xoffset[i]`       | u16[`num_offsets`] | x offsets.  `num_offsets` is `18` decimal for **Furniture/NPC**, `17` decimal otherwise.                                    |
-| 0x04+`num_offset`..0x04+2 * `num_offsets` | `yoffset[i]`       | u16[`num_offsets`] | y offsets.  `num_offsets` is `18` decimal for **Furniture/NPC**, `17` decimal otherwise.                                    |
+| 0x04+2*`num_offset`..0x04+4*`num_offsets` | `yoffset[i]`       | u16[`num_offsets`] | y offsets.  `num_offsets` is `18` decimal for **Furniture/NPC**, `17` decimal otherwise.                                    |
 | 0x04+4*`num_offsets`                      | `sized_pixmap[i]`  | see below         | Pixmaps for each (frame, perspective) combination                                                                           |
 
 The `sized_pixmap` entries have the following structure:
