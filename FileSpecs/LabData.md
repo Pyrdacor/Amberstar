@@ -124,6 +124,9 @@ Furniture/decoration blocks are the only blocks that are drawn when on the same 
 |--------|---|---|---|
 | `@>` 3 | 2 | 1 | 0 |
 
+## Ceiling ans floor
+
+Ceiling and floor uses a graphic from the file `BACKGRND.AMB`. Each subfile stores a [Pixmap List](Pixmaps.md). There should be only one pixmap per subfile though. Usually the graphics have a width of 144 (full map area) but the height is arbitrary. Ceilings are displayed at the top of the map view area and floors at bottom of that area minus the graphic height.
 
 ## Sky Gradient
 
