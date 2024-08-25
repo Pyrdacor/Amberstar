@@ -2,6 +2,8 @@
 
 Amberstar refers to first-person map resources as "Lab" resources, so we here adopt the terms "Labyrinth" to refer to them.
 
+Here block types are mentioned as Solid, Decoration and Furniture/NPC. In the original they are referred to as Underlay (mostly walls), Overlay and Object.
+
 ## LabData
 
 A LabData resource collects all indices needed for drawing a particular type of Labyrinth, including background images and palette information.
