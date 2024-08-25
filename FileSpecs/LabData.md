@@ -122,7 +122,11 @@ Furniture/decoration blocks are the only blocks that are drawn when on the same 
 
 |        |   |   |   |
 |--------|---|---|---|
+|        | 2 | 1 | 0 |
 | `@>` 3 | 2 | 1 | 0 |
+|        | 2 | 1 | 0 |
+
+The blocks in the left and right rows (from player's view) are drawn with an offset. The left ones are drawn at x=`mapViewArea.Left`, the center ones as given as x=`mapViewArea.Left + renderX` and the right ones at x=`mapViewArea.Right - imageWidth/2`.
 
 ## Ceiling and floor
 
