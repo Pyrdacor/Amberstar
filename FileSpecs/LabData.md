@@ -36,13 +36,15 @@ These resources are stored in `LABBLOCK.AMB`.
 
 | offset                                    | name               | size              | meaning                                                                                                                     |
 |-------------------------------------------|--------------------|-------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| 0x00                                      | `magic_0`          | u8                | = `0x00`                                                                                                                    |
-| 0x01                                      | `format`           | u8                | Format specifier.  1 = **Solid**, 2 = **Decoration**, 3 = **Furniture/NPC**                                                 |
+| 0x00                                      | `magic_0`          | u8                | = `0x00`                                                                                                                     |
+| 0x01                                      | `format`           | u8                | Format specifier.  1 = **Solid**, 2 = **Decoration**, 3 = **Furniture/NPC**                                    |
 | 0x02                                      | `num_perspectives` | u8                | Number of perspectives for this block.  For **Solid**: 13 decimal, for **Decoration**: 17 decimal, for **Furniture/NPC**: 4 |
-| 0x03                                      | `num_frames`       | u8                | Number of animation frames (same for all perspectives, but see note about **Furniture/NPC** below                           |
-| 0x04..0x04+2*`num_offsets`                  | `xoffset[i]`       | u16[`num_offsets`] | x offsets.  `num_offsets` is `18` decimal for **Furniture/NPC**, `17` decimal otherwise.                                    |
-| 0x04+2*`num_offset`..0x04+4*`num_offsets` | `yoffset[i]`       | u16[`num_offsets`] | y offsets.  `num_offsets` is `18` decimal for **Furniture/NPC**, `17` decimal otherwise.                                    |
-| 0x04+4*`num_offsets`                      | `sized_pixmap[i]`  | see below         | Pixmaps for each (frame, perspective) combination                                                                           |
+| 0x03                                      | `num_frames`       | u8                | Number of animation frames (same for all perspectives, but see note about **Furniture/NPC** below                        |
+| 0x04..0x26                                | `xoffset[i]`       | u16[17]           | x offsets for drawing                                |
+| 0x26..0x48                                | `yoffset[i]`       | u16[17]           | y offsets for drawing                                |
+| 0x48                                      | `specialXOffset`   | u16               | special x offset (exists for NPCs only, see below)   |
+| 0x4a                                      | `specialYOffset`   | u16               | special y offset (exists for NPCs only, see below)   |
+| 0x48/0x4c                                 | `sized_pixmap[i]`  | see below         | Pixmaps for each (frame, perspective) combination                                                                            |
 
 The `sized_pixmap` entries have the following structure:
 - `size` : u32 : Number of bytes (excluding `size`) of the pixmap
@@ -55,7 +57,8 @@ Notes:
 - For **Furniture/NPC**, the last perspective (index 3) follows a special rule:
     - All animation frames other than frame 0 are drawn on top of frame 0
 	- Frame 0 itself is not a complete animation frame, so **Furniture/NPC** has de facto one animation frame less than the other perspectives in the same resource
-	- The offsets for frames 1 and later use `xoffset[17]` and `yoffset[17]` for screen positioning
+	- The offsets for frames 1 and later use `specialXOffset` and `specialYOffset` for screen positioning
+    - The special offset is only present for **Furniture/NPC**, otherwise the pixmap data directly follows the 17 other offsets. Please note that you can't just read 18 offsets instead as you would read 18 x-values, then 18 y-values but it is stored as 17 x-values, 17 y-values, special-x and then special-y which is different.
 - Perspectives must be drawn in order, i.e., lower-indexed perspectives are drawn first.
 
 ## Perspectives
