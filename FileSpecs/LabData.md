@@ -139,7 +139,7 @@ Ceiling and floor use a graphic from the file `BACKGRND.AMB`. Each subfile store
 
 ## Sky Gradient
 
-Cities have a background sky gradient.  This gradient is stored in [AMBERDEV.UDO](Amberdev.mc) and consists of three [Compact palettes](Palettes.md), in order:
+Cities have a background sky gradient.  This gradient is stored in [AMBERDEV.UDO](Amberdev.md) and consists of three [Compact palettes](Palettes.md), in order:
 - Day gradient
 - Night gradient
 - Twilight gradient (dawn/dusk)
