@@ -28,6 +28,7 @@ These resources are stored in `LAB_DATA.AMB`.
 - When moving around in a Labyrinth, the floor and ceiling images are flipped after every step, except for outdoors images, where the ceiling image is flipped only when rotating.
 - When rotating, the ceiling image is also flipped (UNKNOWN: outdoors only or also in dungeons?)
 - When rotating, the floor images is not flipped outdoors (UNKNOWN: how about in dungeons?)
+- For outdoor maps the ceiling is mirrored if the view direction is north or south, otherwise it iy normally drawn. The floor is mirrored if `(mapX ^ mapY) & 0x1` is 1. So basically if the mapX is odd and the mapY is even or vice versa.
 
 
 ## LabBlock
