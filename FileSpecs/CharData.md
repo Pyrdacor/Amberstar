@@ -4,97 +4,133 @@ Party members, NPCs and monsters.
 
 **Note:** This is **WIP** and many values are not present yet as they are not decoded.
 
-| Offset | Type                                | Name                         | Description                                                                                            |
-| ------ | ----------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 0002   | Byte                                | Type                         | 0: NPC/Player, 1: Monster ?                                                                            |
-| 0003   | Byte                                | Gender                       | 0: Male, 1: Female                                                                                     |
-| 0004   | Byte                                | Race                         | See below                                                                                              |
-| 0005   | Byte                                | Class                        | See below                                                                                              |
-| 0006   | Byte                                | Current ATK                  | Attack                                                                                                 |
-| 0007   | Byte                                | Current PAR                  | Parry                                                                                                  |
-| 0008   | Byte                                | Current SWI                  | Swim                                                                                                   |
-| 0009   | Byte                                | Current LIS                  | Listen                                                                                                 |
-| 000A   | Byte                                | Current F-T                  | Find traps                                                                                             |
-| 000B   | Byte                                | Current D-T                  | Disarm traps                                                                                           |
-| 000C   | Byte                                | Current P-L                  | Pick locks                                                                                             |
-| 000D   | Byte                                | Current SEA                  | Search                                                                                                 |
-| 000E   | Byte                                | Current RMS                  | Read magic scrolls                                                                                     |
-| 000F   | Byte                                | Current U-M                  | Use magic                                                                                              |
-| 0010   | Byte                                | Max ATK                      | Attack                                                                                                 |
-| 0011   | Byte                                | Max PAR                      | Parry                                                                                                  |
-| 0012   | Byte                                | Max SWI                      | Swim                                                                                                   |
-| 0013   | Byte                                | Max LIS                      | Listen                                                                                                 |
-| 0014   | Byte                                | Max F-T                      | Find traps                                                                                             |
-| 0015   | Byte                                | Max D-T                      | Disarm traps                                                                                           |
-| 0016   | Byte                                | Max P-L                      | Pick locks                                                                                             |
-| 0017   | Byte                                | Max SEA                      | Search                                                                                                 |
-| 0018   | Byte                                | Max RMS                      | Read magic scrolls                                                                                     |
-| 0019   | Byte                                | Max U-M                      | Use magic                                                                                              |
-| 001A   | Byte                                | Magic Schools                | Flags; 2: white, 4: grey: 8: black, 128: special                                                       |
-| 001B   | Byte                                | Level                        |
-| 001C   | Byte                                | Number of used hands?        |
-| 001D   | Byte                                | Number of used fingers?      |
-| 001E   | Byte                                | DEF                          | Base Defense                                                                                           |
-| 001F   | Byte                                | DAM                          | Base Damage                                                                                            |
-| 0022   | Byte[9]                             | Item amounts                 | For equipped items (0 = none)                                                                          |
-| 002B   | Byte[12]                            | Item amounts                 | For inventory items (0 = none)                                                                         |
-| 0037   | Byte                                | Languages                    | See below                                                                                              |
-| 003A   | Byte                                | Physical Ailments            | See below                                                                                              |
-| 003B   | Byte                                | Mental Ailments              | See below                                                                                              |
-| 003D   | Byte                                | Quest Completion Flag        | ID of a flag that toggles which of the two NPC interaction blocks to use, see "NPC Interactions" below |
-| 003E   | Byte                                | Battle GFX                   | Graphics used in Battle (Monsters only? PC Icon may depend on class value)                             |
-| 0040   | Byte                                | M-B-A                        | Magic armor level                                                                                      |
-| 0041   | Byte                                | Morale                       | Monsters flee when that amount in % of same Monster is defeated                                        |
-| 0043   | Byte                                | APR                          | Attacks per Round                                                                                      |
-| 0044   | Byte                                | Monster flags                | 1: Undead, 2: Demon, 4: Ailment immunity                                                               |
-| 0045   | Byte                                | Monster elemental flags      | See below                                                                                              |
-| 0048   | Word                                | Current STR                  | Strength                                                                                               |
-| 004A   | Word                                | Current INT                  | Intelligence                                                                                           |
-| 004C   | Word                                | Current DEX                  | Dexterity                                                                                              |
-| 004E   | Word                                | Current SPE                  | Speed                                                                                                  |
-| 0050   | Word                                | Current CON                  | Constitution                                                                                           |
-| 0052   | Word                                | Current CHA                  | Charisma                                                                                               |
-| 0054   | Word                                | Current LUC                  | Luck                                                                                                   |
-| 0056   | Word                                | Current MAG                  | Magic?                                                                                                 |
-| 0058   | Word                                | Current AGE                  | Age                                                                                                    |
-| 005A   | Word                                | Current unused attribute?    | Always 0?                                                                                              |
-| 005C   | Word                                | Max STR                      | Strength                                                                                               |
-| 005E   | Word                                | Max INT                      | Intelligence                                                                                           |
-| 0060   | Word                                | Max DEX                      | Dexterity                                                                                              |
-| 0062   | Word                                | Max SPE                      | Speed                                                                                                  |
-| 0064   | Word                                | Max CON                      | Constitution                                                                                           |
-| 0066   | Word                                | Max CHA                      | Charisma                                                                                               |
-| 0068   | Word                                | Max LUC                      | Luck                                                                                                   |
-| 006A   | Word                                | Max MAG                      | Magic?                                                                                                 |
-| 006C   | Word                                | Max AGE                      | Character will die at this age (race dependent)                                                        |
-| 006E   | Word                                | Max unused attribute?        | Always 0?                                                                                              |
-| 0071   | Byte                                | Lvl/Att                      | PC gets additional Attack per round every X levels                                                     |
-| 0072   | Word                                | HP/lvl                       | (This is not exact, but modified by some yet unknown factors)                                          |
-| 0074   | Word                                | SP/lvl                       | (This is not exact, but modified by some yet unknown factors)                                          |
-| 0076   | Word                                | SLP/lvl                      | (This is not exact, but modified by some yet unknown factors)                                          |
-| 0078   | Word                                | TP/lvl                       | Training Points per level                                                                              |
-| 0086   | Word                                | Current HP                   |
-| 0088   | Word                                | Max HP                       |
-| 008A   | Word                                | Current SP                   |
-| 008C   | Word                                | Max SP                       |
-| 0090   | Word                                | Current gold                 |
-| 0092   | Word                                | Current food                 |
-| 0094   | Word                                | Defense                      | Seems to be used by players only? Maybe each byte has a meaning like variable and base defense?        |
-| 0096   | Word                                | Damage                       | Seems to be used by players only? Maybe each byte has a meaning like variable and base damage?         |
-| 00CC   | Long                                | Experience Points            |
-| 00D0   | Long                                | Known spells (white)         | See [Spells](Spells.md)                                                                                |
-| 00D4   | Long                                | Known spells (grey)          | See [Spells](Spells.md)                                                                                |
-| 00D8   | Long                                | Known spells (black)         | See [Spells](Spells.md)                                                                                |
-| 00E8   | Long                                | Known spells (special)       | See [Spells](Spells.md)                                                                                |
-| 00EC   | Long                                | Total weight in grams        |
-| 00F0   | Byte[16]                            | Name                         | 15 chars for the name and a terminating 0 (the game allows entering 19 chars but only stores 15)       |
-| 0100   | Byte[25]                            | Monster spell schools        | See below                                                                                              |
-| 0119   | Byte[25]                            | Monster spell ids            | See below                                                                                              |
-| 0132   | Item[9]                             | Equipped items               |
-| 029A   | Item[12]                            | Inventory items              |
-| 047A   | Byte[560]                           | Interactions                 | Up to 20 NPC Interactions (see below)                                                                  |
-| 06AA   | [Pixmap](Pixmaps.md))               | Portrait (optional)          | Portrait [Pixmap](Pixmaps.md) with full header.                                                        |
-| 08D0   | [CompressedText](CompressedText.md) | Dialogue Messages (optional) |
+| Offset | Type                                | Name                                         | Description                                                                                            |
+|--------|-------------------------------------|----------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| 0002   | Byte                                | Type                                         | 0: NPC/Player, 1: Monster ?                                                                            |
+| 0003   | Byte                                | Gender                                       | 0: Male, 1: Female                                                                                     |
+| 0004   | Byte                                | Race                                         | See below                                                                                              |
+| 0005   | Byte                                | Class                                        | See below                                                                                              |
+| 0006   | Byte                                | Current ATK                                  | Attack                                                                                                 |
+| 0007   | Byte                                | Current PAR                                  | Parry                                                                                                  |
+| 0008   | Byte                                | Current SWI                                  | Swim                                                                                                   |
+| 0009   | Byte                                | Current LIS                                  | Listen                                                                                                 |
+| 000A   | Byte                                | Current F-T                                  | Find traps                                                                                             |
+| 000B   | Byte                                | Current D-T                                  | Disarm traps                                                                                           |
+| 000C   | Byte                                | Current P-L                                  | Pick locks                                                                                             |
+| 000D   | Byte                                | Current SEA                                  | Search                                                                                                 |
+| 000E   | Byte                                | Current RMS                                  | Read magic scrolls                                                                                     |
+| 000F   | Byte                                | Current U-M                                  | Use magic                                                                                              |
+| 0010   | Byte                                | Max ATK                                      | Attack                                                                                                 |
+| 0011   | Byte                                | Max PAR                                      | Parry                                                                                                  |
+| 0012   | Byte                                | Max SWI                                      | Swim                                                                                                   |
+| 0013   | Byte                                | Max LIS                                      | Listen                                                                                                 |
+| 0014   | Byte                                | Max F-T                                      | Find traps                                                                                             |
+| 0015   | Byte                                | Max D-T                                      | Disarm traps                                                                                           |
+| 0016   | Byte                                | Max P-L                                      | Pick locks                                                                                             |
+| 0017   | Byte                                | Max SEA                                      | Search                                                                                                 |
+| 0018   | Byte                                | Max RMS                                      | Read magic scrolls                                                                                     |
+| 0019   | Byte                                | Max U-M                                      | Use magic                                                                                              |
+| 001A   | Byte                                | Magic Schools                                | Flags; 2: white, 4: grey: 8: black, 128: special                                                       |
+| 001B   | Byte                                | Level                                        |                                                                                                        |
+| 001C   | Byte                                | Number of used hands?                        |                                                                                                        |
+| 001D   | Byte                                | Number of used fingers?                      |                                                                                                        |
+| 001E   | Byte                                | DEF                                          | Base Defense                                                                                           |
+| 001F   | Byte                                | DAM                                          | Base Damage                                                                                            |
+| 0020   | Byte                                | M-B-W                                        | Magic Weapon Level                                                                                     |
+| 0021   | Byte                                | M-B-A from Equipment                         | Is added to DEF when calculating damage                                                                |
+| 0022   | Byte[9]                             | Item amounts                                 | For equipped items (0 = none)                                                                          |
+| 002B   | Byte[12]                            | Item amounts                                 | For inventory items (0 = none)                                                                         |
+| 0037   | Byte                                | Languages                                    | See below                                                                                              |
+| 0038   | Byte                                | Unknown                                      |                                                                                                        |
+| 0039   | Byte                                | Unknown                                      | Always 0                                                                                               |
+| 003A   | Byte                                | Physical Ailments                            | See below                                                                                              |
+| 003B   | Byte                                | Mental Ailments                              | See below                                                                                              |
+| 003C   | Byte                                | Join party chance                            | Needs Verification                                                                                     |
+| 003D   | Byte                                | Quest Completion Flag                        | ID of a flag that toggles which of the two NPC interaction blocks to use, see "NPC Interactions" below |
+| 003E   | Byte                                | Battle GFX                                   | Graphics used in Battle (Monsters only? PC Icon may depend on class value)                             |
+| 003F   | Byte                                | Casting chance                               | Chance to decide to cast a spell; checked after choosing the spell                                     |
+| 0040   | Byte                                | M-B-A                                        | Magic armor level                                                                                      |
+| 0041   | Byte                                | Morale                                       | Monsters flee when that amount in % of same Monster is defeated                                        |
+| 0042   | Byte                                | Monster Rank                                 | Needs verification; Monsters stay behing until all their Minions (lower value) are defeated            |
+| 0043   | Byte                                | APR                                          | Attacks per Round                                                                                      |
+| 0044   | Byte                                | Monster flags                                | 1: Undead, 2: Demon, 4: Ailment immunity                                                               |
+| 0045   | Byte                                | Monster elemental flags                      | See below                                                                                              |
+| 0046   | Byte[2]?                            | Unknown                                      | More flags? Almost all Enemies have 0x07ff                                                             |
+| 0048   | Word                                | Current STR                                  | Strength                                                                                               |
+| 004A   | Word                                | Current INT                                  | Intelligence                                                                                           |
+| 004C   | Word                                | Current DEX                                  | Dexterity                                                                                              |
+| 004E   | Word                                | Current SPE                                  | Speed                                                                                                  |
+| 0050   | Word                                | Current CON                                  | Constitution                                                                                           |
+| 0052   | Word                                | Current CHA                                  | Charisma                                                                                               |
+| 0054   | Word                                | Current LUC                                  | Luck                                                                                                   |
+| 0056   | Word                                | Current MAG                                  | Magic Resistance                                                                                       |
+| 0058   | Word                                | Current AGE                                  | Age                                                                                                    |
+| 005A   | Word                                | Current unused attribute?                    | Always 0                                                                                               |
+| 005C   | Word                                | Max STR                                      | Strength                                                                                               |
+| 005E   | Word                                | Max INT                                      | Intelligence                                                                                           |
+| 0060   | Word                                | Max DEX                                      | Dexterity                                                                                              |
+| 0062   | Word                                | Max SPE                                      | Speed                                                                                                  |
+| 0064   | Word                                | Max CON                                      | Constitution                                                                                           |
+| 0066   | Word                                | Max CHA                                      | Charisma                                                                                               |
+| 0068   | Word                                | Max LUC                                      | Luck                                                                                                   |
+| 006A   | Word                                | Max MAG                                      | Magic Resistance                                                                                       |
+| 006C   | Word                                | Max AGE                                      | Character will die when current age becomes higher than this (race dependent)                          |
+| 006E   | Word                                | Max unused attribute?                        | Always 0                                                                                               |
+| 0070   | Word                                | Lvl/Att                                      | PC gets additional Attack per round every X levels                                                     |
+| 0072   | Word                                | HP/lvl                                       | (This is not exact, but modified by some yet unknown factors)                                          |
+| 0074   | Word                                | SP/lvl                                       | (This is not exact, but modified by some yet unknown factors)                                          |
+| 0076   | Word                                | SLP/lvl                                      | (This is not exact, but modified by some yet unknown factors)                                          |
+| 0078   | Word                                | TP/lvl                                       | Training Points per level                                                                              |
+| 007A   | Byte[12]?                           | Unknown                                      | Always 0                                                                                               |
+| 0086   | Word                                | Current HP                                   |                                                                                                        |
+| 0088   | Word                                | Max HP                                       |                                                                                                        |
+| 008A   | Word                                | Current SP                                   |                                                                                                        |
+| 008C   | Word                                | Max SP                                       |                                                                                                        |
+| 008E   | Word                                | Current SLP                                  |                                                                                                        |
+| 0090   | Word                                | Current gold                                 |                                                                                                        |
+| 0092   | Word                                | Current food                                 |                                                                                                        |
+| 0094   | Word                                | Defense from Equipment                       |                                                                                                        |
+| 0096   | Word                                | Damage from Equipment                        |                                                                                                        |
+| 0098   | Word                                | HP bonus from equipment                      |                                                                                                        |
+| 009A   | Word                                | SP bonus from equipment                      |                                                                                                        |
+| 009C   | Word                                | STR bonus from equipment                     |                                                                                                        |
+| 009E   | Word                                | INT bonus from equipment                     |                                                                                                        |
+| 00A0   | Word                                | DEX bonus from equipment                     |                                                                                                        |
+| 00A0   | Word                                | SPE bonus from equipment                     |                                                                                                        |
+| 00A4   | Word                                | CON bonus from equipment                     |                                                                                                        |
+| 00A6   | Word                                | CHA bonus from equipment                     |                                                                                                        |
+| 00A8   | Word                                | LUC bonus from equipment                     |                                                                                                        |
+| 00AA   | Word                                | MAG bonus from equipment                     |                                                                                                        |
+| 00AC   | Byte[4]                             | Unknown                                      | Always 0                                                                                               |
+| 00B0   | Word                                | ATK bonus from equipment                     |                                                                                                        |
+| 00B2   | Word                                | PAR bonus from equipment                     |                                                                                                        |
+| 00B4   | Word                                | SWI bonus from equipment                     |                                                                                                        |
+| 00B6   | Word                                | LIS bonus from equipment                     |                                                                                                        |
+| 00B8   | Word                                | F-T bonus from equipment                     |                                                                                                        |
+| 00BA   | Word                                | D-T bonus from equipment                     |                                                                                                        |
+| 00BC   | Word                                | P-L bonus from equipment                     |                                                                                                        |
+| 00BE   | Word                                | SEA bonus from equipment                     |                                                                                                        |
+| 00C0   | Word                                | RMS bonus from equipment                     |                                                                                                        |
+| 00C2   | Word                                | U-M bonus from equipment                     |                                                                                                        |
+| 00C4   | Word                                | Join time?                                   | Looks like it could be the game time when the character joined the party                               |
+| 00C6   | Word                                | Experience points for defeating this Monster |                                                                                                        |
+| 00C8   | Word                                | Unknown                                      | seems related to Monster spell points                                                                  |
+| 00CA   | Word                                | Year of Birth                                | 876 - Age; messed up by buggy age changes                                                              | 
+| 00CC   | Long                                | Experience Points                            |                                                                                                        |
+| 00D0   | Long                                | Known spells (white)                         | See [Spells](Spells.md)                                                                                |
+| 00D4   | Long                                | Known spells (grey)                          | See [Spells](Spells.md)                                                                                |
+| 00D8   | Long                                | Known spells (black)                         | See [Spells](Spells.md)                                                                                |
+| 00DC   | Long[3]                             | Known spells (unused)                        |                                                                                                        |
+| 00E8   | Long                                | Known spells (special)                       | See [Spells](Spells.md)                                                                                |
+| 00EC   | Long                                | Total weight in grams                        |                                                                                                        |
+| 00F0   | Byte[16]                            | Name                                         | 15 chars for the name and a terminating 0 (the game allows entering 19 chars but only stores 15)       |
+| 0100   | Byte[25]                            | Monster spell schools                        | See below                                                                                              |
+| 0119   | Byte[25]                            | Monster spell ids                            | See below                                                                                              |
+| 0132   | Item[9]                             | Equipped items                               |                                                                                                        |
+| 029A   | Item[12]                            | Inventory items                              |                                                                                                        |
+| 047A   | Byte[560]                           | Interactions                                 | Up to 20 NPC Interactions (see below)                                                                  |
+| 06AA   | [Pixmap](Pixmaps.md))               | Portrait (optional)                          | Portrait [Pixmap](Pixmaps.md) with full header.                                                        |
+| 08D0   | [CompressedText](CompressedText.md) | Dialogue Messages (optional)                 |                                                                                                        |
 
 **Notes**
 
@@ -188,10 +224,22 @@ Vulnerable means double damage
 
 The “learned spells” flags are only used by Characters. For monsters it works like this:
 
-- There are 25 bytes with spell school values, follwed by 25 bytes with spell ids.
-- A monster can cast a spell if school[i] is set to a spell school and id[i] is set to the corresponding spell id in this school.
-- Example: school[0] = 7, id[0] = 2 means that monster can cast poison., school[1] = 3, id[1] = 20 means it can cast Whirlwind.
-- A monster can have the same spell in multiple slots, probably increasing the chance of casting it (needs confirmation).
+* There are 25 bytes with spell school values, followed by 25 bytes with spell ids.
+* A monster can cast a spell if school[i] is set to a spell school and id[i] is set to the corresponding spell id in this school.
+* Example: school[0] = 7, id[0] = 2 means that monster can cast poison., school[1] = 3, id[1] = 20 means it can cast Whirlwind.
+* A monster can have the same spell in multiple slots, increasing the chance of casting it.
+
+The decision whether to cast a spell works like this:
+```
+let index = rand_int() % 25
+let spell = get_spell(mon.school[index], mon.id[index])
+if mon.iritated() == false && spell != null && spell.cost <= mon.sp && rand_int() % 100 < mon.casting_chance 
+    cast_spell(spell)
+else
+    other_action() // attack | move | parry | run away
+```
+
+Casting chance only affects the decision and does not replace the Use-Magic check.
 
 For values see [Spells](Spells.md)
 
@@ -239,7 +287,7 @@ where:
 **Notes**
 
 - _Give_, _Pay_, and _Feed_ will implicitly remove the item / gp / food that is offered to the NPC.
-- _Join_ will implicitly add the NPC to the party (if possible, otherwise the interaction presumably does not trigger (?)).
+- _Join_ will implicitly add the NPC to the party (if possible, otherwise the interaction is not available).
 
 ### Reactions
 

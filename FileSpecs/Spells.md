@@ -122,3 +122,39 @@ Spell names are in german (should better be translated by someone with the engli
 | 18 | `40000`  | Schloss Öffnen |
 | 19 | `80000`  | Adlerruf       |
 | 20 | `100000` | Musik          |
+
+## In-Memory-Data
+| Offset | Type | Name |
+|-------:|-----:|-----:|
+| 0 | byte | Element \| Flags \| Location |
+| 1 | byte | SP Cost |
+| 2 | byte | Effect Mod? Not clear how it works. |
+| 3 | byte | Target |
+
+Element | Flags | Location
+
+| Hex | Bit | Name |
+|----:|----:|-----:|
+| 1 |  | Overworld Map |
+| 2 |  | 2d or 3d? |
+| 4 |  | 2d or 3d? |
+| 8 |  | Camp |
+| 10 |  | Combat |
+| 20 |  | IsElemental |
+| 30 | 001x xxxx | Fire |
+| 70 | 011x xxxx | Water |
+| b0 | 101x xxxx | Earth |
+| f0 | 111x xxxx | Wind |
+
+Target
+
+| Bit | Name |
+|----:|-----:|
+| 1 | One Character |
+| 2 | All Characters |
+| 4 | One Enemy |
+| 8 | Group of Enemies |
+| 10 | All Enemies |
+| 20 | Inventory |
+| 40 | Party (Buf) |
+| 80 | Environment |
