@@ -48,7 +48,8 @@ Party members, NPCs and monsters.
 | 003C   | Byte                                | Join Percentage Chance       | Chance that an NPC joins the party if asked                                                            |
 | 003D   | Byte                                | Quest Completion Flag        | ID of a flag that toggles which of the two NPC interaction blocks to use, see "NPC Interactions" below |
 | 003E   | Byte                                | Battle GFX                   | Graphics used in Battle (Monsters only? PC Icon may depend on class value)                             |
-| 0040   | Byte                                | M-B-A                        | Magic armor level                                                                                      |
+| 003F   | Byte                                | Spell cast chance            | I guess only used for monsters                                                                         |
+| 0040   | Byte                                | Magic bonus to hit           | Increases hit chance                                                                                   |
 | 0041   | Byte                                | Morale                       | Monsters flee when that amount in % of same Monster is defeated                                        |
 | 0043   | Byte                                | APR                          | Attacks per Round                                                                                      |
 | 0044   | Byte                                | Monster flags                | 1: Undead, 2: Demon, 4: Ailment immunity                                                               |
