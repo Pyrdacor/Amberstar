@@ -45,6 +45,7 @@ Party members, NPCs and monsters.
 | 0039   | Byte                                | Unused                       | Unused                                                                                                 |
 | 003A   | Byte                                | Physical Ailments            | See below                                                                                              |
 | 003B   | Byte                                | Mental Ailments              | See below                                                                                              |
+| 003C   | Byte                                | Join Percentage Chance       | Chance that an NPC joins the party if asked                                                            |
 | 003D   | Byte                                | Quest Completion Flag        | ID of a flag that toggles which of the two NPC interaction blocks to use, see "NPC Interactions" below |
 | 003E   | Byte                                | Battle GFX                   | Graphics used in Battle (Monsters only? PC Icon may depend on class value)                             |
 | 0040   | Byte                                | M-B-A                        | Magic armor level                                                                                      |
