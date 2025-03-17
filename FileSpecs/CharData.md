@@ -36,6 +36,8 @@ Party members, NPCs and monsters.
 | 001D   | Byte                                | Number of used fingers?      |
 | 001E   | Byte                                | DEF                          | Base Defense                                                                                           |
 | 001F   | Byte                                | DAM                          | Base Damage                                                                                            |
+| 0020   | Byte                                | M-B-W                        | Magic bonus weapon                                                                                     |
+| 0021   | Byte                                | M-B-A                        | Magic bonus armour                                                                                     |
 | 0022   | Byte[9]                             | Item amounts                 | For equipped items (0 = none)                                                                          |
 | 002B   | Byte[12]                            | Item amounts                 | For inventory items (0 = none)                                                                         |
 | 0037   | Byte                                | Languages                    | See below                                                                                              |
