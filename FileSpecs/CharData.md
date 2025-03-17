@@ -41,6 +41,8 @@ Party members, NPCs and monsters.
 | 0022   | Byte[9]                             | Item amounts                 | For equipped items (0 = none)                                                                          |
 | 002B   | Byte[12]                            | Item amounts                 | For inventory items (0 = none)                                                                         |
 | 0037   | Byte                                | Languages                    | See below                                                                                              |
+| 0038   | Byte                                | Current language             | Unused                                                                                                 |
+| 0039   | Byte                                | Unused                       | Unused                                                                                                 |
 | 003A   | Byte                                | Physical Ailments            | See below                                                                                              |
 | 003B   | Byte                                | Mental Ailments              | See below                                                                                              |
 | 003D   | Byte                                | Quest Completion Flag        | ID of a flag that toggles which of the two NPC interaction blocks to use, see "NPC Interactions" below |
