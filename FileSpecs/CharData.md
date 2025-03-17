@@ -51,9 +51,11 @@ Party members, NPCs and monsters.
 | 003F   | Byte                                | Spell cast chance            | I guess only used for monsters                                                                         |
 | 0040   | Byte                                | Magic bonus to hit           | Increases hit chance                                                                                   |
 | 0041   | Byte                                | Morale                       | Monsters flee when that amount in % of same Monster is defeated                                        |
+| 0042   | Byte                                | Battle position              | Default start position in battle?                                                                      |
 | 0043   | Byte                                | APR                          | Attacks per Round                                                                                      |
 | 0044   | Byte                                | Monster flags                | 1: Undead, 2: Demon, 4: Ailment immunity                                                               |
 | 0045   | Byte                                | Monster elemental flags      | See below                                                                                              |
+| 0046   | Word                                | Possible classes             | For party members to choose a profession                                                               |
 | 0048   | Word                                | Current STR                  | Strength                                                                                               |
 | 004A   | Word                                | Current INT                  | Intelligence                                                                                           |
 | 004C   | Word                                | Current DEX                  | Dexterity                                                                                              |
