@@ -83,6 +83,7 @@ Party members, NPCs and monsters.
 | 0088   | Word                                | Max HP                       |
 | 008A   | Word                                | Current SP                   |
 | 008C   | Word                                | Max SP                       |
+| 008E   | Word                                | SLP                          | Spell learning points
 | 0090   | Word                                | Current gold                 |
 | 0092   | Word                                | Current food                 |
 | 0094   | Word                                | Defense                      | Seems to be used by players only? Maybe each byte has a meaning like variable and base defense?        |
