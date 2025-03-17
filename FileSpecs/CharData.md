@@ -76,11 +76,13 @@ Party members, NPCs and monsters.
 | 006A   | Word                                | Max MAG                      | Magic?                                                                                                 |
 | 006C   | Word                                | Max AGE                      | Character will die at this age (race dependent)                                                        |
 | 006E   | Word                                | Max unused attribute?        | Always 0?                                                                                              |
-| 0071   | Byte                                | Lvl/Att                      | PC gets additional Attack per round every X levels                                                     |
-| 0072   | Word                                | HP/lvl                       | (This is not exact, but modified by some yet unknown factors)                                          |
-| 0074   | Word                                | SP/lvl                       | (This is not exact, but modified by some yet unknown factors)                                          |
-| 0076   | Word                                | SLP/lvl                      | (This is not exact, but modified by some yet unknown factors)                                          |
-| 0078   | Word                                | TP/lvl                       | Training Points per level                                                                              |
+| 0070   | Word                                | Lvl/Att                      | APR = CurrentLevel / ThisValue. If the value is 0, APR never changes on level up.  
+                    |
+| 0072   | Word                                | HP/lvl                       | On level up you get this value + TotalSTA/10 hit points                                                |
+| 0074   | Word                                | SP/lvl                       | On level up you get this value + TotalINT/20 spell points                                              |
+| 0076   | Word                                | SLP/lvl                      | On level up you get this value + TotalINT/20 spell learning points                                     |
+| 0078   | Word                                | TP/lvl                       | Training Points per level (not really used in Amberstar I guess)                                       |
+| 007A   | Word[6]                             | Unused                       | In Amberstar there are 11 special values, where the first is Lvl/Att. Most values are not used.       |
 | 0086   | Word                                | Current HP                   |
 | 0088   | Word                                | Max HP                       |
 | 008A   | Word                                | Current SP                   |
