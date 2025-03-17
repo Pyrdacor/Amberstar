@@ -76,8 +76,7 @@ Party members, NPCs and monsters.
 | 006A   | Word                                | Max MAG                      | Magic?                                                                                                 |
 | 006C   | Word                                | Max AGE                      | Character will die at this age (race dependent)                                                        |
 | 006E   | Word                                | Max unused attribute?        | Always 0?                                                                                              |
-| 0070   | Word                                | Lvl/Att                      | APR = CurrentLevel / ThisValue. If the value is 0, APR never changes on level up.  
-                    |
+| 0070   | Word                                | Lvl/Att                      | APR = CurrentLevel / ThisValue. If the value is 0, APR never changes on level up.                      |
 | 0072   | Word                                | HP/lvl                       | On level up you get this value + TotalSTA/10 hit points                                                |
 | 0074   | Word                                | SP/lvl                       | On level up you get this value + TotalINT/20 spell points                                              |
 | 0076   | Word                                | SLP/lvl                      | On level up you get this value + TotalINT/20 spell learning points                                     |
