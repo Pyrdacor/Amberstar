@@ -32,8 +32,8 @@ Party members, NPCs and monsters.
 | 0019   | Byte                                | Max U-M                      | Use magic                                                                                              |
 | 001A   | Byte                                | Magic Schools                | Flags; 2: white, 4: grey: 8: black, 128: special                                                       |
 | 001B   | Byte                                | Level                        |
-| 001C   | Byte                                | Number of used hands?        |
-| 001D   | Byte                                | Number of used fingers?      |
+| 001C   | Byte                                | Number of used hands         |
+| 001D   | Byte                                | Number of used fingers       |
 | 001E   | Byte                                | DEF                          | Base Defense                                                                                           |
 | 001F   | Byte                                | DAM                          | Base Damage                                                                                            |
 | 0020   | Byte                                | M-B-W                        | Magic bonus weapon                                                                                     |
