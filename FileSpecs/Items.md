@@ -38,7 +38,7 @@ Offset | Type | Name | Description
 1E | Word | Usable classes | Bitfield
 20 | Word | Buy price |
 22 | Word | Weight | In grams
-24 | Word | ItemID | Special marker for quest items (e.g., door keys)
+24 | Word | ItemID | Identifies the item
 26 | Word | NameID | Item name, as index into the global string table
 
 ## Item types
