@@ -48,7 +48,7 @@ Each image contains *lines* in the sequence:
 - ...
 - `line[height-1]`
 
-Each record has exactly the same size and consists of of *bitplanes*:
+Each record has exactly the same size and consists of 4 *bitplanes*:
 
 ## Bitplanes
 
