@@ -6,7 +6,8 @@ Party members, NPCs and monsters.
 
 | Offset | Type                                | Name                         | Description                                                                                            |
 | ------ | ----------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 0002   | Byte                                | Type                         | 0: NPC/Player, 1: Monster ?                                                                            |
+| 0000   | Word                                | Magic                        | `00 ff`                                                                                                |
+| 0002   | Byte                                | Type                         | 0: Person (NPC/Player), 1: Monster                                                                     |
 | 0003   | Byte                                | Gender                       | 0: Male, 1: Female                                                                                     |
 | 0004   | Byte                                | Race                         | See below                                                                                              |
 | 0005   | Byte                                | Class                        | See below                                                                                              |
