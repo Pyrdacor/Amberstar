@@ -2,6 +2,8 @@
 
 Party members, NPCs and monsters.
 
+In contrast to Ambermoon, there is no distinct type for party members and NPCs. They are both just identified as person. The join percentage value actually specifies if the person can join the party or not.
+
 | Offset | Type                                | Name                         | Description                                                                                            |
 | ------ | ----------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------ |
 | 0000   | Word                                | Magic header                 | `00 ff`                                                                                                |
