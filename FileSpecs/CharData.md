@@ -81,8 +81,7 @@ In contrast to Ambermoon, there is no distinct type for party members and NPCs. 
 | 0072   | Word                                | HP/lvl                       | On level up you get this value + TotalSTA/10 hit points                                                |
 | 0074   | Word                                | SP/lvl                       | On level up you get this value + TotalINT/20 spell points                                              |
 | 0076   | Word                                | SLP/lvl                      | On level up you get this value + TotalINT/20 spell learning points                                     |
-| 0078   | Word                                | TP/lvl                       | Training Points per level (not really used in Amberstar I guess)                                       |
-| 007A   | Word[6]                             | Unused                       | In Amberstar there are 11 special values, where the first is Lvl/Att. Most values are not used.       |
+| 0078   | Word[7]                             | Unused                       | In Amberstar there are 11 special values, where the first is Lvl/Att. Most values are not used.       |
 | 0086   | Word                                | Current HP                   |
 | 0088   | Word                                | Max HP                       |
 | 008A   | Word                                | Current SP                   |
