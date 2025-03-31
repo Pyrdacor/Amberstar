@@ -5,6 +5,13 @@ In Amberstar, CoSo songs are stored in two files:
 - `SAMPLEDA.IMG` consists of the instrument samples, shared across songs.  The indices into this file are stored as part of the CoSo song descriptions.
 - `AMBERDEV.UDO` contains the song descriptions (among many other things).  The file should contain precisely 19 instances of the magic number `COSO`, which marks the beginning of each song.
 
+The COSO uses TFMX on Amiga, but MMME on Atari ST:
+
+   - TFMX (The Final Musicsystem eXtended)
+   - MMME (Mad Max Music Editor)
+   - COSO (COmpressed SOng) for TFMX and MMME songfiles
+   - MMME-MMME (Mad Max Music Editor) with SID (first version only).
+
 A CoSo record starts with the following header:
 
 | Name                   | Format | Comments                       |
