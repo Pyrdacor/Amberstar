@@ -29,7 +29,7 @@ A CoSo record starts with the following header:
 | 0x0026 | `num_timbres - 1`      | u16     | 1 less than the actual count   |
 | 0x0028 | `num_monopatterns - 1` | u16     | 1 less than the actual count   |
 | 0x002a | `num_divisions - 1`    | u16     | 1 less than the actual count   |
-| 0x002c | `0x40`                 | u16     | unknown / unused               |
+| 0x002c | `bytes_per_monopattern`| u16     | `0x40`                   |
 | 0x002e | `0`                    | u16     | unknown / unused               |
 | 0x0030 | `num_songs`            | u16     |                                |
 | 0x0032 | `num_samples`          | u16     |                                |
