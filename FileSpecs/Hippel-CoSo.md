@@ -14,26 +14,26 @@ The COSO uses TFMX on Amiga, but MMME on Atari ST:
 
 A CoSo record starts with the following header:
 
-| Name                   | Format | Comments                       |
-|------------------------|--------|--------------------------------|
-| magic number           | u8[4]  | always  `COSO`                 |
-| `pos_instruments`      | u32    |                                |
-| `pos_timbres`          | u32    |                                |
-| `pos_monopatterns`     | u32    |                                |
-| `pos_divisions`        | u32    |                                |
-| `pos_song`             | u32    |                                |
-| `pos_samples`          | u32    |                                |
-| `total_length`         | u32    |                                |
-| magic number           | u8[4]  | always  `TFMX`                 |
-| `num_instruments - 1`  | u16     |                                |
-| `num_timbres - 1`      | u16     | 1 less than the actual count   |
-| `num_monopatterns - 1` | u16     | 1 less than the actual count   |
-| `num_divisions - 1`    | u16     | 1 less than the actual count   |
-| `0x40`                 | u16     | unknown / unused               |
-| `0`                    | u16     | unknown / unused               |
-| `num_songs`            | u16     |                                |
-| `num_samples`          | u16     |                                |
-| `0`                    | u16[6]  | unknown / unused (!unverified) |
+| Offset | Name                   | Format | Comments                       |
+|--------|------------------------|--------|--------------------------------|
+| 0x0000 | magic number           | u8[4]  | always  `COSO`                 |
+| 0x0004 | `pos_instruments`      | u32    |                                |
+| 0x0008 | `pos_timbres`          | u32    |                                |
+| 0x000c | `pos_monopatterns`     | u32    |                                |
+| 0x0010 | `pos_divisions`        | u32    |                                |
+| 0x0014 | `pos_song`             | u32    |                                |
+| 0x0018 | `pos_samples`          | u32    |                                |
+| 0x001c | `total_length`         | u32    |                                |
+| 0x0020 | magic number           | u8[4]  | always  `TFMX`                 |
+| 0x0024 | `num_instruments - 1`  | u16     |                                |
+| 0x0026 | `num_timbres - 1`      | u16     | 1 less than the actual count   |
+| 0x0028 | `num_monopatterns - 1` | u16     | 1 less than the actual count   |
+| 0x002a | `num_divisions - 1`    | u16     | 1 less than the actual count   |
+| 0x002c | `0x40`                 | u16     | unknown / unused               |
+| 0x002e | `0`                    | u16     | unknown / unused               |
+| 0x0030 | `num_songs`            | u16     |                                |
+| 0x0032 | `num_samples`          | u16     |                                |
+| 0x0034 | `0`                    | u16[6]  | unknown / unused (!unverified) |
 
 All `pos_` references are relative to the first byte of the header.
 
