@@ -12,7 +12,7 @@ validation.
 |------------|------|-----|--------------------------|---------|--------------------------------------------------------------------------------------------|------------|
 | 00000001   | y    | y   | Back-and-forth animation |         | Animation frame goes from first to last, then back down to first                           |            |
 | 00000002   |      | y   | Block sight              |         |                                                                                            |            |
-| 00000004   | y    |     | Animated                 |         | If set on a foreground tile, the tile index is increased continously                       |            |
+| 00000004   | y    |     | Animated                 |         | If set on a foreground tile, the tile index is increased continously (also used for NPCs)  |            |
 | 00000008   | y    |     | Seat                     |         | Chair or bed, if player occupies tile, show NEXT tile instead                              |            |
 | 00000010   | y    | y   | Random animation offset  |         | Start animation for different uses of this tile at different points in time                |            |
 | 00000020   | y    | y   | Icon:Priority / Lab:Illusion    |         | MapIcon: used for nonblocking foreground tiles (if set the underlay blocking and swimming bits are used) / Labyrinth: marks illusory walls           |            |
