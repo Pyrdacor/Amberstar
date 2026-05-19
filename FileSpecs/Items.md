@@ -68,6 +68,7 @@ Offset | Type | Name | Description
 - 04: Stackable
 - 08: Destroy after usage (keys and some quest items, potions and spell scrolls seem to omit this though)
 - 10: Removable during fight (some equipment has this)
+- 80: Identified (enable eye button in item view to see more stats)
 
 ## Equip slots
 
