@@ -80,7 +80,7 @@ The chest slot bits are similar structured to the map character bits. But there 
 writing is even more complex as we deal with half byte reads and writes. In addition to the strange 1-bit shift of course. So technically
 the bit stream looks something like this: `AAAAAAA0 BBBAAAAA BBBBBBBB CCCCCCCB DDDCCCCC ...`
 
-Here A denotes the bits of the first chest, B the bits of the second chest and C the bits of the third chest. The pattern repeats every
+Here `A` denotes the bits of the first chest, `B` the bits of the second chest and `C` the bits of the third chest. The pattern repeats every
 3 bytes (24 bits -> 2 chests with 12 bits each).
 
 The original logic is something like this (pseudo code):
