@@ -1,9 +1,5 @@
 # Savegame
 
-In contrast to Ambermoon, it is not possible to store items in chests. You can only take them out. This is also reflected in the savegames.
-There is no chest data. Only the gold amounts and slot flags are stored. The slot flags are single bits per item slot which determine if
-the item is present or not. If a chest is fully looted in the game it will never be shown again.
-
 | Offset | Type                                | Name                         | Description
 | ------ | ----------------------------------- | ---------------------------- | -----------
 | 0000   | Byte                                | Month                        | Starts at 4 (April)
@@ -32,5 +28,26 @@ the item is present or not. If a chest is fully looted in the game it will never
 | 0087   | Word[30]                            | Transport map indices        | Map indices of transports
 | 00C3   | Byte[32]                            | Quest bits                   | Used to track quest progress
 | 00E3   | Byte[4064]                          | Event bits                   | ...
+| 10C3   | Byte[1502]                          | Character bits               | ...
+| 16A1   | Byte[626]                           | Known words bits             | ...
+| 1913   | Byte[1500]                          | Chest slot bits              | ...
+| 1EEF   | Word[1000]                          | Chest gold                   | Gold of all chests (up to 1000 chests)
+| 26BF   | Byte[1200]                          | Ware counts                  | Number of items of merchants (up to 100 merchants with 12 slots)
+| 2B6F   | Byte[6]                             | Combat positions             | Position in combat for all 6 party member slots
+| 2B75   | Word                                | Number of tile changes       | Tile change section has a dynamic size
+| 2B77   | TileChange[n]                       | Tile change data             | n = Number of tile changes
 
-tbc
+## Tile changes
+
+| Offset | Type                                | Name                        
+| ------ | ----------------------------------- | ----------------------------
+| 0000   | Word                                | Map index 
+| 0002   | Byte                                | X 
+| 0003   | Byte                                | Y 
+| 0004   | Word                                | Tile index 
+
+## Chest data
+
+In contrast to Ambermoon, it is not possible to store items in chests. You can only take them out. This is also reflected in the savegames.
+There is no chest data. Only the gold amounts and slot flags are stored. The slot flags are single bits per item slot which determine if
+the item is present or not. If a chest is fully looted in the game, it will never be shown again.
