@@ -51,3 +51,9 @@
 In contrast to Ambermoon, it is not possible to store items in chests. You can only take them out. This is also reflected in the savegames.
 There is no chest data. Only the gold amounts and slot flags are stored. The slot flags are single bits per item slot which determine if
 the item is present or not. If a chest is fully looted in the game, it will never be shown again.
+
+## Merchant data
+
+In contrast to Ambermoon, sold items will not be added to the merchant items. You just get the gold and the item vanishes forever.
+Similar to chests, no item indices are stored in the savegame. Only the remaining amount of items in the slot. For chests only 1
+item per slot is possible, so no count is needed there.
