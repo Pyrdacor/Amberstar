@@ -1,3 +1,7 @@
+# AMBERDEV format
+
+The `AMBERDEV.UDO` file is a LOB compressed PRG file. So it usually starts with a LOB header. After decompression it is a normal PRG file.
+
 # AMBERDEV data
 
 The `AMBERDEV.UDO` file contains an assortment of data (and possibly executable code?). Some known bits of interest below.
