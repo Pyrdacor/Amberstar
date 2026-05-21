@@ -1,4 +1,4 @@
-The main executable for the AtariST `AMBRSTAR.68k` contains all kind of data.
+The main executable for the AtariST `AMBRSTAR.68k` is a [PRG](PRG.md) file and contains all kind of data.
 
 - Layout definitions
 - Layout graphics
