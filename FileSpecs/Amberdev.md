@@ -1,6 +1,6 @@
 # AMBERDEV format
 
-The `AMBERDEV.UDO` file is a LOB compressed PRG file. So it usually starts with a LOB header. After decompression it is a normal PRG file.
+The `AMBERDEV.UDO` file is a [LOB](Containers.md) compressed [PRG](PRG.md) file. So it usually starts with a LOB header. After decompression it is a normal PRG file. While the Atari ST version has most data inside a DATA segment, this Amiga PRG does not have a DATA segment at all, but instead embeds the data inside the TEXT segment.
 
 # AMBERDEV data
 
