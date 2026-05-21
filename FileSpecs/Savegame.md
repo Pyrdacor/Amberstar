@@ -29,7 +29,7 @@
 | 00C3   | Byte[32]                            | Quest bits                   | Used to track quest progress
 | 00E3   | Byte[4064]                          | Event bits                   | Map event active flags (0 = active, 1 = inactive)
 | 10C3   | Byte[1502]                          | Character bits               | Map character active flags (0 = active, 1 = inactive)
-| 16A1   | Byte[626]                           | Known words bits             | ...
+| 16A1   | Byte[626]                           | Known words bits             | Flags to determine if words (in conversations) are known already
 | 1913   | Byte[1500]                          | Chest slot bits              | ...
 | 1EEF   | Word[1000]                          | Chest gold                   | Gold of all chests (up to 1000 chests)
 | 26BF   | Byte[1200]                          | Ware counts                  | Number of items of merchants (up to 100 merchants with 12 slots)
@@ -54,14 +54,21 @@ I assume 65 is used instead of 64 as a bit for event index 0 is also in there, e
 set an active flag for events 1 to 64. Strange logic which really makes reading and writing way harder, but it is what it is.
 
 Usually you calculate the total bit with `(mapIndex - 1) * 65 + mapEventIndex` where mapEventIndex is the 1-based index (as it is stored
-in tiles for example). Then just calculate the byte with `totalBit >> 3` and the bit with `totalBit & 7`.
+in tiles for example, 1-64). Then just calculate the byte with `totalBit >> 3` and the bit with `totalBit & 7`.
 
 ## Map character flags
 
 There are 1502 bytes of character flags. 500 maps are possible and 24 flags per map are used. So this is 500 * 24 bits, which makes 1500 bytes. There are 2 additional bytes for some reason. I think the bits are shifted left by 1 similar to the chest slot bits. So for example the first
 byte contains a 0 in the lowest bit. Then every 3 bytes the lowest bit contains the first bit of the next map bits. Strange logic which really makes reading and writing way harder, but it is what it is. Most likely this is done to use a 1-based character index instead of a 0-based one... This also explains at least 1 additional byte, so 1501 are needed. But they just used 1502, maybe for padding/alignment.
 
-Usually you calculate the total bit with `(mapIndex - 1) * 24 + mapCharIndex` where mapCharIndex is the 1-based index! Then just calculate the byte with `totalBit >> 3` and the bit with `totalBit & 7`.
+Usually you calculate the total bit with `(mapIndex - 1) * 24 + mapCharIndex` where mapCharIndex is the 1-based index (1-24)! Then just calculate the byte with `totalBit >> 3` and the bit with `totalBit & 7`.
+
+## Known word flags
+
+There are 626 bytes of those flags. I strongly assume this is for 5000 words (625 * 8 bits). The additional bit comes from the fact that the bits are shifted by 1 again, like the map character bits.
+Most likely to easily use 1-based word indices. I verified that shift in original code and with it the additional byte makes sense. Still strange logic, but yeah...
+
+If a bit is set, the word is known and appears in the list of known words during conversations. The file "Dictionary" contains all the words.
 
 ## Chest data
 
