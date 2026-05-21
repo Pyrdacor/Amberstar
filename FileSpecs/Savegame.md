@@ -30,7 +30,7 @@
 | 00E3   | Byte[4064]                          | Event bits                   | Map event active flags (0 = active, 1 = inactive)
 | 10C3   | Byte[1502]                          | Character bits               | Map character active flags (0 = active, 1 = inactive)
 | 16A1   | Byte[626]                           | Known words bits             | Flags to determine if words (in conversations) are known already
-| 1913   | Byte[1500]                          | Chest slot bits              | ...
+| 1913   | Byte[1500]                          | Chest slot bits              | Flags to determine if items are still in the chest
 | 1EEF   | Word[1000]                          | Chest gold                   | Gold of all chests (up to 1000 chests)
 | 26BF   | Byte[1200]                          | Ware counts                  | Number of items of merchants (up to 100 merchants with 12 slots)
 | 2B6F   | Byte[6]                             | Combat positions             | Position in combat for all 6 party member slots
@@ -75,6 +75,35 @@ If a bit is set, the word is known and appears in the list of known words during
 In contrast to Ambermoon, it is not possible to store items in chests. You can only take them out. This is also reflected in the savegames.
 There is no chest data. Only the gold amounts and slot flags are stored. The slot flags are single bits per item slot which determine if
 the item is present or not. If a chest is fully looted in the game, it will never be shown again.
+
+The chest slot bits are similar structured to the map character bits. But there are 12 bits (12 item slots) per chest so the reading and
+writing is even more complex as we deal with half byte reads and writes. In addition to the strange 1-bit shift of course. So technically
+the bit stream looks something like this: `AAAAAAA0 BBBAAAAA BBBBBBBB CCCCCCCB DDDCCCCC ...`
+
+Here A denotes the bits of the first chest, B the bits of the second chest and C the bits of the third chest. The pattern repeats every
+3 bytes (24 bits -> 2 chests with 12 bits each).
+
+The original logic is something like this (pseudo code):
+
+```
+index = chestIndex - 1 // chestIndex is 1-based usually
+offset = 3 * (index / 2) // the last term is rounded down to an integer first!
+
+if index & 1 == 0 // even (1st chest, 3rd chest, 5th chest, ...)
+  chestBits = ChestSlotBits[offset + 1]
+  chestBits <<= 8
+  chestBits |= ChestSlotBits[offset]
+  chestBits >>= 1
+else // odd (2nd chest, 4th chest, ...)
+  chestBits = ChestSlotBits[offset + 2]
+  chestBits <<= 8
+  chestBits |= ChestSlotBits[offset + 1]
+  chestBits >>= 5
+
+  if (ChestSlotBits[offset + 3] & 1) == 1
+    chestBits |= 0x800
+endif
+```
 
 ## Merchant data
 
