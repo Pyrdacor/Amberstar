@@ -201,8 +201,6 @@ Movement algorithm:
 * **ATTACK**: move one field (incl. diagonally) closer to the player.  Unknown: do the NPCs see the player through walls?
 * **CIRCUIT**: Iterate over the coordinates in the coordinate table.  Coordinates may repeat, indicating that the NPC stays still for a few rounds before moving on.
 
-Unknown: can NPCs trigger events?
-
 ## Tile Map and Overlay Map
 
 The overlay map (only present in 2D maps) is functionally identical to the tile map, so we refer to them as map[0] and map[1], respectively,
