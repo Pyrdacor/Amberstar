@@ -273,7 +273,7 @@ where:
 - _GiveItem_ will clone the NPC's item. This happens e.g. if the players ask repeatedly for a key to the sewers-- they can get as many keys as they would like.
 - _CompleteQuest_ can affect some other NPC's quest completion flag, hence the need for an explicit parameter. In the game, Mera can set Shir'kar's quest flag, allowing the party to recruit Shir'kar.
 - The NPCs Satine and Shandra share their quest completion flags, so that Satine's interaction options change when Shandra's quest is completed
-- _RaiseStat_ uses offsets into character data to identify the stat to raise, so e.g. _stat_=`004E` will raise the "Speed" stat.
-- _RaiseStat_ uses offset `00cc` to raise experience points. This is two bytes before the actual experience point stat; this extra word is likely used to "stage" imminent experience raises
-- _SetFlag_ is only used with _stat_ = `0037` to teach the first character in the party a new language.
 - For the stat change reactions (type `07`), `Arg0` always gives a byte offset into the character data. For bit operations, always a single byte is affected, so the bit number in `Arg2` should be in range 0..7 only. However for `RaiseStat` and `DecreaseStat` the affected data is dependent on offset. If it is < 70, a single byte is affected, if >= 70 but < 204, a word is affected and otherwise a whole long.
+- _RaiseStat_ uses offsets into character data to identify the stat to raise, so e.g. _stat_=`004E` will raise the "Speed" stat.
+- _RaiseStat_ uses offset `00cc` to raise experience points.
+- _SetFlag_ is only used with _stat_ = `0037` to teach the first character in the party a new language.
