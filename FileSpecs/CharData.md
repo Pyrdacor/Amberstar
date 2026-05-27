@@ -32,9 +32,9 @@ In contrast to Ambermoon, there is no distinct type for party members and NPCs. 
 | 0018   | Byte                                | Max RMS                      | Read magic scrolls                                                                                     |
 | 0019   | Byte                                | Max U-M                      | Use magic                                                                                              |
 | 001A   | Byte                                | Magic Schools                | Flags; 2: white, 4: grey: 8: black, 128: special                                                       |
-| 001B   | Byte                                | Level                        |
-| 001C   | Byte                                | Number of used hands         |
-| 001D   | Byte                                | Number of used fingers       |
+| 001B   | Byte                                | Level                        |                                                                                                        |
+| 001C   | Byte                                | Number of used hands         |                                                                                                        |
+| 001D   | Byte                                | Number of used fingers       |                                                                                                        |
 | 001E   | Byte                                | DEF                          | Base Defense                                                                                           |
 | 001F   | Byte                                | DAM                          | Base Damage                                                                                            |
 | 0020   | Byte                                | M-B-W                        | Magic bonus weapon                                                                                     |
@@ -64,9 +64,9 @@ In contrast to Ambermoon, there is no distinct type for party members and NPCs. 
 | 0050   | Word                                | Current CON                  | Constitution                                                                                           |
 | 0052   | Word                                | Current CHA                  | Charisma                                                                                               |
 | 0054   | Word                                | Current LUC                  | Luck                                                                                                   |
-| 0056   | Word                                | Current MAG                  | Magic?                                                                                                 |
+| 0056   | Word                                | Current MAG                  | Anti-Magic                                                                                             |
 | 0058   | Word                                | Current AGE                  | Age                                                                                                    |
-| 005A   | Word                                | Current unused attribute?    | Always 0?                                                                                              |
+| 005A   | Word                                | Current unused attribute     | Always 0                                                                                               |
 | 005C   | Word                                | Max STR                      | Strength                                                                                               |
 | 005E   | Word                                | Max INT                      | Intelligence                                                                                           |
 | 0060   | Word                                | Max DEX                      | Dexterity                                                                                              |
@@ -74,37 +74,63 @@ In contrast to Ambermoon, there is no distinct type for party members and NPCs. 
 | 0064   | Word                                | Max CON                      | Constitution                                                                                           |
 | 0066   | Word                                | Max CHA                      | Charisma                                                                                               |
 | 0068   | Word                                | Max LUC                      | Luck                                                                                                   |
-| 006A   | Word                                | Max MAG                      | Magic?                                                                                                 |
+| 006A   | Word                                | Max MAG                      | Anti-Magic                                                                                             |
 | 006C   | Word                                | Max AGE                      | Character will die at this age (race dependent)                                                        |
-| 006E   | Word                                | Max unused attribute?        | Always 0?                                                                                              |
+| 006E   | Word                                | Max unused attribute         | Always 0                                                                                               |
 | 0070   | Word                                | Lvl/Att                      | APR = CurrentLevel / ThisValue. If the value is 0, APR never changes on level up.                      |
 | 0072   | Word                                | HP/lvl                       | On level up you get this value + TotalSTA/10 hit points                                                |
 | 0074   | Word                                | SP/lvl                       | On level up you get this value + TotalINT/20 spell points                                              |
 | 0076   | Word                                | SLP/lvl                      | On level up you get this value + TotalINT/20 spell learning points                                     |
-| 0078   | Word[7]                             | Unused                       | In Amberstar there are 11 special values, where the first is Lvl/Att. Most values are not used.       |
-| 0086   | Word                                | Current HP                   |
-| 0088   | Word                                | Max HP                       |
-| 008A   | Word                                | Current SP                   |
-| 008C   | Word                                | Max SP                       |
-| 008E   | Word                                | SLP                          | Spell learning points
-| 0090   | Word                                | Current gold                 |
-| 0092   | Word                                | Current food                 |
-| 0094   | Word                                | Defense                      | Seems to be used by players only? Maybe each byte has a meaning like variable and base defense?        |
-| 0096   | Word                                | Damage                       | Seems to be used by players only? Maybe each byte has a meaning like variable and base damage?         |
-| 00CC   | Long                                | Experience Points            |
+| 0078   | Word[7]                             | Unused                       | In Amberstar there are 11 special values, where the first is Lvl/Att. Most values are not used.        |
+| 0086   | Word                                | Current HP                   |                                                                                                        |
+| 0088   | Word                                | Max HP                       |                                                                                                        |
+| 008A   | Word                                | Current SP                   |                                                                                                        |
+| 008C   | Word                                | Max SP                       |                                                                                                        |
+| 008E   | Word                                | SLP                          | Spell learning points                                                                                  |
+| 0090   | Word                                | Current gold                 |                                                                                                        |
+| 0092   | Word                                | Current food                 |                                                                                                        |
+| 0094   | Word                                | Bonus defense                | Defense gained from equipment (party members only)                                                     |
+| 0096   | Word                                | Bonus damage                 | Damage gained from equipment (party members only)                                                      |
+| 0098   | Word                                | Bonus hit points             | Hit points gained from equipment (party members only)                                                  |
+| 009A   | Word                                | Bonus spell points           | Spell points gained from equipment (party members only)                                                |
+| 009C   | Byte                                | Bonus ATK                    | Attack  gained from equipment (party members only)                                                     |
+| 009E   | Byte                                | Bonus PAR                    | Parry gained from equipment (party members only)                                                       |
+| 00A0   | Byte                                | Bonus SWI                    | Swim gained from equipment (party members only)                                                        |
+| 00A2   | Byte                                | Bonus LIS                    | Listen gained from equipment (party members only)                                                      |
+| 00A4   | Byte                                | Bonus F-T                    | Find traps gained from equipment (party members only)                                                  |
+| 00A6   | Byte                                | Bonus D-T                    | Disarm traps gained from equipment (party members only)                                                |
+| 00A8   | Byte                                | Bonus P-L                    | Pick locks gained from equipment (party members only)                                                  |
+| 00AA   | Byte                                | Bonus SEA                    | Search gained from equipment (party members only)                                                      |
+| 00AC   | Byte                                | Bonus RMS                    | Read magic scrolls gained from equipment (party members only)                                          |
+| 00AE   | Byte                                | Bonus U-M                    | Use magic gained from equipment (party members only)                                                   |
+| 00B0   | Word                                | Bonus STR                    | Strength gained from equipment (party members only)                                                    |
+| 00B2   | Word                                | Bonus INT                    | Intelligence gained from equipment (party members only)                                                |
+| 00B4   | Word                                | Bonus DEX                    | Dexterity gained from equipment (party members only)                                                   |
+| 00B6   | Word                                | Bonus SPE                    | Speed gained from equipment (party members only)                                                       |
+| 00B8   | Word                                | Bonus CON                    | Constitution gained from equipment (party members only)                                                |
+| 00BA   | Word                                | Bonus CHA                    | Charisma gained from equipment (party members only)                                                    |
+| 00BC   | Word                                | Bonus LUC                    | Luck gained from equipment (party members only)                                                        |
+| 00BE   | Word                                | Bonus MAG                    | Anti-Magic gained from equipment (party members only)                                                  |
+| 00C0   | Word                                | Bonus AGE                    | Age gained from equipment (always 0 of course)                                                         |
+| 00C2   | Word                                | Bonus unused attribute       | Always 0                                                                                               |
+| 00C4   | Word                                | Person save bit              | Character bit inside savegame which is associated to this person (used when person joins/leaves party) |
+| 00C6   | Word                                | Battle experience            | Amount of exp you get for defeating the monster (monsters only)                                        |
+| 00C8   | Word                                | Battle round SP usage        | How much SP can be used per battle round (seems to be unused in original)                              |
+| 00CA   | Word                                | Birth year                   | It is increased when aging but otherwise not used at all                                               |
+| 00CC   | Long                                | Experience Points            |                                                                                                        |
 | 00D0   | Long                                | Known spells (white)         | See [Spells](Spells.md)                                                                                |
 | 00D4   | Long                                | Known spells (grey)          | See [Spells](Spells.md)                                                                                |
 | 00D8   | Long                                | Known spells (black)         | See [Spells](Spells.md)                                                                                |
 | 00E8   | Long                                | Known spells (special)       | See [Spells](Spells.md)                                                                                |
-| 00EC   | Long                                | Total weight in grams        |
+| 00EC   | Long                                | Total weight in grams        |                                                                                                        |
 | 00F0   | Byte[16]                            | Name                         | 15 chars for the name and a terminating 0 (the game allows entering 19 chars but only stores 15)       |
 | 0100   | Byte[25]                            | Monster spell schools        | See below                                                                                              |
 | 0119   | Byte[25]                            | Monster spell ids            | See below                                                                                              |
-| 0132   | Item[9]                             | Equipped items               |
-| 029A   | Item[12]                            | Inventory items              |
+| 0132   | Item[9]                             | Equipped items               |                                                                                                        |
+| 029A   | Item[12]                            | Inventory items              |                                                                                                        |
 | 047A   | Byte[560]                           | Interactions                 | Up to 20 NPC Interactions (see below)                                                                  |
 | 06AA   | [Pixmap](Pixmaps.md))               | Portrait (optional)          | Portrait [Pixmap](Pixmaps.md) with full header.                                                        |
-| 08D0   | [CompressedText](CompressedText.md) | Dialogue Messages (optional) |
+| 08D0   | [CompressedText](CompressedText.md) | Dialogue Messages (optional) |                                                                                                        |
 
 **Notes**
 
