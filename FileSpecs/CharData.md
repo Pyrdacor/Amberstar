@@ -263,7 +263,10 @@ where:
 | `05`          | GiveFood      |        |      | _amount_  | Gives the specified _amount_ of food                                                                               |
 | `06`          | CompleteQuest |        |      | _flag_    | Sets the specified Quest Completion _flag_                                                                         |
 | `07`          | RaiseStat     | _stat_ | `1`  | _amount_  | Increases the given _stat_ (u16 / Word) by the given _amount_                                                      |
+| `07`          | DecreaseStat  | _stat_ | `2`  | _amount_  | Decreases the given _stat_ (u16 / Word) by the given _amount_                                                      |
+| `07`          | ClearFlag     | _stat_ | `3`  | _bitnr_   | Clears the *bitnr*th bit in the given _stat_ (u8 / Byte)                                                           |
 | `07`          | SetFlag       | _stat_ | `4`  | _bitnr_   | Sets the *bitnr*th bit in the given _stat_ (u8 / Byte)                                                             |
+| `07`          | ToggleFlag    | _stat_ | `5`  | _bitnr_   | Toggles the *bitnr*th bit in the given _stat_ (u8 / Byte)                                                          |
 
 **Notes**
 
@@ -273,3 +276,4 @@ where:
 - _RaiseStat_ uses offsets into character data to identify the stat to raise, so e.g. _stat_=`004E` will raise the "Speed" stat.
 - _RaiseStat_ uses offset `00cc` to raise experience points. This is two bytes before the actual experience point stat; this extra word is likely used to "stage" imminent experience raises
 - _SetFlag_ is only used with _stat_ = `0037` to teach the first character in the party a new language.
+- For the stat change reactions (type `07`), `Arg0` always gives a byte offset into the character data. For bit operations, always a single byte is affected, so the bit number in `Arg2` should be in range 0..7 only. However for `RaiseStat` and `DecreaseStat` the affected data is dependent on offset. If it is < 70, a single byte is affected, if >= 70 but < 204, a word is affected and otherwise a whole long.
