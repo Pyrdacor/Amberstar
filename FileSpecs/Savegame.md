@@ -14,28 +14,27 @@
 | 000E   | Byte                                | Active party member          | Slot index of the active party member (1-6)
 | 000F   | Byte                                | Travel type                  | 0: Walk, 1: Horse, ...
 | 0010   | Byte                                | Active special items         | Flag bits which special items (like clock) are active
-| 0011   | Byte                                | Party size                   | Number of characters in the party (1-6)
-| 0012   | Byte                                | Music off                    | `0xff` = off, `0x00` = on
-| 0013   | Byte[6]                             | ActiveSpellValues            | Value of each active spell
-| 0019   | Word                                | Year                         | Starts at 876
-| 001B   | Word                                | Map index                    | Starts at 65 (Twinlake graveyard)
-| 001D   | Word[6]                             | Character indices            | Character indices of all 6 party character slots (0 = empty)
-| 0029   | Word                                | Travelled days               | Total amount of days (not sure if this is used for anything)
-| 002B   | Word                                | Relative year                | Passed years since 876 (not sure if this is used for anything)
-| 002D   | Byte[30]                            | Transport types              | Types of transports (none, horse, raft, ship)
-| 004B   | Byte[30]                            | Transport X coords           | X coords of transports
-| 0069   | Byte[30]                            | Transport Y coords           | Y coords of transports
-| 0087   | Word[30]                            | Transport map indices        | Map indices of transports
-| 00C3   | Byte[32]                            | Quest bits                   | Used to track quest progress
-| 00E3   | Byte[4064]                          | Event bits                   | Map event active flags (0 = active, 1 = inactive)
-| 10C3   | Byte[1502]                          | Character bits               | Map character active flags (0 = active, 1 = inactive)
-| 16A1   | Byte[626]                           | Known words bits             | Flags to determine if words (in conversations) are known already
-| 1913   | Byte[1500]                          | Chest slot bits              | Flags to determine if items are still in the chest
-| 1EEF   | Word[1000]                          | Chest gold                   | Gold of all chests (up to 1000 chests)
-| 26BF   | Byte[1200]                          | Ware counts                  | Number of items of merchants (up to 100 merchants with 12 slots)
-| 2B6F   | Byte[6]                             | Combat positions             | Position in combat for all 6 party member slots
-| 2B75   | Word                                | Number of tile changes       | Tile change section has a dynamic size
-| 2B77   | TileChange[n]                       | Tile change data             | n = Number of tile changes
+| 0011   | Byte                                | Music off                    | `0xff` = off, `0x00` = on
+| 0012   | Byte[6]                             | ActiveSpellValues            | Value of each active spell
+| 0018   | Word                                | Year                         | Starts at 876
+| 001A   | Word                                | Map index                    | Starts at 65 (Twinlake graveyard)
+| 001C   | Word[6]                             | Character indices            | Character indices of all 6 party character slots (0 = empty)
+| 0028   | Word                                | Travelled days               | Total amount of days (not sure if this is used for anything)
+| 002A   | Word                                | Relative year                | Passed years since 876 (not sure if this is used for anything)
+| 002C   | Byte[30]                            | Transport types              | Types of transports (none, horse, raft, ship)
+| 004A   | Byte[30]                            | Transport X coords           | X coords of transports
+| 0068   | Byte[30]                            | Transport Y coords           | Y coords of transports
+| 0086   | Word[30]                            | Transport map indices        | Map indices of transports
+| 00C2   | Byte[32]                            | Quest bits                   | Used to track quest progress
+| 00E2   | Byte[4064]                          | Event bits                   | Map event active flags (0 = active, 1 = inactive)
+| 10C2   | Byte[1502]                          | Character bits               | Map character active flags (0 = active, 1 = inactive)
+| 16A0   | Byte[626]                           | Known words bits             | Flags to determine if words (in conversations) are known already
+| 1912   | Byte[1500]                          | Chest slot bits              | Flags to determine if items are still in the chest
+| 1EEE   | Word[1000]                          | Chest gold                   | Gold of all chests (up to 1000 chests)
+| 26BE   | Byte[1200]                          | Ware counts                  | Number of items of merchants (up to 100 merchants with 12 slots)
+| 2B6E   | Byte[6]                             | Combat positions             | Position in combat for all 6 party member slots
+| 2B74   | Word                                | Number of tile changes       | Tile change section has a dynamic size
+| 2B76   | TileChange[n]                       | Tile change data             | n = Number of tile changes
 
 ## Tile changes
 
