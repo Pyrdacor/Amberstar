@@ -150,7 +150,7 @@ def match_pass(known):
                 o = seq[b.a + k]; d = dis[lo + b.b + k]
                 if not tok_eq(o[0], d[1]): continue
                 for ro, rd in zip(o[2], d[3]):
-                    if ro and rd and ro[0] == 'name' and rd[0] == 'addr':
+                    if ro and rd and ro[0] == 'name' and rd[0] == 'addr' and not ro[1].startswith('.'):
                         votes[ro[1]][rd[1] - ro[2]] += 1
     names = {}
     for nm, c in votes.items():

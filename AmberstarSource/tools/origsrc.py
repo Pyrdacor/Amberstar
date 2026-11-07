@@ -174,7 +174,7 @@ def norm_operand(o, side):
             return (str(v) if v is not None else '?'), None
         v = evaluate(expr)
         if v is not None: return str(v), None
-        m = re.fullmatch(r'([A-Za-z_][\w.]*)(?:([+-])(.+))?', expr)
+        m = re.fullmatch(r'([A-Za-z_.][\w.]*)(?:([+-])(.+))?', expr)
         if m:
             add = 0
             if m.group(3):
@@ -236,6 +236,9 @@ def norm_instr(mn, ops, side):
         if BRANCH.match(base) and r is None and side == 'o' and n == '?':
             n = 'S'
         nops.append(n); refs.append(r)
+    # jsr/jmp to a label and bsr/bra are the same (the assembler of the program turned one into the other)
+    if base in ('jsr', 'jmp') and len(nops) == 1 and nops[0] == 'S':
+        base = 'bsr' if base == 'jsr' else 'bra'
     full = base + ('.' + size if size else '') + ' ' + ','.join(nops)
     shape = base + ('.' + size if size else '') + ' ' + ','.join(re.sub(r'-?\d+', 'N', x) for x in nops)
     return full, shape, refs

@@ -71,7 +71,7 @@ T_000d6:
 	bsr.w	Push_PA
 	bsr.w	T_00194
 	bsr.w	T_07200
-	bsr.w	T_002bc
+	bsr.w	Restore_game
 	bsr.w	Update_status_block
 	jsr	Switch_screen
 	jsr	Copy_screen
@@ -169,31 +169,32 @@ T_0029c:
 	movea.l	Off_screen,a6
 	jsr	Draw_box
 	rts
-T_002bc:
-	movem.l	d0/d7/a0-a2,-(a7)
-	bsr.w	T_00312
+; ---- Restore_game (original source: MAIN/TEST.ASM)
+Restore_game:
+	movem.l	d0/d7/a0-a2,-(sp)
+	bsr.w	Load_party_data
 	move.w	Travel_mode,d0
 	bsr.w	Set_new_travel_mode
 	lea.l	Member_1_nr,a1
 	lea.l	Chard_ptrs,a2
-	moveq	#5,d7
-T_002dc:
+	moveq.l	#5,d7
+.Loop:
 	move.w	(a1)+,d0
-	beq.b	T_002ee
+	beq.s	.Next
 	lea.l	Chard_filename,a0
 	jsr	Load_subfile
 	move.l	a0,(a2)
-T_002ee:
-	addq.l	#$4,a2
-	dbra	d7,T_002dc
+.Next:
+	addq.l	#4,a2
+	dbra	d7,.Loop
 	lea.l	Chard_ptrs,a0
 	move.w	Active_member,d0
 	add.w	d0,d0
 	add.w	d0,d0
-	move.l	-$4(a0,d0.w),Current_active_char_data
-	movem.l	(a7)+,d0/d7/a0-a2
-	rts
-T_00312:
+	move.l	-4(a0,d0.w),Current_active_char_data
+	movem.l	(sp)+,d0/d7/a0-a2
+	rts	
+Load_party_data:
 	movem.l	d0/d7/a0-a1,-(a7)
 	lea.l	D_2f26a,a0
 	jsr	T_1b786
@@ -301,7 +302,7 @@ T_00440:
 	move.w	d0,Travel_mode
 	cmpi.b	#$1,Current_map_type
 	bne.b	T_00454
-	bsr.w	T_02754
+	bsr.w	Set_spell_area
 T_00454:
 	cmpi.w	#$5,d0
 	smi.b	D_1e1fa
@@ -317,26 +318,27 @@ T_0047c:
 	rts
 T_00480:
 	dc.b	$00,$04,$00,$02,$00,$03,$00,$02,$00,$04,$00,$01,$00,$01
+; ---- Member_left (original source: MAIN/TEST.ASM)
 Member_left:
-	andi.l	#$ff00,d0
-	beq.b	T_004cc
-	lsr.w	#$6,d0
+	andi.l	#$0000ff00,d0
+	beq.s	.Exit
+	lsr.w	#6,d0
 	move.w	d0,d1
 	lea.l	Chard_ptrs,a0
-	move.l	-$4(a0,d0.w),d0
-	beq.b	T_004cc
-	movea.l	d0,a0
-	move.w	$3a(a0),d0
-	andi.w	#$e486,d0
-	bne.b	T_004cc
-	lsr.w	#$2,d1
+	move.l	-$4(a0,d0.w),d0	; CHANGE: was "movea.l -4(a0,d0.w),a0"
+	beq.b	.Exit	; CHANGE: added
+	movea.l	d0,a0	; CHANGE: added
+	move.w	Body_conditions(a0),d0
+	andi.w	#$e486,d0	; CHANGE: was "andi.w #$e506,d0"
+	bne.s	.Exit
+	lsr.w	#2,d1
 	move.w	d1,Active_member
 	lea.l	Chard_ptrs,a0
 	add.w	d1,d1
 	add.w	d1,d1
-	move.l	-$4(a0,d1.w),Current_active_char_data
-T_004cc:
-	rts
+	move.l	-4(a0,d1.w),Current_active_char_data
+.Exit:
+	rts	
 T_004ce:
 	movem.l	d0/a0,-(a7)
 	andi.l	#$ff00,d0
@@ -458,7 +460,7 @@ T_005f0:
 	tst.b	(a0)
 	beq.b	T_00604
 	move.w	(a1),d0
-	bsr.w	T_00656
+	bsr.w	Display_damage
 	subq.b	#$1,(a0)
 	bne.b	T_00604
 	move.w	d7,d0
@@ -494,7 +496,7 @@ T_00646:
 	bmi.b	T_00634
 	movem.l	(a7)+,d0/d7/a0-a1/a6
 	rts
-T_00656:
+Display_damage:
 	movem.l	d0-d2/d6-d7/a0,-(a7)
 	lea.l	Status_PA,a0
 	bsr.w	Push_PA
@@ -636,6 +638,7 @@ ActSel_ModInit:
 	move.w	Nr_of_chars,d2
 	lea.l	Code0006Sys,a1
 	bsr.w	Prepare_text_block
+HearTxtW_ModInit:
 	move.w	Lines_in_text,d0
 	mulu.w	#$7,d0
 	moveq	#15,d3
@@ -727,7 +730,7 @@ T_009a8:
 	jsr	Load_80x80_picture
 	bsr.w	T_00208
 	movea.l	Mapd_ptr,a0
-	addq.w	#$1,B_59358
+	addq.w	#$1,Nr_travelled_days
 	move.w	Day,d0
 	addq.w	#$1,d0
 	move.w	d0,Day
@@ -743,9 +746,9 @@ T_009a8:
 	sub.w	d1,d0
 	bls.b	T_00a16
 	move.w	d0,Month
-	addq.w	#$1,B_59348
+	addq.w	#$1,Year
 	addq.w	#$1,Time_data_year
-	bsr.w	T_066c2
+	bsr.w	Every_year
 T_00a16:
 	move.w	#$7,Hour
 	move.w	#$14,Minute
@@ -776,7 +779,7 @@ T_00a72:
 T_00a82:
 	clr.w	(a0)+
 	dbra	d7,T_00a82
-	sf.b	B_592dc
+	sf.b	First
 	sf.b	Which_CIL
 	sf.b	Battling
 	sf.b	Party_invisible
@@ -988,7 +991,7 @@ T_00e1a:
 T_00e2a:
 	clr.w	(a0)+
 	dbra	d7,T_00e2a
-	sf.b	B_592dc
+	sf.b	First
 	sf.b	Which_CIL
 	sf.b	Battling
 	sf.b	Party_invisible
@@ -1244,28 +1247,28 @@ T_0118a:
 	lea.l	D_2e884,a0
 	jsr	DI_Print
 	move.w	Map_nr,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e894,a0
 	jsr	DI_Print
 	move.w	Map_Xcoord,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e8a4,a0
 	jsr	DI_Print
 	move.w	Map_Ycoord,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	lea.l	D_2e8b4,a0
 	jsr	DI_Print
 	move.w	View_direction,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e8c6,a0
 	jsr	DI_Print
 	move.w	Travel_mode,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	cmpi.b	#$1,Current_map_type
 	bne.b	T_012a4
@@ -1273,50 +1276,50 @@ T_0118a:
 	lea.l	D_2e8d8,a0
 	jsr	DI_Print
 	move.w	World_X,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e8e3,a0
 	jsr	DI_Print
 	move.w	World_Y,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 T_012a4:
 	jsr	DI_Carriage_return
 	lea.l	D_2e8ee,a0
 	jsr	DI_Print
-	move.w	B_59348,d0
-	jsr	T_1c30e
+	move.w	Year,d0
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e8f8,a0
 	jsr	DI_Print
 	move.w	Month,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e902,a0
 	jsr	DI_Print
 	move.w	Day,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e90c,a0
 	jsr	DI_Print
 	move.w	Hour,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e916,a0
 	jsr	DI_Print
 	move.w	Minute,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e920,a0
 	jsr	DI_Print
 	move.w	Frame,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	lea.l	D_2e92a,a0
 	jsr	DI_Print
 	move.w	Nr_members,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	lea.l	D_2e948,a0
@@ -1347,7 +1350,7 @@ T_013ba:
 	lea.l	D_2e979,a0
 	jsr	DI_Print
 	move.l	Size_of_free_memory,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	move.l	B_5da0c,d0
 	sub.l	Size_of_free_memory,d0
@@ -1355,24 +1358,24 @@ T_013ba:
 	lea.l	D_2e998,a0
 	jsr	DI_Print
 	move.l	d0,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	movea.l	B_5bea4,a1
 	lea.l	D_2e9b7,a0
 	jsr	DI_Print
 	move.l	$c(a1),d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e9d6,a0
 	jsr	DI_Print
 	move.l	$14(a1),d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	lea.l	D_2e9f5,a0
 	jsr	DI_Print
 	move.l	$1c(a1),d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	move.l	#$100,d0
@@ -1382,14 +1385,14 @@ T_013ba:
 	lea.l	D_2ea14,a0
 	jsr	DI_Print
 	move.l	d0,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	add.l	d1,d0
 	lea.l	D_2ea33,a0
 	jsr	DI_Print
 	move.l	d0,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	lea.l	D_2ea52,a0
@@ -1415,7 +1418,7 @@ T_01516:
 	lea.l	D_2ea89,a0
 	jsr	DI_Print
 	move.w	d7,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	movea.l	Modifications_ptr,a1
@@ -1424,19 +1427,19 @@ T_0157c:
 	lea.l	D_2eaa4,a0
 	jsr	DI_Print
 	move.w	(a1)+,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	lea.l	D_2eaa7,a0
 	jsr	DI_Print
 	move.b	(a1)+,d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	lea.l	D_2eaa9,a0
 	jsr	DI_Print
 	move.b	(a1)+,d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	lea.l	D_2eaab,a0
 	jsr	DI_Print
 	move.w	(a1)+,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 T_015d2:
 	dbra	d7,T_0157c
@@ -1505,11 +1508,11 @@ T_016bc:
 	lea.l	D_2eb1a,a0
 	jsr	DI_Print
 	move.l	$cc(a1),d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 T_01714:
 	lea.l	D_2eb37,a0
-	jsr	T_1c210
+	jsr	DI_Input
 	tst.l	d0
 	bmi.b	T_0172a
 	beq.b	T_01714
@@ -1542,16 +1545,16 @@ T_0175e:
 	jsr	DI_Carriage_return
 T_01796:
 	lea.l	D_2eb5d,a0
-	jsr	T_1c210
+	jsr	DI_Input
 	tst.l	d0
 	bmi.b	T_017ea
 	beq.b	T_01796
-	move.w	d0,B_52f3e
+	move.w	d0,New_map
 	jsr	T_1c15e
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 	bsr.w	Exit_map
-	move.w	B_52f3e,Map_nr
+	move.w	New_map,Map_nr
 	move.w	#$7,Map_Xcoord
 	move.w	#$7,Map_Ycoord
 	move.w	#$0,View_direction
@@ -1575,7 +1578,7 @@ T_017fc:
 	jsr	DI_Print
 	jsr	DI_Carriage_return
 	lea.l	D_2eb84,a0
-	jsr	T_1c210
+	jsr	DI_Input
 	jsr	DI_Carriage_return
 	tst.w	d0
 	bmi.w	T_019a0
@@ -1680,17 +1683,19 @@ T_019b2:
 	beq.b	T_019d4
 	moveq	#20,d0
 	bsr.w	Delay
+; ---- Status_F0 (original source: MAIN/STATUS.ASM)
+Status_F0:
 	move.w	Travel_mode,d0
 	tst.w	d0
-	beq.b	T_019ce
-	moveq	#0,d0
-	bra.b	T_019d0
-T_019ce:
-	moveq	#6,d0
-T_019d0:
+	beq.s	.On
+	moveq.l	#0,d0
+	bra.s	.Exit
+.On:
+	moveq.l	#6,d0
+.Exit:
 	bsr.w	Set_new_travel_mode
-T_019d4:
-	rts
+	rts	
+T_019d4	equ	Status_F0+20
 T_019d6:
 	tst.b	D_1dc92
 	beq.w	T_01af8
@@ -1744,12 +1749,12 @@ T_01a36:
 	lea.l	D_2ec67,a0
 	jsr	DI_Print
 	move.l	d0,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ec7c,a0
 	jsr	DI_Print
 	move.l	d1,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	movea.l	(a7)+,a0
@@ -1832,11 +1837,11 @@ T_01bb2:
 	lea.l	D_2ecc5,a0
 	jsr	DI_Print
 	move.w	$90(a1),d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 T_01c0c:
 	lea.l	D_2ecdb,a0
-	jsr	T_1c210
+	jsr	DI_Input
 	tst.l	d0
 	bmi.b	T_01c36
 	beq.b	T_01c0c
@@ -1869,42 +1874,42 @@ T_01c48:
 	lea.l	D_2ed06,a0
 	jsr	DI_Print
 	move.b	(a1),d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed10,a0
 	jsr	DI_Print
 	move.b	$1(a1),d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed1a,a0
 	jsr	DI_Print
 	move.b	$2(a1),d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed24,a0
 	jsr	DI_Print
 	move.b	$3(a1),d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed2e,a0
 	jsr	DI_Print
 	move.b	$4(a1),d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed38,a0
 	jsr	DI_Print
 	move.w	$6(a1),d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed42,a0
 	jsr	DI_Print
 	move.w	$8(a1),d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 	lea.l	D_2ed4c,a0
 	jsr	DI_Print
 	move.b	$5(a1),d0
-	jsr	T_1c2f4
+	jsr	DI_Decb_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
 	lea.l	D_2ed56,a0
@@ -1926,7 +1931,7 @@ T_01d8e:
 	lea.l	D_2ed71,a0
 	jsr	DI_Print
 	move.w	Active_member,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 	jsr	Wait_4_key
 	jsr	T_1c15e
 	movem.l	(a7)+,d0-d7/a0-a6
@@ -1947,7 +1952,7 @@ T_01e0a:
 	move.l	$0(a1),d0
 	jsr	T_1c2de
 	move.l	$4(a1),d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	lea.l	Memory_types,a3
 	moveq	#127,d0
 	and.b	$8(a1),d0
@@ -1961,7 +1966,7 @@ T_01e0a:
 	move.w	$a(a1),d0
 	addq.w	#$1,d0
 	move.w	d0,d0
-	jsr	T_1c30e
+	jsr	DI_Decw_print
 T_01e54:
 	jsr	DI_Carriage_return
 T_01e5a:
@@ -1987,7 +1992,7 @@ T_01e86:
 	lea.l	D_2ed96,a0
 	jsr	DI_Print
 	move.l	d0,d0
-	jsr	T_1c326
+	jsr	DI_Decl_print
 	bra.b	T_01ec4
 T_01eb8:
 	lea.l	D_2eda4,a0
@@ -2026,10 +2031,10 @@ T_01f20:
 	moveq	#1,d0
 T_01f22:
 	move.b	d0,Current_map_type
-	tst.b	B_592dc
+	tst.b	First
 	bne.b	T_01f3a
 	bsr.w	Init_time
-	st.b	B_592dc
+	st.b	First
 T_01f3a:
 	bsr.w	T_01ff6
 	lea.l	T_01f56(pc),a0
@@ -2227,7 +2232,7 @@ Recalc_random:
 	move.b	d0,1(a0)
 	move.l	(sp)+,d0
 	rts	
-T_021de:
+Before_move:
 	movem.l	d0/a0,-(a7)
 	tst.b	B_592dd
 	beq.b	T_021f2
@@ -2238,7 +2243,7 @@ T_021f2:
 	bsr.w	T_01ff6
 	movem.l	(a7)+,d0/a0
 	rts
-T_021fc:
+After_move:
 	movem.l	d0-d1/d7/a0-a1,-(a7)
 	st.b	New_move
 	move.w	#$0,Frame
@@ -2304,7 +2309,7 @@ T_022a0:
 	bpl.b	T_022ca
 	bset	#$1,$3a(a1)
 	move.w	d7,d0
-	bsr.w	T_07e22
+	bsr.w	Do_damage
 T_022ca:
 	addq.l	#$4,a0
 	addq.w	#$1,d7
@@ -2357,14 +2362,14 @@ T_0232e:
 	swap	d1
 	addq.w	#$1,d1
 	move.w	d7,d0
-	bsr.w	T_07e22
+	bsr.w	Do_damage
 T_02364:
 	addq.l	#$4,a0
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
 	bmi.b	T_0232e
 T_0236e:
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	tst.w	B_5932e
 	beq.w	T_02424
 	cmpi.w	#$5,Travel_mode
@@ -2396,7 +2401,7 @@ T_0236e:
 	jsr	Switch_screen
 T_023da:
 	st.b	B_57c61
-	bsr.w	T_07b76
+	bsr.w	Handle_event
 	bra.b	T_02440
 T_023e6:
 	lea.l	D_26358,a0
@@ -2431,7 +2436,7 @@ T_02454:
 	move.w	Mouse_direction,d0
 	add.w	d0,d0
 	add.w	d0,d0
-	movea.l	B_57c6c,a0
+	movea.l	Mousemove_ptr,a0
 	movea.l	(a0,d0.w),a0
 	jsr	(a0)
 	rts
@@ -2626,42 +2631,42 @@ Seek_transport:
 .Exit:
 	movem.l	(sp)+,d2/d3/d7/a0/a1
 	rts	
-T_026f0:
-	movem.l	a0-a1,-(a7)
+; ---- Update_map_CIL (original source: MAIN/MAP/MAP.ASM)
+Update_map_CIL:
+	movem.l	a0/a1,-(sp)
 	tst.b	Which_CIL
-	bne.b	T_0270e
+	bne.s	.Second
 	movea.l	First_CIL_ptr,a0
 	lea.l	Map_CIL_evaluate,a1
 	bsr.w	Update_control_icons
-	bra.b	T_0271e
-T_0270e:
+	bra.s	.Exit
+.Second:
 	lea.l	Second_CIL,a0
 	lea.l	Second_CIL_evaluate,a1
 	bsr.w	Update_control_icons
-T_0271e:
-	movem.l	(a7)+,a0-a1
-	rts
-; ---- Set_spell_area (original source: MAIN/MAP/MAP.ASM)
-Set_spell_area:
-	movem.l	d0/a0,-(sp)
-	movea.l	Mapd_ptr,a0
-	move.b	Map_special(a0),d0
-	btst	#5,d0
-	beq.s	.No_W
-	moveq.l	#0,d0
-	bra.s	.Exit
-.No_W:
-	btst	#6,d0
-	beq.s	.No_C
-	moveq.l	#1,d0
-	bra.s	.Exit
-.No_C:
-	moveq.l	#2,d0
 .Exit:
-	move.w	d0,Spell_area_type
-	movem.l	(sp)+,d0/a0
+	movem.l	(sp)+,a0/a1
 	rts	
-T_02754:
+T_02724:
+	movem.l	d0/a0,-(a7)
+	movea.l	Mapd_ptr,a0
+	move.b	$5(a0),d0
+	btst	#$5,d0
+	beq.b	T_0273c
+	moveq	#0,d0
+	bra.b	T_02748
+T_0273c:
+	btst	#$6,d0
+	beq.b	T_02746
+	moveq	#1,d0
+	bra.b	T_02748
+T_02746:
+	moveq	#2,d0
+T_02748:
+	move.w	d0,Spell_area_type
+	movem.l	(a7)+,d0/a0
+	rts
+Set_spell_area:
 	movem.l	d0/a0,-(a7)
 	movea.l	Mapd_ptr,a0
 	cmpi.w	#$41,Map_nr
@@ -2724,7 +2729,7 @@ T_0280e:
 T_02844:
 	movem.l	(a7)+,d0-d1/a0
 	rts
-T_0284a:
+Build_2D_map:
 	movem.l	d0-d7/a0-a6,-(a7)
 	bsr.w	M2_time_evaluate
 	move.w	Mapbuf_X,d0
@@ -2817,12 +2822,12 @@ T_02952:
 	movea.l	Icondata_ptr,a0
 	cmpi.w	#$5,Travel_mode
 	bmi.b	T_02984
-	bsr.w	T_02a12
+	bsr.w	Display_sky_icons
 	bsr.w	Display_party_icon
 	bra.b	T_0298c
 T_02984:
 	bsr.w	Display_party_icon
-	bsr.w	T_02a12
+	bsr.w	Display_sky_icons
 T_0298c:
 	bsr.w	Display_night_circle
 T_02990:
@@ -2858,7 +2863,7 @@ Get_hashable_number:
 	sub.w	Buffer_X,d5
 	subq.w	#1,d5
 	rts	
-T_02a12:
+Display_sky_icons:
 	movem.l	d0-d3/d5-d7/a0-a3,-(a7)
 	lea.l	Underlay_buf,a1
 	lea.l	Overlay_buf,a2
@@ -3210,163 +3215,166 @@ Get_2D_icon_status:
 .Exit:
 	movem.l	(sp)+,a0/a1
 	rts	
-T_02dba:
-	movem.l	d0-d3/a0,-(a7)
+; ---- Movement_check_2D (original source: MAIN/MAP/2DMAP.ASM)
+Movement_check_2D:
+	movem.l	d0-d3/a0,-(sp)
+	tst.b	Current_map_type	; CHANGE: added
+	bne.b	.c_02df0	; CHANGE: added
+	cmpi.w	#$6,d0	; CHANGE: added
+	bmi.b	.c_02dea	; CHANGE: added
+	cmpi.w	#$6,d1	; CHANGE: added
+	bmi.b	.c_02dea	; CHANGE: added
+	move.w	Width_of_map,d2	; CHANGE: added
+	subq.w	#$5,d2	; CHANGE: added
+	cmp.w	d0,d2	; CHANGE: added
+	bmi.b	.c_02dea	; CHANGE: added
+	move.w	Height_of_map,d2	; CHANGE: added
+	subq.w	#$5,d2	; CHANGE: added
+	cmp.w	d1,d2	; CHANGE: added
+	bpl.b	.c_02df0	; CHANGE: added
+.c_02dea:
+	moveq	#-1,d3	; CHANGE: added
+	bra.w	.Exit	; CHANGE: added
+.c_02df0:
+	cmpi.w	#6,Travel_mode
+	bne.s	.Normal
+	moveq.l	#0,d3
+	bra.s	.Exit
+.Normal:
+	moveq.l	#-1,d3
+	moveq.l	#0,d2
 	tst.b	Current_map_type
-	bne.b	T_02df0
-	cmpi.w	#$6,d0
-	bmi.b	T_02dea
-	cmpi.w	#$6,d1
-	bmi.b	T_02dea
-	move.w	Width_of_map,d2
-	subq.w	#$5,d2
-	cmp.w	d0,d2
-	bmi.b	T_02dea
-	move.w	Height_of_map,d2
-	subq.w	#$5,d2
-	cmp.w	d1,d2
-	bpl.b	T_02df0
-T_02dea:
-	moveq	#-1,d3
-	bra.w	T_02e78
-T_02df0:
-	cmpi.w	#$6,Travel_mode
-	bne.b	T_02dfe
-	moveq	#0,d3
-	bra.b	T_02e78
-T_02dfe:
-	moveq	#-1,d3
-	moveq	#0,d2
-	tst.b	Current_map_type
-	beq.b	T_02e10
+	beq.s	.Skip
 	move.w	Travel_mode,d2
-T_02e10:
-	addq.w	#$8,d2
+.Skip:
+	addq.w	#8,d2
 	sub.w	Map_Xcoord,d0
 	sub.w	Map_Ycoord,d1
 	add.w	Mapbuf_X,d0
 	add.w	Mapbuf_Y,d1
-	lea.l	B_52f66,a0
-	mulu.w	#$d,d1
+	lea.l	Underlay_buf+14,a0
+	mulu.w	#13,d1
 	add.w	d0,d1
 	adda.w	d1,a0
-	moveq	#0,d0
+	moveq.l	#0,d0
 	move.b	(a0),d0
-	moveq	#0,d1
-	move.b	$8f(a0),d1
+	moveq.l	#0,d1
+	move.b	143(a0),d1
 	movea.l	Iconstats_ptr,a0
 	add.w	d0,d0
 	add.w	d0,d0
-	move.l	-$4(a0,d0.w),d0
+	move.l	-4(a0,d0.w),d0
 	tst.w	d1
-	beq.b	T_02e6e
+	beq.s	.Underlay
 	add.w	d1,d1
 	add.w	d1,d1
-	move.l	-$4(a0,d1.w),d1
-	btst	#$5,d1
-	bne.b	T_02e6e
-	btst	#$7,d1
-	bne.b	T_02e78
-	btst	d2,d1
-	seq.b	d3
-	bra.b	T_02e78
-T_02e6e:
-	btst	#$7,d0
-	bne.b	T_02e78
-	btst	d2,d0
-	seq.b	d3
-T_02e78:
+	move.l	-4(a0,d1.w),d1
+	btst.l	#5,d1
+	bne.s	.Underlay
+	btst.l	#7,d1
+	bne.s	.Exit
+	btst.l	d2,d1
+	seq	d3
+	bra.s	.Exit
+.Underlay:
+	btst.l	#7,d0
+	bne.s	.Exit
+	btst.l	d2,d0
+	seq	d3
+.Exit:
 	tst.b	d3
-	movem.l	(a7)+,d0-d3/a0
-	rts
+	movem.l	(sp)+,d0-d3/a0
+	rts	
+; ---- Display_night_circle (original source: MAIN/MAP/2DMAP.ASM)
 Display_night_circle:
-	movem.l	d0-d7/a0-a1/a5,-(a7)
-	cmpi.w	#$6,Travel_mode
-	beq.w	T_02f50
+	movem.l	d0-d7/a0/a1/a5,-(sp)
+	cmpi.w	#6,Travel_mode
+	beq.w	.Exit
 	lea.l	Graphics_buf,a5
-	move.w	#$68,d5
+	move.w	#13*8,d5
 	move.w	Current_radius,d1
-	bne.b	T_02eac
+	bne.s	.Ok
 	tst.w	New_radius
-	beq.w	T_02f50
-T_02eac:
+	beq.w	.Exit
+.Ok:
 	cmp.w	New_radius,d1
-	beq.b	T_02ed0
-	bmi.b	T_02ec0
-	subq.w	#$4,d1
+	beq.s	.Continue
+	bmi.s	.Up
+	subq.w	#$4,d1	; CHANGE: was "subq.w #2,d1"
 	move.w	d1,Current_radius
-	bra.b	T_02ed0
-T_02ec0:
-	addq.w	#$4,d1
-	cmpi.w	#$c8,d1
-	bhi.w	T_02f50
+	bra.s	.Continue
+.Up:
+	addq.w	#$4,d1	; CHANGE: was ".Up: addq.w #2,d1"
+	cmpi.w	#Max_radius,d1
+	bhi.w	.Exit
 	move.w	d1,Current_radius
-T_02ed0:
+.Continue:
 	move.w	Buffer_X,d6
 	move.w	Buffer_Y,d7
-	addq.w	#$1,d6
-	addq.w	#$1,d7
-	lsl.w	#$3,d6
-	lsl.w	#$3,d7
-	moveq	#0,d2
+	addq.w	#1,d6
+	addq.w	#1,d7
+	lsl.w	#3,d6
+	lsl.w	#3,d7
+	moveq.l	#0,d2
 	movea.l	a5,a0
 	move.w	d7,d0
 	sub.w	d1,d0
-	cmpi.w	#$af,d0
-	bhi.b	T_02f02
-	bra.b	T_02efe
-T_02ef4:
-	moveq	#12,d3
-T_02ef6:
+	cmpi.w	#175,d0
+	bhi.s	.Clip_1
+	bra.s	.Entry_1
+.Loop_1:
+	moveq.l	#12,d3
+.Loop_3a:
 	move.l	d2,(a0)+
 	move.l	d2,(a0)+
-	dbra	d3,T_02ef6
-T_02efe:
-	dbra	d0,T_02ef4
-T_02f02:
-	lea.l	$4780(a5),a0
-	move.w	#$b0,d0
+	dbra	d3,.Loop_3a
+.Entry_1:
+	dbra	d0,.Loop_1
+.Clip_1:
+	lea.l	18304(a5),a0
+	move.w	#176,d0
 	sub.w	d1,d0
 	sub.w	d7,d0
-	cmpi.w	#$af,d0
-	bhi.b	T_02f24
-	bra.b	T_02f20
-T_02f16:
-	moveq	#12,d3
-T_02f18:
+	cmpi.w	#175,d0
+	bhi.s	.Clip_2
+	bra.s	.Entry_2
+.Loop_2:
+	moveq.l	#12,d3
+.Loop_3b:
 	move.l	d2,-(a0)
 	move.l	d2,-(a0)
-	dbra	d3,T_02f18
-T_02f20:
-	dbra	d0,T_02f16
-T_02f24:
-	moveq	#0,d0
-	moveq	#0,d2
+	dbra	d3,.Loop_3b
+.Entry_2:
+	dbra	d0,.Loop_2
+.Clip_2:
+	moveq.l	#0,d0
+	moveq.l	#0,d2
 	move.w	d1,d3
-	subq.w	#$1,d3
+	subq.w	#1,d3
 	add.w	d3,d3
 	move.w	d1,d4
-T_02f30:
-	exg.l	d1,d0
-	bsr.w	T_02f56
-	exg.l	d1,d0
-	addq.w	#$1,d0
+.Again:
+	exg.l	d1,d0	; CHANGE: was ".Again: exg.l d0,d1"
+	bsr.w	Draw_four_lines
+	exg.l	d1,d0	; CHANGE: was "exg.l d0,d1"
+	addq.w	#1,d0
 	add.w	d2,d4
-	addq.w	#$2,d2
+	addq.w	#2,d2
 	tst.w	d4
-	bmi.b	T_02f4c
-	bsr.w	T_02f56
-	subq.w	#$1,d1
+	bmi.s	.Skip
+	bsr.w	Draw_four_lines
+	subq.w	#1,d1
 	sub.w	d3,d4
-	subq.w	#$2,d3
-T_02f4c:
+	subq.w	#2,d3
+.Skip:
 	cmp.w	d1,d0
-	bls.b	T_02f30
-T_02f50:
-	movem.l	(a7)+,d0-d7/a0-a1/a5
-	rts
-T_02f56:
-	movem.l	d0-d4/d6,-(a7)
+	bls.s	.Again
+.Exit:
+	movem.l	(sp)+,d0-d7/a0/a1/a5
+	rts	
+; ---- Draw_four_lines (original source: MAIN/MAP/2DMAP.ASM)
+Draw_four_lines:
+	movem.l	d0-d4/d6,-(sp)
 	move.w	d6,d2
 	add.w	d0,d2
 	sub.w	d6,d0
@@ -3377,58 +3385,59 @@ T_02f56:
 	neg.w	d1
 	add.w	d7,d1
 	bsr.w	Draw_two_lines
-	movem.l	(a7)+,d0-d4/d6
-	rts
+	movem.l	(sp)+,d0-d4/d6
+	rts	
+; ---- Draw_two_lines (original source: MAIN/MAP/2DMAP.ASM)
 Draw_two_lines:
-	cmpi.w	#$af,d1
-	bhi.b	T_02fe4
-	moveq	#0,d6
+	cmpi.w	#175,d1
+	bhi.s	.Exit
+	moveq.l	#0,d6
 	movea.l	a5,a0
 	move.w	d1,d3
 	mulu.w	d5,d3
 	adda.w	d3,a0
 	movea.l	a0,a1
 	adda.w	d5,a1
-	cmpi.w	#$cf,d0
-	bhi.b	T_02fb6
+	cmpi.w	#207,d0
+	bhi.s	.Skip
 	move.w	d0,d3
-	lsr.w	#$4,d3
-	bra.b	T_02f9c
-T_02f98:
+	lsr.w	#4,d3
+	bra.s	.Entry_1
+.Loop_1:
 	move.l	d6,(a0)+
 	move.l	d6,(a0)+
-T_02f9c:
-	dbra	d3,T_02f98
+.Entry_1:
+	dbra	d3,.Loop_1
 	move.w	d0,d4
-	andi.w	#$f,d4
-	move.l	#$ffff,d3
+	andi.w	#$000f,d4
+	move.l	#$0000ffff,d3
 	ror.l	d4,d3
 	and.w	d3,(a0)+
-	and.w	d3,(a0)+
-	and.w	d3,(a0)+
-	and.w	d3,(a0)+
-T_02fb6:
-	cmpi.w	#$cf,d2
-	bhi.b	T_02fe4
-	move.w	#$cf,d3
+	and.w	d3,(a0)+	; CHANGE: added
+	and.w	d3,(a0)+	; CHANGE: added
+	and.w	d3,(a0)+	; CHANGE: added
+.Skip:
+	cmpi.w	#207,d2
+	bhi.s	.Exit
+	move.w	#207,d3
 	sub.w	d2,d3
-	lsr.w	#$4,d3
-	bra.b	T_02fca
-T_02fc6:
+	lsr.w	#4,d3
+	bra.s	.Entry_2
+.Loop_2:
 	move.l	d6,-(a1)
 	move.l	d6,-(a1)
-T_02fca:
-	dbra	d3,T_02fc6
+.Entry_2:
+	dbra	d3,.Loop_2
 	move.w	d2,d4
-	andi.w	#$f,d4
+	andi.w	#$000f,d4
 	move.l	#$ffff0000,d3
 	ror.l	d4,d3
 	and.w	d3,-(a1)
-	and.w	d3,-(a1)
-	and.w	d3,-(a1)
-	and.w	d3,-(a1)
-T_02fe4:
-	rts
+	and.w	d3,-(a1)	; CHANGE: added
+	and.w	d3,-(a1)	; CHANGE: added
+	and.w	d3,-(a1)	; CHANGE: added
+.Exit:
+	rts	
 ; ---- Cut_from_3D_map (original source: MAIN/MAP/3DMAP.ASM)
 Cut_from_3D_map:
 	movem.l	d0-d4/d7/a0-a3,-(sp)
@@ -3477,7 +3486,7 @@ M3_Dark_check:
 .Exit:
 	movem.l	(sp)+,d0/a0
 	rts	
-T_03088:
+Build_3D_map:
 	movem.l	d0-d2/d6-d7/a0-a6,-(a7)
 	bsr.w	M3_Dark_check
 	tst.b	Stygian
@@ -3494,7 +3503,7 @@ T_03088:
 	bra.w	T_031ea
 T_030be:
 	lea.l	Map_buffer_3D,a1
-	movea.l	B_57918,a2
+	movea.l	INB_ptr,a2
 	lea.l	Labblock_ptrs,a3
 	movea.l	Iconstats_ptr,a4
 	lea.l	Persons_buf_3D,a5
@@ -3512,7 +3521,7 @@ T_030fc:
 	cmpi.b	#$2,$1(a0)
 	bne.b	T_0313e
 	movem.l	d0/a0,-(a7)
-	movea.l	B_5791c,a0
+	movea.l	OUH_ptr,a0
 	move.b	-$1(a0,d0.w),d0
 	bsr.w	Get_ptr_to_labblock
 	bsr.w	Display_element
@@ -3542,7 +3551,7 @@ T_0315c:
 	cmpi.b	#$2,$1(a0)
 	bne.b	T_03192
 	movem.l	d0/a0,-(a7)
-	movea.l	B_5791c,a0
+	movea.l	OUH_ptr,a0
 	move.b	-$1(a0,d0.w),d0
 	bsr.w	Get_ptr_to_labblock
 	bsr.w	Display_element
@@ -3616,43 +3625,47 @@ Get_ptr_to_labblock:
 	movea.l	-4(a3,d1.w),a0
 	move.l	(sp)+,d1
 	rts	
+; ---- Display_element (original source: MAIN/MAP/3DMAP.ASM)
 Display_element:
-	movem.l	d0-d2/d7/a0-a1,-(a7)
-	moveq	#0,d1
-	move.b	$3(a0),d1
+	movem.l	d0-d2/d7/a0/a1,-(sp)
+	moveq.l	#0,d1
+	move.b	Block_animation(a0),d1
 	bsr.w	Get_current_anim_frame
-	lea.l	$48(a0),a1
-	moveq	#0,d0
-	move.b	$2(a0),d0
-	subq.w	#$1,d0
-	subq.w	#$1,d1
-	bmi.b	T_03276
-T_0326a:
+	lea.l	Block_elements(a0),a1
+	moveq.l	#0,d0
+	move.b	Block_number(a0),d0
+	subq.w	#1,d0
+	subq.w	#1,d1
+	bmi.s	.First_frame
+.Loop_1:
 	move.w	d0,d2
-T_0326c:
+.Loop_2:
 	adda.l	(a1)+,a1
-	dbra	d2,T_0326c
-	dbra	d1,T_0326a
-T_03276:
+	dbra	d2,.Loop_2
+	dbra	d1,.Loop_1
+.First_frame:
 	move.w	d7,d0
-	subq.w	#$2,d0
-	bmi.b	T_03282
-T_0327c:
+	subq.w	#2,d0
+	bmi.s	.First_size
+.Loop_3:
 	adda.l	(a1)+,a1
-	dbra	d0,T_0327c
-T_03282:
+	dbra	d0,.Loop_3
+.First_size:
 	add.w	d7,d7
-	move.w	$2(a0,d7.w),d0
-	move.w	$24(a0,d7.w),d1
-	lea.l	$4(a1),a0
+	move.w	Block_X_cor-2(a0,d7.w),d0
+	move.w	Block_Y_cor-2(a0,d7.w),d1
+	lea.l	4(a1),a0
 	bsr.w	Blit
-	movem.l	(a7)+,d0-d2/d7/a0-a1
-T_03298:
-	rts
+	movem.l	(sp)+,d0-d2/d7/a0/a1
+	rts	
+T_03299	equ	Display_element+77
+T_03298	equ	Display_element+76
+; ---- OD_Table (original source: MAIN/MAP/3DMAP.ASM)
 OD_Table:
-	dc.b	$01,$01,$01,$02,$02,$02,$03,$03,$03,$00,$00
-T_032a5:
-	dc.b	$04,$00,$08,$04,$00,$08,$04,$00,$08,$04,$00,$08,$04
+	dc.b	1,1,1,2,2,2,3,3,3,0,0,4
+	dc.b	0,8,4,0,8,4,0,8,4,0,8,4
+	even	
+T_032a5	equ	OD_Table+11
 ; ---- Display_object (original source: MAIN/MAP/3DMAP.ASM)
 Display_object:
 	movem.l	d0-d2/d6/d7/a0/a1,-(sp)
@@ -4105,18 +4118,16 @@ Blit_right:
 	unlk	a4
 	movem.l	(sp)+,d0-d7/a0-a4
 	rts	
-T_03718:
-	btst	#$1,Mouse_button_state
-	bne.b	T_03718
-; ---- D3_turnleft (original source: MAIN/MAP/3DMAP.ASM)
 D3_turnleft:
-	move.l	d0,-(sp)
+	btst	#$1,Mouse_button_state
+	bne.b	D3_turnleft
+	move.l	d0,-(a7)
 	move.w	View_direction,d0
-	subq.w	#1,d0
-	andi.w	#3,d0
+	subq.w	#$1,d0
+	andi.w	#$3,d0
 	move.w	d0,View_direction
-	move.l	(sp)+,d0
-	rts	
+	move.l	(a7)+,d0
+	rts
 T_0373a:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0373a
@@ -4129,53 +4140,58 @@ D3_turnright:
 	move.w	d0,View_direction
 	move.l	(sp)+,d0
 	rts	
-T_0375c:
-	move.l	a0,-(a7)
-	bsr.w	T_03718
+; ---- D3_fullturnleft (original source: MAIN/MAP/3DMAP.ASM)
+D3_fullturnleft:
+	move.l	a0,-(sp)
+	bsr.w	D3_turnleft
 	movea.l	Module_sp,a0
 	movea.l	(a0),a0
 	jsr	(a0)
 	jsr	Switch_screen
-	bsr.w	T_03718
-	movea.l	(a7)+,a0
-	rts
+	bsr.w	D3_turnleft
+	movea.l	(sp)+,a0
+	rts	
+; ---- D3_fullturnright (original source: MAIN/MAP/3DMAP.ASM)
 T_0377a:
-	move.l	a0,-(a7)
-	bsr.w	T_0373a
+D3_fullturnright:
+	move.l	a0,-(sp)
+	bsr.w	T_0373a	; CHANGE: was "jsr D3_turnright"
 	movea.l	Module_sp,a0
 	movea.l	(a0),a0
 	jsr	(a0)
 	jsr	Switch_screen
-	bsr.w	T_0373a
-	movea.l	(a7)+,a0
-	rts
-T_03798:
-	bsr.w	T_021de
-	movem.l	d0-d1,-(a7)
+	bsr.w	T_0373a	; CHANGE: was "jsr D3_turnright"
+	movea.l	(sp)+,a0
+	rts	
+; ---- D3_forward (original source: MAIN/MAP/3DMAP.ASM)
+D3_right:
+D3_left:
+D3_back:
+D3_forward:
+	bsr.w	Before_move
+	movem.l	d0/d1,-(sp)
 	move.w	View_direction,d1
 	add.w	d1,d1
-	move.b	T_037e8(pc,d1.w),d0
+	move.b	.Forward(pc,d1.w),d0
 	ext.w	d0
 	add.w	Map_Xcoord,d0
-	move.b	T_037e9(pc,d1.w),d1
+	move.b	.Forward+1(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
-	bsr.w	T_0392a
-	sne.b	Bumped
-	bne.b	T_037e2
+	bsr.w	Movement_check_3D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
-	bsr.w	T_021fc
-T_037e2:
-	movem.l	(a7)+,d0-d1
-	rts
-T_037e8:
-	dc.b	$00
-T_037e9:
-	dc.b	$ff,$01,$00,$00,$01,$ff,$00
+	bsr.w	After_move
+.Exit:
+	movem.l	(sp)+,d0/d1
+	rts	
+.Forward:
+	dc.b	0,-1,1,0,0,1,-1,0
 T_037f0:
-	bsr.w	T_021de
+	bsr.w	Before_move
 	movem.l	d0-d1,-(a7)
 	move.w	View_direction,d1
 	add.w	d1,d1
@@ -4185,13 +4201,13 @@ T_037f0:
 	move.b	T_03841(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
-	bsr.w	T_0392a
+	bsr.w	Movement_check_3D
 	sne.b	Bumped
 	bne.b	T_0383a
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
-	bsr.w	T_021fc
+	bsr.w	After_move
 T_0383a:
 	movem.l	(a7)+,d0-d1
 	rts
@@ -4200,7 +4216,7 @@ T_03840:
 T_03841:
 	dc.b	$00,$00,$ff,$01,$00,$00,$01
 T_03848:
-	bsr.w	T_021de
+	bsr.w	Before_move
 	movem.l	d0-d1,-(a7)
 	move.w	View_direction,d1
 	add.w	d1,d1
@@ -4210,13 +4226,13 @@ T_03848:
 	move.b	T_03899(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
-	bsr.w	T_0392a
+	bsr.w	Movement_check_3D
 	sne.b	Bumped
 	bne.b	T_03892
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
-	bsr.w	T_021fc
+	bsr.w	After_move
 T_03892:
 	movem.l	(a7)+,d0-d1
 	rts
@@ -4225,7 +4241,7 @@ T_03898:
 T_03899:
 	dc.b	$00,$00,$01,$ff,$00,$00,$ff
 T_038a0:
-	bsr.w	T_021de
+	bsr.w	Before_move
 	movem.l	d0-d1,-(a7)
 	move.w	View_direction,d1
 	add.w	d1,d1
@@ -4235,13 +4251,13 @@ T_038a0:
 	move.b	T_038f1(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
-	bsr.w	T_0392a
+	bsr.w	Movement_check_3D
 	sne.b	Bumped
 	bne.b	T_038ea
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
-	bsr.w	T_021fc
+	bsr.w	After_move
 T_038ea:
 	movem.l	(a7)+,d0-d1
 	rts
@@ -4267,64 +4283,65 @@ Get_3D_icon_status:
 .Exit:
 	movem.l	(sp)+,d1/a0/a1
 	rts	
-T_0392a:
-	movem.l	d0/d6-d7/a0,-(a7)
-	cmpi.w	#$6,d0
-	bmi.b	T_03952
-	cmpi.w	#$6,d1
-	bmi.b	T_03952
-	move.w	Width_of_map,d6
-	subq.w	#$5,d6
-	cmp.w	d0,d6
-	bmi.b	T_03952
-	move.w	Height_of_map,d6
-	subq.w	#$5,d6
-	cmp.w	d1,d6
-	bpl.b	T_03956
-T_03952:
-	moveq	#-1,d0
-	bra.b	T_039be
-T_03956:
+; ---- Movement_check_3D (original source: MAIN/MAP/3DMAP.ASM)
+Movement_check_3D:
+	movem.l	d0/d6/d7/a0,-(sp)
+	cmpi.w	#$6,d0	; CHANGE: added
+	bmi.b	.c_03952	; CHANGE: added
+	cmpi.w	#$6,d1	; CHANGE: added
+	bmi.b	.c_03952	; CHANGE: added
+	move.w	Width_of_map,d6	; CHANGE: added
+	subq.w	#$5,d6	; CHANGE: added
+	cmp.w	d0,d6	; CHANGE: added
+	bmi.b	.c_03952	; CHANGE: added
+	move.w	Height_of_map,d6	; CHANGE: added
+	subq.w	#$5,d6	; CHANGE: added
+	cmp.w	d1,d6	; CHANGE: added
+	bpl.b	.c_03956	; CHANGE: added
+.c_03952:
+	moveq	#-1,d0	; CHANGE: added
+	bra.b	.Exit	; CHANGE: added
+.c_03956:
 	move.w	d0,d6
-	cmpi.w	#$6,Travel_mode
-	bne.b	T_03966
-	moveq	#0,d0
-	bra.b	T_039be
-T_03966:
+	cmpi.w	#6,Travel_mode
+	bne.s	.Normal
+	moveq.l	#0,d0
+	bra.s	.Exit
+.Normal:
 	bsr.w	Get_3D_icon_status
-	btst	#$7,d0
-	bne.b	T_039be
+	btst.l	#7,d0
+	bne.s	.Exit
 	move.w	d6,d0
 	lea.l	VChar_data,a0
 	move.l	CD_value,d6
-	moveq	#0,d7
-T_03980:
+	moveq.l	#0,d7
+.Loop:
 	tst.w	(a0)
-	beq.b	T_039b0
+	beq.s	.Next
 	btst	d7,d6
-	bne.b	T_039b0
-	cmp.w	$8(a0),d0
-	bne.b	T_039b0
-	cmp.w	$a(a0),d1
-	bne.b	T_039b0
-	move.b	$2(a0),d0
-	beq.b	T_039be
+	bne.s	.Next
+	cmp.w	VChar_X(a0),d0
+	bne.s	.Next
+	cmp.w	VChar_Y(a0),d1
+	bne.s	.Next
+	move.b	VChar_icon(a0),d0
+	beq.s	.Exit
 	movea.l	Iconstats_ptr,a0
-	subq.w	#$1,d0
+	subq.w	#1,d0
 	add.w	d0,d0
 	add.w	d0,d0
-	move.l	(a0,d0.w),d0
-	btst	#$7,d0
-	bra.b	T_039be
-T_039b0:
-	lea.l	$14(a0),a0
-	addq.w	#$1,d7
-	cmpi.w	#$18,d7
-	bmi.b	T_03980
-	moveq	#0,d0
-T_039be:
-	movem.l	(a7)+,d0/d6-d7/a0
-	rts
+	move.l	0(a0,d0.w),d0
+	btst.l	#7,d0
+	bra.s	.Exit
+.Next:
+	lea.l	VData_length(a0),a0
+	addq.w	#1,d7
+	cmpi.w	#Max_chars,d7
+	bmi.s	.Loop
+	moveq.l	#0,d0
+.Exit:
+	movem.l	(sp)+,d0/d6/d7/a0
+	rts	
 ; ---- Blot_mirrored_unmasked_block (original source: MAIN/MAP/3DMAP.ASM)
 Blot_mirrored_unmasked_block:
 	movem.l	d2-d7/a0-a2,-(sp)
@@ -4374,6 +4391,7 @@ Blot_mirrored_unmasked_block:
 	dc.b	91,219,59,187,123,251,7,135,71,199,39,167,103,231,23,151,87,215,55,183,119,247,15,143,79,207,47
 	dc.b	175,111,239,31,159,95,223,63,191,127,255
 	even	
+T_03a1c	equ	Blot_mirrored_unmasked_block+88
 Prepare_3D_map:
 	movem.l	d0-d1/d7/a0-a3,-(a7)
 	lea.l	D_2f1ba,a0
@@ -4425,9 +4443,9 @@ T_03b74:
 	adda.w	d7,a0
 	adda.w	d7,a0
 	adda.w	d7,a0
-	move.l	a0,B_57918
+	move.l	a0,INB_ptr
 	adda.w	d7,a0
-	move.l	a0,B_5791c
+	move.l	a0,OUH_ptr
 	adda.w	d7,a0
 	move.l	a0,Lab_IC_ptr
 	adda.w	d7,a0
@@ -4525,40 +4543,43 @@ T_03d44:
 	jsr	(a0)
 	bsr.w	T_00208
 	bsr.w	W2_DisInit
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	rts
 	dc.b	$00,$00,$00,$04,$00,$00,$00,$08,$00,$00,$00,$00,$00,$00,$00,$0c
 T_03dc6:
-	dc.l	T_03dd6	; ori.b #$d6, d0
-	dc.l	T_03df6	; ori.b #$f6, d0
+	dc.l	Load_0	; ori.b #$d6, d0
+	dc.l	Load_3	; ori.b #$f6, d0
 	dc.l	T_03e18	; ori.b #$18, d0
-	dc.l	T_03e3a	; ori.b #$3a, d0
-T_03dd6:
-	movem.l	d2/d7/a2,-(a7)
-	subq.w	#$1,d1
-	bsr.w	T_0457a
+	dc.l	Load_2	; ori.b #$3a, d0
+; ---- Load_0 (original source: MAIN/MAP/2DWILD.ASM)
+Load_0:
+	movem.l	d2/d7/a2,-(sp)
+	subq.w	#1,d1
+	bsr.w	Load_submap
 	move.l	a0,(a1)
-	move.l	a2,$10(a1)
-	move.w	d2,$22(a1)
+	move.l	a2,16(a1)
+	move.w	d2,34(a1)
 	move.w	d2,d7
 	bsr.w	Make_modifications
-	movem.l	(a7)+,d2/d7/a2
-	rts
-T_03df6:
-	movem.l	d2/d7/a2,-(a7)
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$4(a1)
-	move.l	a2,$14(a1)
-	move.w	d2,$26(a1)
+	movem.l	(sp)+,d2/d7/a2
+	rts	
+; ---- Load_3 (original source: MAIN/MAP/2DWILD.ASM)
+Load_1:
+Load_3:
+	movem.l	d2/d7/a2,-(sp)
+	addq.w	#$1,d0	; CHANGE: was "addq.w #1,d1"
+	bsr.w	Load_submap
+	move.l	a0,$4(a1)	; CHANGE: was "move.l a0,12(a1)"
+	move.l	a2,$14(a1)	; CHANGE: was "move.l a2,16+12(a1)"
+	move.w	d2,$26(a1)	; CHANGE: was "move.w d2,34+12(a1)"
 	move.w	d2,d7
 	bsr.w	Make_modifications
-	movem.l	(a7)+,d2/d7/a2
-	rts
+	movem.l	(sp)+,d2/d7/a2
+	rts	
 T_03e18:
 	movem.l	d2/d7/a2,-(a7)
 	addq.w	#$1,d1
-	bsr.w	T_0457a
+	bsr.w	Load_submap
 	move.l	a0,$c(a1)
 	move.l	a2,$1c(a1)
 	move.w	d2,$2e(a1)
@@ -4566,39 +4587,40 @@ T_03e18:
 	bsr.w	Make_modifications
 	movem.l	(a7)+,d2/d7/a2
 	rts
-T_03e3a:
-	movem.l	d2/d7/a2,-(a7)
-	subq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$8(a1)
-	move.l	a2,$18(a1)
-	move.w	d2,$2a(a1)
+; ---- Load_2 (original source: MAIN/MAP/2DWILD.ASM)
+Load_2:
+	movem.l	d2/d7/a2,-(sp)
+	subq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,8(a1)
+	move.l	a2,16+8(a1)
+	move.w	d2,34+8(a1)
 	move.w	d2,d7
 	bsr.w	Make_modifications
-	movem.l	(a7)+,d2/d7/a2
-	rts
+	movem.l	(sp)+,d2/d7/a2
+	rts	
 W2_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
+	bsr.w	T_02724
 	bsr.w	Set_spell_area
-	bsr.w	T_02754
 	movea.l	Off_screen,a6
 	moveq	#1,d0
 	bsr.w	Show_layout
 	bsr.w	Print_headline
-	move.l	#D_1e19e,First_CIL_ptr
+	move.l	#C2_CIL,First_CIL_ptr
 	bsr.w	Handle_CIL
 	bsr.w	Show_control_icons
 	st.b	B_57c4c
 	bsr.w	W2_DisUpd
 	jsr	Switch_screen
 	jsr	Copy_screen
-	lea.l	D_2f286,a0
+	lea.l	Lay1_c1,a0
 	bsr.w	Set_layout_data
-	move.l	#D_1e1a8,B_57c6c
+	move.l	#D_1e1a8,Mousemove_ptr
 	movea.l	Icondata_ptr,a0
 	lea.l	$7d2(a0),a0
-	lea.l	B_57c74,a1
+	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
 T_03ed8:
@@ -4754,283 +4776,291 @@ T_040d2:
 	dc.l	Shift_DL	; ori.b #$c0, d0
 	dc.l	Shift_D	; ori.b #$5a, d0
 	dc.l	Shift_DR	; ori.b #$e4, d0
+; ---- Shift_UL (original source: MAIN/MAP/2DWILD.ASM)
 Shift_UL:
-	movea.l	$4(a1),a0
+	movea.l	4(a1),a0
 	jsr	Free_memory
-	movea.l	$8(a1),a0
+	movea.l	8(a1),a0
 	jsr	Free_memory
-	movea.l	$c(a1),a0
+	movea.l	12(a1),a0
 	jsr	Free_memory
-	movea.l	$14(a1),a0
+	movea.l	16+4(a1),a0
 	jsr	Free_memory
-	movea.l	$18(a1),a0
+	movea.l	16+8(a1),a0
 	jsr	Free_memory
-	movea.l	$1c(a1),a0
+	movea.l	16+12(a1),a0
 	jsr	Free_memory
-	move.l	(a1),$c(a1)
-	move.l	$10(a1),$1c(a1)
-	move.w	$22(a1),$2e(a1)
-	subq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$8(a1)
-	move.l	a2,$18(a1)
-	move.w	d2,$2a(a1)
-	subq.w	#$1,d1
-	bsr.w	T_0457a
+	move.l	(a1),12(a1)
+	move.l	16(a1),16+12(a1)
+	move.w	34(a1),34+12(a1)
+	subq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,8(a1)
+	move.l	a2,16+8(a1)
+	move.w	d2,34+8(a1)
+	subq.w	#1,d1
+	bsr.w	Load_submap
 	move.l	a0,(a1)
-	move.l	a2,$10(a1)
-	move.w	d2,$22(a1)
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$4(a1)
-	move.l	a2,$14(a1)
-	move.w	d2,$26(a1)
-	addi.w	#$32,Quad_X
-	addi.w	#$32,Quad_Y
-	move.w	#$3,d2
-	rts
+	move.l	a2,16(a1)
+	move.w	d2,34(a1)
+	addq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,4(a1)
+	move.l	a2,16+4(a1)
+	move.w	d2,34+4(a1)
+	addi.w	#Submap_width,Quad_X
+	addi.w	#Submap_height,Quad_Y
+	move.w	#3,d2
+	rts	
+; ---- Shift_U (original source: MAIN/MAP/2DWILD.ASM)
 Shift_U:
-	move.l	d2,-(a7)
-	movea.l	$8(a1),a0
+	move.l	d2,-(sp)
+	movea.l	8(a1),a0
 	jsr	Free_memory
-	movea.l	$c(a1),a0
+	movea.l	12(a1),a0
 	jsr	Free_memory
-	movea.l	$18(a1),a0
+	movea.l	16+8(a1),a0
 	jsr	Free_memory
-	movea.l	$1c(a1),a0
+	movea.l	16+12(a1),a0
 	jsr	Free_memory
-	move.l	(a1),$8(a1)
-	move.l	$4(a1),$c(a1)
-	move.l	$10(a1),$18(a1)
-	move.l	$14(a1),$1c(a1)
-	move.w	$22(a1),$2a(a1)
-	move.w	$26(a1),$2e(a1)
-	btst	#$0,B_5795d
-	beq.b	T_041e4
-	subq.w	#$1,d0
-T_041e4:
-	subq.w	#$1,d1
-	bsr.w	T_0457a
+	move.l	(a1),8(a1)
+	move.l	4(a1),12(a1)
+	move.l	16(a1),16+8(a1)
+	move.l	16+4(a1),16+12(a1)
+	move.w	34(a1),34+8(a1)
+	move.w	34+4(a1),34+12(a1)
+	btst	#0,Quad_index+1
+	beq.s	.Skip
+	subq.w	#1,d0
+.Skip:
+	subq.w	#1,d1
+	bsr.w	Load_submap
 	move.l	a0,(a1)
-	move.l	a2,$10(a1)
-	move.w	d2,$22(a1)
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$4(a1)
-	move.l	a2,$14(a1)
-	move.w	d2,$26(a1)
-	addi.w	#$32,Quad_Y
-	move.l	(a7)+,d2
-	bset	#$1,d2
-	rts
+	move.l	a2,16(a1)
+	move.w	d2,34(a1)
+	addq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,4(a1)
+	move.l	a2,16+4(a1)
+	move.w	d2,34+4(a1)
+	addi.w	#Submap_height,Quad_Y
+	move.l	(sp)+,d2
+	bset	#1,d2
+	rts	
+; ---- Shift_UR (original source: MAIN/MAP/2DWILD.ASM)
 Shift_UR:
 	movea.l	(a1),a0
 	jsr	Free_memory
-	movea.l	$8(a1),a0
+	movea.l	8(a1),a0
 	jsr	Free_memory
-	movea.l	$c(a1),a0
+	movea.l	12(a1),a0
 	jsr	Free_memory
-	movea.l	$10(a1),a0
+	movea.l	16(a1),a0
 	jsr	Free_memory
-	movea.l	$18(a1),a0
+	movea.l	16+8(a1),a0
 	jsr	Free_memory
-	movea.l	$1c(a1),a0
+	movea.l	16+12(a1),a0
 	jsr	Free_memory
-	move.l	$4(a1),$8(a1)
-	move.l	$14(a1),$18(a1)
-	move.w	$26(a1),$2a(a1)
-	subq.w	#$1,d1
-	bsr.w	T_0457a
+	move.l	4(a1),8(a1)
+	move.l	16+4(a1),16+8(a1)
+	move.w	34+4(a1),34+8(a1)
+	subq.w	#1,d1
+	bsr.w	Load_submap
 	move.l	a0,(a1)
-	move.l	a2,$10(a1)
-	move.w	d2,$22(a1)
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$4(a1)
-	move.l	a2,$14(a1)
-	move.w	d2,$26(a1)
-	addq.w	#$1,d1
-	bsr.w	T_0457a
-	move.l	a0,$c(a1)
-	move.l	a2,$1c(a1)
-	move.w	d2,$2e(a1)
-	subi.w	#$32,Quad_X
-	addi.w	#$32,Quad_Y
-	move.w	#$2,d2
-	rts
+	move.l	a2,16(a1)
+	move.w	d2,34(a1)
+	addq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,4(a1)
+	move.l	a2,16+4(a1)
+	move.w	d2,34+4(a1)
+	addq.w	#1,d1
+	bsr.w	Load_submap
+	move.l	a0,12(a1)
+	move.l	a2,16+12(a1)
+	move.w	d2,34+12(a1)
+	subi.w	#Submap_width,Quad_X
+	addi.w	#Submap_height,Quad_Y
+	move.w	#2,d2
+	rts	
+; ---- Shift_L (original source: MAIN/MAP/2DWILD.ASM)
 Shift_L:
-	move.l	d2,-(a7)
-	movea.l	$4(a1),a0
+	move.l	d2,-(sp)
+	movea.l	4(a1),a0
 	jsr	Free_memory
-	movea.l	$c(a1),a0
+	movea.l	12(a1),a0
 	jsr	Free_memory
-	movea.l	$14(a1),a0
+	movea.l	16+4(a1),a0
 	jsr	Free_memory
-	movea.l	$1c(a1),a0
+	movea.l	16+12(a1),a0
 	jsr	Free_memory
-	move.l	(a1),$4(a1)
-	move.l	$8(a1),$c(a1)
-	move.l	$10(a1),$14(a1)
-	move.l	$18(a1),$1c(a1)
-	move.w	$22(a1),$26(a1)
-	move.w	$2a(a1),$2e(a1)
-	btst	#$1,B_5795d
-	beq.b	T_04304
-	subq.w	#$1,d1
-T_04304:
-	subq.w	#$1,d0
-	bsr.w	T_0457a
+	move.l	(a1),4(a1)
+	move.l	8(a1),12(a1)
+	move.l	16(a1),16+4(a1)
+	move.l	16+8(a1),16+12(a1)
+	move.w	34(a1),34+4(a1)
+	move.w	34+8(a1),34+12(a1)
+	btst	#1,Quad_index+1
+	beq.s	.Skip
+	subq.w	#1,d1
+.Skip:
+	subq.w	#1,d0
+	bsr.w	Load_submap
 	move.l	a0,(a1)
-	move.l	a2,$10(a1)
-	move.w	d2,$22(a1)
-	addq.w	#$1,d1
-	bsr.w	T_0457a
-	move.l	a0,$8(a1)
-	move.l	a2,$18(a1)
-	move.w	d2,$2a(a1)
-	addi.w	#$32,Quad_X
-	move.l	(a7)+,d2
-	bset	#$0,d2
-	rts
+	move.l	a2,16(a1)
+	move.w	d2,34(a1)
+	addq.w	#1,d1
+	bsr.w	Load_submap
+	move.l	a0,8(a1)
+	move.l	a2,16+8(a1)
+	move.w	d2,34+8(a1)
+	addi.w	#Submap_width,Quad_X
+	move.l	(sp)+,d2
+	bset	#0,d2
+	rts	
+; ---- Shift_R (original source: MAIN/MAP/2DWILD.ASM)
 Shift_R:
-	move.l	d2,-(a7)
+	move.l	d2,-(sp)
 	movea.l	(a1),a0
 	jsr	Free_memory
-	movea.l	$8(a1),a0
+	movea.l	8(a1),a0
 	jsr	Free_memory
-	movea.l	$10(a1),a0
+	movea.l	16(a1),a0
 	jsr	Free_memory
-	movea.l	$18(a1),a0
+	movea.l	16+8(a1),a0
 	jsr	Free_memory
-	move.l	$4(a1),(a1)
-	move.l	$c(a1),$8(a1)
-	move.l	$14(a1),$10(a1)
-	move.l	$1c(a1),$18(a1)
-	move.w	$26(a1),$22(a1)
-	move.w	$2e(a1),$2a(a1)
-	btst	#$1,B_5795d
-	beq.b	T_0438c
-	subq.w	#$1,d1
-T_0438c:
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$4(a1)
-	move.l	a2,$14(a1)
-	move.w	d2,$26(a1)
-	addq.w	#$1,d1
-	bsr.w	T_0457a
-	move.l	a0,$c(a1)
-	move.l	a2,$1c(a1)
-	move.w	d2,$2e(a1)
-	subi.w	#$32,Quad_X
-	move.l	(a7)+,d2
-	bclr	#$0,d2
-	rts
+	move.l	4(a1),(a1)
+	move.l	12(a1),8(a1)
+	move.l	16+4(a1),16(a1)
+	move.l	16+12(a1),16+8(a1)
+	move.w	34+4(a1),34(a1)
+	move.w	34+12(a1),34+8(a1)
+	btst	#1,Quad_index+1
+	beq.s	.Skip
+	subq.w	#1,d1
+.Skip:
+	addq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,4(a1)
+	move.l	a2,16+4(a1)
+	move.w	d2,34+4(a1)
+	addq.w	#1,d1
+	bsr.w	Load_submap
+	move.l	a0,12(a1)
+	move.l	a2,16+12(a1)
+	move.w	d2,34+12(a1)
+	subi.w	#Submap_width,Quad_X
+	move.l	(sp)+,d2
+	bclr	#0,d2
+	rts	
+; ---- Shift_DL (original source: MAIN/MAP/2DWILD.ASM)
 Shift_DL:
 	movea.l	(a1),a0
 	jsr	Free_memory
-	movea.l	$4(a1),a0
+	movea.l	4(a1),a0
 	jsr	Free_memory
-	movea.l	$c(a1),a0
+	movea.l	12(a1),a0
 	jsr	Free_memory
-	movea.l	$10(a1),a0
+	movea.l	16(a1),a0
 	jsr	Free_memory
-	movea.l	$14(a1),a0
+	movea.l	16+4(a1),a0
 	jsr	Free_memory
-	movea.l	$1c(a1),a0
+	movea.l	16+12(a1),a0
 	jsr	Free_memory
-	move.l	$8(a1),$4(a1)
-	move.l	$18(a1),$14(a1)
-	move.w	$2a(a1),$26(a1)
-	addq.w	#$1,d1
-	bsr.w	T_0457a
-	move.l	a0,$c(a1)
-	move.l	a2,$1c(a1)
-	move.w	d2,$2e(a1)
-	subq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$8(a1)
-	move.l	a2,$18(a1)
-	move.w	d2,$2a(a1)
-	subq.w	#$1,d1
-	bsr.w	T_0457a
+	move.l	8(a1),4(a1)
+	move.l	16+8(a1),16+4(a1)
+	move.w	34+8(a1),34+4(a1)
+	addq.w	#1,d1
+	bsr.w	Load_submap
+	move.l	a0,12(a1)
+	move.l	a2,16+12(a1)
+	move.w	d2,34+12(a1)
+	subq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,8(a1)
+	move.l	a2,16+8(a1)
+	move.w	d2,34+8(a1)
+	subq.w	#1,d1
+	bsr.w	Load_submap
 	move.l	a0,(a1)
-	move.l	a2,$10(a1)
-	move.w	d2,$22(a1)
-	addi.w	#$32,Quad_X
-	subi.w	#$32,Quad_Y
-	move.w	#$1,Quad_index
-	rts
+	move.l	a2,16(a1)
+	move.w	d2,34(a1)
+	addi.w	#Submap_width,Quad_X
+	subi.w	#Submap_height,Quad_Y
+	move.w	#1,Quad_index
+	rts	
+; ---- Shift_D (original source: MAIN/MAP/2DWILD.ASM)
 Shift_D:
-	move.l	d2,-(a7)
+	move.l	d2,-(sp)
 	movea.l	(a1),a0
 	jsr	Free_memory
-	movea.l	$4(a1),a0
+	movea.l	4(a1),a0
 	jsr	Free_memory
-	movea.l	$10(a1),a0
+	movea.l	16(a1),a0
 	jsr	Free_memory
-	movea.l	$14(a1),a0
+	movea.l	16+4(a1),a0
 	jsr	Free_memory
-	move.l	$8(a1),(a1)
-	move.l	$c(a1),$4(a1)
-	move.l	$18(a1),$10(a1)
-	move.l	$1c(a1),$14(a1)
-	move.w	$2a(a1),$22(a1)
-	move.w	$2e(a1),$26(a1)
-	btst	#$0,B_5795d
-	beq.b	T_044b0
-	subq.w	#$1,d0
-T_044b0:
-	addq.w	#$1,d1
-	bsr.w	T_0457a
-	move.l	a0,$8(a1)
-	move.l	a2,$18(a1)
-	move.w	d2,$2a(a1)
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$c(a1)
-	move.l	a2,$1c(a1)
-	move.w	d2,$2e(a1)
-	subi.w	#$32,Quad_Y
-	move.l	(a7)+,d2
-	bclr	#$1,d2
-	rts
+	move.l	8(a1),(a1)
+	move.l	12(a1),4(a1)
+	move.l	16+8(a1),16(a1)
+	move.l	16+12(a1),16+4(a1)
+	move.w	34+8(a1),34(a1)
+	move.w	34+12(a1),34+4(a1)
+	btst	#0,Quad_index+1
+	beq.s	.Skip
+	subq.w	#1,d0
+.Skip:
+	addq.w	#1,d1
+	bsr.w	Load_submap
+	move.l	a0,8(a1)
+	move.l	a2,16+8(a1)
+	move.w	d2,34+8(a1)
+	addq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,12(a1)
+	move.l	a2,16+12(a1)
+	move.w	d2,34+12(a1)
+	subi.w	#Submap_height,Quad_Y
+	move.l	(sp)+,d2
+	bclr	#1,d2
+	rts	
+; ---- Shift_DR (original source: MAIN/MAP/2DWILD.ASM)
 Shift_DR:
 	movea.l	(a1),a0
 	jsr	Free_memory
-	movea.l	$4(a1),a0
+	movea.l	4(a1),a0
 	jsr	Free_memory
-	movea.l	$8(a1),a0
+	movea.l	8(a1),a0
 	jsr	Free_memory
-	movea.l	$10(a1),a0
+	movea.l	16(a1),a0
 	jsr	Free_memory
-	movea.l	$14(a1),a0
+	movea.l	16+4(a1),a0
 	jsr	Free_memory
-	movea.l	$18(a1),a0
+	movea.l	16+8(a1),a0
 	jsr	Free_memory
-	move.l	$c(a1),(a1)
-	move.l	$1c(a1),$10(a1)
-	move.w	$2e(a1),$22(a1)
-	addq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$4(a1)
-	move.l	a2,$14(a1)
-	move.w	d2,$26(a1)
-	addq.w	#$1,d1
-	bsr.w	T_0457a
-	move.l	a0,$c(a1)
-	move.l	a2,$1c(a1)
-	move.w	d2,$2e(a1)
-	subq.w	#$1,d0
-	bsr.w	T_0457a
-	move.l	a0,$8(a1)
-	move.l	a2,$18(a1)
-	move.w	d2,$2a(a1)
-	subi.w	#$32,Quad_X
-	subi.w	#$32,Quad_Y
-	move.w	#$0,d2
-	rts
-T_0457a:
+	move.l	12(a1),(a1)
+	move.l	16+12(a1),16(a1)
+	move.w	34+12(a1),34(a1)
+	addq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,4(a1)
+	move.l	a2,16+4(a1)
+	move.w	d2,34+4(a1)
+	addq.w	#1,d1
+	bsr.w	Load_submap
+	move.l	a0,12(a1)
+	move.l	a2,16+12(a1)
+	move.w	d2,34+12(a1)
+	subq.w	#1,d0
+	bsr.w	Load_submap
+	move.l	a0,8(a1)
+	move.l	a2,16+8(a1)
+	move.w	d2,34+8(a1)
+	subi.w	#Submap_width,Quad_X
+	subi.w	#Submap_height,Quad_Y
+	move.w	#0,d2
+	rts	
+Load_submap:
 	movem.l	d0-d1/d7,-(a7)
 	tst.w	d0
 	bpl.b	T_04586
@@ -5059,234 +5089,242 @@ T_0459e:
 	move.w	d0,d2
 	movem.l	(a7)+,d0-d1/d7
 	rts
-T_045ce:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$2,View_direction
+; ---- W2_downright (original source: MAIN/MAP/2DWILD.ASM)
+W2_downright:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#2,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d0
-	addq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_04602
-	bsr.w	T_04852
-	beq.b	T_0464e
-	bsr.w	T_048b6
-	bra.b	T_0464e
-T_04602:
+	addq.w	#1,d0
+	addq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Move
+	bsr.w	W2_down
+	beq.s	.Exit
+	bsr.w	W2_right
+	bra.s	.Exit
+.Move:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
-	addq.w	#$1,Quad_X
-	addq.w	#$1,Quad_Y
+	addq.w	#1,Quad_X
+	addq.w	#1,Quad_Y
 	bsr.w	Quad_evaluate
-	move.w	#$1,Scroll_X
-	move.w	#$1,Scroll_Y
-	move.w	#$1,Half_X
-	move.w	#$1,Half_Y
-	bsr.w	T_0284a
+	move.w	#1,Scroll_X
+	move.w	#1,Scroll_Y
+	move.w	#1,Half_X
+	move.w	#1,Half_Y
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_0464e:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04656:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$0,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_upright (original source: MAIN/MAP/2DWILD.ASM)
+W2_upright:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#0,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d0
-	subq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_0468a
-	bsr.w	T_047ee
-	beq.b	T_046d6
-	bsr.w	T_048b6
-	bra.b	T_046d6
-T_0468a:
+	addq.w	#1,d0
+	subq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Move
+	bsr.w	W2_up
+	beq.s	.Exit
+	bsr.w	W2_right
+	bra.s	.Exit
+.Move:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
-	addq.w	#$1,Quad_X
-	subq.w	#$1,Quad_Y
+	addq.w	#1,Quad_X
+	subq.w	#1,Quad_Y
 	bsr.w	Quad_evaluate
-	move.w	#$1,Scroll_X
-	move.w	#$ffff,Scroll_Y
-	move.w	#$1,Half_X
-	move.w	#$ffff,Half_Y
-	bsr.w	T_0284a
+	move.w	#1,Scroll_X
+	move.w	#-1,Scroll_Y
+	move.w	#1,Half_X
+	move.w	#-1,Half_Y
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_046d6:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_046de:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$2,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_downleft (original source: MAIN/MAP/2DWILD.ASM)
+W2_downleft:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#2,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d0
-	addq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_04712
-	bsr.w	T_04852
-	beq.b	T_0475e
-	bsr.w	T_0491a
-	bra.b	T_0475e
-T_04712:
+	subq.w	#1,d0
+	addq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Move
+	bsr.w	W2_down
+	beq.s	.Exit
+	bsr.w	W2_left
+	bra.s	.Exit
+.Move:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
-	subq.w	#$1,Quad_X
-	addq.w	#$1,Quad_Y
+	subq.w	#1,Quad_X
+	addq.w	#1,Quad_Y
 	bsr.w	Quad_evaluate
-	move.w	#$ffff,Scroll_X
-	move.w	#$1,Scroll_Y
-	move.w	#$ffff,Half_X
-	move.w	#$1,Half_Y
-	bsr.w	T_0284a
+	move.w	#-1,Scroll_X
+	move.w	#1,Scroll_Y
+	move.w	#-1,Half_X
+	move.w	#1,Half_Y
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_0475e:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04766:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$0,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_upleft (original source: MAIN/MAP/2DWILD.ASM)
+W2_upleft:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#0,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d0
-	subq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_0479a
-	bsr.w	T_047ee
-	beq.b	T_047e6
-	bsr.w	T_0491a
-	bra.b	T_047e6
-T_0479a:
+	subq.w	#1,d0
+	subq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Move
+	bsr.w	W2_up
+	beq.s	.Exit
+	bsr.w	W2_left
+	bra.s	.Exit
+.Move:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
-	subq.w	#$1,Quad_X
-	subq.w	#$1,Quad_Y
+	subq.w	#1,Quad_X
+	subq.w	#1,Quad_Y
 	bsr.w	Quad_evaluate
-	move.w	#$ffff,Scroll_X
-	move.w	#$ffff,Scroll_Y
-	move.w	#$ffff,Half_X
-	move.w	#$ffff,Half_Y
-	bsr.w	T_0284a
+	move.w	#-1,Scroll_X
+	move.w	#-1,Scroll_Y
+	move.w	#-1,Half_X
+	move.w	#-1,Half_Y
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_047e6:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_047ee:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$0,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_up (original source: MAIN/MAP/2DWILD.ASM)
+W2_up:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#0,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d1
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_0484a
+	subq.w	#1,d1
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d1,Map_Ycoord
-	subq.w	#$1,Quad_Y
+	subq.w	#1,Quad_Y
 	bsr.w	Quad_evaluate
-	move.w	#$ffff,Scroll_Y
-	move.w	#$ffff,Half_Y
-	bsr.w	T_0284a
+	move.w	#-1,Scroll_Y
+	move.w	#-1,Half_Y
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_0484a:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04852:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$2,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_down (original source: MAIN/MAP/2DWILD.ASM)
+W2_down:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#2,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d1
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_048ae
+	addq.w	#1,d1
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d1,Map_Ycoord
-	addq.w	#$1,Quad_Y
+	addq.w	#1,Quad_Y
 	bsr.w	Quad_evaluate
-	move.w	#$1,Scroll_Y
-	move.w	#$1,Half_Y
-	bsr.w	T_0284a
+	move.w	#1,Scroll_Y
+	move.w	#1,Half_Y
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_048ae:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_048b6:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$1,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_right (original source: MAIN/MAP/2DWILD.ASM)
+W2_right:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#1,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d0
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_04912
+	addq.w	#1,d0
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d0,Map_Xcoord
-	addq.w	#$1,Quad_X
+	addq.w	#1,Quad_X
 	bsr.w	Quad_evaluate
-	move.w	#$1,Scroll_X
-	move.w	#$1,Half_X
-	bsr.w	T_0284a
+	move.w	#1,Scroll_X
+	move.w	#1,Half_X
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_04912:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_0491a:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$3,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- W2_left (original source: MAIN/MAP/2DWILD.ASM)
+W2_left:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#3,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d0
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_04976
+	subq.w	#1,d0
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d0,Map_Xcoord
-	subq.w	#$1,Quad_X
+	subq.w	#1,Quad_X
 	bsr.w	Quad_evaluate
-	move.w	#$ffff,Scroll_X
-	move.w	#$ffff,Half_X
-	bsr.w	T_0284a
+	move.w	#-1,Scroll_X
+	move.w	#-1,Half_X
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_04976:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
+	movem.l	(sp)+,d0-d2
+	rts	
 W2_DisUpd:
 	movem.l	d0-d2/a0-a1,-(a7)
 	lea.l	Trans_buf,a0
@@ -5320,8 +5358,8 @@ T_049d0:
 	lea.l	T_04a04,a0
 	movea.l	(a0,d2.w),a0
 	jsr	(a0)
-	bsr.w	T_0284a
-	bsr.w	T_026f0
+	bsr.w	Build_2D_map
+	bsr.w	Update_map_CIL
 	tst.b	CombatReq
 	beq.b	T_049fe
 	lea.l	CombatReq_Mod,a0
@@ -5334,18 +5372,18 @@ T_04a04:
 	dc.l	T_04a44	; ori.b #$44, d0
 	dc.l	T_04a44	; ori.b #$44, d0
 	dc.l	T_04a44	; ori.b #$44, d0
-	dc.l	T_04a64	; ori.b #$64, d0
-	dc.l	T_04a64	; ori.b #$64, d0
+	dc.l	Cut_C	; ori.b #$64, d0
+	dc.l	Cut_C	; ori.b #$64, d0
 	dc.l	T_04ab8	; ori.b #$b8, d0
 	dc.l	T_04ab8	; ori.b #$b8, d0
 	dc.l	T_04a7e	; ori.b #$7e, d0
-	dc.l	T_04a98	; ori.b #$98, d0
+	dc.l	Cut_E	; ori.b #$98, d0
 	dc.l	T_04a7e	; ori.b #$7e, d0
-	dc.l	T_04a98	; ori.b #$98, d0
-	dc.l	T_04ad8	; ori.b #$d8, d0
-	dc.l	T_04ad8	; ori.b #$d8, d0
-	dc.l	T_04ad8	; ori.b #$d8, d0
-	dc.l	T_04ad8	; ori.b #$d8, d0
+	dc.l	Cut_E	; ori.b #$98, d0
+	dc.l	Cut_F	; ori.b #$d8, d0
+	dc.l	Cut_F	; ori.b #$d8, d0
+	dc.l	Cut_F	; ori.b #$d8, d0
+	dc.l	Cut_F	; ori.b #$d8, d0
 T_04a44:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
@@ -5353,109 +5391,123 @@ T_04a44:
 	subq.w	#$6,d1
 	movea.l	Mapd_ptr,a0
 	move.w	Map_nr,d2
-	bra.w	T_04b12
-T_04a64:
+	bra.w	Copy_map_part
+; ---- Cut_C (original source: MAIN/MAP/2DWILD.ASM)
+Cut_B:
+Cut_C:
 	movea.l	(a1),a0
-	move.w	$22(a1),d2
-	bsr.w	T_04b12
-	subi.w	#$32,d0
-	movea.l	$4(a1),a0
-	move.w	$26(a1),d2
-	bra.w	T_04b12
+	move.w	34(a1),d2
+	bsr.w	Copy_map_part
+	subi.w	#$32,d0	; CHANGE: was "subi.w #Submap_height,d1"
+	movea.l	$4(a1),a0	; CHANGE: was "movea.l 8(a1),a0"
+	move.w	$26(a1),d2	; CHANGE: was "move.w 34+8(a1),d2"
+	bra.w	Copy_map_part
 T_04a7e:
 	movea.l	(a1),a0
 	move.w	$22(a1),d2
-	bsr.w	T_04b12
+	bsr.w	Copy_map_part
 	subi.w	#$32,d1
 	movea.l	$8(a1),a0
 	move.w	$2a(a1),d2
-	bra.w	T_04b12
-T_04a98:
-	subi.w	#$32,d0
-	movea.l	$4(a1),a0
-	move.w	$26(a1),d2
-	bsr.w	T_04b12
-	subi.w	#$32,d1
-	movea.l	$c(a1),a0
-	move.w	$2e(a1),d2
-	bra.w	T_04b12
+	bra.w	Copy_map_part
+; ---- Cut_E (original source: MAIN/MAP/2DWILD.ASM)
+Cut_D:
+Cut_E:
+	subi.w	#$32,d0	; CHANGE: was "Cut_E: subi.w #Submap_height,d1"
+	movea.l	$4(a1),a0	; CHANGE: was "movea.l 8(a1),a0"
+	move.w	$26(a1),d2	; CHANGE: was "move.w 34+8(a1),d2"
+	bsr.w	Copy_map_part
+	subi.w	#$32,d1	; CHANGE: was "subi.w #Submap_width,d0"
+	movea.l	12(a1),a0
+	move.w	34+12(a1),d2
+	bra.w	Copy_map_part
 T_04ab8:
 	subi.w	#$32,d1
 	movea.l	$8(a1),a0
 	move.w	$2a(a1),d2
-	bsr.w	T_04b12
+	bsr.w	Copy_map_part
 	subi.w	#$32,d0
 	movea.l	$c(a1),a0
 	move.w	$2e(a1),d2
-	bra.w	T_04b12
-T_04ad8:
+	bra.w	Copy_map_part
+; ---- Cut_F (original source: MAIN/MAP/2DWILD.ASM)
+Cut_F:
 	movea.l	(a1),a0
-	move.w	$22(a1),d2
-	bsr.w	T_04b12
-	subi.w	#$32,d0
-	movea.l	$4(a1),a0
-	move.w	$26(a1),d2
-	bsr.w	T_04b12
-	subi.w	#$32,d1
-	movea.l	$c(a1),a0
-	move.w	$2e(a1),d2
-	bsr.w	T_04b12
-	addi.w	#$32,d0
-	movea.l	$8(a1),a0
-	move.w	$2a(a1),d2
-	bra.w	T_04b12
-T_04b12:
-	movem.l	d0-d3/d5-d7/a0-a3,-(a7)
-	lea.l	$ac5(a0),a0
+	move.w	34(a1),d2
+	bsr.w	Copy_map_part
+	subi.w	#Submap_width,d0
+	movea.l	4(a1),a0
+	move.w	34+4(a1),d2
+	bsr.w	Copy_map_part
+	subi.w	#Submap_height,d1
+	movea.l	12(a1),a0
+	move.w	34+12(a1),d2
+	bsr.w	Copy_map_part
+	addi.w	#Submap_width,d0
+	movea.l	8(a1),a0
+	move.w	34+8(a1),d2
+	bra.w	Copy_map_part
+; ---- Copy_map_part (original source: MAIN/MAP/2DWILD.ASM)
+Copy_map_part:
+	movem.l	d0-d3/d5-d7/a0-a3,-(sp)
+	lea.l	Map_data(a0),a0
 	lea.l	Underlay_buf,a1
-	moveq	#10,d7
-	moveq	#12,d6
+	moveq.l	#10,d7
+	moveq.l	#12,d6
 	tst.w	d0
-	bpl.b	T_04b32
+	bpl.s	.X_pos
 	add.w	d0,d6
 	neg.w	d0
 	adda.w	d0,a1
-	moveq	#0,d0
-	bra.b	T_04b40
-T_04b32:
-	dc.b	$0c,$40,$00,$26,$6b,$08,$36,$3c,$00,$31,$96,$40,$3c,$03
-T_04b40:
+	moveq.l	#0,d0
+	bra.s	.Y_check
+.X_pos:
+	cmpi.w	#Submap_width-12,d0
+	bmi.s	.Y_check
+	move.w	#Submap_width-1,d3
+	sub.w	d0,d3
+	move.w	d3,d6
+.Y_check:
 	tst.w	d1
-	bpl.b	T_04b52
+	bpl.s	.Y_pos
 	add.w	d1,d7
 	neg.w	d1
-	mulu.w	#$d,d1
+	mulu.w	#13,d1
 	adda.w	d1,a1
-	moveq	#0,d1
-	bra.b	T_04b60
-T_04b52:
-	dc.b	$0c,$41,$00,$28,$6b,$08,$36,$3c,$00,$31,$96,$41,$3e,$03
-T_04b60:
+	moveq.l	#0,d1
+	bra.s	.Cont
+.Y_pos:
+	cmpi.w	#Submap_height-10,d1
+	bmi.s	.Cont
+	move.w	#Submap_height-1,d3
+	sub.w	d1,d3
+	move.w	d3,d7
+.Cont:
 	tst.w	d6
-	bmi.b	T_04b9e
+	bmi.s	.Exit
 	tst.w	d7
-	bmi.b	T_04b9e
+	bmi.s	.Exit
 	bsr.w	Enter_transport_icons
 	move.w	Width_of_map,d2
 	adda.w	d0,a0
 	mulu.w	d2,d1
 	adda.w	d1,a0
 	move.w	Size_of_map,d0
-	move.w	#$8f,d1
-T_04b82:
+	move.w	#13*11,d1
+.Loop_1:
 	movea.l	a0,a2
 	movea.l	a1,a3
 	move.w	d6,d5
-T_04b88:
+.Loop_2:
 	move.b	(a2)+,(a3)+
-	move.b	-$1(a2,d0.w),-$1(a3,d1.w)
-	dbra	d5,T_04b88
+	move.b	-1(a2,d0.w),-1(a3,d1.w)
+	dbra	d5,.Loop_2
 	adda.w	d2,a0
-	lea.l	$d(a1),a1
-	dbra	d7,T_04b82
-T_04b9e:
-	movem.l	(a7)+,d0-d3/d5-d7/a0-a3
-	rts
+	lea.l	13(a1),a1
+	dbra	d7,.Loop_1
+.Exit:
+	movem.l	(sp)+,d0-d3/d5-d7/a0-a3
+	rts	
 ; ---- Enter_transport_icons (original source: MAIN/MAP/2DWILD.ASM)
 Enter_transport_icons:
 	movem.l	d0-d7/a0-a2,-(sp)
@@ -5531,62 +5583,63 @@ C2_ModInit:
 	bsr.w	Init_persons
 	bsr.w	T_00208
 	bsr.w	C2_DisInit
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	rts
+; ---- Recalc_mapbuf_coords (original source: MAIN/MAP/2DCITY.ASM)
 Recalc_mapbuf_coords:
-	movem.l	d0-d1,-(a7)
-	move.w	#$5,Mapbuf_X
-	move.w	#$4,Mapbuf_Y
+	movem.l	d0/d1,-(sp)
+	move.w	#Def_mapbuf_X,Mapbuf_X
+	move.w	#Def_mapbuf_Y,Mapbuf_Y
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	cmpi.w	#$c,d0
-	bpl.b	T_04cde
-	subi.w	#$b,d0
+	cmpi.w	#12,d0
+	bpl.s	.Skip_1
+	subi.w	#11,d0
 	add.w	d0,Mapbuf_X
-	bra.b	T_04cf4
-T_04cde:
+	bra.s	.Go_1
+.Skip_1:
 	sub.w	Width_of_map,d0
-	cmpi.w	#$fff6,d0
-	bmi.b	T_04cf4
-	addi.w	#$a,d0
+	cmpi.w	#$fff6,d0	; CHANGE: was "cmpi.w #-11,d0"
+	bmi.s	.Go_1
+	addi.w	#10,d0
 	add.w	d0,Mapbuf_X
-T_04cf4:
-	cmpi.w	#$a,d1
-	bpl.b	T_04d06
-	subi.w	#$a,d1
+.Go_1:
+	cmpi.w	#10,d1
+	bpl.s	.Skip_2
+	subi.w	#10,d1
 	add.w	d1,Mapbuf_Y
-	bra.b	T_04d1c
-T_04d06:
+	bra.s	.Go_2
+.Skip_2:
 	sub.w	Height_of_map,d1
-	cmpi.w	#$fff8,d1
-	bmi.b	T_04d1c
-	addi.w	#$9,d1
+	cmpi.w	#$fff8,d1	; CHANGE: was "cmpi.w #-9,d1"
+	bmi.s	.Go_2
+	addi.w	#9,d1
 	add.w	d1,Mapbuf_Y
-T_04d1c:
-	movem.l	(a7)+,d0-d1
-	rts
+.Go_2:
+	movem.l	(sp)+,d0/d1
+	rts	
 C2_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
+	bsr.w	T_02724
 	bsr.w	Set_spell_area
-	bsr.w	T_02754
 	movea.l	Off_screen,a6
 	moveq	#1,d0
 	bsr.w	Show_layout
 	bsr.w	Print_headline
-	move.l	#D_1e1cc,First_CIL_ptr
+	move.l	#W2_CIL,First_CIL_ptr
 	bsr.w	Handle_CIL
 	bsr.w	Show_control_icons
 	st.b	B_57c4c
 	bsr.w	C2_DisUpd
 	jsr	Switch_screen
 	jsr	Copy_screen
-	lea.l	D_2f286,a0
+	lea.l	Lay1_c1,a0
 	bsr.w	Set_layout_data
-	move.l	#D_1e1d6,B_57c6c
+	move.l	#D_1e1d6,Mousemove_ptr
 	movea.l	Icondata_ptr,a0
 	lea.l	$7d2(a0),a0
-	lea.l	B_57c74,a1
+	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
 T_04d9e:
@@ -5626,202 +5679,210 @@ T_04e14:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts
-T_04e48:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$2,View_direction
+; ---- C2_downright (original source: MAIN/MAP/2DCITY.ASM)
+C2_downright:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#2,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d0
-	addq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_04e7c
-	bsr.w	T_05016
-	beq.b	T_04ea0
-	bsr.w	T_05064
-	bra.b	T_04ea0
-T_04e7c:
+	addq.w	#1,d0
+	addq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Downright
+	bsr.w	C2_down
+	beq.s	.Exit
+	bsr.w	C2_right
+	bra.s	.Exit
+.Downright:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	bsr.w	Move_down_2D
 	bsr.w	Move_right_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_04ea0:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04ea8:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$0,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_upright (original source: MAIN/MAP/2DCITY.ASM)
+C2_upright:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#0,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d0
-	subq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_04edc
-	bsr.w	T_04fc8
-	beq.b	T_04f00
-	bsr.w	T_05064
-	bra.b	T_04f00
-T_04edc:
+	addq.w	#1,d0
+	subq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Upright
+	bsr.w	C2_up
+	beq.s	.Exit
+	bsr.w	C2_right
+	bra.s	.Exit
+.Upright:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	bsr.w	Move_up_2D
 	bsr.w	Move_right_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_04f00:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04f08:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$2,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_downleft (original source: MAIN/MAP/2DCITY.ASM)
+C2_downleft:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#2,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d0
-	addq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_04f3c
-	bsr.w	T_05016
-	beq.b	T_04f60
-	bsr.w	T_050b2
-	bra.b	T_04f60
-T_04f3c:
+	subq.w	#1,d0
+	addq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Downleft
+	bsr.w	C2_down
+	beq.s	.Exit
+	bsr.w	C2_left
+	bra.s	.Exit
+.Downleft:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	bsr.w	Move_down_2D
 	bsr.w	Move_left_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_04f60:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04f68:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$0,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_upleft (original source: MAIN/MAP/2DCITY.ASM)
+C2_upleft:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#0,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d0
-	subq.w	#$1,d1
-	bsr.w	T_02dba
-	beq.b	T_04f9c
-	bsr.w	T_04fc8
-	beq.b	T_04fc0
-	bsr.w	T_050b2
-	bra.b	T_04fc0
-T_04f9c:
+	subq.w	#1,d0
+	subq.w	#1,d1
+	bsr.w	Movement_check_2D
+	beq.s	.Upleft
+	bsr.w	C2_up
+	beq.s	.Exit
+	bsr.w	C2_left
+	bra.s	.Exit
+.Upleft:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	bsr.w	Move_up_2D
 	bsr.w	Move_left_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_04fc0:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_04fc8:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$0,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_up (original source: MAIN/MAP/2DCITY.ASM)
+C2_up:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#0,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d1
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_0500e
+	subq.w	#1,d1
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d1,Map_Ycoord
 	bsr.w	Move_up_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_0500e:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_05016:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$2,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_down (original source: MAIN/MAP/2DCITY.ASM)
+C2_down:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#2,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d1
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_0505c
+	addq.w	#1,d1
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d1,Map_Ycoord
 	bsr.w	Move_down_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_0505c:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_05064:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$1,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_right (original source: MAIN/MAP/2DCITY.ASM)
+C2_right:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#1,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	addq.w	#$1,d0
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_050aa
+	addq.w	#1,d0
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d0,Map_Xcoord
 	bsr.w	Move_right_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_050aa:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
-T_050b2:
-	bsr.w	T_021de
-	movem.l	d0-d2,-(a7)
-	moveq	#-1,d2
-	move.w	#$3,View_direction
+	movem.l	(sp)+,d0-d2
+	rts	
+; ---- C2_left (original source: MAIN/MAP/2DCITY.ASM)
+C2_left:
+	bsr.w	Before_move
+	movem.l	d0-d2,-(sp)
+	moveq.l	#-1,d2
+	move.w	#3,View_direction
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	subq.w	#$1,d0
-	bsr.w	T_02dba
-	sne.b	Bumped
-	bne.b	T_050f8
+	subq.w	#1,d0
+	bsr.w	Movement_check_2D
+	sne	Bumped
+	bne.s	.Exit
 	move.w	d0,Map_Xcoord
 	bsr.w	Move_left_2D
-	bsr.w	T_0284a
+	bsr.w	Build_2D_map
 	jsr	Switch_screen
-	bsr.w	T_021fc
-	moveq	#0,d2
-T_050f8:
+	bsr.w	After_move
+	moveq.l	#0,d2
+.Exit:
 	tst.w	d2
-	movem.l	(a7)+,d0-d2
-	rts
+	movem.l	(sp)+,d0-d2
+	rts	
 C2_DisUpd:
 	movem.l	d0-d1/d6-d7/a0-a4,-(a7)
 	movea.l	Map_pointer,a1
@@ -5862,12 +5923,12 @@ T_0514e:
 	add.w	Mapbuf_X,d0
 	addq.b	#$1,(a0,d0.w)
 T_05194:
-	tst.b	B_57c4b
+	tst.b	Pause_Upd
 	bne.b	T_051a0
-	bsr.w	T_05bda
+	bsr.w	TwoD_char_handler
 T_051a0:
-	bsr.w	T_0284a
-	bsr.w	T_026f0
+	bsr.w	Build_2D_map
+	bsr.w	Update_map_CIL
 	tst.b	CombatReq
 	beq.b	T_051bc
 	lea.l	CombatReq_Mod,a0
@@ -5941,29 +6002,29 @@ D3_ModInit:
 	bsr.w	Init_persons
 	bsr.w	T_00208
 	bsr.w	D3_DisInit
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	rts
 D3_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
+	bsr.w	T_02724
 	bsr.w	Set_spell_area
-	bsr.w	T_02754
 	movea.l	Off_screen,a6
 	moveq	#5,d0
 	bsr.w	Show_layout
 	bsr.w	Print_headline
-	move.l	#D_1e170,First_CIL_ptr
+	move.l	#M3_CIL,First_CIL_ptr
 	bsr.w	Handle_CIL
 	bsr.w	Show_control_icons
 	st.b	B_57c4c
 	bsr.w	D3_DisUpd
 	jsr	Switch_screen
 	jsr	Copy_screen
-	lea.l	D_2f298,a0
+	lea.l	Lay5_c1,a0
 	bsr.w	Set_layout_data
-	move.l	#D_1e17a,B_57c6c
+	move.l	#D_1e17a,Mousemove_ptr
 	movea.l	Colpall_ptrs,a0
-	lea.l	B_57c74,a1
+	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
 T_05324:
@@ -5977,18 +6038,21 @@ T_05324:
 	lea.l	Hbl_D3_map,a0
 	jsr	Update_HBL
 	rts
-D3_ModExit:
+T_05358:
 	bsr.w	T_00194
+; ---- D3_ModExit (original source: MAIN/MAP/3DDUNGEO.ASM)
+C3_ModExit:
+D3_ModExit:
 	bsr.w	Clear_persons_buffer
 	jsr	Exit_automap
 	movea.l	Mapd_ptr,a0
 	jsr	Free_memory
 	lea.l	Labblock_ptrs,a1
 	move.w	Nr_labblocks,d7
-T_0537e:
+.Loop:
 	movea.l	(a1)+,a0
 	jsr	Free_memory
-	dbra	d7,T_0537e
+	dbra	d7,.Loop
 	movea.l	Ceiling_ptr,a0
 	jsr	Free_memory
 	movea.l	Floor_ptr,a0
@@ -5998,7 +6062,7 @@ T_0537e:
 	movea.l	Maptext_ptr,a0
 	jsr	Free_memory
 	jsr	Next_generation
-	rts
+	rts	
 T_053c2:
 	st.b	Time_lock
 ; ---- D3_DisExit (original source: MAIN/MAP/3DDUNGEO.ASM)
@@ -6058,12 +6122,12 @@ T_05452:
 T_0547a:
 	bsr.w	Blot_mirrored_unmasked_block
 T_0547e:
-	tst.b	B_57c4b
+	tst.b	Pause_Upd
 	bne.b	T_0548a
-	bsr.w	T_05d10
+	bsr.w	ThreeD_char_handler
 T_0548a:
-	bsr.w	T_03088
-	bsr.w	T_026f0
+	bsr.w	Build_3D_map
+	bsr.w	Update_map_CIL
 	tst.b	CombatReq
 	beq.b	T_054a6
 	lea.l	CombatReq_Mod,a0
@@ -6120,27 +6184,27 @@ T_05548:
 	bsr.w	Init_persons
 	bsr.w	T_00208
 	bsr.w	C3_DisInit
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	rts
 C3_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
+	bsr.w	T_02724
 	bsr.w	Set_spell_area
-	bsr.w	T_02754
 	movea.l	Off_screen,a6
 	moveq	#5,d0
 	bsr.w	Show_layout
 	bsr.w	Print_headline
-	move.l	#D_1e170,First_CIL_ptr
+	move.l	#M3_CIL,First_CIL_ptr
 	bsr.w	Handle_CIL
 	bsr.w	Show_control_icons
 	st.b	B_57c4c
 	bsr.w	C3_DisUpd
 	jsr	Switch_screen
 	jsr	Copy_screen
-	lea.l	D_2f298,a0
+	lea.l	Lay5_c1,a0
 	bsr.w	Set_layout_data
-	move.l	#D_1e17a,B_57c6c
+	move.l	#D_1e17a,Mousemove_ptr
 	lea.l	Skypal_buffer,a1
 	lea.l	Subfade1,a2
 T_055d0:
@@ -6154,7 +6218,7 @@ T_055d0:
 	lea.l	Hbl_C3_map,a0
 	jsr	Update_HBL
 	rts
-C3_ModExit:
+T_05604:
 	bsr.w	T_00194
 	bsr.w	Clear_persons_buffer
 	jsr	Exit_automap
@@ -6235,12 +6299,12 @@ T_05704:
 T_0572c:
 	bsr.w	Blot_mirrored_unmasked_block
 T_05730:
-	tst.b	B_57c4b
+	tst.b	Pause_Upd
 	bne.b	T_0573c
-	bsr.w	T_05d10
+	bsr.w	ThreeD_char_handler
 T_0573c:
-	bsr.w	T_03088
-	bsr.w	T_026f0
+	bsr.w	Build_3D_map
+	bsr.w	Update_map_CIL
 	tst.b	CombatReq
 	beq.b	T_05758
 	lea.l	CombatReq_Mod,a0
@@ -6619,100 +6683,102 @@ Clear_persons_buffer:
 .Exit:
 	movem.l	(sp)+,d0/d7/a0
 	rts	
-T_05bda:
-	movem.l	d0-d7/a0-a2,-(a7)
+; ---- TwoD_char_handler (original source: MAIN/PERSONS.ASM)
+TwoD_char_handler:
+	movem.l	d0-d7/a0-a2,-(sp)
 	bsr.w	Clear_persons_buffer
 	lea.l	Persons_buf,a0
 	lea.l	VChar_data,a1
 	move.l	CD_value,d6
-	moveq	#0,d7
-T_05bf6:
+	moveq.l	#0,d7
+.Loop:
 	tst.w	(a1)
-	beq.w	T_05cf0
+	beq.w	.Next
 	btst	d7,d6
-	bne.w	T_05cf0
-	move.b	$4(a1),d0
-	btst	#$0,d0
-	beq.b	T_05c2a
-	btst	#$2,d0
-	beq.b	T_05c20
-	move.w	$8(a1),d0
-	move.w	$a(a1),d1
-	bsr.w	T_0629a
-	bra.b	T_05c8a
-T_05c20:
-	bsr.w	T_05e52
-	bsr.w	T_0629a
-	bra.b	T_05c8a
-T_05c2a:
-	btst	#$3,d0
-	beq.b	T_05c4e
-	moveq	#0,d1
-	move.b	$5(a1),d1
+	bne.w	.Next
+	move.b	VChar_stats(a1),d0
+	btst	#0,d0
+	beq.s	.Person
+	btst	#2,d0
+	beq.s	.Hunt
+	move.w	VChar_X(a1),d0
+	move.w	VChar_Y(a1),d1
+	bsr.w	Battle_check
+	bra.s	.Show
+.Hunt:
+	bsr.w	Hunting_monster
+	bsr.w	Battle_check
+	bra.s	.Show
+.Person:
+	btst	#3,d0
+	beq.s	.There
+	moveq.l	#0,d1
+	move.b	VChar_day(a1),d1
 	cmp.w	Day,d1
-	bne.w	T_05cf0
-	move.b	$6(a1),d1
+	bne.w	.Next
+	move.b	VChar_month(a1),d1
 	cmp.w	Month,d1
-	bne.w	T_05cf0
-T_05c4e:
-	btst	#$1,d0
-	beq.b	T_05c5a
-	bsr.w	T_05ff4
-	bra.b	T_05c8a
-T_05c5a:
-	movea.l	$c(a1),a2
+	bne.w	.Next
+.There:
+	btst	#1,d0
+	beq.s	.Path
+.Random:
+	bsr.w	Random_person
+	bra.s	.Show
+.Path:
+	movea.l	VPath_ptr(a1),a2
 	move.w	Current_step,d2
-	moveq	#0,d0
-	move.b	(a2,d2.w),d0
+	moveq.l	#0,d0
+	move.b	0(a2,d2.w),d0
 	add.w	Length_of_day,d2
-	moveq	#0,d1
-	move.b	(a2,d2.w),d1
-	move.w	d0,$8(a1)
-	move.w	d1,$a(a1)
-	cmpi.w	#$6,d0
-	bne.b	T_05c8a
-	cmpi.w	#$6,d1
-	beq.b	T_05cf0
-T_05c8a:
+	moveq.l	#0,d1
+	move.b	0(a2,d2.w),d1
+	move.w	d0,VChar_X(a1)
+	move.w	d1,VChar_Y(a1)
+	cmpi.w	#6,d0
+	bne.s	.Show
+	cmpi.w	#6,d1
+	beq.s	.Next
+.Show:
 	sub.w	Map_Xcoord,d0
 	sub.w	Map_Ycoord,d1
 	add.w	Mapbuf_X,d0
 	add.w	Mapbuf_Y,d1
-	addq.w	#$1,d0
-	addq.w	#$1,d1
-	cmpi.w	#$c,d0
-	bhi.b	T_05cf0
-	cmpi.w	#$a,d1
-	bhi.b	T_05cf0
-	mulu.w	#$d,d1
+	addq.w	#1,d0
+	addq.w	#1,d1
+	cmpi.w	#12,d0
+	bhi.s	.Next
+	cmpi.w	#10,d1
+	bhi.s	.Next
+	mulu.w	#13,d1
 	add.w	d0,d1
 	lea.l	Overlay_buf,a2
-	moveq	#0,d0
-	move.b	(a2,d1.w),d0
-	beq.b	T_05cea
+	moveq.l	#0,d0
+	move.b	0(a2,d1.w),d0
+	beq.s	.Normal
 	move.w	d0,d2
 	movea.l	Iconstats_ptr,a2
 	add.w	d0,d0
 	add.w	d0,d0
-	move.l	-$4(a2,d0.w),d0
-	btst	#$3,d0
-	beq.b	T_05cea
+	move.l	-4(a2,d0.w),d0
+	btst.l	#3,d0
+	beq.s	.Normal
 	lea.l	Overlay_buf,a2
-	addq.b	#$1,d2
-	move.b	d2,(a2,d1.w)
-	bra.b	T_05cf0
-T_05cea:
-	move.b	$2(a1),(a0,d1.w)
-T_05cf0:
-	lea.l	$14(a1),a1
-	addq.w	#$1,d7
-	cmpi.w	#$18,d7
-	bmi.w	T_05bf6
-	sf.b	New_step
-	sf.b	New_move
-	movem.l	(a7)+,d0-d7/a0-a2
-	rts
-T_05d10:
+	addq.b	#1,d2
+	move.b	d2,0(a2,d1.w)
+	bra.s	.Next
+.Normal:
+	move.b	VChar_icon(a1),0(a0,d1.w)
+.Next:
+	lea.l	VData_length(a1),a1
+	addq.w	#1,d7
+	cmpi.w	#Max_chars,d7
+	bmi.w	.Loop
+	sf	New_step
+	sf	New_move
+	movem.l	(sp)+,d0-d7/a0-a2
+	rts	
+ThreeD_char_handler:
 	movem.l	d0-d7/a0-a2,-(a7)
 	bsr.w	Clear_persons_buffer
 	lea.l	VChar_data,a1
@@ -6731,11 +6797,11 @@ T_05d26:
 	beq.b	T_05d56
 	move.w	$8(a1),d0
 	move.w	$a(a1),d1
-	bsr.w	T_0629a
+	bsr.w	Battle_check
 	bra.b	T_05dbc
 T_05d56:
-	bsr.w	T_05e52
-	bsr.w	T_0629a
+	bsr.w	Hunting_monster
+	bsr.w	Battle_check
 	bra.b	T_05dbc
 T_05d60:
 	btst	#$3,d0
@@ -6750,7 +6816,7 @@ T_05d60:
 T_05d80:
 	btst	#$1,d0
 	beq.b	T_05d8c
-	bsr.w	T_05ff4
+	bsr.w	Random_person
 	bra.b	T_05dbc
 T_05d8c:
 	movea.l	$c(a1),a2
@@ -6817,160 +6883,164 @@ T_05e46:
 	dbra	d7,T_05e08
 	movem.l	(a7)+,d0-d7/a0-a2
 	rts
-T_05e52:
-	movem.l	d2-d6,-(a7)
-	move.w	$8(a1),d0
-	move.w	$a(a1),d1
+; ---- Hunting_monster (original source: MAIN/PERSONS.ASM)
+Hunting_monster:
+	movem.l	d2-d6,-(sp)
+	move.w	VChar_X(a1),d0
+	move.w	VChar_Y(a1),d1
 	bsr.w	Check_line_of_sight
-	beq.b	T_05eba
+	beq.s	.Visible
 	tst.b	New_step
-	beq.w	T_05f82
-	btst	#$0,$7(a1)
-	bne.b	T_05e7e
-	bsr.w	T_05ff4
-	bra.w	T_05f82
-T_05e7e:
-	move.w	$10(a1),d2
+	beq.w	.Exit
+	btst	#0,VChar_flag(a1)
+	bne.s	.Not_random
+	bsr.w	Random_person
+	bra.w	.Exit
+.Not_random:
+	move.w	VDir(a1),d2
 	bsr.w	Move_character
 	tst.w	d0
-	ble.b	T_05ea6
+	ble.s	.No_move1
 	cmp.w	Width_of_map,d0
-	bhi.b	T_05ea6
+	bhi.s	.No_move1
 	tst.w	d1
-	ble.b	T_05ea6
+	ble.s	.No_move1
 	cmp.w	Height_of_map,d1
-	bhi.b	T_05ea6
+	bhi.s	.No_move1
 	bsr.w	Character_movement_check
-	beq.w	T_05f72
-T_05ea6:
-	bclr	#$0,$7(a1)
-	move.w	#$0,$12(a1)
-	bsr.w	T_05ff4
-	bra.w	T_05f82
-T_05eba:
-	ori.b	#$3,$7(a1)
+	beq.w	.Move
+.No_move1:
+	bclr	#0,VChar_flag(a1)
+	move.w	#0,VPathlen(a1)
+	bsr.w	Random_person
+	bra.w	.Exit
+.Visible:
+	ori.b	#3,VChar_flag(a1)
 	tst.b	New_step
-	bne.b	T_05ed2
+	bne.s	.Ok
 	tst.b	New_move
-	beq.w	T_05f82
-T_05ed2:
+	beq.w	.Exit
+.Ok:
 	move.w	d0,d2
 	move.w	d1,d3
 	sub.w	Map_Xcoord,d2
 	sub.w	Map_Ycoord,d3
 	move.w	d2,d4
-	bpl.b	T_05ee8
+	bpl.s	.Pos1
 	neg.w	d4
-T_05ee8:
+.Pos1:
 	move.w	d3,d5
-	bpl.b	T_05eee
+	bpl.s	.Pos2
 	neg.w	d5
-T_05eee:
+.Pos2:
 	ext.l	d2
-	beq.b	T_05ef8
-	swap	d2
-	bmi.b	T_05ef8
-	moveq	#1,d2
-T_05ef8:
+	beq.s	.Zero1
+	swap.w	d2
+	bmi.s	.Zero1
+	moveq.l	#1,d2
+.Zero1:
 	ext.l	d3
-	beq.b	T_05f02
-	swap	d3
-	bmi.b	T_05f02
-	moveq	#1,d3
-T_05f02:
+	beq.s	.Zero2
+	swap.w	d3
+	bmi.s	.Zero2
+	moveq.l	#1,d3
+.Zero2:
 	sub.w	d5,d4
 	ext.l	d4
-	beq.b	T_05f0e
-	swap	d4
-	bmi.b	T_05f0e
-	moveq	#1,d4
-T_05f0e:
+	beq.s	.Zero3
+	swap.w	d4
+	bmi.s	.Zero3
+	moveq.l	#1,d4
+.Zero3:
 	neg.w	d2
 	neg.w	d3
-	addq.w	#$1,d2
-	addq.w	#$1,d3
-	addq.w	#$1,d4
+	addq.w	#1,d2
+	addq.w	#1,d3
+	addq.w	#1,d4
 	add.w	d3,d2
 	add.w	d3,d3
 	add.w	d3,d2
 	move.w	d4,d3
-	lsl.w	#$3,d3
+	lsl.w	#3,d3
 	add.w	d3,d2
 	add.w	d4,d2
 	add.w	d2,d2
 	add.w	d2,d2
-	move.l	T_05f88(pc,d2.w),d2
-	bmi.b	T_05f72
+	move.l	.Dir_table(pc,d2.w),d2
+	bmi.s	.Move
 	move.w	d0,d4
 	move.w	d1,d5
-	rol.l	#$8,d2
+	rol.l	#8,d2
 	tst.b	d2
-	bmi.b	T_05f6c
+	bmi.s	.No_move2
 	bsr.w	Move_character
 	bsr.w	Character_movement_check
-	beq.b	T_05f72
+	beq.s	.Move
 	move.w	d4,d0
 	move.w	d5,d1
-	rol.l	#$8,d2
+	rol.l	#8,d2
 	tst.b	d2
-	bmi.b	T_05f6c
+	bmi.s	.No_move2
 	bsr.w	Move_character
 	bsr.w	Character_movement_check
-	beq.b	T_05f72
+	beq.s	.Move
 	move.w	d4,d0
 	move.w	d5,d1
-	rol.l	#$8,d2
+	rol.l	#8,d2
 	tst.b	d2
-	bmi.b	T_05f6c
+	bmi.s	.No_move2
 	bsr.w	Move_character
 	bsr.w	Character_movement_check
-	beq.b	T_05f72
-T_05f6c:
+	beq.s	.Move
+.No_move2:
 	move.w	d4,d0
 	move.w	d5,d1
-	bra.b	T_05f82
-T_05f72:
-	move.w	d0,$8(a1)
-	move.w	d1,$a(a1)
-	andi.w	#$ff,d2
-	move.w	d2,$10(a1)
-T_05f82:
-	movem.l	(a7)+,d2-d6
-	rts
-T_05f88:
-	dc.b	$00,$03,$01,$00,$00,$03,$01,$00,$00,$01,$03,$00,$03,$00,$02,$00
-	dc.b	$ff,$ff,$ff,$ff,$01,$00,$02,$00,$02,$03,$01,$00,$02,$01,$03,$00
-	dc.b	$02,$01,$03,$00,$00,$03,$ff,$00,$ff,$ff,$ff,$ff,$00,$01,$ff,$00
-	dc.b	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$02,$03,$ff,$00
-	dc.b	$ff,$ff,$ff,$ff,$02,$01,$ff,$00,$03,$00,$02,$00,$00,$03,$01,$00
-	dc.b	$01,$00,$02,$00,$03,$00,$02,$00,$ff,$ff,$ff,$ff,$01,$00,$02,$00
-	dc.b	$03,$02,$00,$00,$02,$03,$01,$00,$01,$02,$00,$00
-T_05ff4:
-	movem.l	d2/d7,-(a7)
-	moveq	#3,d7
-	tst.w	$12(a1)
-	bne.b	T_06004
+	bra.s	.Exit
+.Move:
+	move.w	d0,VChar_X(a1)
+	move.w	d1,VChar_Y(a1)
+	andi.w	#$00ff,d2
+	move.w	d2,VDir(a1)
+.Exit:
+	movem.l	(sp)+,d2-d6
+	rts	
+.Dir_table:
+	dc.l	$00030100,$00030100,$00010300
+	dc.l	$03000200,-1,$01000200
+	dc.l	$02030100,$02010300,$02010300
+	dc.l	$0003ff00,-1,$0001ff00
+	dc.l	-1,-1,-1
+	dc.l	$0203ff00,-1,$0201ff00
+	dc.l	$03000200,$00030100,$01000200
+	dc.l	$03000200,-1,$01000200
+	dc.l	$03020000,$02030100,$01020000
+; ---- Random_person (original source: MAIN/PERSONS.ASM)
+Random_person:
+	movem.l	d2/d7,-(sp)
+	moveq.l	#4-1,d7
+	tst.w	VPathlen(a1)
+	bne.s	.Loop
 	bsr.w	Choose_random_path
-T_06004:
-	move.w	$8(a1),d0
-	move.w	$a(a1),d1
+.Loop:
+	move.w	VChar_X(a1),d0
+	move.w	VChar_Y(a1),d1
 	tst.b	New_step
-	beq.b	T_0603e
-	move.w	$10(a1),d2
+	beq.s	.Exit
+	move.w	VDir(a1),d2
 	bsr.w	Move_character
 	bsr.w	Character_movement_check
-	beq.b	T_06032
+	beq.s	.Move
 	bsr.w	Choose_random_path
-	dbra	d7,T_06004
-	move.w	#$0,$12(a1)
-	bra.b	T_0603e
-T_06032:
-	subq.w	#$1,$12(a1)
-	move.w	d0,$8(a1)
-	move.w	d1,$a(a1)
-T_0603e:
-	movem.l	(a7)+,d2/d7
-	rts
+	dbra	d7,.Loop
+	move.w	#0,VPathlen(a1)
+	bra.s	.Exit
+.Move:
+	subq.w	#1,VPathlen(a1)
+	move.w	d0,VChar_X(a1)
+	move.w	d1,VChar_Y(a1)
+.Exit:
+	movem.l	(sp)+,d2/d7
+	rts	
 ; ---- Move_character (original source: MAIN/PERSONS.ASM)
 Move_character:
 	movem.l	d2/d3/a0,-(sp)
@@ -7114,94 +7184,95 @@ Character_movement_check:
 	tst.b	d3
 	movem.l	(sp)+,d0-d3/d6/d7/a0
 	rts	
+; ---- Check_line_of_sight (original source: MAIN/PERSONS.ASM)
 Check_line_of_sight:
-	movem.l	d0-d7/a0-a2,-(a7)
+	movem.l	d0-d7/a0-a2,-(sp)
 	tst.w	Spell_6_duration
-	bne.w	T_06294
+	bne.w	.Exit
 	movea.l	Iconstats_ptr,a2
-	move.w	$8(a1),d0
-	move.w	$a(a1),d1
+	move.w	VChar_X(a1),d0
+	move.w	VChar_Y(a1),d1
 	sub.w	Map_Xcoord,d0
 	sub.w	Map_Ycoord,d1
 	movea.l	Map_pointer,a0
 	move.w	Map_Ycoord,d2
-	subq.w	#$1,d2
+	subq.w	#1,d2
 	mulu.w	Width_of_map,d2
 	add.w	Map_Xcoord,d2
-	lea.l	-$1(a0,d2.w),a0
+	lea.l	-1(a0,d2.w),a0
 	lea.l	(a0),a1
 	adda.w	Size_of_map,a1
 	move.w	d0,d2
 	ext.l	d2
-	beq.b	T_06216
-	swap	d2
-	bmi.b	T_06216
-	moveq	#1,d2
-T_06216:
+	beq.s	.Zero1
+	swap.w	d2
+	bmi.s	.Zero1
+	moveq.l	#1,d2
+.Zero1:
 	move.w	d1,d3
 	ext.l	d3
-	beq.b	T_06222
-	swap	d3
-	bmi.b	T_06222
-	moveq	#1,d3
-T_06222:
+	beq.s	.Zero2
+	swap.w	d3
+	bmi.s	.Zero2
+	moveq.l	#1,d3
+.Zero2:
 	neg.w	d2
 	neg.w	d3
 	move.w	d0,d4
 	move.w	d1,d5
 	tst.w	d2
-	bmi.b	T_06230
+	bmi.s	.No_abs1
 	neg.w	d4
-T_06230:
+.No_abs1:
 	tst.w	d3
-	bmi.b	T_06236
+	bmi.s	.No_abs2
 	neg.w	d5
-T_06236:
+.No_abs2:
 	muls.w	Width_of_map,d3
 	muls.w	Width_of_map,d1
 	add.w	d1,d0
 	cmp.w	d5,d4
-	bpl.b	T_0624c
-	exg.l	d3,d2
-	exg.l	d5,d4
-T_0624c:
+	bpl.s	.DxDy
+	exg.l	d3,d2	; CHANGE: was "exg.l d2,d3"
+	exg.l	d5,d4	; CHANGE: was "exg.l d4,d5"
+.DxDy:
 	move.w	d4,d6
-	lsr.w	#$1,d6
+	lsr.w	#1,d6
 	move.w	d4,d7
-	subq.w	#$1,d7
-	bmi.b	T_06292
-	bra.b	T_06282
-T_06258:
-	moveq	#0,d1
-	move.b	(a0,d0.w),d1
+	subq.w	#1,d7
+	bmi.s	.End
+	bra.s	.Entry
+.Again:
+	moveq.l	#0,d1
+	move.b	0(a0,d0.w),d1
 	add.w	d1,d1
 	add.w	d1,d1
-	move.l	-$4(a2,d1.w),d1
-	btst	#$1,d1
-	bne.b	T_06294
-	moveq	#0,d1
-	move.b	(a1,d0.w),d1
-	beq.b	T_06282
+	move.l	-4(a2,d1.w),d1
+	btst	#1,d1
+	bne.s	.Exit
+	moveq.l	#0,d1
+	move.b	0(a1,d0.w),d1
+	beq.s	.Entry
 	add.w	d1,d1
 	add.w	d1,d1
-	move.l	-$4(a2,d1.w),d1
-	btst	#$1,d1
-	bne.b	T_06294
-T_06282:
+	move.l	-4(a2,d1.w),d1
+	btst	#1,d1
+	bne.s	.Exit
+.Entry:
 	add.w	d5,d6
 	cmp.w	d4,d6
-	bmi.b	T_0628c
+	bmi.s	.Skip
 	sub.w	d4,d6
 	add.w	d3,d0
-T_0628c:
+.Skip:
 	add.w	d2,d0
-	dbra	d7,T_06258
-T_06292:
-	moveq	#0,d0
-T_06294:
-	movem.l	(a7)+,d0-d7/a0-a2
-	rts
-T_0629a:
+	dbra	d7,.Again
+.End:
+	moveq.l	#0,d0
+.Exit:
+	movem.l	(sp)+,d0-d7/a0-a2
+	rts	
+Battle_check:
 	tst.b	B_57c4c
 	beq.b	T_062aa
 	sf.b	B_57c4c
@@ -7216,7 +7287,7 @@ T_062aa:
 	move.w	$0(a1),B_5891a
 	move.w	d7,B_58e60
 	st.b	CombatReq
-	st.b	B_57c4b
+	st.b	Pause_Upd
 T_062e0:
 	rts
 CombatReq_ModInit:
@@ -7242,7 +7313,7 @@ T_06326:
 	dbra	d7,T_06326
 	sf.b	B_57914
 T_06338:
-	sf.b	B_57c4b
+	sf.b	Pause_Upd
 	moveq	#16,d0
 	moveq	#52,d1
 	moveq	#18,d2
@@ -7378,163 +7449,173 @@ Init_time:
 	move.w	d0,Current_step
 	movem.l	(sp)+,d0/d1
 	rts	
+; ---- Update_time (original source: MAIN/TIME.ASM)
 Update_time:
-	st.b	New_step
-	movem.l	d0-d1/a0,-(a7)
+	st	New_step
+	movem.l	d0/d1/a0,-(sp)
 	bsr.w	Every_step
-	moveq	#0,d1
+	moveq.l	#0,d1
 	movea.l	Mapd_ptr,a0
-	addq.w	#$1,Current_step
+	addq.w	#1,Current_step
 	move.w	Minute,d0
-	move.b	$ac2(a0),d1
+	move.b	Time_step_len(a0),d1
 	add.w	d1,d0
 	move.w	d0,Minute
-	move.b	$ac1(a0),d1
+	move.b	Time_hour_len(a0),d1
 	sub.w	d1,d0
-	bmi.w	T_065da
+	bmi.w	.Exit
 	move.w	d0,Minute
 	move.w	Hour,d0
-	addq.w	#$1,d0
+	addq.w	#1,d0
 	move.w	d0,Hour
 	bsr.w	Every_hour
-	move.b	$ac0(a0),d1
+	move.b	Time_day_len(a0),d1
 	sub.w	d1,d0
-	bmi.b	T_065da
+	bmi.s	.Exit
 	move.w	d0,Hour
-	move.w	#$0,Current_step
-	addq.w	#$1,B_59358
+	move.w	#0,Current_step
+	addq.w	#1,Nr_travelled_days
 	move.w	Day,d0
-	addq.w	#$1,d0
+	addq.w	#1,d0
 	move.w	d0,Day
 	bsr.w	Every_day
-	move.b	$abf(a0),d1
+	move.b	Time_month_len(a0),d1
 	sub.w	d1,d0
-	bls.b	T_065da
+	bls.s	.Exit
 	move.w	d0,Day
 	move.w	Month,d0
-	addq.w	#$1,d0
+	addq.w	#1,d0
 	move.w	d0,Month
-	move.b	$abe(a0),d1
+	move.b	Time_year_len(a0),d1
 	sub.w	d1,d0
-	bls.b	T_065da
+	bls.s	.Exit
 	move.w	d0,Month
-	addq.w	#$1,B_59348
-	addq.w	#$1,Time_data_year
-	bsr.w	T_066c2
-T_065da:
-	movem.l	(a7)+,d0-d1/a0
-	rts
+	addq.w	#1,Year
+	addq.w	#1,Time_data_year
+	bsr.w	Every_year
+.Exit:
+	movem.l	(sp)+,d0/d1/a0
+	rts	
+; ---- Every_step (original source: MAIN/TIME.ASM)
 Every_step:
-	movem.l	d7/a0,-(a7)
+	movem.l	d7/a0,-(sp)
 	lea.l	Spell_1_duration,a0
-	moveq	#5,d7
-T_065ec:
+	moveq.l	#6-1,d7
+.Loop:
 	tst.w	(a0)
-	beq.b	T_065f2
-	subq.w	#$1,(a0)
-T_065f2:
-	addq.l	#$2,a0
-	dbra	d7,T_065ec
-	tst.w	B_5930c
-	beq.b	T_06618
-	subq.w	#$1,B_5930c
-	bne.b	T_06618
-	cmpi.w	#$5,Travel_mode
-	bpl.b	T_06618
-	st.b	D_1e1fa
-T_06618:
-	movem.l	(a7)+,d7/a0
-	rts
+	beq.s	.Next
+	subq.w	#1,(a0)
+.Next:
+	addq.l	#2,a0
+	dbra	d7,.Loop
+	tst.w	B_5930c	; CHANGE: added
+	beq.b	.c_06618	; CHANGE: added
+	subq.w	#$1,B_5930c	; CHANGE: added
+	bne.b	.c_06618	; CHANGE: added
+	cmpi.w	#$5,Travel_mode	; CHANGE: added
+	bpl.b	.c_06618	; CHANGE: added
+	st.b	D_1e1fa	; CHANGE: added
+.c_06618:
+	movem.l	(sp)+,d7/a0
+	rts	
+; ---- Every_hour (original source: MAIN/TIME.ASM)
 Every_hour:
-	movem.l	d0-d2/d7/a0-a1,-(a7)
+	movem.l	d0-d2/d7/a0/a1,-(sp)
 	lea.l	Chard_ptrs,a0
-	moveq	#1,d7
-T_0662a:
+	moveq.l	#1,d7
+.Loop:
 	tst.l	(a0)
-	beq.b	T_06656
+	beq.s	.Next
 	movea.l	(a0),a1
 	move.w	#$e400,d2
-	and.w	$3a(a1),d2
-	bne.b	T_06656
-	btst	#$1,$3a(a1)
-	beq.b	T_06656
+	and.w	Body_conditions(a1),d2
+	bne.s	.Next
+	btst	#1,Body_conditions(a1)
+	beq.s	.Next
 	jsr	Random
-	moveq	#5,d1
+	moveq.l	#5,d1
 	mulu.w	d0,d1
-	swap	d1
-	addq.w	#$1,d1
+	swap.w	d1
+	addq.w	#1,d1
 	move.w	d7,d0
-	bsr.w	T_07e22
-T_06656:
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	T_0662a
-	movem.l	(a7)+,d0-d2/d7/a0-a1
-	rts
+	bsr.w	Do_damage
+.Next:
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop
+	movem.l	(sp)+,d0-d2/d7/a0/a1
+	rts	
+; ---- Every_day (original source: MAIN/TIME.ASM)
 Every_day:
-	movem.l	d0-d1/d7/a0-a1,-(a7)
+	movem.l	d0/d1/d7/a0/a1,-(sp)
 	lea.l	Chard_ptrs,a0
-	moveq	#0,d1
-	moveq	#1,d7
-T_06674:
+	moveq.l	#0,d1
+	moveq.l	#1,d7
+.Loop:
 	tst.l	(a0)
-	beq.b	T_066b2
+	beq.s	.Next
 	movea.l	(a0),a1
 	move.w	#$e400,d0
-	and.w	$3a(a1),d0
-	bne.b	T_066b2
-	btst	#$3,$3a(a1)
-	beq.b	T_066b2
-	lea.l	$48(a1),a2
+	and.w	Body_conditions(a1),d0
+	bne.s	.Next
+	btst	#3,Body_conditions(a1)
+	beq.s	.Next
+	lea.l	Attr_1_normal(a1),a2
 	jsr	Random
-	mulu.w	#$8,d0
-	swap	d0
+	mulu.w	#8,d0
+	swap.w	d0
 	add.w	d0,d0
 	adda.w	d0,a2
 	move.w	(a2),d0
-	cmpi.w	#$1,d0
-	beq.b	T_066ac
-	subq.w	#$1,d0
+	cmpi.w	#1,d0
+	beq.s	.Done
+	subq.w	#1,d0
 	move.w	d0,(a2)
-T_066ac:
+.Done:
 	move.w	d7,d0
-	bsr.w	T_07e22
-T_066b2:
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	T_06674
-	movem.l	(a7)+,d0-d1/d7/a0-a1
-	rts
-T_066c2:
-	movem.l	d0-d1/d7/a0-a1,-(a7)
+	bsr.w	Do_damage
+.Next:
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop
+	movem.l	(sp)+,d0/d1/d7/a0/a1
+	rts	
+; ---- Every_year (original source: MAIN/TIME.ASM)
+Every_year:
+	movem.l	d0/d1/d7/a0/a1,-(sp)
 	lea.l	Chard_ptrs,a0
-	moveq	#1,d7
-T_066ce:
+	moveq.l	#1,d7
+.Loop:
 	tst.l	(a0)
-	beq.b	T_06706
+	beq.s	.Next
 	movea.l	(a0),a1
 	move.w	#$e400,d0
-	and.w	$3a(a1),d0
-	bne.b	T_06706
-	move.w	$58(a1),d0
-	add.w	$ac(a1),d0
+	and.w	Body_conditions(a1),d0
+	bne.s	.Next
+	move.w	Attr_9_normal(a1),d0
+	add.w	Attr_9_normal_magic(a1),d0
 	add.w	Time_data_year,d0
-	move.w	$6c(a1),d1
+	move.w	Attr_9_max(a1),d1
 	cmp.w	d0,d1
-	bpl.b	T_06706
-	ori.w	#$2000,$3a(a1)
+	bpl.s	.Next
+	ori.w	#$2000,Body_conditions(a1)
 	cmp.w	Active_member,d7
-	bne.b	T_06706
-	bsr.w	T_006fe
-T_06706:
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	T_066ce
-	movem.l	(a7)+,d0-d1/d7/a0-a1
-	rts
+	bne.s	.Next
+; CHANGE: removed "clr.w Active_member"
+	bsr.w	T_006fe	; CHANGE: was "jsr Exit_display"
+; CHANGE: removed "move.l a0,-(sp)"
+; CHANGE: removed "Push Module,ActSel_Mod"
+; CHANGE: removed "Push Module,ActSel_Mod"
+; CHANGE: removed "movea.l (sp)+,a0"
+.Next:
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop
+	movem.l	(sp)+,d0/d1/d7/a0/a1
+	rts	
 T_06716:
 	move.w	#$0,Frame
 	bsr.w	Update_time
@@ -7619,31 +7700,32 @@ T_067f8:
 T_067fa:
 	addq.w	#$1,B_57d64
 	rts
+; ---- Show_updated_status_block (original source: LAYOUT/LAYOUT.ASM)
 Show_updated_status_block:
 	tst.b	Updated
-	beq.b	T_0684e
+	beq.s	.Exit
 	jsr	Mouse_off
 	move.b	Updated,d4
-	moveq	#16,d0
-	moveq	#1,d1
-	moveq	#1,d5
-	moveq	#3,d6
-	moveq	#35,d7
+	moveq.l	#16,d0
+	moveq.l	#1,d1
+	moveq.l	#1,d5
+	moveq.l	#3,d6
+	moveq.l	#35,d7
 	movea.l	Screen_base,a0
 	movea.l	Off_screen,a1
-T_0682c:
+.Loop:
 	btst	d5,d4
-	beq.b	T_06836
+	beq.s	.Next
 	jsr	Duplicate_block
-T_06836:
-	addi.w	#$30,d0
-	addq.w	#$1,d5
-	cmpi.w	#$6,d5
-	bls.b	T_0682c
-	sf.b	Updated
+.Next:
+	addi.w	#48,d0
+	addq.w	#1,d5
+	cmpi.w	#6,d5
+	bls.s	.Loop
+	sf.b	Updated	; CHANGE: was "clr.b Updated"
 	jsr	Mouse_on
-T_0684e:
-	rts
+.Exit:
+	rts	
 ; ---- Force_char_update (original source: LAYOUT/LAYOUT.ASM)
 Force_char_update:
 	movem.l	d0/a0,-(sp)
@@ -7653,83 +7735,84 @@ Force_char_update:
 	clr.l	0(a0,d0.w)
 	movem.l	(sp)+,d0/a0
 	rts	
+; ---- Update_status_block (original source: LAYOUT/LAYOUT.ASM)
 Update_status_block:
-	movem.l	d0-d7/a0-a4/a6,-(a7)
+	movem.l	d0-d7/a0-a4/a6,-(sp)
 	lea.l	Shadow_data,a1
 	lea.l	Chard_ptrs,a2
 	lea.l	Char_status_icons,a3
 	movea.l	Off_screen,a6
 	move.w	Active_member,d1
 	cmp.w	XActive_member,d1
-	beq.b	T_068bc
+	beq.s	.Continue
 	move.w	XActive_member,d0
-	beq.b	T_068a6
-	subq.w	#$1,d0
-	mulu.w	#$e,d0
-	clr.l	(a1,d0.w)
-T_068a6:
+	beq.s	.Skip1
+	subq.w	#1,d0
+	mulu.w	#XSize,d0
+	clr.l	0(a1,d0.w)
+.Skip1:
 	tst.w	d1
-	beq.b	T_068b6
+	beq.s	.Skip2
 	move.w	d1,d0
-	subq.w	#$1,d0
-	mulu.w	#$e,d0
-	clr.l	(a1,d0.w)
-T_068b6:
+	subq.w	#1,d0
+	mulu.w	#XSize,d0
+	clr.l	0(a1,d0.w)
+.Skip2:
 	move.w	d1,XActive_member
-T_068bc:
-	moveq	#48,d4
-	moveq	#1,d5
-T_068c0:
+.Continue:
+	moveq.l	#48,d4
+	moveq.l	#1,d5
+.Loop:
 	tst.l	(a2)
-	bne.b	T_068de
+	bne.s	.Not_empty
 	tst.l	(a1)
-	beq.b	T_06940
+	beq.s	.Next
 	bsr.w	Erase_portrait
 	bsr.w	Erase_status_icon
 	bsr.w	Erase_bars
 	clr.l	(a1)
 	bset	d5,Updated
-	bra.b	T_06940
-T_068de:
+	bra.s	.Next
+.Not_empty:
 	movea.l	(a2),a4
 	cmpa.l	(a1),a4
-	beq.b	T_0690e
+	beq.s	.Same_character
 	move.l	a4,(a1)
-	clr.l	$4(a1)
-	clr.l	$8(a1)
-	clr.w	$c(a1)
-	bsr.w	Erase_status_icon
-	bsr.w	Erase_bars
+	clr.l	$4(a1)	; CHANGE: added
+	clr.l	$8(a1)	; CHANGE: added
+	clr.w	$c(a1)	; CHANGE: added
+	bsr.w	Erase_status_icon	; CHANGE: added
+	bsr.w	Erase_bars	; CHANGE: added
 	bsr.w	Display_portrait
 	bsr.w	Update_status_icon
 	bsr.w	Update_bars
 	bset	d5,Updated
-	bra.b	T_06940
-T_0690e:
-	cmpi.b	#$1,$c(a1)
-	beq.b	T_06940
-	move.w	$3a(a4),d0
+	bra.s	.Next
+.Same_character:
+	cmpi.b	#1,XStat_icon(a1)
+	beq.s	.Next
+	move.w	Body_conditions(a4),d0
 	andi.w	#$e000,d0
-	beq.b	T_06938
-	move.b	#$1,(a3)
+	beq.s	.Not_dead
+	move.b	#1,(a3)
 	bsr.w	Display_portrait
 	bsr.w	Update_status_icon
 	bsr.w	Erase_bars
 	bset	d5,Updated
-	bra.b	T_06940
-T_06938:
+	bra.s	.Next
+.Not_dead:
 	bsr.w	Update_status_icon
 	bsr.w	Update_bars
-T_06940:
-	lea.l	$e(a1),a1
-	addq.l	#$4,a2
-	addq.l	#$1,a3
-	addi.w	#$30,d4
-	addq.l	#$1,d5
-	cmpi.w	#$6,d5
-	bls.w	T_068c0
-	movem.l	(a7)+,d0-d7/a0-a4/a6
-	rts
+.Next:
+	lea.l	XSize(a1),a1
+	addq.l	#4,a2
+	addq.l	#1,a3
+	addi.w	#48,d4
+	addq.l	#1,d5
+	cmpi.w	#6,d5
+	bls.w	.Loop
+	movem.l	(sp)+,d0-d7/a0-a4/a6
+	rts	
 ; ---- Display_portrait (original source: LAYOUT/LAYOUT.ASM)
 Display_portrait:
 	movem.l	d0/d1/d6/d7/a0/a1,-(sp)
@@ -7866,21 +7949,22 @@ Update_bars:
 .Exit:
 	movem.l	(sp)+,d0/d1/d6/d7/a0
 	rts	
+; ---- Erase_portrait (original source: LAYOUT/LAYOUT.ASM)
 Erase_portrait:
-	movem.l	d0-d1/d6-d7/a0,-(a7)
-	moveq	#-32,d0
+	movem.l	d0/d1/d6/d7/a0,-(sp)
+	moveq.l	#-32,d0
 	add.w	d4,d0
-	moveq	#1,d1
-	moveq	#2,d6
-	moveq	#34,d7
-	lea.l	D_3db60,a0
+	moveq.l	#1,d1
+	moveq.l	#2,d6
+	moveq.l	#34,d7
+	lea.l	D_3db60,a0	; CHANGE: was "lea.l Void,a0"
 	jsr	Blot_unmasked_block
-	moveq	#35,d1
-	moveq	#1,d7
+	moveq.l	#35,d1
+	moveq.l	#1,d7
 	lea.l	Topblk_bot,a0
 	jsr	Blot_unmasked_block
-	movem.l	(a7)+,d0-d1/d6-d7/a0
-	rts
+	movem.l	(sp)+,d0/d1/d6/d7/a0
+	rts	
 ; ---- Erase_status_icon (original source: LAYOUT/LAYOUT.ASM)
 Erase_status_icon:
 	movem.l	d0/d1/a0,-(sp)
@@ -8201,57 +8285,62 @@ T_06f32:
 	dbra	d5,T_06f32
 	movem.l	(a7)+,d0-d1/d5-d7/a0/a6
 	rts
+; ---- Show_control_icons (original source: LAYOUT/LAYOUT.ASM)
 Show_control_icons:
-	movem.l	d0-d7/a0-a2,-(a7)
-	sf.b	Control_icon_flag
+	movem.l	d0-d7/a0-a2,-(sp)
+	sf	Control_icon_flag
 	bsr.w	Feedb_off
+; CHANGE: removed "move.w #0,Draw_Cicon"
+; CHANGE: removed "move.w #0,Erase_Cicon"
 	lea.l	Control_icn,a1
 	movea.l	Control_list_ptr,a2
-	move.w	#$91,d1
-	move.w	#$d0,d2
-	moveq	#2,d5
-	moveq	#2,d6
-	moveq	#16,d7
-T_06f6e:
+	move.w	#145,d1
+	move.w	#208,d2
+	moveq.l	#3-1,d5
+	moveq.l	#2,d6
+	moveq.l	#16,d7
+.Loop1:
 	move.w	d2,d0
-	moveq	#2,d4
-T_06f72:
-	moveq	#127,d3
+	moveq.l	#3-1,d4
+.Loop2:
+	moveq.l	#$7f,d3
 	and.b	(a2),d3
-	lsl.w	#$8,d3
-	lea.l	(a1,d3.w),a0
+	lsl.w	#8,d3
+	lea.l	0(a1,d3.w),a0
 	jsr	Blot_unmasked_block
-	btst	#$7,(a2)+
-	beq.b	T_06f94
+	btst.b	#7,(a2)+
+	beq.s	.Next
 	lea.l	Chequered,a0
 	jsr	Blot_masked_block
-T_06f94:
-	addi.w	#$20,d0
-	dbra	d4,T_06f72
-	addi.w	#$10,d1
-	dbra	d5,T_06f6e
-	st.b	Control_icon_flag
-	movem.l	(a7)+,d0-d7/a0-a2
-	rts
+.Next:
+	addi.w	#32,d0
+	dbra	d4,.Loop2
+	addi.w	#16,d1
+	dbra	d5,.Loop1
+.Continue:
+	st	Control_icon_flag
+	movem.l	(sp)+,d0-d7/a0-a2
+	rts	
+; ---- Do_control_icons (original source: LAYOUT/LAYOUT.ASM)
 Do_control_icons:
 	tst.b	Control_icon_flag
-	beq.b	T_06fea
-	andi.w	#$ff,d0
+	beq.s	.Exit
+	andi.w	#$00ff,d0
 	movea.l	Control_list_ptr,a0
-	move.b	-$1(a0,d0.w),d1
-	cmpi.b	#$38,d1
-	beq.b	T_06fea
-	btst	#$7,d1
-	bne.b	T_06fea
+	move.b	-1(a0,d0.w),d1
+	cmpi.b	#56,d1
+	beq.s	.Exit
+	btst	#7,d1
+	bne.s	.Exit
 	move.w	d0,Draw_Cicon
-	jsr	My_vsync
-	lsl.w	#$2,d0
-	move.l	$6(a0,d0.w),d0
-	beq.b	T_06fea
+	jsr	My_vsync	; CHANGE: added
+	lsl.w	#2,d0
+	move.l	10-4(a0,d0.w),d0
+	beq.s	.Exit
 	movea.l	d0,a0
 	jsr	(a0)
-T_06fea:
-	rts
+.Exit:
+	rts	
 ; ---- Feedb_on (original source: LAYOUT/LAYOUT.ASM)
 Feedb_on:
 	movem.l	d0-d2/d6/d7/a0/a1/a6,-(sp)
@@ -8460,36 +8549,40 @@ T_0726e:
 T_07282:
 	movem.l	(a7)+,d0-d1
 	rts
+; ---- Convert_text_line (original source: MAIN/WORDS.ASM)
 Convert_text_line:
-	movem.l	d0-d2/d6-d7/a0-a3,-(a7)
+	movem.l	d0-d2/d6/d7/a0-a3,-(sp)
 	bsr.w	Calc_textblock_address
 	lea.l	Line_buffer,a2
 	move.w	(a1)+,d0
-	bra.b	T_072c4
-T_0729a:
+	bra.s	.Next1
+.Loop1:
 	bsr.w	Find_word
-	moveq	#0,d6
+	moveq.l	#0,d6
 	move.b	(a0)+,d6
-	subq.w	#$1,d6
+	subq.w	#1,d6
 	add.w	d6,d1
-	bra.b	T_072aa
-T_072a8:
+	bra.s	.Entry2
+.Loop2:
 	move.b	(a0)+,(a2)+
-T_072aa:
-	dbra	d6,T_072a8
+; CHANGE: removed "tst.w d6"
+; CHANGE: removed "bpl.s .Entry2"
+; CHANGE: removed "illegal"
+.Entry2:
+	dbra	d6,.Loop2
 	move.w	(a1)+,d0
 	lea.l	EndPuncts,a3
-	moveq	#2,d6
-T_072b8:
+	moveq	#2,d6	; CHANGE: was "moveq.l #Nr_Endpuncts-1,d6"
+.Loop3:
 	cmp.w	(a3)+,d0
-	beq.b	T_072c4
-	dbra	d6,T_072b8
-	move.b	#$20,(a2)+
-T_072c4:
-	dbra	d7,T_0729a
-	move.b	#$0,-(a2)
-	movem.l	(a7)+,d0-d2/d6-d7/a0-a3
-	rts
+	beq.s	.Next1
+	dbra	d6,.Loop3
+	move.b	#$20,(a2)+	; CHANGE: was "move.b #" ",(a2)+"
+.Next1:
+	dbra	d7,.Loop1
+	move.b	#0,-(a2)
+	movem.l	(sp)+,d0-d2/d6/d7/a0-a3
+	rts	
 Calc_textblock_address:
 	moveq	#0,d1
 	move.b	(a1),d1
@@ -8510,140 +8603,142 @@ T_072e8:
 	addq.l	#$2,a1
 T_072fe:
 	rts
+; ---- Prepare_scrolling (original source: MAIN/WORDS.ASM)
 Prepare_scrolling:
-	movem.l	d0-d7/a0-a3/a5-a6,-(a7)
-	move.w	$8(a5),d0
+	movem.l	d0-d7/a0-a3/a5/a6,-(sp)
+	move.w	PA_Ink(a5),d0
 	jsr	IG_Set_ink
-	moveq	#-1,d0
+	moveq.l	#-1,d0
 	jsr	IG_Set_paper
 	move.w	Nr_of_chars,d0
-	mulu.w	#$6,d0
-	addi.w	#$f,d0
+	mulu.w	#6,d0
+	addi.w	#15,d0
 	andi.w	#$fff0,d0
-	lsr.w	#$1,d0
+	lsr.w	#1,d0
 	move.w	Lines_in_text,d1
-	mulu.w	#$7,d1
+	mulu.w	#7,d1
 	move.w	d1,Height_of_buffer
 	mulu.w	d1,d0
 	jsr	Allocate_memory
 	move.l	a1,Text_graphics_buffer
-	move.l	#$460,d0
+	move.l	#7*160,d0
 	jsr	Allocate_memory
 	move.l	a1,Line_graphics_buffer
-	moveq	#0,d0
-	moveq	#0,d1
+	moveq.l	#0,d0
+	moveq.l	#0,d1
 	move.w	Nr_of_chars,d2
 	movea.w	d2,a2
-	addq.w	#$1,a2
-	mulu.w	#$6,d2
+	addq.w	#1,a2
+	mulu.w	#6,d2
 	move.w	d2,d5
-	addi.w	#$f,d5
+	addi.w	#15,d5
 	andi.w	#$fff0,d5
-	lsr.w	#$1,d5
+	lsr.w	#1,d5
 	move.w	d5,Width_of_buffer
-	mulu.w	#$7,d5
+	mulu.w	#7,d5
 	movea.w	d5,a3
-	addi.w	#$f,d2
+	addi.w	#15,d2
 	move.w	d2,d6
-	lsr.w	#$4,d6
+	lsr.w	#4,d6
 	andi.w	#$fff0,d2
-	subq.w	#$1,d2
-	moveq	#6,d3
-	move.w	$a(a5),d4
+	subq.w	#1,d2
+	moveq.l	#7-1,d3
+	move.w	PA_Paper(a5),d4
 	move.w	Lines_in_text,d5
-	subq.w	#$1,d5
-	moveq	#7,d7
+	subq.w	#1,d5
+	moveq.l	#7,d7
 	movea.l	Text_buffer,a0
 	movea.l	Text_graphics_buffer,a1
 	movea.l	Line_graphics_buffer,a6
-T_073b4:
-	exg.l	d6,d4
+.Loop:
+	exg.l	d6,d4	; CHANGE: was ".Loop: exg.l d4,d6"
 	jsr	Draw_box
-	exg.l	d6,d4
+	exg.l	d6,d4	; CHANGE: was "exg.l d4,d6"
 	jsr	IG_Set_cursor
 	jsr	IG_Print
-	exg.l	a1,a0
+	exg.l	a1,a0	; CHANGE: was "exg.l a0,a1"
 	jsr	Get2_block
-	exg.l	a1,a0
+	exg.l	a1,a0	; CHANGE: was "exg.l a0,a1"
 	adda.w	a2,a0
 	adda.w	a3,a1
-	dbra	d5,T_073b4
+	dbra	d5,.Loop
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	movea.l	Line_graphics_buffer,a0
 	jsr	Free_memory
-	movem.l	(a7)+,d0-d7/a0-a3/a5-a6
-	rts
+	movem.l	(sp)+,d0-d7/a0-a3/a5/a6
+	rts	
+; ---- Refresh_text_window (original source: MAIN/WORDS.ASM)
 Refresh_text_window:
-	movem.l	d0-d3/d6-d7/a0,-(a7)
+	movem.l	d0-d3/d6/d7/a0,-(sp)
 	movea.l	Text_graphics_buffer,a0
 	tst.w	d0
-	bpl.b	T_0744a
+	bpl.s	.Ok_1
 	move.w	d0,d3
 	neg.w	d3
-	cmp.w	$6(a5),d3
-	bmi.b	T_0741a
-	bsr.w	Erase_text_window
-	bra.w	T_074be
-T_0741a:
-	move.w	$0(a5),d0
-	move.w	$2(a5),d1
+	cmp.w	$6(a5),d3	; CHANGE: added
+	bmi.b	.c_0741a	; CHANGE: added
+	bsr.w	Erase_text_window	; CHANGE: added
+	bra.w	.Exit	; CHANGE: added
+.c_0741a:
+	move.w	PA_X(a5),d0
+	move.w	PA_Y(a5),d1
 	move.w	d0,d2
 	add.w	d1,d3
-	add.w	$4(a5),d2
-	subq.w	#$1,d2
-	subq.w	#$1,d3
-	move.w	$a(a5),d6
+	add.w	PA_Wd(a5),d2
+	subq.w	#1,d2
+	subq.w	#1,d3
+	move.w	PA_Paper(a5),d6
 	jsr	Draw_box
 	move.w	d3,d1
-	addq.w	#$1,d1
-	move.w	$2(a5),d7
-	add.w	$6(a5),d7
+	addq.w	#1,d1
+	move.w	PA_Y(a5),d7
+	add.w	PA_Ht(a5),d7
 	sub.w	d3,d7
-	subq.w	#$1,d7
-	bra.b	T_074b0
-T_0744a:
+	subq.w	#1,d7
+	bra.s	.Continue
+.Ok_1:
 	move.w	Height_of_buffer,d1
-	subq.w	#$1,d1
+	subq.w	#1,d1
 	cmp.w	d1,d0
-	bmi.b	T_0745c
+	bmi.s	.Ok_2
 	bsr.w	Erase_text_window
-	bra.b	T_074be
-T_0745c:
+	bra.s	.Exit
+.Ok_2:
 	move.w	Width_of_buffer,d2
 	ext.l	d2
 	mulu.w	d0,d2
 	adda.l	d2,a0
-	move.w	$6(a5),d7
+	move.w	PA_Ht(a5),d7
 	move.w	d0,d1
 	add.w	d7,d1
 	cmp.w	Height_of_buffer,d1
-	bmi.b	T_074a8
+	bmi.s	.Ok_3
 	move.w	Height_of_buffer,d7
 	sub.w	d0,d7
-	bmi.b	T_074be
-	subq.w	#$1,d7
-	move.w	$0(a5),d0
-	move.w	$2(a5),d1
+	bmi.s	.Exit
+	subq.w	#1,d7
+	move.w	PA_X(a5),d0
+	move.w	PA_Y(a5),d1
 	move.w	d0,d2
-	add.w	$4(a5),d2
-	subq.w	#$1,d2
+	add.w	PA_Wd(a5),d2
+	subq.w	#1,d2
 	move.w	d1,d3
-	add.w	$6(a5),d3
-	subq.w	#$1,d3
+	add.w	PA_Ht(a5),d3
+	subq.w	#1,d3
 	add.w	d7,d1
-	move.w	$a(a5),d6
+	move.w	PA_Paper(a5),d6
 	jsr	Draw_box
-T_074a8:
-	move.w	$0(a5),d0
-	move.w	$2(a5),d1
-T_074b0:
+.Ok_3:
+	move.w	PA_X(a5),d0
+	move.w	PA_Y(a5),d1
+.Continue:
 	move.w	Width_of_buffer,d6
-	lsr.w	#$3,d6
+	lsr.w	#3,d6
 	jsr	Blot_unmasked_block
-T_074be:
-	movem.l	(a7)+,d0-d3/d6-d7/a0
-	rts
+.Exit:
+	movem.l	(sp)+,d0-d3/d6/d7/a0
+	rts	
 ; ---- Erase_text_window (original source: MAIN/WORDS.ASM)
 Erase_text_window:
 	movem.l	d0-d3/d6/a5,-(sp)
@@ -8722,77 +8817,79 @@ Init_PA:
 	move.w	PA_Paper(a0),d0
 	jsr	IG_Set_paper
 	rts	
+; ---- Prepare_text_block (original source: MAIN/WORDS.ASM)
 Prepare_text_block:
-	movem.l	d0-d3/d7/a0-a5,-(a7)
+	movem.l	d0-d3/d7/a0-a5,-(sp)
 	bsr.w	Calc_textblock_address
 	movea.l	a1,a3
-	move.l	#$bb8,d0
+	move.l	#$bb8,d0	; CHANGE: was "move.l #Max_textblock_size,d0"
 	jsr	Allocate_memory
-	exg.l	a3,a1
+	exg.l	a3,a1	; CHANGE: was "exg.l a1,a3"
 	move.l	a3,Text_buffer
 	lea.l	Line_buffer,a2
 	lea.l	Paragraph_list,a4
-	moveq	#0,d1
-	moveq	#0,d3
-	moveq	#0,d4
-	moveq	#1,d5
-	bra.b	T_07664
-T_075fa:
+	moveq.l	#0,d1
+	moveq.l	#0,d3
+	moveq.l	#0,d4
+	moveq.l	#1,d5
+	bra.s	.Next1
+.Loop1:
 	move.w	(a1)+,d0
-	cmpi.w	#$0,d0
-	bne.b	T_07608
-	bsr.w	T_076ac
-	bra.b	T_07664
-T_07608:
-	cmpi.w	#$18e,d0
-	bne.b	T_0761a
-	bsr.w	T_076ee
+	cmpi.w	#$0,d0	; CHANGE: was "cmpi.w #OpenBracket,d0"
+	bne.s	.No_OB
+	bsr.w	.Copy_word
+	bra.s	.Next1
+.No_OB:
+	cmpi.w	#$18e,d0	; CHANGE: was ".No_OB: cmpi.w #CarrReturn,d0"
+	bne.s	.No_CR
+	bsr.w	.Carriage_return
 	lea.l	Line_buffer,a2
-	bra.b	T_07664
-T_0761a:
-	cmpi.w	#$c2b,d0
-	bne.b	T_07632
-	bsr.w	T_076ee
-	lea.l	Line_buffer,a2
+	bra.s	.Next1
+.No_CR:
+	cmpi.w	#$c2b,d0	; CHANGE: was ".No_CR: cmpi.w #ParaMark,d0"
+	bne.s	.No_para
+	bsr.w	.Carriage_return	; CHANGE: added
+	lea.l	Line_buffer,a2	; CHANGE: added
 	move.w	d4,(a4)+
-	moveq	#0,d4
-	addq.w	#$1,d5
-	bra.b	T_07664
-T_07632:
+	moveq.l	#0,d4
+	addq.w	#1,d5
+; CHANGE: removed "jsr .Carriage_return"
+	bra.s	.Next1
+.No_para:
 	lea.l	EndPuncts,a5
-	moveq	#2,d6
-T_0763a:
+	moveq	#2,d6	; CHANGE: was "moveq.l #Nr_Endpuncts-1,d6"
+.Loop2:
 	cmp.w	(a5)+,d0
-	beq.b	T_0764c
-	dbra	d6,T_0763a
-	bsr.w	T_076ac
-	bsr.w	T_076c2
-	bra.b	T_07664
-T_0764c:
+	beq.s	.Punct
+	dbra	d6,.Loop2
+	bsr.w	.Copy_word
+	bsr.w	.Insert_space
+	bra.s	.Next1
+.Punct:
 	tst.w	d1
-	beq.b	T_0765c
-	cmpi.b	#$20,-$1(a2)
-	bne.b	T_0765c
-	subq.l	#$1,a2
-	subq.w	#$1,d1
-T_0765c:
-	bsr.w	T_076ac
-	bsr.w	T_076c2
-T_07664:
-	dbra	d7,T_075fa
-	move.b	#$0,(a2)
+	beq.s	.Skip
+	cmpi.b	#$20,-$1(a2)	; CHANGE: was "cmpi.b #" ",-1(a2)"
+	bne.s	.Skip
+	subq.l	#1,a2
+	subq.w	#1,d1
+.Skip:
+	bsr.w	.Copy_word
+	bsr.w	.Insert_space
+.Next1:
+	dbra	d7,.Loop1
+	move.b	#0,(a2)
 	movea.l	a3,a0
 	lea.l	Line_buffer,a2
-T_07674:
+.Loop3:
 	move.b	(a2)+,(a0)+
-	tst.b	-$1(a2)
-	bne.b	T_07674
+	tst.b	-1(a2)
+	bne.s	.Loop3
 	tst.w	d1
-	beq.b	T_07688
-	addq.w	#$1,d3
-	addq.w	#$1,d4
-	lea.l	$1(a3,d2.w),a3
-T_07688:
+	beq.s	.Empty
+	addq.w	#1,d3
+	addq.w	#1,d4
+	lea.l	1(a3,d2.w),a3
+.Empty:
 	move.w	d3,Lines_in_text
 	move.w	d4,(a4)+
 	move.w	d5,Paras_in_text
@@ -8800,52 +8897,52 @@ T_07688:
 	suba.l	a0,a3
 	move.l	a3,d0
 	jsr	Shrink_memory
-	movem.l	(a7)+,d0-d3/d7/a0-a5
-	rts
-T_076ac:
+	movem.l	(sp)+,d0-d3/d7/a0-a5
+	rts	
+.Copy_word:
 	bsr.w	Find_word
-	moveq	#0,d6
+	moveq.l	#0,d6
 	move.b	(a0)+,d6
-	subq.w	#$1,d6
+	subq.w	#1,d6
 	add.w	d6,d1
-	bra.b	T_076bc
-T_076ba:
+	bra.s	.Entry4
+.Loop4:
 	move.b	(a0)+,(a2)+
-T_076bc:
-	dbra	d6,T_076ba
-	rts
-T_076c2:
-	move.b	#$20,(a2)+
-	addq.w	#$1,d1
+.Entry4:
+	dbra	d6,.Loop4
+	rts	
+.Insert_space:
+	move.b	#$20,(a2)+	; CHANGE: was "move.b #" ",(a2)+"
+	addq.w	#1,d1
 	cmp.w	d2,d1
-	bls.b	T_076ec
-	subq.l	#$1,a2
-T_076ce:
-	cmpi.b	#$20,-(a2)
-	bne.b	T_076ce
-	bsr.w	T_076ee
+	bls.s	.Exit
+	subq.l	#1,a2
+.Seek:
+	cmpi.b	#$20,-(a2)	; CHANGE: was ".Seek: cmpi.b #" ",-(a2)"
+	bne.s	.Seek
+	bsr.w	.Carriage_return
 	lea.l	Line_buffer,a0
-T_076de:
+.Loop5:
 	move.b	(a2)+,(a0)+
-	addq.l	#$1,d1
-	cmpi.b	#$20,-$1(a2)
-	bne.b	T_076de
+	addq.l	#1,d1
+	cmpi.b	#$20,-$1(a2)	; CHANGE: was "cmpi.b #" ",-1(a2)"
+	bne.s	.Loop5
 	movea.l	a0,a2
-T_076ec:
-	rts
-T_076ee:
-	move.b	#$0,(a2)
+.Exit:
+	rts	
+.Carriage_return:
+	move.b	#0,(a2)
 	movea.l	a3,a0
 	lea.l	Line_buffer,a2
-T_076fa:
+.Loop6:
 	move.b	(a2)+,(a0)+
-	tst.b	-$1(a2)
-	bne.b	T_076fa
-	moveq	#0,d1
-	addq.w	#$1,d3
-	addq.w	#$1,d4
-	lea.l	$1(a3,d2.w),a3
-	rts
+	tst.b	-1(a2)
+	bne.s	.Loop6
+	moveq.l	#0,d1
+	addq.w	#1,d3
+	addq.w	#1,d4
+	lea.l	1(a3,d2.w),a3
+	rts	
 Mr_Blue_Sky:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.w	Nr_of_chars,d2
@@ -8865,8 +8962,8 @@ Mr_Blue_Sky:
 	bsr.w	Refresh_text_window
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bsr.w	T_0784c
-	bra.w	T_07818
+	bsr.w	Wait_4_user
+	bra.w	Exit_Blue_Sky
 T_0776a:
 	lea.l	Paragraph_list,a0
 	move.w	$6(a5),d0
@@ -8881,12 +8978,12 @@ T_07786:
 	bhi.b	T_07796
 	move.w	d2,d1
 	bsr.w	Scroll_up
-	bsr.w	T_0784c
+	bsr.w	Wait_4_user
 	bra.b	T_077a4
 T_07796:
 	move.w	d6,d1
 	bsr.w	Scroll_up
-	bsr.w	T_0784c
+	bsr.w	Wait_4_user
 	sub.w	d6,d2
 	bra.b	T_07786
 T_077a4:
@@ -8926,7 +9023,8 @@ T_0780a:
 	bra.b	T_077d6
 T_07812:
 	jsr	Pop_MA
-T_07818:
+; ---- Exit_Blue_Sky (original source: MAIN/WORDS.ASM)
+Exit_Blue_Sky:
 	movea.l	Off_screen,a6
 	bsr.w	Erase_text_window
 	jsr	Switch_screen
@@ -8935,9 +9033,9 @@ T_07818:
 	movea.l	Text_graphics_buffer,a0
 	jsr	Free_memory
 	clr.b	Mouse_click_state
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
-T_0784c:
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
+Wait_4_user:
 	movem.l	a0-a1,-(a7)
 	lea.l	D_26a26,a0
 	movea.l	Module_sp,a1
@@ -9020,23 +9118,25 @@ T_0794a:
 	dc.b	$0e,$0e,$5f,$20,$0e,$00
 T_07950:
 	dc.b	$0e,$20,$00,$00
+; ---- Init_RText (original source: MAIN/WORDS.ASM)
 Init_RText:
-	movem.l	d0/a1,-(a7)
-	move.w	#$0,RText_X
-	move.w	#$0,RText_Y
-	move.w	#$0,Lines_in_text
-	move.l	#$1f4,d0
+	movem.l	d0/a1,-(sp)
+	move.w	#0,RText_X
+	move.w	#0,RText_Y
+	move.w	#0,Lines_in_text
+	move.l	#$1f4,d0	; CHANGE: was "move.l #Max_textblock_size,d0"
 	jsr	Allocate_memory
 	move.l	a1,RText_ptr
 	clr.b	(a1)
-	movem.l	(a7)+,d0/a1
-	rts
-T_0798a:
-	move.l	a0,-(a7)
+	movem.l	(sp)+,d0/a1
+	rts	
+; ---- Exit_RText (original source: MAIN/WORDS.ASM)
+Exit_RText:
+	move.l	a0,-(sp)
 	movea.l	RText_ptr,a0
 	jsr	Free_memory
-	movea.l	(a7)+,a0
-	rts
+	movea.l	(sp)+,a0
+	rts	
 ; ---- Add_ASCII_2_RText (original source: MAIN/WORDS.ASM)
 Add_ASCII_2_RText:
 	movem.l	d0-d3/a0-a3,-(sp)
@@ -9115,72 +9215,74 @@ Add_ASCII_2_RText:
 	lea.l	1(a1,d1.w),a1
 	movea.l	(sp)+,a2
 	rts	
+; ---- Add_encoded_2_RText (original source: MAIN/WORDS.ASM)
 Add_encoded_2_RText:
-	movem.l	d0-d1/d6-d7/a0-a3,-(a7)
+	movem.l	d0/d1/d6/d7/a0-a3,-(sp)
 	bsr.w	Calc_textblock_address
 	movea.l	a1,a2
-	move.l	#$bb8,d0
+	move.l	#$bb8,d0	; CHANGE: was "move.l #Max_textblock_size,d0"
 	jsr	Allocate_memory
-	exg.l	a2,a1
+	exg.l	a2,a1	; CHANGE: was "exg.l a1,a2"
 	move.l	a2,Text_buffer
-	bra.b	T_07ac4
-T_07a86:
+	bra.s	.Next1
+.Loop1:
 	move.w	(a1)+,d0
-	cmpi.w	#$0,d0
-	bne.b	T_07a94
-	bsr.w	T_07ae0
-	bra.b	T_07ac4
-T_07a94:
-	cmpi.w	#$18e,d0
-	bne.b	T_07aa0
-	move.b	#$d,(a2)+
-	bra.b	T_07ac4
-T_07aa0:
+	cmpi.w	#$0,d0	; CHANGE: was "cmpi.w #OpenBracket,d0"
+	bne.s	.No_OB
+	bsr.w	.Copy_word
+	bra.s	.Next1
+.No_OB:
+	cmpi.w	#$18e,d0	; CHANGE: was ".No_OB: cmpi.w #CarrReturn,d0"
+	bne.s	.No_CR
+	move.b	#13,(a2)+
+	bra.s	.Next1
+.No_CR:
 	lea.l	EndPuncts,a3
-	moveq	#2,d6
-T_07aa8:
+	moveq	#2,d6	; CHANGE: was "moveq.l #Nr_Endpuncts-1,d6"
+.Loop2:
 	cmp.w	(a3)+,d0
-	beq.b	T_07ab2
-	dbra	d6,T_07aa8
-	bra.b	T_07abc
-T_07ab2:
-	cmpi.b	#$20,-$1(a2)
-	bne.b	T_07abc
-	subq.l	#$1,a2
-T_07abc:
-	bsr.w	T_07ae0
-	move.b	#$20,(a2)+
-T_07ac4:
-	dbra	d7,T_07a86
+	beq.s	.Punct
+	dbra	d6,.Loop2
+	bra.s	.Skip
+.Punct:
+	cmpi.b	#$20,-$1(a2)	; CHANGE: was ".Punct: cmpi.b #" ",-1(a2)"
+	bne.s	.Skip
+	subq.l	#1,a2
+.Skip:
+	bsr.w	.Copy_word
+	move.b	#$20,(a2)+	; CHANGE: was "move.b #" ",(a2)+"
+.Next1:
+	dbra	d7,.Loop1
 	clr.b	(a2)
 	movea.l	Text_buffer,a0
 	bsr.w	Add_ASCII_2_RText
 	jsr	Free_memory
-	movem.l	(a7)+,d0-d1/d6-d7/a0-a3
-	rts
-T_07ae0:
+	movem.l	(sp)+,d0/d1/d6/d7/a0-a3
+	rts	
+.Copy_word:
 	bsr.w	Find_word
-	moveq	#0,d6
+	moveq.l	#0,d6
 	move.b	(a0)+,d6
-	subq.w	#$1,d6
-	bra.b	T_07aee
-T_07aec:
+	subq.w	#1,d6
+	bra.s	.Entry3
+.Loop3:
 	move.b	(a0)+,(a2)+
-T_07aee:
-	dbra	d6,T_07aec
-	rts
-T_07af4:
-	movem.l	d0-d1/a5,-(a7)
-	cmpi.w	#$5,Travel_mode
-	bpl.b	T_07b18
+.Entry3:
+	dbra	d6,.Loop3
+	rts	
+; ---- Event_handler (original source: MAIN/EVENTS.ASM)
+Event_handler:
+	movem.l	d0/d1/a5,-(sp)
+	cmpi.w	#5,Travel_mode
+	bpl.s	.Exit
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	bsr.w	Find_event
-	beq.b	T_07b18
-	bsr.w	T_07b76
-T_07b18:
-	movem.l	(a7)+,d0-d1/a5
-	rts
+	beq.s	.Exit
+	bsr.w	Handle_event
+.Exit:
+	movem.l	(sp)+,d0/d1/a5
+	rts	
 ; ---- Find_event (original source: MAIN/EVENTS.ASM)
 Find_event:
 	movem.l	d0/d1/a0,-(sp)
@@ -9207,7 +9309,7 @@ Find_event:
 .Exit:
 	movem.l	(sp)+,d0/d1/a0
 	rts	
-T_07b76:
+Handle_event:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.w	#$0,Draw_Cicon
 	moveq	#0,d1
@@ -9230,7 +9332,7 @@ T_07b76:
 	bne.b	T_07bbe
 	btst	d7,(a0)
 	beq.b	T_07bc2
-	bsr.w	T_09af2
+	bsr.w	Do_extra_event
 	bra.b	T_07bf0
 T_07bbe:
 	btst	d7,(a0)
@@ -9254,27 +9356,27 @@ T_07be6:
 T_07bf0:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-	dc.l	T_07ed8
+	dc.l	Map_exit
 	dc.l	Door
 	dc.l	T_085aa
 	dc.l	T_08a34
 	dc.l	T_092d4
 	dc.l	T_0935a
 	dc.l	T_093f2
-	dc.l	T_09404
-	dc.l	T_09436
-	dc.l	T_0948e
-	dc.l	T_094d6
-	dc.l	T_09548
-	dc.l	T_09b16
-	dc.l	T_095ca
+	dc.l	Spinner
+	dc.l	Damage_field
+	dc.l	Anti_magic
+	dc.l	Lp_regen
+	dc.l	Sp_regen
+	dc.l	ETrap
+	dc.l	Riddle_mouth
 	dc.l	T_099c8
 	dc.l	T_09a46
 	dc.l	T_09b2c
-	dc.l	T_0aa6e
+	dc.l	Places
 	dc.l	T_09a8e
 	dc.l	T_09ae6
-	dc.l	T_07f0a
+	dc.l	Travel_exit
 	dc.l	T_09c06
 	dc.l	T_0a262
 ; ---- Save_event (original source: MAIN/EVENTS.ASM)
@@ -9293,26 +9395,27 @@ T_07c70:
 	mulu.w	B_589d8,d0
 	divu.w	#$64,d0
 	bra.b	T_07c84
+; ---- Probe (original source: MAIN/EVENTS.ASM)
 Probe:
-	movem.l	d0-d1,-(a7)
-T_07c84:
-	cmpi.w	#$6,Travel_mode
-	bpl.b	T_07cac
+	movem.l	d0/d1,-(sp)
+	cmpi.w	#6,Travel_mode
+	bpl.s	.Exit
 	tst.w	d0
-	bmi.b	T_07cac
-	cmpi.w	#$64,d0
-	bpl.b	T_07cac
+	bmi.s	.Exit
+	cmpi.w	#100,d0
+	bpl.s	.Exit
 	move.w	d0,d1
 	jsr	Random
-	lsr.w	#$1,d0
+	lsr.w	#1,d0
 	ext.l	d0
-	divu.w	#$64,d0
-	swap	d0
+	divu.w	#100,d0
+	swap.w	d0
 	cmp.w	d0,d1
-T_07cac:
-	movem.l	(a7)+,d0-d1
-	rts
-T_07cb2:
+.Exit:
+	movem.l	(sp)+,d0/d1
+	rts	
+T_07c84	equ	Probe+4
+Execute_trap:
 	movem.l	d0-d2/a0-a2/a5,-(a7)
 	ext.w	d0
 	beq.w	T_07d7e
@@ -9383,7 +9486,7 @@ T_07d9c:
 T_07d9e:
 	rts
 T_07da0:
-	dc.l	T_07dd8	; ori.b #$d8, d0
+	dc.l	Damage_trap	; ori.b #$d8, d0
 	ori.b	#$7,d0
 	dc.l	T_07df2	; ori.b #$f2, d0
 	ori.b	#$8,d1
@@ -9397,14 +9500,15 @@ T_07da0:
 	ori.b	#$c,d1
 	dc.l	T_07e1a	; ori.b #$1a, d0
 	ori.b	#$d,d1
-T_07dd8:
-	movem.l	d1/a0,-(a7)
+; ---- Damage_trap (original source: MAIN/EVENTS.ASM)
+Damage_trap:
+	movem.l	d1/a0,-(a7)	; CHANGE: was "movem.l d1/a5,-(sp)"
 	movea.l	Event_data_ptr,a0
-	move.b	$3(a0),d1
+	move.b	3(a0),d1
 	ext.w	d1
-	bsr.w	T_07e22
-	movem.l	(a7)+,d1/a0
-	rts
+	bsr.w	Do_damage
+	movem.l	(sp)+,d1/a0
+	rts	
 T_07df2:
 	bset	#$1,$3a(a0)
 	rts
@@ -9423,7 +9527,7 @@ T_07e12:
 T_07e1a:
 	bset	#$3,$3a(a0)
 	rts
-T_07e22:
+Do_damage:
 	movem.l	d2/a0,-(a7)
 	lea.l	Codetxt_ptr,a0
 	move.w	d0,d2
@@ -9457,91 +9561,100 @@ T_07e64:
 T_07e82:
 	movem.l	(a7)+,d2/a0
 	rts
-T_07e88:
-	cmpi.b	#$1a,d0
-	bpl.b	T_07ed6
+; ---- Event_text (original source: MAIN/EVENTS.ASM)
+Event_text:
+	cmpi.b	#26,d0
+	bpl.s	.Exit
 	ext.w	d0
 	move.w	d0,WText_nr
 	move.l	Maptext_ptr,Textfile_ptr
+; CHANGE: removed "move.l (sp)+,.Filth+2"
 	lea.l	TxtW_Mod,a0
+; CHANGE: removed "move.l #.Dirty,Return_ptr(a0)"
 	jsr	Push_Module
-T_07eac:
-	move.w	#$0,Draw_Cicon
-	jsr	Input_handler
-	movea.l	Module_sp,a0
-	move.l	(a0),d0
-	beq.b	T_07ec8
-	movea.l	d0,a0
-	jsr	(a0)
-T_07ec8:
-	jsr	Switch_screen
-	tst.b	B_592de
-	beq.b	T_07eac
-T_07ed6:
-	rts
-T_07ed8:
+.c_07eac:
+	move.w	#$0,Draw_Cicon	; CHANGE: was "bra.s .Exit"
+.Dirty:
+	jsr	Input_handler	; CHANGE: was ".Dirty: clr.l TxtW_Mod+Return_ptr"
+	movea.l	Module_sp,a0	; CHANGE: was "movea.l Event_data_ptr,a5"
+.Filth:
+	move.l	(a0),d0	; CHANGE: was ".Filth: jsr $deadface"
+	beq.b	.c_07ec8	; CHANGE: added
+	movea.l	d0,a0	; CHANGE: added
+	jsr	(a0)	; CHANGE: added
+.c_07ec8:
+	jsr	Switch_screen	; CHANGE: added
+	tst.b	B_592de	; CHANGE: added
+	beq.b	.c_07eac	; CHANGE: added
+.Exit:
+	rts	
+; ---- Map_exit (original source: MAIN/EVENTS.ASM)
+Map_exit:
 	bsr.w	Exit_map
-	moveq	#0,d0
-	move.b	$1(a5),d0
+	moveq.l	#0,d0
+	move.b	1(a5),d0
 	move.w	d0,Map_Xcoord
-	move.b	$2(a5),d0
+	move.b	2(a5),d0
 	move.w	d0,Map_Ycoord
-	move.b	$3(a5),d0
+	move.b	3(a5),d0
 	move.w	d0,View_direction
-	move.w	$6(a5),Map_nr
+	move.w	6(a5),Map_nr
 	bsr.w	Init_map
-	rts
-T_07f0a:
+	rts	
+; ---- Travel_exit (original source: MAIN/EVENTS.ASM)
+Travel_exit:
 	bsr.w	Exit_map
-	moveq	#0,d0
-	move.b	$1(a5),d0
+	moveq.l	#0,d0
+	move.b	1(a5),d0
 	move.w	d0,Map_Xcoord
-	move.b	$2(a5),d0
+	move.b	2(a5),d0
 	move.w	d0,Map_Ycoord
-	move.b	$3(a5),d0
+	move.b	3(a5),d0
 	move.w	d0,View_direction
-	move.w	$6(a5),Map_nr
-	moveq	#0,d0
+	move.w	6(a5),Map_nr
+	moveq.l	#0,d0
 	bsr.w	Set_new_travel_mode
 	bsr.w	Init_map
-	rts
+	rts	
+; ---- Door (original source: MAIN/EVENTS.ASM)
 Door:
 	move.w	Special_item_flags,d0
-	btst	#$1,d0
-	beq.b	T_07f62
+	btst	#1,d0
+	beq.s	.No_Amber
 	tst.b	Doorexit_flag
-	beq.b	T_07f60
-	bsr.w	T_09af2
-	sf.b	Doorexit_flag
-T_07f60:
-	rts
-T_07f62:
+	beq.s	.No_doorexit
+	bsr.w	Do_extra_event
+	sf	Doorexit_flag
+.No_doorexit:
+	rts	
+.No_Amber:
 	jsr	Exit_display
-	sf.b	Door_opened
-	sf.b	Trap_found
-	sf.b	Trap_disarmed
+	sf	Door_opened
+	sf	Trap_found
+	sf	Trap_disarmed
 	lea.l	Door_Mod,a0
 	jsr	Push_Module
 	jsr	Init_display
-	rts
+	rts	
+; ---- Door_DisUpd (original source: MAIN/EVENTS.ASM)
 Door_DisUpd:
 	bsr.w	Update_status_block
 	lea.l	Door_CIL,a0
 	lea.l	DoorCIL_evaluate,a1
 	bsr.w	Update_control_icons
 	tst.b	Door_opened
-	beq.b	T_07fd0
+	beq.s	.Exit
 	jsr	Exit_display
 	jsr	Pop_Module
 	tst.b	Doorexit_flag
-	beq.b	T_07fca
-	bsr.w	T_09af2
-	sf.b	Doorexit_flag
-	bra.b	T_07fd0
-T_07fca:
+	beq.s	.No_doorexit
+	bsr.w	Do_extra_event
+	sf	Doorexit_flag
+	bra.s	.Exit
+.No_doorexit:
 	jsr	Init_display
-T_07fd0:
-	rts
+.Exit:
+	rts	
 Door_ModInit:
 	bsr.w	T_0025a
 	moveq	#13,d0
@@ -9625,7 +9738,7 @@ T_08100:
 	bsr.w	Probe
 	bpl.b	T_0811e
 	move.b	$2(a5),d0
-	bsr.w	T_07cb2
+	bsr.w	Execute_trap
 	bra.b	T_0813a
 T_0811e:
 	move.w	#$1,d0
@@ -9647,10 +9760,11 @@ T_0813c:
 UseItemDoor_DisUpd:
 	jsr	Update_quantity_colours
 	rts	
+; ---- UseItemDoor_DisInit (original source: MAIN/EVENTS.ASM)
 UseItemDoor_DisInit:
 	movea.l	Current_active_char_data,a0
-	lea.l	$2b(a0),a1
-	lea.l	$29a(a0),a0
+	lea.l	Inventory_1_place_counter(a0),a1
+	lea.l	Inv_data+360(a0),a0
 	move.l	a0,Itemdata_ptr
 	move.l	a1,Itemslots_ptr
 	movea.l	Off_screen,a6
@@ -9659,10 +9773,10 @@ UseItemDoor_DisInit:
 	jsr	Copy_screen
 	lea.l	L3_objects_area,a0
 	jsr	Push_MA
-T_08196:
-	btst	#$1,Mouse_button_state
-	bne.b	T_08196
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- UseItemDoor_DisExit (original source: MAIN/EVENTS.ASM)
 UseItemDoor_DisExit:
 	jsr	Pop_MA
@@ -9685,77 +9799,80 @@ UseItemDoor_DisExit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
+; ---- UseItemDoor_objselect (original source: MAIN/EVENTS.ASM)
 T_081f8:
-	btst	#$1,Mouse_button_state
-	bne.b	T_081f8
+UseItemDoor_objselect:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	tst.b	d0
-	beq.w	T_082e4
+	beq.w	.Exit
 	move.b	d0,Object_slot_number
 	movea.l	Current_active_char_data,a0
-	lea.l	$2a(a0),a1
-	lea.l	$272(a0),a2
+	lea.l	Inventory_1_place_counter-1(a0),a1
+	lea.l	Inv_data+320(a0),a2
 	ext.w	d0
 	adda.w	d0,a1
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	adda.w	d0,a2
 	movea.l	Event_data_ptr,a5
-	tst.b	(a1)
-	beq.w	T_082e4
-	move.w	$24(a2),d1
-	cmp.w	$6(a5),d1
-	bne.b	T_082a6
-	btst	#$3,$18(a2)
-	beq.b	T_0828c
-	tst.b	$5(a5)
-	beq.b	T_0828c
-	subq.b	#$1,(a1)
-	moveq	#0,d0
-	move.w	$22(a2),d0
-	sub.l	d0,$ec(a0)
-	lea.l	D_25fd2,a3
+	tst.b	(a1)	; CHANGE: added
+	beq.w	.Exit	; CHANGE: added
+	move.w	Item_ID(a2),d1
+	cmp.w	6(a5),d1
+	bne.s	.Wrong
+	btst	#3,Item_stat_bits(a2)
+	beq.s	.Use_more
+	tst.b	5(a5)
+	beq.s	.Use_more
+	subq.b	#1,(a1)
+	moveq.l	#0,d0
+	move.w	Weight(a2),d0
+	sub.l	d0,Weight_normal(a0)
+	lea.l	Door_object_pos_list-4,a3
 	move.b	Object_slot_number,d0
 	ext.w	d0
 	add.w	d0,d0
 	add.w	d0,d0
-	move.w	$2(a3,d0.w),d1
-	move.w	(a3,d0.w),d0
-	moveq	#0,d2
+	move.w	2(a3,d0.w),d1
+	move.w	0(a3,d0.w),d0
+	moveq.l	#0,d2
 	move.b	(a2),d2
 	move.b	Object_slot_number,d3
 	ext.w	d3
-	lea.l	D_1e3f9,a3
-	move.b	-$1(a3,d3.w),d3
+	lea.l	Erase_icon+9,a3
+	move.b	-1(a3,d3.w),d3
 	ext.w	d3
 	bsr.w	Show_item_destruction
-T_0828c:
+.Use_more:
 	bsr.w	Save_event
-	st.b	Door_opened
-	move.w	#$2,d0
+	st	Door_opened
+	move.w	#2,d0
 	bsr.w	Plus_message
 	jsr	Pop_Module
-	bra.b	T_082e4
-T_082a6:
-	cmpi.b	#$7,$c(a2)
-	bne.b	T_082e4
-	cmpi.b	#$12,$d(a2)
-	bne.b	T_082e4
-	subq.b	#$1,(a1)
-	moveq	#0,d0
-	move.w	$22(a2),d0
-	sub.l	d0,$ec(a0)
-	cmpi.b	#$64,$1(a5)
-	bmi.b	T_082ce
-	moveq	#7,d0
-	bra.b	T_082da
-T_082ce:
-	moveq	#6,d0
-	st.b	Door_opened
+	bra.s	.Exit
+.Wrong:
+	cmpi.b	#7,Spell_class(a2)
+	bne.s	.Exit
+	cmpi.b	#18,Spell_number(a2)
+	bne.s	.Exit
+	subq.b	#1,(a1)
+	moveq.l	#0,d0
+	move.w	Weight(a2),d0
+	sub.l	d0,Weight_normal(a0)
+	cmpi.b	#100,1(a5)
+	bmi.s	.Magic_works
+	moveq.l	#7,d0
+	bra.s	.Skip
+.Magic_works:
+	moveq.l	#6,d0
+	st	Door_opened
 	bsr.w	Save_event
-T_082da:
+.Skip:
 	bsr.w	Plus_message
 	jsr	Pop_Module
-T_082e4:
-	rts
+.Exit:
+	rts	
 T_082e6:
 	btst	#$1,Mouse_button_state
 	bne.b	T_082e6
@@ -9799,7 +9916,7 @@ T_08332:
 T_08372:
 	movea.l	Event_data_ptr,a0
 	move.b	$2(a0),d0
-	bra.w	T_07cb2
+	bra.w	Execute_trap
 T_08380:
 	moveq	#5,d0
 	st.b	Trap_disarmed
@@ -9865,16 +9982,16 @@ Upd2_objname_print:
 .Init_string:
 	dc.b	1,15,2,-1,0
 	even	
-; ---- Upd2_objname_erase (original source: MAIN/EVENTS.ASM)
-Upd_objname_erase:
+; ---- Upd_objname_erase (original source: MAIN/INVENT.ASM)
 Upd5_objname_erase:
 Upd2_objname_erase:
+Upd_objname_erase:
 	tst.b	Erase_objname_flag
 	beq.s	.Exit
-	move.w	#112,d0
-	move.w	#73,d1
-	move.w	#112+192-1,d2
-	move.w	#73+6,d3
+	move.w	#$70,d0	; CHANGE: was "move.w #16,d0"
+	move.w	#$49,d1	; CHANGE: was "move.w #58,d1"
+	move.w	#$12f,d2	; CHANGE: was "move.w #16+176-1,d2"
+	move.w	#$4f,d3	; CHANGE: was "move.w #58+7-1,d3"
 	move.w	#2,d6
 	movea.l	Off_screen,a6
 	jsr	Draw_box
@@ -9986,7 +10103,7 @@ T_085aa:
 	bra.b	T_085c8
 T_085b8:
 	dc.b	$4a,$39
-	dc.l	B_58494
+	dc.l	Eye_flag
 	dc.b	$67,$0a,$0c,$2d,$00,$01,$00,$03,$66,$1c
 T_085c8:
 	rts
@@ -10032,6 +10149,7 @@ T_08644:
 	rts
 T_0864a:
 	jsr	T_0025a
+; ---- P80_ModInit (original source: MAIN/EVENTS.ASM)
 P80_ModInit:
 	lea.l	Pics80_filename,a0
 	move.w	d1,d0
@@ -10039,10 +10157,10 @@ P80_ModInit:
 	jsr	Load_subfile
 	move.l	a0,Pic80pal_ptr
 	lea.l	Pics80_filename,a0
-	subq.w	#$1,d0
+	subq.w	#1,d0
 	jsr	Load_subfile
 	move.l	a0,Pic80_ptr
-	jsr	T_00208
+	jsr	T_00208	; CHANGE: added
 	bra.w	P80_DisInit
 ; ---- P80_ModExit (original source: MAIN/EVENTS.ASM)
 P80_ModExit:
@@ -10325,42 +10443,43 @@ T_08aba:
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bra.w	Init_display
+; ---- Init_chest (original source: MAIN/EVENTS.ASM)
 Init_chest:
-	movem.l	d0-d2/d7/a0,-(a7)
-	move.w	$6(a5),d7
+	movem.l	d0-d2/d7/a0,-(sp)
+	move.w	6(a5),d7
 	lea.l	Chest_gold,a0
 	move.w	d7,d0
 	add.w	d0,d0
-	move.w	(a0,d0.w),Current_chest_gold
+	move.w	0(a0,d0.w),Current_chest_gold
 	lea.l	Chest,a0
-	moveq	#0,d2
-	subq.w	#$1,d7
+	moveq	#0,d2	; CHANGE: added
+	subq.w	#1,d7
 	move.w	d7,d0
-	lsr.w	#$1,d0
+	lsr.w	#1,d0
 	move.w	d0,d1
 	add.w	d0,d0
 	add.w	d1,d0
-	btst	#$0,d7
-	bne.b	T_08b0c
-	move.b	$1(a0,d0.w),d2
-	lsl.w	#$8,d2
-	move.b	(a0,d0.w),d2
-	lsr.w	#$1,d2
-	bra.b	T_08b22
-T_08b0c:
-	move.b	$2(a0,d0.w),d2
-	lsl.w	#$8,d2
-	move.b	$1(a0,d0.w),d2
-	lsr.w	#$5,d2
-	moveq	#1,d1
-	and.b	$3(a0,d0.w),d1
-	ror.w	#$5,d1
+	btst	#0,d7
+	bne.s	.Odd
+	move.b	1(a0,d0.w),d2
+	lsl.w	#8,d2
+	move.b	0(a0,d0.w),d2
+	lsr.w	#1,d2
+	bra.s	.Continue
+.Odd:
+	move.b	2(a0,d0.w),d2
+	lsl.w	#8,d2
+	move.b	1(a0,d0.w),d2
+	lsr.w	#5,d2
+	moveq.l	#1,d1
+	and.b	3(a0,d0.w),d1
+	ror.w	#5,d1
 	or.w	d1,d2
-T_08b22:
-	andi.w	#$fff,d2
+.Continue:
+	andi.w	#$0fff,d2
 	move.w	d2,Current_chest_slots
-	movem.l	(a7)+,d0-d2/d7/a0
-	rts
+	movem.l	(sp)+,d0-d2/d7/a0
+	rts	
 ClosedChest_ModInit:
 	jsr	T_0025a
 	moveq	#12,d0
@@ -10372,14 +10491,15 @@ ClosedChest_ModInit:
 ClosedChest_ModExit:
 	movea.l	Pic80_ptr,a0
 	jmp	Free_memory
+; ---- ClosedChest_DisInit (original source: MAIN/EVENTS.ASM)
 ClosedChest_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0002Sys,Textfile_ptr
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
-	lea.l	D_26034,a0
+	lea.l	ClosedChest_CIL,a0
 	bsr.w	ClosedChestCIL_evaluate
 	move.l	a0,Control_list_ptr
 	bsr.w	Show_control_icons
@@ -10387,57 +10507,59 @@ ClosedChest_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
+; ---- ClosedChest_DisUpd (original source: MAIN/EVENTS.ASM)
 ClosedChest_DisUpd:
 	bsr.w	Update_status_block
-	lea.l	D_26034,a0
+	lea.l	ClosedChest_CIL,a0
 	lea.l	ClosedChestCIL_evaluate,a1
 	bsr.w	Update_control_icons
 	jsr	Update_quantity_colours
 	tst.b	Door_opened
-	beq.b	T_08bf4
-	st.b	Fade_block
+	beq.s	.Exit
+	st	Fade_block
 	bsr.w	Pop_Module
 	movea.l	Event_data_ptr,a5
 	bsr.w	Init_chest
 	lea.l	OpenedChest_Mod,a0
 	bsr.w	Push_Module
-	sf.b	Fade_block
-T_08bf4:
-	rts
+	sf	Fade_block
+.Exit:
+	rts	
 T_08bf6:
 	lea.l	UseItemChest_Mod,a0
 	bra.w	Push_Module
-T_08c00:
+; ---- UseItemChest_objselect (original source: MAIN/EVENTS.ASM)
+UseItemChest_objselect:
 	tst.b	d0
-	beq.b	T_08c54
+	beq.s	.Exit
 	movea.l	Current_active_char_data,a0
-	lea.l	$2a(a0),a1
-	lea.l	$272(a0),a2
+	lea.l	Inventory_1_place_counter-1(a0),a1
+	lea.l	Inv_data+320(a0),a2
 	ext.w	d0
 	adda.w	d0,a1
-	moveq	#40,d1
+	moveq.l	#40,d1
 	mulu.w	d0,d1
 	adda.w	d1,a2
 	movea.l	Event_data_ptr,a5
-	cmpi.b	#$7,$c(a2)
-	bne.b	T_08c54
-	cmpi.b	#$12,$d(a2)
-	bne.b	T_08c54
-	subq.b	#$1,(a1)
-	cmpi.b	#$64,$1(a5)
-	bmi.b	T_08c40
-	moveq	#7,d0
-	bra.b	T_08c4c
-T_08c40:
-	moveq	#6,d0
-	st.b	Door_opened
+	cmpi.b	#7,Spell_class(a2)
+	bne.s	.Exit
+	cmpi.b	#18,Spell_number(a2)
+	bne.s	.Exit
+	subq.b	#1,(a1)
+	cmpi.b	#100,1(a5)
+	bmi.s	.Magic_works
+	moveq.l	#7,d0
+	bra.s	.Skip
+.Magic_works:
+	moveq.l	#6,d0
+	st	Door_opened
 	bsr.w	Save_event
-T_08c4c:
+.Skip:
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
-T_08c54:
-	rts
+.Exit:
+	rts	
 ; ---- ClosedChestCIL_evaluate (original source: MAIN/EVENTS.ASM)
 ClosedChestCIL_evaluate:
 	movem.l	d0/d7/a1,-(sp)
@@ -10475,11 +10597,11 @@ ClosedChestCIL_evaluate:
 .Exit:
 	movem.l	(sp)+,d0/d7/a1
 	rts	
-OpenedChest_ModInit:
+T_08cd2:
 	tst.b	Fade_block
-	bne.b	T_08ce0
+	bne.b	OpenedChest_ModInit
 	jsr	T_0025a
-T_08ce0:
+OpenedChest_ModInit:
 	moveq	#21,d0
 	lea.l	D_260c0,a0
 	bsr.w	Load_80x80_picture
@@ -10558,65 +10680,68 @@ OpenedChest_ModExit:
 	jsr	Free_memory
 	movea.l	Chestdata_ptr,a0
 	jmp	Free_memory
+; ---- OpenedChest_DisInit (original source: MAIN/EVENTS.ASM)
 OpenedChest_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
+; CHANGE: removed "Push PA,Lay3_PA"
+; CHANGE: removed "Push PA,Lay3_PA"
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	move.l	Chestdata_ptr,Itemdata_ptr
 	move.l	#Chest_slot_list,Itemslots_ptr
 	bsr.w	Show_objects_LAY3
 	tst.w	Current_chest_gold
-	sne.b	B_58222
-	beq.b	T_08e52
-	moveq	#15,d0
+	sne	Gold_in_chest_flag
+	beq.s	.No_gold
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#2,d0
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
-	move.w	#$70,d0
-	move.w	#$71,d1
-	move.w	#$40,d2
+	move.w	#112,d0
+	move.w	#113,d1
+	move.w	#64,d2
 	lea.l	Gold_txt,a0
 	bsr.w	Print_centered_string
-T_08e52:
+.No_gold:
 	bsr.w	Display_80x80_picture
-	lea.l	D_26062,a0
-	bsr.w	T_08ee4
+	lea.l	OpenedChest_CIL,a0
+	bsr.w	OpenedChestCIL_evaluate
 	move.l	a0,Control_list_ptr
 	bsr.w	Show_control_icons
 	jsr	Switch_screen
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bsr.w	T_0a2ce
-	rts
+	bsr.w	Fadein_lay3
+	rts	
+; ---- OpenedChest_DisUpd (original source: MAIN/EVENTS.ASM)
 OpenedChest_DisUpd:
 	bsr.w	Update_status_block
-	lea.l	D_26062,a0
-	lea.l	T_08ee4,a1
+	lea.l	OpenedChest_CIL,a0
+	lea.l	OpenedChestCIL_evaluate,a1
 	bsr.w	Update_control_icons
-	tst.b	B_58222
-	beq.b	T_08ee2
-	moveq	#15,d0
+	tst.b	Gold_in_chest_flag
+	beq.s	.No_gold
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#2,d0
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
 	move.w	Current_chest_gold,d0
-	moveq	#48,d1
-	moveq	#5,d7
+	moveq.l	#"0",d1
+	moveq.l	#5,d7
 	lea.l	GoldDis_text,a0
 	movea.l	a0,a3
 	jsr	RConvert_number
-	move.w	#$70,d0
-	move.w	#$79,d1
-	move.w	#$40,d2
+	move.w	#112,d0
+	move.w	#113+8,d1
+	move.w	#64,d2
 	movea.l	Off_screen,a6
 	bsr.w	Print_centered_string
-T_08ee2:
-	rts
-T_08ee4:
-	bclr	#$7,$4(a0)
+.No_gold:
+	rts	
 OpenedChestCIL_evaluate:
+	bclr	#$7,$4(a0)
 	bclr	#$7,$5(a0)
 	bclr	#$7,$7(a0)
 	bclr	#$7,$8(a0)
@@ -10657,7 +10782,7 @@ T_08f8a:
 	bne.b	T_08f8a
 	lea.l	TIChest_Mod,a0
 	bra.w	Push_Module
-TIChest_DisInit:
+T_08f9e:
 	move.w	#$70,Mesmin_X
 	move.w	#$42,Mesmin_Y
 	move.w	#$c0,Mesmin_Wd
@@ -10670,7 +10795,7 @@ TIChest_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
-T_08fe8:
+Do_TIChest:
 	tst.b	d0
 	bne.b	T_08ff0
 T_08fec:
@@ -10796,57 +10921,61 @@ T_09182:
 TransGold_DisInit:
 TGCHEST_DisInit:
 	movem.l	d0-d7/a0-a6,-(a7)
-	move.w	#$60,Adding
-	moveq	#15,d0
+; ---- TransFood_DisInit (original source: MAIN/INVENT.ASM)
+TransFood_DisInit:
+	move.w	#First_add,Adding
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#2,d0
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
 	jsr	ItemW_DisInit
 	movea.l	Off_screen,a6
-	move.w	#$60,d0
-	moveq	#0,d1
+	move.w	#$60,d0	; CHANGE: was "move.w #Food_icon,d0"
+	moveq.l	#0,d1
 	bsr.w	INV2_Show_object
-	move.w	#$43,d0
-	move.w	#$82,d1
+	move.w	#49+18,d0
+	move.w	#80+18+32,d1
 	jsr	IG_Set_cursor
-	lea.l	Gold_txt,a0
+	lea.l	Gold_txt,a0	; CHANGE: was "lea.l Food_txt,a0"
 	jsr	IG_Print
-	move.w	#$31,d0
-	move.w	#$96,d1
+	move.w	#32+17,d0
+	move.w	#80+38+32,d1
 	jsr	IG_Set_cursor
-	moveq	#14,d0
+	moveq.l	#14,d0
 	lea.l	Code0001Sys,a1
 	bsr.w	Convert_text_line
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
 	jsr	Switch_screen
 	jsr	Copy_screen
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+	movem.l	(a7)+,d0-d7/a0-a6	; CHANGE: added
+	rts	
+; ---- TGCHEST_Return (original source: MAIN/EVENTS.ASM)
+TGPLACES_Return:
 TGCHEST_Return:
-	movem.l	d0-d1/a0,-(a7)
+	movem.l	d0/d1/a0,-(sp)
 	move.l	ItemW_nr,d0
-	beq.b	T_0927a
+	beq.s	.Exit
 	move.w	d0,d1
-	mulu.w	#$a,d0
+	mulu.w	#Gold_weight,d0
 	suba.l	a0,a0
 	jsr	Scan_4_gold_victims
-	bne.b	T_0925a
-	move.w	#$5,d0
+	bne.s	.Go
+	move.w	#5,d0
 	bsr.w	Plus_message
-	bra.b	T_0927a
-T_0925a:
+	bra.s	.Exit
+.Go:
 	jsr	Show_transfer_victims
 	move.l	#Do_TGCHEST,TIVS_Ptr
 	lea.l	TIVS2_Mod,a0
-	move.w	#$19,$2c(a0)
+	move.w	#25,Mouse_ptr(a0)
 	bsr.w	Push_Module
-T_0927a:
-	movem.l	(a7)+,d0-d1/a0
-T_0927e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0927e
-	rts
+.Exit:
+	movem.l	(sp)+,d0/d1/a0
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Do_TGCHEST (original source: MAIN/EVENTS.ASM)
 Do_TGCHEST:
 	move.l	d0,-(sp)
@@ -10857,26 +10986,28 @@ Do_TGCHEST:
 	add.l	d0,Weight_normal(a0)
 	move.l	(sp)+,d0
 	rts	
+; ---- Divide_gold_CHEST (original source: MAIN/EVENTS.ASM)
 T_092a8:
-	btst	#$1,Mouse_button_state
-	bne.b	T_092a8
-	move.w	#$0,Draw_Cicon
-	jsr	My_vsync
-	moveq	#0,d0
+Divide_gold_CHEST:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+	move.w	#$0,Draw_Cicon	; CHANGE: was "Wait_4_unclick"
+	jsr	My_vsync	; CHANGE: added
+	moveq.l	#0,d0
 	move.w	Current_chest_gold,d0
 	bsr.w	Divide_gold
 	move.w	d0,Current_chest_gold
-	rts
+	rts	
 T_092d4:
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
-	beq.b	T_092e8
+	beq.b	Trap_door
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
-T_092e8:
+Trap_door:
 	move.b	$4(a5),d0
-	bsr.w	T_07e88
+	bsr.w	Event_text
 	tst.b	$3(a5)
 	beq.b	T_09358
 	lea.l	Chard_ptrs,a0
@@ -10894,7 +11025,7 @@ T_092fe:
 	swap	d1
 	addq.w	#$1,d1
 	move.w	d7,d0
-	bsr.w	T_07e22
+	bsr.w	Do_damage
 T_09324:
 	addq.l	#$4,a0
 	addq.w	#$1,d7
@@ -10913,7 +11044,7 @@ T_09358:
 	rts
 T_0935a:
 	move.b	$4(a5),d0
-	bsr.w	T_07e88
+	bsr.w	Event_text
 	move.w	$6(a5),d0
 	cmp.w	Map_nr,d0
 	beq.b	T_093a6
@@ -10954,61 +11085,64 @@ T_093f2:
 	rts
 T_09400:
 	bra.w	T_0935a
-T_09404:
-	move.b	$4(a5),d0
-	bsr.w	T_07e88
-	move.b	$1(a5),d0
+; ---- Spinner (original source: MAIN/EVENTS.ASM)
+Spinner:
+	move.b	4(a5),d0
+	bsr.w	Event_text
+	move.b	1(a5),d0
 	ext.w	d0
-	cmpi.w	#$4,d0
-	bmi.b	T_0942a
-T_09418:
+	cmpi.w	#4,d0
+	bmi.s	.Absolute
+.Repeat:
 	jsr	Random
-	andi.w	#$3,d0
+	andi.w	#$0003,d0
 	cmp.w	View_direction,d0
-	beq.b	T_09418
-T_0942a:
+	beq.s	.Repeat
+.Absolute:
 	move.w	d0,View_direction
 	bsr.w	Save_event
-	rts
-T_09436:
-	move.b	$4(a5),d0
-	bsr.w	T_07e88
-	move.b	$2(a5),d2
+	rts	
+; ---- Damage_field (original source: MAIN/EVENTS.ASM)
+Damage_field:
+	move.b	4(a5),d0
+	bsr.w	Event_text
+	move.b	2(a5),d2
 	lea.l	Chard_ptrs,a0
-	moveq	#1,d7
-T_0944a:
+	moveq.l	#1,d7
+.Loop:
 	tst.l	(a0)
-	beq.b	T_0947e
+	beq.s	.Next
 	movea.l	(a0),a1
 	move.w	#$e000,d3
-	and.w	$3a(a1),d3
-	bne.b	T_0947e
-	cmpi.b	#$2,d2
-	beq.b	T_09466
-	cmp.b	$3(a1),d2
-	bne.b	T_0947e
-T_09466:
-	moveq	#0,d1
-	move.b	$1(a5),d1
+	and.w	Body_conditions(a1),d3
+	bne.s	.Next
+	cmpi.b	#2,d2
+	beq.s	.Both
+	cmp.b	Character_sex(a1),d2
+	bne.s	.Next
+.Both:
+	moveq.l	#0,d1
+	move.b	1(a5),d1
 	jsr	Random
 	mulu.w	d0,d1
-	swap	d1
-	addq.w	#$1,d1
+	swap.w	d1
+	addq.w	#1,d1
 	move.w	d7,d0
-	bsr.w	T_07e22
-T_0947e:
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	T_0944a
+	bsr.w	Do_damage
+.Next:
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop
 	bsr.w	Save_event
-	rts
-T_0948e:
-	move.b	$4(a5),d0
-	bsr.w	T_07e88
-	move.b	$1(a5),d0
-	bne.b	T_094b8
-	moveq	#0,d0
+	rts	
+; ---- Anti_magic (original source: MAIN/EVENTS.ASM)
+Anti_magic:
+	move.b	4(a5),d0
+	bsr.w	Event_text
+	move.b	1(a5),d0
+	bne.s	.One
+	moveq.l	#0,d0
 	lea.l	Spell_1_duration,a0
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
@@ -11017,102 +11151,137 @@ T_0948e:
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
 	move.l	d0,(a0)+
-	bra.b	T_094d0
-T_094b8:
-	dc.b	$48,$80,$d0,$40,$41,$f9
-	dc.l	Spell_1_duration
-	dc.b	$42,$70,$00,$fe,$41,$f9
-	dc.l	Spell_1_data
-	dc.b	$42,$70,$00,$fe
-T_094d0:
+	bra.s	.Exit
+.One:
+	ext.w	d0
+	add.w	d0,d0
+	lea.l	Spell_1_duration,a0
+	clr.w	-2(a0,d0.w)
+	lea.l	Spell_1_data,a0
+	clr.w	-2(a0,d0.w)
+.Exit:
 	bsr.w	Save_event
-	rts
-T_094d6:
-	move.b	$4(a5),d0
-	bsr.w	T_07e88
-	move.b	$1(a5),d0
-	bne.b	T_09516
+	rts	
+; ---- Lp_regen (original source: MAIN/EVENTS.ASM)
+Lp_regen:
+	move.b	4(a5),d0
+	bsr.w	Event_text
+	move.b	1(a5),d0
+	bne.s	.No
 	lea.l	Chard_ptrs,a0
-	moveq	#5,d7
-T_094ec:
+	moveq.l	#6-1,d7
+.Loop1:
 	tst.l	(a0)
-	beq.b	T_0950e
+	beq.s	.Next1
 	movea.l	(a0),a1
 	move.w	#$e000,d1
-	and.w	$3a(a1),d1
-	bne.b	T_0950e
-	move.w	$88(a1),d0
-	add.w	$98(a1),d0
-	cmp.w	$86(a1),d0
-	bmi.b	T_0950e
-	move.w	d0,$86(a1)
-T_0950e:
-	addq.l	#$4,a0
-	dbra	d7,T_094ec
-	bra.b	T_09542
-T_09516:
-	dc.b	$41,$f9
-	dc.l	Chard_ptrs
-	dc.b	$48,$80,$7e,$05,$4a,$90,$67,$18,$22,$50,$32,$3c,$e0,$00,$c2,$69
-	dc.b	$00,$3a,$66,$0c,$2f,$08,$20,$49,$4e,$b9
-	dc.l	Increase_LP
-	dc.b	$20,$5f,$58,$88,$51,$cf,$ff,$e0
-T_09542:
-	bsr.w	Save_event
-	rts
-T_09548:
-	move.b	$4(a5),d0
-	bsr.w	T_07e88
-	move.b	$1(a5),d0
-	bne.b	T_09588
+	and.w	Body_conditions(a1),d1
+	bne.s	.Next1
+	move.w	Life_points_max(a1),d0
+	add.w	Life_points_max_magic(a1),d0
+	cmp.w	Life_points_normal(a1),d0
+	bmi.s	.Next1
+	move.w	d0,Life_points_normal(a1)
+.Next1:
+	addq.l	#4,a0
+	dbra	d7,.Loop1
+	bra.s	.Exit
+.No:
 	lea.l	Chard_ptrs,a0
-	moveq	#5,d7
-T_0955e:
+	ext.w	d0
+	moveq.l	#6-1,d7
+.Loop2:
 	tst.l	(a0)
-	beq.b	T_09580
+	beq.s	.Next2
 	movea.l	(a0),a1
 	move.w	#$e000,d1
-	and.w	$3a(a1),d1
-	bne.b	T_09580
-	move.w	$8c(a1),d0
-	add.w	$9a(a1),d0
-	cmp.w	$8a(a1),d0
-	bmi.b	T_09580
-	move.w	d0,$8a(a1)
-T_09580:
-	addq.l	#$4,a0
-	dbra	d7,T_0955e
-	bra.b	T_095c4
-T_09588:
-	dc.b	$41,$f9
-	dc.l	Chard_ptrs
-	dc.b	$48,$80,$7e,$05,$4a,$90,$67,$28,$22,$50,$32,$3c,$e0,$00,$c2,$69
-	dc.b	$00,$3a,$66,$1c,$32,$29,$00,$8a,$34,$29,$00,$8c,$d4,$69,$00,$9a
-	dc.b	$b2,$42,$6a,$0c,$d2,$40,$b2,$42,$6b,$02,$32,$02,$33,$41,$00,$8a
-	dc.b	$58,$88,$51,$cf,$ff,$d0
-T_095c4:
+	and.w	Body_conditions(a1),d1
+	bne.s	.Next2
+	move.l	a0,-(sp)
+	movea.l	a1,a0
+	jsr	Increase_LP
+	movea.l	(sp)+,a0
+.Next2:
+	addq.l	#4,a0
+	dbra	d7,.Loop2
+.Exit:
 	bsr.w	Save_event
-	rts
-T_095ca:
+	rts	
+; ---- Sp_regen (original source: MAIN/EVENTS.ASM)
+Sp_regen:
+	move.b	4(a5),d0
+	bsr.w	Event_text
+	move.b	1(a5),d0
+	bne.s	.No
+	lea.l	Chard_ptrs,a0
+	moveq.l	#6-1,d7
+.Loop1:
+	tst.l	(a0)
+	beq.s	.Next1
+	movea.l	(a0),a1
+	move.w	#$e000,d1
+	and.w	Body_conditions(a1),d1
+	bne.s	.Next1
+	move.w	Power_points_max(a1),d0
+	add.w	Power_points_max_magic(a1),d0
+	cmp.w	Power_points_normal(a1),d0
+	bmi.s	.Next1
+	move.w	d0,Power_points_normal(a1)
+.Next1:
+	addq.l	#4,a0
+	dbra	d7,.Loop1
+	bra.s	.Exit
+.No:
+	lea.l	Chard_ptrs,a0
+	ext.w	d0
+	moveq.l	#6-1,d7
+.Loop2:
+	tst.l	(a0)
+	beq.s	.Next2
+	movea.l	(a0),a1
+	move.w	#$e000,d1
+	and.w	Body_conditions(a1),d1
+	bne.s	.Next2
+	move.w	Power_points_normal(a1),d1
+	move.w	Power_points_max(a1),d2
+	add.w	Power_points_max_magic(a1),d2
+	cmp.w	d2,d1
+	bpl.s	.Next2
+	add.w	d0,d1
+	cmp.w	d2,d1
+	bmi.s	.Ok
+	move.w	d2,d1
+.Ok:
+	move.w	d1,Power_points_normal(a1)
+.Next2:
+	addq.l	#4,a0
+	dbra	d7,.Loop2
+.Exit:
+	bsr.w	Save_event
+	rts	
+; ---- Riddle_mouth (original source: MAIN/EVENTS.ASM)
+Riddle_mouth:
 	bsr.w	Exit_display
 	lea.l	RiddleM_Mod,a0
 	bsr.w	Push_Module
 	bsr.w	Init_display
-	rts
+	rts	
+; ---- RiddleM_DisUpd (original source: MAIN/EVENTS.ASM)
 RiddleM_DisUpd:
 	bsr.w	Update_status_block
 	tst.b	Door_opened
-	beq.b	T_09604
+	beq.s	.Exit
 	movea.l	Event_data_ptr,a5
 	bsr.w	Save_event
-	bsr.w	T_0784c
+	bsr.w	Wait_4_user
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bsr.w	Init_display
-T_09604:
-	rts
-RiddleM_ModInit:
+.Exit:
+	rts	
+T_09606:
 	jsr	T_0025a
+RiddleM_ModInit:
 	moveq	#17,d0
 	lea.l	Palette_buffer,a0
 	bsr.w	Load_80x80_picture
@@ -11291,11 +11460,12 @@ Ask_riddleM:
 	bsr.w	Push_Module
 .Exit:
 	rts	
+; ---- RiddleMes (original source: MAIN/EVENTS.ASM)
 RiddleMes:
 	jsr	Mouse_off
 	movea.l	PlusMes_info,a0
 	jsr	Push_MA
-	addq.l	#$8,a0
+	addq.l	#8,a0
 	bsr.w	Push_PA
 	movea.l	Off_screen,a6
 	bsr.w	Erase_text_window
@@ -11305,70 +11475,70 @@ RiddleMes:
 	bsr.w	Prepare_text_block
 	movea.l	Text_buffer,a0
 	move.w	Nr_of_chars,d0
-	addq.w	#$1,d0
+	addq.w	#1,d0
 	move.w	Lines_in_text,d7
-	subq.w	#$1,d7
-T_09902:
+	subq.w	#1,d7
+.Loop1:
 	jsr	IG_Print
 	jsr	IG_Carriage_return
 	adda.w	d0,a0
-	dbra	d7,T_09902
+	dbra	d7,.Loop1
 	jsr	Switch_screen
 	jsr	Copy_screen
-	moveq	#2,d7
-T_09922:
+	moveq.l	#2,d7
+.Loop2:
 	jsr	Random
 	andi.w	#$7,d0
-	beq.b	T_09922
-	bsr.w	T_09966
-	dbra	d7,T_09922
+	beq.s	.Loop2
+	bsr.w	.Move_mouth
+	dbra	d7,.Loop2
 	jsr	Copy_screen
 	jsr	Pop_MA
 	bsr.w	Pop_PA
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
-T_09952:
-	btst	#$1,Mouse_button_state
-	bne.b	T_09952
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	jsr	Mouse_on
 	bra.w	Pop_Module
-T_09966:
-	movem.l	d0-d3/d6-d7/a0/a6,-(a7)
+.Move_mouth:
+	movem.l	d0-d3/d6/d7/a0/a6,-(sp)
 	move.w	d0,d3
-	move.w	#$e0,d0
-	move.w	#$5a,d1
-	moveq	#0,d2
-	moveq	#5,d6
-	moveq	#15,d7
-T_0997a:
-	bsr.w	T_09994
-	addq.w	#$1,d2
+	move.w	#224,d0
+	move.w	#49+41,d1
+	moveq.l	#0,d2
+	moveq.l	#5,d6
+	moveq.l	#15,d7
+.Loop3:
+	bsr.w	.Show_mouth_frame
+	addq.w	#1,d2
 	cmp.w	d2,d3
-	bpl.b	T_0997a
-	subq.w	#$2,d2
-T_09986:
-	bsr.w	T_09994
-	subq.w	#$1,d2
-	bpl.b	T_09986
-	movem.l	(a7)+,d0-d3/d6-d7/a0/a6
-	rts
-T_09994:
-	movem.l	d2/a0/a6,-(a7)
-	lea.l	D_43150,a0
-	mulu.w	#$258,d2
+	bpl.s	.Loop3
+	subq.w	#2,d2
+.Loop4:
+	bsr.w	.Show_mouth_frame
+	subq.w	#1,d2
+	bpl.s	.Loop4
+	movem.l	(sp)+,d0-d3/d6/d7/a0/a6
+	rts	
+.Show_mouth_frame:
+	movem.l	d2/a0/a6,-(sp)
+	lea.l	RiddleM_graphics+4640,a0
+	mulu.w	#600,d2
 	adda.w	d2,a0
 	movea.l	Off_screen,a6
 	jsr	Blot_unmasked_block
 	jsr	Switch_screen
-	moveq	#6,d2
-T_099b8:
+	moveq.l	#7-1,d2
+.Wait:
 	jsr	My_vsync
-	dbra	d2,T_099b8
-	movem.l	(a7)+,d2/a0/a6
-	rts
+	dbra	d2,.Wait
+	movem.l	(sp)+,d2/a0/a6
+	rts	
 T_099c8:
 	move.b	$4(a5),d0
-	bsr.w	T_07e88
+	bsr.w	Event_text
 	tst.w	$6(a5)
 	beq.b	T_099e2
 	movea.l	Current_active_char_data,a1
@@ -11407,13 +11577,13 @@ T_09a3a:
 T_09a46:
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
-	beq.b	T_09a5a
+	beq.b	Change_icon
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
-T_09a5a:
+Change_icon:
 	move.b	$4(a5),d0
-	bsr.w	T_07e88
+	bsr.w	Event_text
 	moveq	#0,d0
 	move.b	$1(a5),d0
 	moveq	#0,d1
@@ -11436,10 +11606,11 @@ T_09a8e:
 	jsr	Switch_screen
 T_09aa2:
 	move.b	$4(a5),d0
-	bsr.w	T_07e88
+	bsr.w	Event_text
 	rts
 T_09aac:
 	movem.l	d0-d2/a0/a5,-(a7)
+Do_event_item:
 	movea.l	Event_data_ptr,a5
 	moveq	#0,d0
 	move.b	$1(a5),d0
@@ -11459,22 +11630,24 @@ T_09ae6:
 	st.b	Doorexit_flag
 	bsr.w	Door
 	rts
-T_09af2:
+; ---- Do_extra_event (original source: MAIN/EVENTS.ASM)
+Do_extra_event:
 	movea.l	Event_data_ptr,a5
-	moveq	#0,d0
-	move.b	$4(a5),d0
+	moveq.l	#0,d0
+	move.b	4(a5),d0
 	movea.l	Mapd_ptr,a5
-	mulu.w	#$a,d0
-	lea.l	$1e(a5,d0.w),a5
+	mulu.w	#10,d0
+	lea.l	Event_data-10(a5,d0.w),a5
 	move.l	a5,Event_data_ptr
-	bra.w	T_07b76
-T_09b16:
-	move.b	$4(a5),d0
-	bsr.w	T_07e88
-	move.b	$1(a5),d0
-	bsr.w	T_07cb2
+	bra.w	Handle_event
+; ---- ETrap (original source: MAIN/EVENTS.ASM)
+ETrap:
+	move.b	4(a5),d0
+	bsr.w	Event_text
+	move.b	1(a5),d0
+	bsr.w	Execute_trap
 	bsr.w	Save_event
-	rts
+	rts	
 T_09b2c:
 	move.b	$1(a5),d0
 	ext.w	d0
@@ -11497,7 +11670,7 @@ T_09b4e:
 	btst	d1,(a1,d0.w)
 	beq.w	T_09c04
 	move.b	$3(a5),d0
-	bsr.w	T_07e88
+	bsr.w	Event_text
 	bra.b	T_09b7e
 T_09b76:
 	dc.b	$10,$2d,$00,$04,$61,$00,$e3,$0c
@@ -11624,7 +11797,7 @@ T_09d1e:
 	jsr	Free_memory
 	movea.l	B_5d0a4,a0
 	jsr	Free_memory
-	bsr.w	T_02754
+	bsr.w	Set_spell_area
 	rts
 T_09d44:
 	move.l	B_5d0a4,Textfile_ptr
@@ -12020,9 +12193,10 @@ T_0a2a0:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	jmp	T_00162
-T_0a2ce:
+; ---- Fadein_lay3 (original source: MAIN/EVENTS.ASM)
+Fadein_lay3:
 	lea.l	Lay3_target_hbl,a1
-	bra.b	Fade_lay3
+	bra.s	Fade_lay3
 ; ---- Fadeout_lay3 (original source: MAIN/EVENTS.ASM)
 Fadeout_lay3:
 	lea.l	Void,a1
@@ -12043,32 +12217,33 @@ Fade_lay3:
 	jsr	Update_HBL
 .Exit:
 	rts	
+; ---- Update_control_icons (original source: MAIN/EVENTS.ASM)
 Update_control_icons:
-	movem.l	a0-a2,-(a7)
+	movem.l	a0-a2,-(sp)
 	movea.l	a0,a2
 	lea.l	CIL_buffer,a0
 	move.l	(a2),(a0)
-	move.l	$4(a2),$4(a0)
-	move.b	$8(a2),$8(a0)
-	movem.l	a0/a2,-(a7)
+	move.l	4(a2),4(a0)
+	move.b	8(a2),8(a0)
+	movem.l	a0/a2,-(a7)	; CHANGE: added
 	jsr	(a1)
-	movem.l	(a7)+,a0/a2
+	movem.l	(a7)+,a0/a2	; CHANGE: added
 	movea.l	a2,a1
 	cmpm.l	(a0)+,(a1)+
-	bne.b	T_0a350
+	bne.s	.Update
 	cmpm.l	(a0)+,(a1)+
-	bne.b	T_0a350
+	bne.s	.Update
 	cmpm.b	(a0)+,(a1)+
-	beq.b	T_0a364
-T_0a350:
+	beq.s	.Ready
+.Update:
 	lea.l	CIL_buffer,a0
 	move.l	(a0)+,(a2)+
 	move.l	(a0)+,(a2)+
 	move.b	(a0),(a2)
-	move.b	#$2,CIL_update
-T_0a364:
-	movem.l	(a7)+,a0-a2
-	rts
+	move.b	#2,CIL_update
+.Ready:
+	movem.l	(sp)+,a0-a2
+	rts	
 ; ---- Load_80x80_picture (original source: MAIN/EVENTS.ASM)
 Load_80x80_picture:
 	movem.l	d0-d7/a0-a2,-(sp)
@@ -12486,48 +12661,51 @@ InputWord:
 	bsr.w	Search_word
 	move.w	d0,Found_word
 	bra.w	Pop_Module
+; ---- ExitWordSelect (original source: MAIN/WSELW.ASM)
 T_0a8c8:
-	st.b	No_word_entered
+ExitWordSelect:
+	st	No_word_entered
 	bsr.w	Pop_Module
-T_0a8d2:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0a8d2
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 T_0a8de:
 	moveq	#1,d0
-	bra.w	WordSel_UP
+	bra.w	SpSel_UP
 T_0a8e4:
 	moveq	#1,d0
-	bra.w	T_0a95a
+	bra.w	SpSel_DOWN
 T_0a8ea:
 	moveq	#8,d0
-	bra.w	WordSel_UP
+	bra.w	SpSel_UP
 T_0a8f0:
 	moveq	#8,d0
-	bra.w	T_0a95a
+	bra.w	SpSel_DOWN
 T_0a8f6:
 	move.w	Adding,d0
 	lsr.w	#$8,d0
-	bsr.w	WordSel_UP
+	bsr.w	SpSel_UP
 	bra.w	Inc_adding
 T_0a906:
 	move.w	Adding,d0
 	lsr.w	#$8,d0
-	bsr.w	T_0a95a
+	bsr.w	SpSel_DOWN
 	bra.w	Inc_adding
 T_0a916:
 	move.w	Adding,d0
 	lsr.w	#$5,d0
 	andi.w	#$fff8,d0
-	bsr.w	WordSel_UP
+	bsr.w	SpSel_UP
 	bra.w	Inc_adding
 T_0a92a:
 	move.w	Adding,d0
 	lsr.w	#$5,d0
 	andi.w	#$fff8,d0
-	bsr.w	T_0a95a
+	bsr.w	SpSel_DOWN
 	bra.w	Inc_adding
 ; ---- WordSel_UP (original source: MAIN/WSELW.ASM)
+SpSel_UP:
 WordSel_UP:
 	move.w	Word_list_pos,d1
 	sub.w	d0,d1
@@ -12537,19 +12715,21 @@ WordSel_UP:
 .Skip:
 	move.w	d1,Word_list_pos
 	rts	
-T_0a95a:
+; ---- WordSel_DOWN (original source: MAIN/WSELW.ASM)
+SpSel_DOWN:
+WordSel_DOWN:
 	move.w	Word_list_pos,d1
-	add.w	d0,d1
-	moveq	#16,d2
-	add.w	d1,d2
-	cmp.w	Nr_of_known_words,d2
-	bmi.b	T_0a980
+	add.w	d0,d1	; CHANGE: added
+	moveq	#16,d2	; CHANGE: added
+	add.w	d1,d2	; CHANGE: was "add.w d0,d1"
+	cmp.w	Nr_of_known_words,d2	; CHANGE: was "cmp.w Nr_of_known_words,d1"
+	bmi.s	.Skip
 	move.w	Nr_of_known_words,d1
-	subi.w	#$10,d1
-	move.w	#$60,Adding
-T_0a980:
+	subi.w	#$10,d1	; CHANGE: was "subq.w #1,d1"
+	move.w	#First_add,Adding
+.Skip:
 	move.w	d1,Word_list_pos
-	rts
+	rts	
 ; ---- Sort_word_list (original source: MAIN/WSELW.ASM)
 Sort_word_list:
 	movem.l	d0-d3/d5/d6/a0,-(sp)
@@ -12651,7 +12831,7 @@ Search_word:
 .Found:
 	movem.l	(sp)+,d4-d7/a1-a3
 	rts	
-T_0aa6e:
+Places:
 	moveq	#0,d0
 	move.b	$1(a5),d0
 	beq.b	T_0aab6
@@ -12713,8 +12893,9 @@ T_0aaf4:
 	dc.l	Inn_Mod
 	dc.l	MerchMAGIC_Mod
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-Places_ModInit:
+T_0ab46:
 	jsr	T_0025a
+Places_ModInit:
 	clr.w	Places_gold
 	movea.l	Event_data_ptr,a0
 	moveq	#0,d0
@@ -12759,7 +12940,7 @@ T_0abc6:
 	bsr.w	Pop_PA
 	cmpi.w	#$9,Place_nr
 	bpl.b	T_0ac16
-	bsr.w	T_0af9c
+	bsr.w	Update_guild_messages
 T_0ac16:
 	rts
 	dc.b	$10,$10,$10,$10,$10,$10,$10,$10,$ff,$ff,$ff,$ff,$ff,$0f,$ff,$ff
@@ -12819,6 +13000,7 @@ Exit_PLACES:
 .Exit_txts:
 	dc.b	8,8,8,8,8,8,8,8,17,17,-1,18,21,18,18,18,5,17,-1,-1
 	even	
+T_0acf0	equ	Exit_PLACES+130
 Do_PlacesExit:
 	jsr	T_01f98
 	bsr.w	Exit_display
@@ -12841,36 +13023,39 @@ Pool_gold_PLACES:
 	jsr	Pool_gold
 	add.w	d0,Places_gold
 	rts	
+; ---- Divide_gold_PLACES (original source: MAIN/PLACES.ASM)
 T_0ad52:
-	moveq	#0,d0
+Divide_gold_PLACES:
+	moveq.l	#0,d0
 	move.w	Places_gold,d0
 	bsr.w	Divide_gold
 	move.w	d0,Places_gold
-T_0ad64:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0ad64
-	rts
-T_0ad70:
-	move.w	#$70,Mesmin_X
-	move.w	#$3f,Mesmin_Y
-	move.w	#$c0,Mesmin_Wd
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
+; ---- Transfer_gold_PLACES (original source: MAIN/PLACES.ASM)
+Transfer_gold_PLACES:
+	move.w	#112,Mesmin_X
+	move.w	#63,Mesmin_Y
+	move.w	#192,Mesmin_Wd
 	move.l	#Code0001Sys,Textfile_ptr
 	movea.l	Off_screen,a6
-	move.w	#$6,d0
+	move.w	#6,d0
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0adac:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0adac
-	moveq	#0,d0
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	moveq.l	#0,d0
 	move.w	Places_gold,d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	TransGoldPLACES_Mod,a0
 	bsr.w	Push_Module
-	rts
-TGPLACES_Return:
+	rts	
+T_0add6:
 	move.l	ItemW_nr,d0
 	beq.b	T_0ae18
 	move.w	d0,d1
@@ -12994,8 +13179,8 @@ Guild_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
-T_0af9c:
+	bra.w	Fadein_lay3
+Update_guild_messages:
 	movem.l	d0-d1/d7/a0-a5,-(a7)
 	lea.l	Lay3_PA,a0
 	bsr.w	Push_PA
@@ -13023,7 +13208,7 @@ T_0af9c:
 	lea.l	Code0003Sys,a1
 	move.w	#$13,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	moveq	#0,d0
 	move.w	(a4),d0
@@ -13034,7 +13219,7 @@ T_0af9c:
 	bsr.w	Add_ASCII_2_RText
 	lea.l	Gold_txt,a0
 	bsr.w	Add_ASCII_2_RText
-	lea.l	D_1e460,a0
+	lea.l	Return,a0
 	bsr.w	Add_ASCII_2_RText
 	bsr.w	Add_ASCII_2_RText
 T_0b036:
@@ -13049,7 +13234,7 @@ T_0b036:
 	lea.l	Code0003Sys,a1
 	move.w	#$14,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	move.w	$2(a4),d0
 	moveq	#4,d7
@@ -13059,7 +13244,7 @@ T_0b036:
 	bsr.w	Add_ASCII_2_RText
 	lea.l	Gold_txt,a0
 	bsr.w	Add_ASCII_2_RText
-	lea.l	D_1e460,a0
+	lea.l	Return,a0
 	bsr.w	Add_ASCII_2_RText
 	bsr.w	Add_ASCII_2_RText
 T_0b094:
@@ -13082,12 +13267,12 @@ T_0b0be:
 	ble.b	T_0b104
 	lea.l	$f0(a2),a0
 	bsr.w	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	bsr.w	Add_ASCII_2_RText
 	lea.l	Code0004Sys,a1
 	move.w	#$11,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	move.l	d1,d0
 	moveq	#4,d7
@@ -13099,7 +13284,7 @@ T_0b104:
 	bsr.w	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bsr.w	T_0798a
+	bsr.w	Exit_RText
 	bsr.w	Pop_PA
 	movem.l	(a7)+,d0-d1/d7/a0-a5
 	rts
@@ -13188,62 +13373,64 @@ T_0b22e:
 	move.w	$2(a0),d0
 	sub.w	d0,Places_gold
 	movea.l	Current_active_char_data,a0
+; ---- Increase_level (original source: MAIN/PLACES.ASM)
 Increase_level:
-	addq.b	#$1,$1b(a0)
-	moveq	#0,d0
-	move.b	$1b(a0),d0
-	subq.w	#$1,d0
-	move.w	$70(a0),d1
-	beq.b	T_0b276
+	addq.b	#1,Level_nr(a0)
+	moveq.l	#0,d0
+	move.b	Level_nr(a0),d0
+	subq.w	#$1,d0	; CHANGE: added
+	move.w	Special_1(a0),d1
+	beq.s	.Zero
 	divu.w	d1,d0
-	addq.w	#$1,d0
-	move.b	d0,$43(a0)
-T_0b276:
-	moveq	#0,d0
-	move.w	$50(a0),d0
-	add.w	$a4(a0),d0
-	divu.w	#$a,d0
-	add.w	$72(a0),d0
-	add.w	d0,$88(a0)
-	tst.b	$1a(a0)
-	beq.b	T_0b2b2
-	moveq	#0,d0
-	move.w	$4a(a0),d0
-	add.w	$9e(a0),d0
-	divu.w	#$14,d0
+	addq.w	#$1,d0	; CHANGE: added
+	move.b	d0,Attacks_per_round(a0)
+.Zero:
+	moveq.l	#0,d0
+	move.w	Attr_5_normal(a0),d0
+	add.w	Attr_5_normal_magic(a0),d0
+	divu.w	#10,d0
+	add.w	Special_2(a0),d0
+	add.w	d0,Life_points_max(a0)
+	tst.b	Spell_class_counter(a0)
+	beq.s	.No_magic
+	moveq.l	#0,d0
+	move.w	Attr_2_normal(a0),d0
+	add.w	Attr_2_normal_magic(a0),d0
+	divu.w	#20,d0
 	move.w	d0,d1
-	add.w	$74(a0),d0
-	add.w	d0,$8c(a0)
-	add.w	$76(a0),d1
-	add.w	d1,$8e(a0)
-T_0b2b2:
+	add.w	Special_3(a0),d0
+	add.w	d0,Power_points_max(a0)
+	add.w	Special_4(a0),d1
+	add.w	d1,Nr_spell_learn_points(a0)
+.No_magic:
 	move.l	#Code0004Sys,Textfile_ptr
-	move.w	#$12,d0
+	move.w	#18,d0
 	bsr.w	Plus_message
 	lea.l	SkillW_Mod,a0
 	bsr.w	Push_Module
-	rts
-T_0b2d0:
-	andi.l	#$ff00,d0
-	beq.b	T_0b312
-	lsr.w	#$6,d0
+	rts	
+; ---- Guild_Member_left (original source: MAIN/PLACES.ASM)
+Guild_Member_left:
+	andi.l	#$0000ff00,d0
+	beq.s	.Exit
+	lsr.w	#6,d0
 	move.w	d0,d1
 	lea.l	Chard_ptrs,a0
-	move.l	-$4(a0,d0.w),d0
-	beq.b	T_0b312
-	movea.l	d0,a0
-	move.w	$3a(a0),d0
-	andi.w	#$e406,d0
-	bne.b	T_0b312
-	lsr.w	#$2,d1
+	move.l	-$4(a0,d0.w),d0	; CHANGE: was "movea.l -4(a0,d0.w),a0"
+	beq.b	.Exit	; CHANGE: added
+	movea.l	d0,a0	; CHANGE: added
+	move.w	Body_conditions(a0),d0
+	andi.w	#$e406,d0	; CHANGE: was "andi.w #$e506,d0"
+	bne.s	.Exit
+	lsr.w	#2,d1
 	move.w	d1,Active_member
 	lea.l	Chard_ptrs,a0
 	add.w	d1,d1
 	add.w	d1,d1
-	move.l	-$4(a0,d1.w),Current_active_char_data
-	bsr.w	T_0af9c
-T_0b312:
-	rts
+	move.l	-4(a0,d1.w),Current_active_char_data
+	bsr.w	Update_guild_messages
+.Exit:
+	rts	
 SkillW_ModInit:
 	moveq	#32,d0
 	moveq	#37,d1
@@ -13302,7 +13489,7 @@ T_0b3bc:
 	move.w	#$66,d0
 	move.w	d2,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dbdf,a0
+	lea.l	Skill_txt,a0
 	movea.l	a0,a3
 	moveq	#48,d1
 	moveq	#0,d0
@@ -13407,116 +13594,120 @@ SkillW_DisUpd:
 	bsr.w	RConvert_number
 	jsr	IG_Print
 	rts	
+; ---- Inc_skill (original source: MAIN/PLACES.ASM)
 Inc_skill:
 	tst.w	Remaining_offset
-	beq.w	T_0b5d4
-	lsr.w	#$8,d0
-	lea.l	B_5827d,a1
+	beq.w	.Exit
+	lsr.w	#8,d0
+	lea.l	Possible_level_offsets-1,a1
 	adda.w	d0,a1
 	tst.b	(a1)
-	beq.b	T_0b5d4
+	beq.s	.Exit
 	movea.l	Current_active_char_data,a0
-	lea.l	$5(a0),a0
-	addq.b	#$1,(a0,d0.w)
-	bsr.w	T_0b646
-	lea.l	B_58273,a0
+	lea.l	Skill_1-1(a0),a0
+	addq.b	#1,0(a0,d0.w)
+	bsr.w	Reprint_skill
+	lea.l	Make_level_offsets-1,a0
 	adda.w	d0,a0
-	addq.b	#$1,(a0)
-	subq.w	#$1,Remaining_offset
-	subq.b	#$1,(a1)
-	bne.b	T_0b59c
+	addq.b	#1,(a0)
+	subq.w	#1,Remaining_offset
+	subq.b	#1,(a1)
+	bne.s	.Ok
 	lea.l	Possible_level_offsets,a0
 	move.w	(a0)+,d0
 	or.w	(a0)+,d0
-	or.w	(a0)+,d0
-	or.w	(a0)+,d0
-	or.w	(a0)+,d0
-	beq.b	T_0b5a4
-T_0b59c:
+	or.w	(a0)+,d0	; CHANGE: added
+	or.w	(a0)+,d0	; CHANGE: added
+	or.w	(a0)+,d0	; CHANGE: added
+	beq.s	.Done
+.Ok:
 	tst.w	Remaining_offset
-	bne.b	T_0b5d4
-T_0b5a4:
-	moveq	#2,d6
-	moveq	#16,d7
-	move.w	#$30,d0
-	move.w	#$85,d1
-	lea.l	D_39d60,a0
+	bne.s	.Exit
+.Done:
+	moveq.l	#2,d6
+	moveq.l	#16,d7
+	move.w	#32+16,d0
+	move.w	#37+16+80,d1
+	lea.l	Control_icn+7680,a0
 	movea.l	Off_screen,a6
 	jsr	Blot_unmasked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	st.b	Exit_on
-T_0b5d4:
-	rts
+	st	Exit_on
+.Exit:
+	rts	
+; ---- Dec_skill (original source: MAIN/PLACES.ASM)
 Dec_skill:
-	lea.l	B_58273,a0
-	lsr.w	#$8,d0
+	lea.l	Make_level_offsets-1,a0
+	lsr.w	#8,d0
 	adda.w	d0,a0
 	tst.b	(a0)
-	beq.b	T_0b644
+	beq.s	.Exit
 	movea.l	Current_active_char_data,a1
-	lea.l	$5(a1),a1
+	lea.l	Skill_1-1(a1),a1
 	adda.w	d0,a1
 	tst.b	(a1)
-	beq.b	T_0b644
-	subq.b	#$1,(a1)
-	bsr.w	T_0b646
-	subq.b	#$1,(a0)
-	lea.l	B_5827d,a0
+	beq.s	.Exit
+	subq.b	#1,(a1)
+	bsr.w	Reprint_skill
+	subq.b	#1,(a0)
+	lea.l	Possible_level_offsets-1,a0
 	adda.w	d0,a0
-	addq.b	#$1,(a0)
+	addq.b	#1,(a0)
 	tst.w	Remaining_offset
-	bne.b	T_0b63e
-	moveq	#2,d6
-	moveq	#16,d7
-	move.w	#$30,d0
-	move.w	#$85,d1
+	bne.s	.Skip
+	moveq.l	#2,d6
+	moveq.l	#16,d7
+	move.w	#32+16,d0
+	move.w	#37+16+80,d1
 	lea.l	Chequered,a0
 	movea.l	Off_screen,a6
 	jsr	Blot_masked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	sf.b	Exit_on
-T_0b63e:
-	addq.w	#$1,Remaining_offset
-T_0b644:
-	rts
-T_0b646:
-	movem.l	d0-d2/d6-d7/a0-a3/a6,-(a7)
+	sf	Exit_on
+.Skip:
+	addq.w	#1,Remaining_offset
+.Exit:
+	rts	
+; ---- Reprint_skill (original source: MAIN/PLACES.ASM)
+Reprint_skill:
+	movem.l	d0-d2/d6/d7/a0-a3/a6,-(sp)
 	move.w	d0,d2
 	movea.l	Off_screen,a6
-	moveq	#15,d0
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#3,d0
+	moveq.l	#3,d0
 	jsr	IG_Set_paper
-	move.w	#$66,d0
+	move.w	#48+9*6,d0
 	move.w	d2,d1
-	mulu.w	#$7,d1
-	addi.w	#$36,d1
+	mulu.w	#7,d1
+	addi.w	#61-7,d1
 	jsr	IG_Set_cursor
 	movea.l	Current_active_char_data,a1
-	lea.l	$ae(a1),a2
-	lea.l	$5(a1),a1
+	lea.l	$ae(a1),a2	; CHANGE: was "lea.l Skill_1_normal_magic(a1),a2"
+	lea.l	Skill_1-1(a1),a1
 	adda.w	d2,a1
 	adda.w	d2,a2
 	adda.w	d2,a2
-	lea.l	D_2dbdf,a0
-	movea.l	a0,a3
-	moveq	#48,d1
-	moveq	#2,d7
-	moveq	#0,d0
+	lea.l	Skill_txt,a0	; CHANGE: was "lea.l Skill_txt,a3"
+	movea.l	a0,a3	; CHANGE: was "moveq.l #"0",d1"
+	moveq	#48,d1	; CHANGE: added
+	moveq.l	#2,d7
+	moveq.l	#0,d0
 	move.b	(a1),d0
 	add.w	(a2),d0
 	bsr.w	RConvert_number
-	addq.l	#$2,a3
-	moveq	#0,d0
-	move.b	$a(a1),d0
+	addq.l	#2,a3
+	moveq.l	#0,d0
+	move.b	10(a1),d0
 	bsr.w	RConvert_number
+; CHANGE: removed "lea.l Skill_txt,a0"
 	jsr	IG_Print
 	jsr	Switch_screen
 	jsr	Copy_screen
-	movem.l	(a7)+,d0-d2/d6-d7/a0-a3/a6
-	rts
+	movem.l	(sp)+,d0-d2/d6/d7/a0-a3/a6
+	rts	
 T_0b6c4:
 	tst.b	Exit_on
 	beq.w	T_0b7d2
@@ -13530,12 +13721,12 @@ T_0b6d2:
 	bsr.w	Init_RText
 	lea.l	$f0(a2),a0
 	bsr.w	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	bsr.w	Add_ASCII_2_RText
 	lea.l	Code0004Sys,a1
 	moveq	#19,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	moveq	#0,d0
 	move.b	$1b(a2),d0
@@ -13546,11 +13737,11 @@ T_0b6d2:
 	bsr.w	Add_ASCII_2_RText
 	moveq	#20,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	D_1e460,a0
+	lea.l	Return,a0
 	bsr.w	Add_ASCII_2_RText
 	moveq	#21,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	move.w	$88(a2),d0
 	add.w	$98(a2),d0
@@ -13559,22 +13750,22 @@ T_0b6d2:
 	bsr.w	Add_ASCII_2_RText
 	tst.b	$1a(a2)
 	beq.b	T_0b7b2
-	lea.l	D_1e460,a0
+	lea.l	Return,a0
 	bsr.w	Add_ASCII_2_RText
 	moveq	#22,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	move.w	$8c(a2),d0
 	add.w	$9a(a2),d0
 	moveq	#3,d7
 	bsr.w	LConvert_number
 	bsr.w	Add_ASCII_2_RText
-	lea.l	D_1e460,a0
+	lea.l	Return,a0
 	bsr.w	Add_ASCII_2_RText
 	moveq	#23,d0
 	bsr.w	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	move.w	$8e(a2),d0
 	moveq	#3,d7
@@ -13584,31 +13775,33 @@ T_0b7b2:
 	bsr.w	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bsr.w	T_0784c
-	bsr.w	T_0798a
+	bsr.w	Wait_4_user
+	bsr.w	Exit_RText
 	bsr.w	Pop_PA
-	bsr.w	T_0af9c
+	bsr.w	Update_guild_messages
 T_0b7d2:
 	rts
+; ---- MerchOBJC_DisUpd (original source: MAIN/PLACES.ASM)
 MerchOBJC_DisUpd:
 	bsr.w	Update_status_block
-	lea.l	D_2615c,a0
+	lea.l	MOBJC_CIL,a0
 	lea.l	MOBJCCIL_evaluate,a1
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	bsr.w	Update_quantity_colours
-	rts
+	rts	
+; ---- MerchOBJC_DisInit (original source: MAIN/PLACES.ASM)
 MerchOBJC_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0002Sys,Textfile_ptr
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
-	lea.l	D_2615c,a0
+	lea.l	MOBJC_CIL,a0
 	bsr.w	MOBJCCIL_evaluate
 	move.l	a0,Control_list_ptr
 	bsr.w	Show_control_icons
@@ -13617,7 +13810,7 @@ MerchOBJC_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- MOBJCCIL_evaluate (original source: MAIN/PLACES.ASM)
 MOBJCCIL_evaluate:
 	movem.l	d0/d7/a1,-(sp)
@@ -13671,9 +13864,12 @@ MOBJCCIL_evaluate:
 	bsr.w	Places_CIL_evaluate
 	movem.l	(sp)+,d0/d7/a1
 	rts	
+; ---- View_item_MOBJC (original source: MAIN/PLACES.ASM)
 T_0b8fa:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0b8fa
+View_item_MOBJC:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	lea.l	ViewItemMOBJC_Mod,a0
 	bra.w	Push_Module
 ; ---- ViewItemMOBJC_DisInit (original source: MAIN/PLACES.ASM)
@@ -13706,7 +13902,7 @@ T_0b978:
 	tst.b	-$1(a0)
 	beq.b	T_0b9a6
 	move.b	d0,Object_slot_number
-	lea.l	ItemView1_Mod,a0
+	lea.l	D_28160,a0
 	bsr.w	Push_Module
 T_0b9a6:
 	rts
@@ -13715,15 +13911,16 @@ T_0b9a8:
 	bne.b	T_0b9a8
 	lea.l	SellItem_Mod,a0
 	bra.w	Push_Module
-; ---- SellItem_DisInit (original source: MAIN/PLACES.ASM)
 SellItem_DisInit:
-	move.w	#112,Mesmin_X
-	move.w	#66,Mesmin_Y
-	move.w	#192,Mesmin_Wd
+	move.w	#$70,Mesmin_X
+	move.w	#$42,Mesmin_Y
+	move.w	#$c0,Mesmin_Wd
 	move.l	#Code0002Sys,Textfile_ptr
 	move.l	#Lay3_PlusMes,PlusMes_info
 	lea.l	Lay3_PA,a0
 	bsr.w	Push_PA
+; ---- LearnSpell_DisInit (original source: MAIN/EYE.ASM)
+LearnSpell_DisInit:
 	lea.l	L3_objects_area,a0
 	jsr	Push_MA
 	movea.l	Current_active_char_data,a0
@@ -13732,13 +13929,14 @@ SellItem_DisInit:
 	move.l	a0,Itemdata_ptr
 	move.l	a1,Itemslots_ptr
 	movea.l	Off_screen,a6
-	move.w	#12,d0
+	move.w	#$c,d0	; CHANGE: was "HashMes 11"
 	bsr.w	Hash_message
 	bsr.w	Show_objects_LAY3
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
 ; ---- SellItem_DisExit (original source: MAIN/PLACES.ASM)
+BuyItem_DisExit:
 SellItem_DisExit:
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
@@ -13756,43 +13954,46 @@ SellItem_DisUpd:
 	bsr.w	Update_quantity_colours
 	bsr.w	Display_gold
 	rts	
+; ---- SellItem_objselect (original source: MAIN/PLACES.ASM)
 T_0ba80:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0ba80
+SellItem_objselect:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	tst.b	d0
-	beq.b	T_0bafe
+	beq.s	.Exit
 	move.b	d0,Object_slot_number
 	ext.w	d0
-	subq.w	#$1,d0
+	subq.w	#1,d0
 	movea.l	Itemslots_ptr,a1
 	movea.l	Itemdata_ptr,a2
 	adda.w	d0,a1
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	adda.w	d0,a2
 	tst.b	(a1)
-	beq.b	T_0bafe
-	btst	#$1,$18(a2)
-	beq.b	T_0bafe
-	cmpi.w	#$2,$20(a2)
-	bmi.b	T_0bafe
-	btst	#$2,$18(a2)
-	beq.b	T_0bace
-	cmpi.b	#$1,(a1)
-	bhi.b	T_0bae4
-T_0bace:
-	move.l	#$1,ItemW_nr
+	beq.s	.Exit
+	btst	#1,Item_stat_bits(a2)
+	beq.s	.Exit
+	cmpi.w	#2,Price(a2)
+	bmi.s	.Exit
+	btst	#2,Item_stat_bits(a2)
+	beq.s	.Single
+	cmpi.b	#1,(a1)
+	bhi.s	.Multiple
+.Single:
+	move.l	#1,ItemW_nr
 	lea.l	SellReq_Mod,a0
 	bsr.w	Push_Module
-	rts
-T_0bae4:
-	moveq	#0,d0
+	rts	
+.Multiple:
+	moveq.l	#0,d0
 	move.b	(a1),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	SellMItem_Mod,a0
 	bsr.w	Push_Module
-T_0bafe:
-	rts
+.Exit:
+	rts	
 ; ---- SellMItem_DisInit (original source: MAIN/PLACES.ASM)
 SellMItem_DisInit:
 	movem.l	d0/d1/a0-a2/a6,-(sp)
@@ -13833,17 +14034,18 @@ SellMItem_DisInit:
 	jsr	Copy_screen
 	movem.l	(sp)+,d0/d1/a0-a2/a6
 	rts	
+; ---- SellMItem_Return (original source: MAIN/PLACES.ASM)
 SellMItem_Return:
 	tst.l	ItemW_nr
-	bne.b	T_0bbba
-T_0bbae:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0bbae
-	rts
-T_0bbba:
+	bne.s	.Go_on
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
+.Go_on:
 	lea.l	SellReq_Mod,a0
 	bsr.w	Push_Module
-	rts
+	rts	
 ; ---- SellReq_ModInit (original source: MAIN/PLACES.ASM)
 SellReq_ModInit:
 	move.l	ItemW_nr,d6
@@ -13920,6 +14122,8 @@ SellReq_ModInit:
 	lea.l	Lay3_PlusMes,a0
 	jsr	Push_MA
 	rts	
+; ---- SellReq_ModExit (original source: MAIN/PLACES.ASM)
+BuyTRANSReq_ModExit:
 SellReq_ModExit:
 	movea.l	Off_screen,a6
 	bsr.w	Erase_text_window
@@ -13929,20 +14133,20 @@ SellReq_ModExit:
 	bsr.w	Pop_PA
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-T_0bd2c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0bd2c
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Itemslots_ptr,a0
 	move.b	(a0)+,d0
-	moveq	#10,d7
-T_0bd40:
+	moveq.l	#11-1,d7
+.Loop:
 	or.b	(a0)+,d0
-	dbra	d7,T_0bd40
+	dbra	d7,.Loop
 	tst.b	d0
-	bne.b	T_0bd4e
+	bne.s	.Exit
 	bsr.w	Pop_Module
-T_0bd4e:
-	rts
+.Exit:
+	rts	
 T_0bd50:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0bd50
@@ -13991,8 +14195,7 @@ BuyItem_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
-; ---- BuyItem_DisExit (original source: MAIN/PLACES.ASM)
-BuyItem_DisExit:
+T_0be3e:
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	movea.l	Off_screen,a6
@@ -14002,7 +14205,7 @@ BuyItem_DisExit:
 	jsr	Copy_screen
 	bsr.w	Pop_PA
 	jsr	Pop_MA
-	rts	
+	rts
 T_0be78:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0be78
@@ -14091,17 +14294,19 @@ BuyMItem_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
+; ---- BuyMItem_Return (original source: MAIN/PLACES.ASM)
 BuyMItem_Return:
 	tst.l	ItemW_nr
-	bne.b	T_0bfd0
-T_0bfc2:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0bfc2
+	bne.s	.Go_on
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bra.w	Pop_Module
-T_0bfd0:
+.Go_on:
 	lea.l	BuyReq_Mod,a0
 	bsr.w	Push_Module
-	rts
+.Exit:
+	rts	
 ; ---- BuyReq_ModInit (original source: MAIN/PLACES.ASM)
 BuyReq_ModInit:
 	movea.l	Off_screen,a6
@@ -14164,6 +14369,7 @@ BuyReq_ModInit:
 	lea.l	Lay3_PlusMes,a0
 	jsr	Push_MA
 	rts	
+; ---- BuyReq_ModExit (original source: MAIN/PLACES.ASM)
 BuyReq_ModExit:
 	movea.l	Off_screen,a6
 	bsr.w	Erase_text_window
@@ -14173,19 +14379,19 @@ BuyReq_ModExit:
 	bsr.w	Pop_PA
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-T_0c114:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0c114
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Warecount_ptr,a0
 	tst.l	(a0)+
-	bne.b	T_0c134
+	bne.s	.Exit
 	tst.l	(a0)+
-	bne.b	T_0c134
+	bne.s	.Exit
 	tst.l	(a0)+
-	bne.b	T_0c134
+	bne.s	.Exit
 	bsr.w	Pop_Module
-T_0c134:
-	rts
+.Exit:
+	rts	
 T_0c136:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0c136
@@ -14269,24 +14475,26 @@ T_0c228:
 T_0c22c:
 	lea.l	TIMOBJC_Mod,a0
 	bra.w	Push_Module
+; ---- TIMOBJC_DisInit (original source: MAIN/PLACES.ASM)
+TIChest_DisInit:
 TIMOBJC_DisInit:
-	movem.l	d0/a6,-(a7)
-	move.w	#$70,Mesmin_X
-	move.w	#$42,Mesmin_Y
-	move.w	#$c0,Mesmin_Wd
+	movem.l	d0/a6,-(sp)
+	move.w	#112,Mesmin_X
+	move.w	#66,Mesmin_Y
+	move.w	#192,Mesmin_Wd
 	move.l	#Code0001Sys,Textfile_ptr
 	lea.l	Lay3_L2,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
-	move.w	#$4,d0
+	move.w	#4,d0
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0c282:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0c282
-	movem.l	(a7)+,d0/a6
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	movem.l	(sp)+,d0/a6
+	rts	
 T_0c292:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0c292
@@ -14315,7 +14523,7 @@ T_0c2da:
 	moveq	#0,d0
 	move.w	$22(a2),d0
 	moveq	#1,d2
-	bra.w	T_0c3d2
+	bra.w	MOBJC_TI_2
 T_0c2e6:
 	moveq	#0,d0
 	move.b	(a1),d0
@@ -14324,45 +14532,46 @@ T_0c2e6:
 	lea.l	TMI_MOBJC_Mod,a0
 	bsr.w	Push_Module
 	rts
+; ---- TMI_MOBJC_DisInit (original source: MAIN/PLACES.ASM)
 TMI_MOBJC_DisInit:
-	movem.l	d0-d7/a0-a6,-(a7)
-	move.w	#$60,Adding
-	moveq	#15,d0
+	movem.l	d0-d7/a0-a6,-(sp)
+	move.w	#First_add,Adding
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#2,d0
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
 	bsr.w	ItemW_DisInit
 	move.b	Object_slot_number,d0
 	ext.w	d0
-	subq.w	#$1,d0
-	movea.l	Itemslots_ptr,a2
-	movea.l	Itemdata_ptr,a3
+	subq.w	#$1,d0	; CHANGE: was "lea.l Sold_slots-1,a2"
+	movea.l	Itemslots_ptr,a2	; CHANGE: was "lea.l Sold_data-40,a3"
+	movea.l	Itemdata_ptr,a3	; CHANGE: added
 	adda.w	d0,a2
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	adda.w	d0,a3
 	movea.l	Off_screen,a6
 	move.b	(a3),d0
-	moveq	#0,d1
+	moveq.l	#0,d1
 	bsr.w	INV2_Show_object
-	move.w	#$43,d0
-	move.w	#$82,d1
+	move.w	#49+18,d0
+	move.w	#80+18+32,d1
 	jsr	IG_Set_cursor
-	move.w	$26(a3),d0
+	move.w	Name_word_nr(a3),d0
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-	move.w	#$31,d0
-	move.w	#$96,d1
+	move.w	#32+17,d0
+	move.w	#80+38+32,d1
 	jsr	IG_Set_cursor
-	moveq	#14,d0
+	moveq.l	#14,d0
 	lea.l	Code0001Sys,a1
 	bsr.w	Convert_text_line
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
 	jsr	Switch_screen
 	jsr	Copy_screen
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
 TMI_MOBJC_Return:
 	movea.l	Itemdata_ptr,a0
 	move.b	Object_slot_number,d0
@@ -14376,7 +14585,7 @@ TMI_MOBJC_Return:
 T_0c3ca:
 	mulu.w	$22(a0),d0
 	move.w	$24(a0),d1
-T_0c3d2:
+MOBJC_TI_2:
 	suba.l	a0,a0
 	bsr.w	Scan_4_transfer_victims
 	bne.b	T_0c3e8
@@ -14541,9 +14750,9 @@ Show3_object_name:
 	move.b	#2,Print_objname_flag
 .Exit:
 	rts	
-; ---- Upd3_objname_erase (original source: MAIN/PLACES.ASM)
-Upd4_objname_erase:
+; ---- Upd4_objname_erase (original source: MAIN/PLACES.ASM)
 Upd3_objname_erase:
+Upd4_objname_erase:
 	tst.b	Erase_objname_flag
 	beq.s	.Exit
 	movea.l	Off_screen,a6
@@ -14551,7 +14760,7 @@ Upd3_objname_erase:
 	move.w	#112,d0
 	move.w	#73,d1
 	move.w	#112+192-1,d2
-	move.w	#73+6,d3
+	move.w	#$4f,d3	; CHANGE: was "move.w #73+14,d3"
 	move.w	#2,d6
 	jsr	Draw_box
 	subq.b	#1,Erase_objname_flag
@@ -14664,16 +14873,17 @@ MerchFOOD_DisUpd:
 	movea.l	Off_screen,a6
 	bsr.w	Print_centered_string
 	rts	
+; ---- MerchFOOD_DisInit (original source: MAIN/PLACES.ASM)
 MerchFOOD_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
-	move.w	#$f0,d0
-	move.w	#$71,d1
-	move.w	#$40,d2
+	move.w	#240,d0
+	move.w	#113,d1
+	move.w	#64,d2
 	lea.l	Food_txt,a0
 	bsr.w	Print_centered_string
 	movea.l	Placedat_ptr,a0
@@ -14685,28 +14895,37 @@ MerchFOOD_DisInit:
 	lea.l	Lay3_PA,a0
 	bsr.w	Push_PA
 	bsr.w	Init_RText
-	moveq	#16,d0
+	moveq.l	#16,d0
 	lea.l	Code0004Sys,a1
 	bsr.w	Add_encoded_2_RText
-	moveq	#0,d0
+	moveq.l	#0,d0
 	move.w	Total_price,d0
-	moveq	#5,d7
-	lea.l	B_5814e,a0
+	moveq.l	#5,d7
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	bsr.w	LConvert_number
-	move.b	#$20,(a3)+
+	move.b	#$20,(a3)+	; CHANGE: was "move.b #" ",(a3)+"
 	clr.b	(a3)
 	bsr.w	Add_ASCII_2_RText
 	lea.l	Gold_txt,a0
 	bsr.w	Add_ASCII_2_RText
-	bsr.w	T_0707a
-	bsr.w	T_0798a
+; CHANGE: removed "movea.l RText_ptr,a0"
+; CHANGE: removed "move.w Nr_of_chars,d0"
+; CHANGE: removed "move.w Lines_in_text,d1"
+; CHANGE: removed "bra.s .Entry2"
+.Loop2:
+	bsr.w	T_0707a	; CHANGE: was ".Loop2: jsr IG_Print"
+; CHANGE: removed "jsr IG_Carriage_return"
+; CHANGE: removed "lea.l 1(a0,d0.w),a0"
+; CHANGE: removed ".Entry2: dbra d1,.Loop2"
+.Entry2:
+	bsr.w	Exit_RText
 	bsr.w	Pop_PA
 	jsr	Switch_screen
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- MFOODCIL_evaluate (original source: MAIN/PLACES.ASM)
 MFOODCIL_evaluate:
 	bclr	#7,3(a0)
@@ -14724,73 +14943,76 @@ MFOODCIL_evaluate:
 .Ok2:
 	bsr.w	Places_CIL_evaluate
 	rts	
-T_0c8be:
-	move.w	#$70,Mesmin_X
-	move.w	#$3f,Mesmin_Y
-	move.w	#$c0,Mesmin_Wd
+; ---- MFOOD_Transfer_food (original source: MAIN/PLACES.ASM)
+MFOOD_Transfer_food:
+	move.w	#112,Mesmin_X
+	move.w	#63,Mesmin_Y
+	move.w	#192,Mesmin_Wd
 	move.l	#Code0001Sys,Textfile_ptr
 	movea.l	Off_screen,a6
-	move.w	#$7,d0
+	move.w	#7,d0
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0c8fa:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0c8fa
-	moveq	#0,d0
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	moveq.l	#0,d0
 	move.w	Places_food,d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	TFMFOOD_Mod,a0
 	bsr.w	Push_Module
-	rts
-T_0c924:
+	rts	
+; ---- TFMFOOD_Return (original source: MAIN/PLACES.ASM)
+TFMFOOD_Return:
 	move.l	ItemW_nr,d0
-	beq.w	T_0c9b8
-	mulu.w	#$fa,d0
+	beq.w	.Exit
+	mulu.w	#Food_weight,d0
 	lea.l	Chard_ptrs,a1
 	lea.l	Char_status_icons,a4
-	moveq	#0,d6
-	moveq	#1,d7
-T_0c942:
+	moveq.l	#0,d6
+	moveq.l	#1,d7
+.Loop1:
 	tst.l	(a1)
-	beq.b	T_0c970
+	beq.s	.Next
+.Do_it:
 	movea.l	(a1),a2
-	move.w	$48(a2),d1
-	add.w	$9c(a2),d1
-	mulu.w	#$3e8,d1
-	sub.l	$ec(a2),d1
+	move.w	Attr_1_normal(a2),d1
+	add.w	Attr_1_normal_magic(a2),d1
+	mulu.w	#1000,d1
+	sub.l	Weight_normal(a2),d1
 	cmp.l	d0,d1
-	bmi.b	T_0c970
-	move.w	$92(a2),d1
+	bmi.s	.Next
+	move.w	Food_rations(a2),d1
 	add.w	d0,d1
-	bvs.b	T_0c970
+	bvs.s	.Next
 	move.w	#$e402,d1
-	and.w	$3a(a2),d1
-	bne.b	T_0c970
+	and.w	Body_conditions(a2),d1
+	bne.s	.Next
 	bset	d7,d6
-T_0c970:
-	addq.l	#$4,a1
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	T_0c942
-	bmi.b	T_0c942
+.Next:
+	addq.l	#4,a1
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop1
+	bmi.s	.Loop1
 	move.w	d5,Transferring
 	move.w	d6,Transfer_victims
 	tst.w	d6
-	bne.b	T_0c99a
-	move.w	#$5,d0
+	bne.s	.Go
+	move.w	#5,d0
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
-	bra.b	T_0c9b8
-T_0c99a:
+	bra.s	.Exit
+.Go:
 	bsr.w	Show_transfer_victims
 	move.l	#Do_TFMFOOD,TIVS_Ptr
 	lea.l	TIVS2_Mod,a0
-	move.w	#$1a,$2c(a0)
+	move.w	#26,Mouse_ptr(a0)
 	bsr.w	Push_Module
-T_0c9b8:
-	rts
+.Exit:
+	rts	
 ; ---- Do_TFMFOOD (original source: MAIN/PLACES.ASM)
 Do_TFMFOOD:
 	move.l	ItemW_nr,d0
@@ -14853,15 +15075,17 @@ BuyFood_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
+; ---- BuyFood_Return (original source: MAIN/PLACES.ASM)
 BuyFood_Return:
-	btst	#$1,Mouse_button_state
-	bne.b	BuyFood_Return
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	tst.l	ItemW_nr
-	beq.b	T_0cadc
+	beq.s	.Exit
 	lea.l	BuyFoodReq_Mod,a0
 	bsr.w	Push_Module
-T_0cadc:
-	rts
+.Exit:
+	rts	
 ; ---- BuyFoodReq_ModInit (original source: MAIN/PLACES.ASM)
 BuyFoodReq_ModInit:
 	movea.l	Off_screen,a6
@@ -15018,32 +15242,33 @@ MerchHORSE_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	rts	
+; ---- MerchHORSE_DisInit (original source: MAIN/PLACES.ASM)
 MerchHORSE_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
 	bsr.w	Check_trans_creation
-	bsr.w	T_0dcdc
-	move.w	d0,d1
+	bsr.w	T_0dcdc	; CHANGE: added
+	move.w	d0,d1	; CHANGE: added
 	movea.l	Placedat_ptr,a1
 	move.w	(a1),d0
-	mulu.w	d1,d0
+	mulu.w	d1,d0	; CHANGE: was "mulu.w Nr_members,d0"
 	move.w	d0,Total_price
 	lea.l	MHORSE_CIL,a0
-	bsr.w	MSHIPCIL_evaluate
+	bsr.w	MHORSECIL_evaluate
 	move.l	a0,Control_list_ptr
 	bsr.w	Show_control_icons
 	jsr	Switch_screen
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- MSHIPCIL_evaluate (original source: MAIN/PLACES.ASM)
-MRAFTCIL_evaluate:
 MHORSECIL_evaluate:
+MRAFTCIL_evaluate:
 MSHIPCIL_evaluate:
 	movem.l	d0/d7/a1,-(sp)
 	bclr	#7,3(a0)
@@ -15058,12 +15283,15 @@ MSHIPCIL_evaluate:
 	bsr.w	Places_CIL_evaluate
 	movem.l	(sp)+,d0/d7/a1
 	rts	
+; ---- Buy_ship (original source: MAIN/PLACES.ASM)
 T_0cd6a:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0cd6a
-	lea.l	BuyHORSEReq_Mod,a0
+Buy_ship:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	lea.l	BuyHORSEReq_Mod,a0	; CHANGE: was "Push Module,BuySHIPReq_Mod"
 	bsr.w	Push_Module
-	rts
+	rts	
 ; ---- BuyHORSEReq_ModInit (original source: MAIN/PLACES.ASM)
 BuyHORSEReq_ModInit:
 	move.l	#Code0002Sys,Textfile_ptr
@@ -15088,6 +15316,7 @@ MerchRAFT_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	rts
+MerchSHIP_DisInit:
 MerchRAFT_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
@@ -15107,7 +15336,7 @@ MerchRAFT_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 T_0ce3c:
 	movem.l	d0/d7/a1,-(a7)
 	bclr	#$7,$3(a0)
@@ -15133,14 +15362,15 @@ BuyRAFTReq_ModInit:
 	move.l	#Code0003Sys,Textfile_ptr
 	moveq.l	#1,d0
 	bra.w	BuyTRANSReq_ModInit
-; ---- BuyRAFTYes (original source: MAIN/PLACES.ASM)
+; ---- BuySHIPYes (original source: MAIN/PLACES.ASM)
 BuyRAFTYes:
+BuySHIPYes:
 	bsr.w	Create_transport
 	move.w	Total_price,d0
 	sub.w	d0,Places_gold
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0003Sys,Textfile_ptr
-	move.w	#2,d0
+	move.w	#$2,d0	; CHANGE: was "PlusMes 4"
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
 .Exit:
@@ -15152,7 +15382,7 @@ MerchSHIP_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	rts
-MerchSHIP_DisInit:
+T_0cede:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
 	moveq	#3,d0
@@ -15171,7 +15401,7 @@ MerchSHIP_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 T_0cf3e:
 	movem.l	d0/d7/a1,-(a7)
 	bclr	#$7,$3(a0)
@@ -15197,18 +15427,16 @@ BuySHIPReq_ModInit:
 	move.l	#Code0003Sys,Textfile_ptr
 	moveq.l	#3,d0
 	bra.w	BuyTRANSReq_ModInit
-; ---- BuySHIPYes (original source: MAIN/PLACES.ASM)
-BuySHIPYes:
+T_0cf94:
 	bsr.w	Create_transport
 	move.w	Total_price,d0
 	sub.w	d0,Places_gold
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0003Sys,Textfile_ptr
-	move.w	#4,d0
+	move.w	#$4,d0
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
-.Exit:
-	rts	
+	rts
 Create_transport:
 	movem.l	d0/d7/a0-a1,-(a7)
 	lea.l	Trans_T,a0
@@ -15309,7 +15537,7 @@ BuyTRANSReq_ModInit:
 	lea.l	SellReq_L2,a0
 	jsr	Set_layout_data
 	rts	
-BuyTRANSReq_ModExit:
+T_0d132:
 	movea.l	Off_screen,a6
 	bsr.w	Erase_text_window
 	jsr	Switch_screen
@@ -15339,15 +15567,16 @@ Healer_DisUpd:
 Healer_ModInit:
 	move.l	Current_active_char_data,Current_healer_victim
 	move.w	Active_member,Healer_victim_nr
-	bra.w	Places_ModInit
+	bra.w	T_0ab46	; CHANGE: was "jmp Places_ModInit"
+; ---- Healer_DisInit (original source: MAIN/PLACES.ASM)
 Healer_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
-	bsr.w	T_0d5fc
+	bsr.w	Display_BodyMind
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	lea.l	Healer_CIL,a0
@@ -15358,9 +15587,9 @@ Healer_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	lea.l	D_262fa,a1
-	movem.l	D_260c0,d0-d7
-	movem.l	d0-d7,$2(a1)
+	lea.l	XLay3_target_hbl,a1
+	movem.l	Lay3_target_hbl+2,d0-d7
+	movem.l	d0-d7,2(a1)
 	bra.w	Fade_lay3
 ; ---- Healer_DisExit (original source: MAIN/PLACES.ASM)
 Healer_DisExit:
@@ -15477,85 +15706,89 @@ HealCondReq_ModInit:
 	move.l	#Code0002Sys,Textfile_ptr
 	moveq.l	#24,d0
 	bra.w	BuyTRANSReq_ModInit
+; ---- HealCondYes (original source: MAIN/PLACES.ASM)
 T_0d3b4:
+HealCondYes:
 	move.w	Total_price,d0
 	sub.w	d0,Places_gold
-	lea.l	Make_level_offsets,a0
+	lea.l	Sold_data-40,a0
 	move.b	Object_slot_number,d0
 	ext.w	d0
-	mulu.w	#$28,d0
-	move.b	$1(a0,d0.w),d0
+	mulu.w	#40,d0
+	move.b	1(a0,d0.w),d0
 	movea.l	Current_healer_victim,a0
-	move.w	$3a(a0),d1
+	move.w	Body_conditions(a0),d1
 	bclr	d0,d1
-	move.w	d1,$3a(a0)
-	cmpi.w	#$d,d0
-	bmi.b	T_0d3f6
+	move.w	d1,Body_conditions(a0)
+	cmpi.w	#13,d0
+	bmi.s	.No
 	move.w	Healer_victim_nr,d0
-	bsr.w	T_0d72a
-T_0d3f6:
+	bsr.w	T_0d72a	; CHANGE: was "jsr Resurrection"
+.No:
 	movea.l	Off_screen,a6
-	bsr.w	T_0d5fc
+	bsr.w	Display_BodyMind
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0d40c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0d40c
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bra.w	Pop_Module
 ; ---- RemCurseReq_ModInit (original source: MAIN/PLACES.ASM)
 RemCurseReq_ModInit:
 	move.l	#Code0002Sys,Textfile_ptr
 	moveq.l	#23,d0
 	bra.w	BuyTRANSReq_ModInit
-T_0d42a:
+; ---- RemCurseYes (original source: MAIN/PLACES.ASM)
+RemCurseYes:
 	move.w	Total_price,d0
 	sub.w	d0,Places_gold
-T_0d436:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0d436
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Pop_Module
 	bsr.w	Exit_display
 	lea.l	RemCurse_Mod,a0
 	bsr.w	Push_Module
-	rts
+	rts	
+; ---- RemCurse_DisInit (original source: MAIN/PLACES.ASM)
 RemCurse_DisInit:
 	jsr	Mouse_off
-	bsr.w	T_10fac
-	moveq	#50,d0
+	bsr.w	Inv2_DisInit
+	moveq.l	#50,d0
 	jsr	Delay
 	lea.l	Cursed_slots,a0
 	movea.l	Current_healer_victim,a1
-	lea.l	$22(a1),a2
-	lea.l	$132(a1),a3
-	moveq	#1,d0
-	moveq	#8,d7
-T_0d47e:
+	lea.l	Neck_place_counter(a1),a2
+	lea.l	Inv_data(a1),a3
+	moveq.l	#1,d0
+	moveq.l	#9-1,d7
+.Loop:
 	tst.b	(a0)+
-	beq.b	T_0d4bc
+	beq.s	.Next
 	clr.b	(a2)
-	moveq	#0,d2
-	move.w	$22(a3),d2
-	sub.l	d2,$ec(a1)
-	bsr.w	T_0d4de
-	move.l	d0,-(a7)
-	moveq	#0,d2
-	moveq	#0,d3
+	moveq.l	#0,d2
+	move.w	Weight(a3),d2
+	sub.l	d2,Weight_normal(a1)
+	bsr.w	T_0d4de	; CHANGE: added
+	move.l	d0,-(sp)
+	moveq.l	#0,d2
+	moveq.l	#0,d3
 	move.b	(a3),d2
 	lea.l	Erase_icon,a4
-	move.b	-$1(a4,d0.w),d3
-	lea.l	D_2dc66,a4
+	move.b	-1(a4,d0.w),d3
+	lea.l	Object_pos_list-4,a4
 	add.w	d0,d0
 	add.w	d0,d0
-	move.w	$2(a4,d0.w),d1
-	move.w	(a4,d0.w),d0
+	move.w	2(a4,d0.w),d1
+	move.w	0(a4,d0.w),d0
 	bsr.w	Show_item_destruction
-	move.l	(a7)+,d0
-T_0d4bc:
-	addq.w	#$1,d0
-	addq.l	#$1,a2
-	lea.l	$28(a3),a3
-	dbra	d7,T_0d47e
-	moveq	#50,d0
+	move.l	(sp)+,d0
+.Next:
+	addq.w	#1,d0
+	addq.l	#1,a2
+	lea.l	40(a3),a3
+	dbra	d7,.Loop
+	moveq.l	#50,d0
 	jsr	Delay
 	bsr.w	Pop_Module
 	jsr	Mouse_on
@@ -15638,7 +15871,7 @@ T_0d5a6:
 	jsr	Copy_screen
 	movem.l	(a7)+,d0-d2/d7/a0-a4/a6
 	rts
-T_0d5fc:
+Display_BodyMind:
 	movem.l	d0-d2/d6-d7/a0-a3,-(a7)
 	moveq	#0,d1
 	movea.l	Current_healer_victim,a0
@@ -15688,33 +15921,34 @@ T_0d690:
 	dbra	d7,T_0d668
 	movem.l	(a7)+,d0-d2/d6-d7/a0-a3
 	rts
-T_0d69e:
-	andi.l	#$ff00,d0
-	beq.b	T_0d700
-	lsr.w	#$8,d0
+; ---- Healer_Member_left (original source: MAIN/PLACES.ASM)
+Healer_Member_left:
+	andi.l	#$0000ff00,d0
+	beq.s	.Exit
+	lsr.w	#8,d0
 	cmp.w	Healer_victim_nr,d0
-	beq.b	T_0d700
-	lea.l	Codetxt_ptr,a0
+	beq.s	.Exit
+	lea.l	Chard_ptrs-4,a0
 	move.w	d0,d1
 	add.w	d1,d1
 	add.w	d1,d1
 	adda.w	d1,a0
 	tst.l	(a0)
-	beq.b	T_0d700
+	beq.s	.Exit
 	move.w	Healer_victim_nr,d5
 	move.w	d0,Healer_victim_nr
 	move.w	d5,d4
-	mulu.w	#$30,d4
+	mulu.w	#48,d4
 	movea.l	Current_healer_victim,a4
 	movea.l	Off_screen,a6
 	bsr.w	Display_portrait
 	move.l	(a0),Current_healer_victim
 	movea.l	Off_screen,a6
-	bsr.w	T_0d5fc
+	bsr.w	Display_BodyMind
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0d700:
-	rts
+.Exit:
+	rts	
 ; ---- Display_Ankh (original source: MAIN/PLACES.ASM)
 Display_Ankh:
 	move.w	Healer_victim_nr,d0
@@ -15749,8 +15983,8 @@ T_0d72a:
 	bsr.w	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bsr.w	T_0798a
-	bsr.w	T_0784c
+	bsr.w	Exit_RText
+	bsr.w	Wait_4_user
 	movea.l	Off_screen,a6
 	bsr.w	Erase_text_window
 	jsr	Switch_screen
@@ -15767,13 +16001,14 @@ MerchMAGIC_DisUpd:
 	bsr.w	Display_gold
 	bsr.w	Update_quantity_colours
 	rts	
+; ---- MerchMAGIC_DisInit (original source: MAIN/PLACES.ASM)
 MerchMAGIC_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0002Sys,Textfile_ptr
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
@@ -15786,7 +16021,7 @@ MerchMAGIC_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- MMAGICCIL_evaluate (original source: MAIN/PLACES.ASM)
 MMAGICCIL_evaluate:
 	movem.l	d0/d7/a1,-(sp)
@@ -15828,10 +16063,11 @@ Sage_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	rts	
+; ---- Sage_DisInit (original source: MAIN/PLACES.ASM)
 Sage_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
@@ -15839,7 +16075,7 @@ Sage_DisInit:
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	bsr.w	Show_objects_LAY3
-	sf.b	Body_backpack
+	sf	Body_backpack
 	lea.l	Sage_CIL,a0
 	bsr.w	SageCIL_evaluate
 	move.l	a0,Control_list_ptr
@@ -15848,7 +16084,7 @@ Sage_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- SageCIL_evaluate (original source: MAIN/PLACES.ASM)
 SageCIL_evaluate:
 	tst.b	Body_backpack
@@ -15885,48 +16121,49 @@ Show_backpack_items:
 	jsr	Copy_screen
 	not.b	Body_backpack
 	rts	
-T_0d9b2:
+; ---- Lore_item (original source: MAIN/PLACES.ASM)
+Lore_item:
 	tst.b	d0
-	beq.w	T_0da58
+	beq.w	.Exit
 	movea.l	Itemslots_ptr,a0
 	ext.w	d0
-	tst.b	-$1(a0,d0.w)
-	beq.w	T_0da58
+	tst.b	-1(a0,d0.w)
+	beq.w	.Exit
 	tst.b	Body_backpack
-	beq.b	T_0d9d4
-	addi.w	#$9,d0
-T_0d9d4:
+	beq.s	.Body
+	addi.w	#9,d0
+.Body:
 	move.b	d0,Object_slot_number
-T_0d9da:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0d9da
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Current_active_char_data,a0
-	lea.l	$10a(a0),a0
-	mulu.w	#$28,d0
+	lea.l	Inv_data-40(a0),a0
+	mulu.w	#40,d0
 	adda.w	d0,a0
-	btst	#$7,$18(a0)
-	beq.b	T_0da1a
+	btst	#7,Item_stat_bits(a0)
+	beq.s	.No
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0003Sys,Textfile_ptr
-	move.w	#$19,d0
+	move.w	#$19,d0	; CHANGE: was "PlusMes 24"
 	bsr.w	Plus_message
-	bra.b	T_0da58
-T_0da1a:
+	bra.s	.Exit
+.No:
 	movea.l	Placedat_ptr,a0
 	move.w	(a0),d0
 	cmp.w	Places_gold,d0
-	ble.b	T_0da48
+	ble.s	.Ok
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0002Sys,Textfile_ptr
-	move.w	#$16,d0
+	move.w	#22,d0
 	bsr.w	Plus_message
-	bra.b	T_0da58
-T_0da48:
+	bra.s	.Exit
+.Ok:
 	move.w	d0,Total_price
 	lea.l	LoreItemReq_Mod,a0
 	bsr.w	Push_Module
-T_0da58:
-	rts
+.Exit:
+	rts	
 ; ---- LoreItemReq_ModInit (original source: MAIN/PLACES.ASM)
 LoreItemReq_ModInit:
 	move.l	#Code0003Sys,Textfile_ptr
@@ -15951,7 +16188,7 @@ T_0da96:
 	lea.l	$132(a0),a0
 	move.l	a0,Itemdata_ptr
 	move.l	a1,Itemslots_ptr
-	lea.l	ItemView1_Mod,a0
+	lea.l	D_28160,a0
 	move.l	#T_0dace,$28(a0)
 	bsr.w	Push_Module
 	rts
@@ -16003,40 +16240,41 @@ List_body_items:
 	dbra	d7,.Loop1
 	movem.l	(sp)+,d6/d7/a0-a3
 	rts	
+; ---- Sage_Member_left (original source: MAIN/PLACES.ASM)
 Sage_Member_left:
-	andi.l	#$ff00,d0
-	beq.b	T_0dbde
-	lsr.w	#$8,d0
+	andi.l	#$0000ff00,d0
+	beq.s	.Exit
+	lsr.w	#8,d0
 	cmp.w	Active_member,d0
-	beq.b	T_0dbde
-	lea.l	Codetxt_ptr,a0
+	beq.s	.Exit
+	lea.l	Chard_ptrs-4,a0
 	move.w	d0,d1
 	add.w	d1,d1
 	add.w	d1,d1
 	adda.w	d1,a0
 	tst.l	(a0)
-	beq.b	T_0dbde
+	beq.s	.Exit
 	movea.l	(a0),a1
-	move.w	$3a(a1),d1
-	andi.w	#$e406,d1
-	bne.b	T_0dbde
+	move.w	Body_conditions(a1),d1
+	andi.w	#$e406,d1	; CHANGE: was "andi.w #$e506,d1"
+	bne.s	.Exit
 	move.w	d0,Active_member
 	move.l	a1,Current_active_char_data
 	bsr.w	List_body_items
 	tst.b	Body_backpack
-	beq.b	T_0dbc8
+	beq.s	.Body
 	movea.l	Current_active_char_data,a0
-	lea.l	$29a(a0),a1
+	lea.l	Inv_data+360(a0),a1
 	move.l	a1,Itemdata_ptr
-	lea.l	$2b(a0),a1
+	lea.l	Inventory_1_place_counter(a0),a1
 	move.l	a1,Itemslots_ptr
-T_0dbc8:
+.Body:
 	movea.l	Off_screen,a6
 	bsr.w	Show_objects_LAY3
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0dbde:
-	rts
+.Exit:
+	rts	
 ; ---- Inn_DisUpd (original source: MAIN/PLACES.ASM)
 Inn_DisUpd:
 	bsr.w	Update_status_block
@@ -16045,19 +16283,20 @@ Inn_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	rts	
+; ---- Inn_DisInit (original source: MAIN/PLACES.ASM)
 Inn_DisInit:
-	sf.b	Room_rented
+	sf	Room_rented
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	bsr.w	Show_layout
 	bsr.w	Display_80x80_picture
 	bsr.w	Places_DisInit
-	bsr.w	T_0dcdc
-	move.w	d0,d1
+	bsr.w	T_0dcdc	; CHANGE: added
+	move.w	d0,d1	; CHANGE: added
 	movea.l	Placedat_ptr,a0
 	move.w	(a0),d0
-	mulu.w	d1,d0
+	mulu.w	d1,d0	; CHANGE: was "mulu.w Nr_members,d0"
 	move.w	d0,Total_price
 	lea.l	Inn_CIL,a0
 	bsr.w	InnCIL_evaluate
@@ -16067,7 +16306,7 @@ Inn_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- InnCIL_evaluate (original source: MAIN/PLACES.ASM)
 InnCIL_evaluate:
 	bclr	#7,3(a0)
@@ -16081,25 +16320,30 @@ InnCIL_evaluate:
 .Ok:
 	bsr.w	Places_CIL_evaluate
 	rts	
+; ---- Guestroom (original source: MAIN/PLACES.ASM)
 T_0dc8c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0dc8c
+Guestroom:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	lea.l	GuestroomReq_Mod,a0
 	bsr.w	Push_Module
-	rts
+	rts	
 ; ---- GuestroomReq_ModInit (original source: MAIN/PLACES.ASM)
 GuestroomReq_ModInit:
 	moveq.l	#6,d0
 	move.l	#Code0003Sys,Textfile_ptr
 	bra.w	BuyTRANSReq_ModInit
+; ---- GuestroomYes (original source: MAIN/PLACES.ASM)
 T_0dcb2:
+GuestroomYes:
 	move.w	Total_price,d0
 	sub.w	d0,Places_gold
-	st.b	Inn_flag
-	st.b	Room_rented
-T_0dcca:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0dcca
+	st	Inn_flag
+	st	Room_rented
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Exit_display
 	bra.w	Pop_Module
 T_0dcdc:
@@ -16119,7 +16363,7 @@ T_0dcfa:
 	dbra	d7,T_0dcea
 	movem.l	(a7)+,d7/a0-a1
 	rts
-T_0dd06:
+Eye_spy:
 	movem.l	d0/a0/a5,-(a7)
 	cmpi.b	#$2,Current_map_type
 	bpl.b	T_0dd36
@@ -16146,7 +16390,7 @@ T_0dd36:
 T_0dd60:
 	movem.l	(a7)+,d0/a0/a5
 	rts
-T_0dd66:
+Eye_clicked:
 	move.w	Mouse_X,d0
 	move.w	Mouse_Y,d1
 	subi.w	#$10,d0
@@ -16157,73 +16401,74 @@ T_0dd66:
 	sub.w	Mapbuf_Y,d1
 	add.w	Map_Xcoord,d0
 	add.w	Map_Ycoord,d1
-	bsr.w	T_0dda8
+	bsr.w	Eye_exit
 T_0dd9a:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0dd9a
 	bra.w	T_0de56
-T_0dda8:
+; ---- Eye_exit (original source: MAIN/EYE.ASM)
+Eye_exit:
 	bsr.w	Pop_Module
 	jsr	Pop_MA
-	rts
-; ---- Make_area_EYE (original source: MAIN/EYE.ASM)
-Make_area_MOUTH:
+	rts	
+; ---- Make_area_MOUTH (original source: MAIN/EYE.ASM)
 Make_area_EYE:
+Make_area_MOUTH:
 	lea.l	Made_area,a0
 	move.w	Mapbuf_X,d0
 	subq.w	#1,d0
 	lsl.w	#4,d0
-	addi.w	#16+7,d0
+	addi.w	#$17,d0	; CHANGE: was "addi.w #7,d0"
+	move.w	d0,(a0)+	; CHANGE: added
+	addi.w	#$21,d0	; CHANGE: added
+	move.w	d0,(a0)+	; CHANGE: added
+	move.w	Mapbuf_Y,d0	; CHANGE: added
+	subq.w	#$1,d0	; CHANGE: added
+	lsl.w	#$4,d0	; CHANGE: added
+	addi.w	#$38,d0	; CHANGE: added
+	move.w	d0,(a0)+	; CHANGE: added
+	addi.w	#$21,d0	; CHANGE: added
+	move.w	d0,(a0)+	; CHANGE: added
+	subq.l	#$8,a0	; CHANGE: added
+	jsr	Push_MA	; CHANGE: added
+	rts	; CHANGE: added
+	lea.l	Made_area,a0	; CHANGE: added
+	move.w	Mapbuf_X,d0	; CHANGE: added
+	subq.w	#$1,d0	; CHANGE: added
+	lsl.w	#$4,d0	; CHANGE: added
+	addq.w	#$7,d0	; CHANGE: added
+	move.w	d0,d1
+	cmpi.w	#16,d0
+	bpl.s	.Left_Ok
+	move.w	#16+7,d0
+.Left_Ok:
 	move.w	d0,(a0)+
-	addi.w	#48-15,d0
-	move.w	d0,(a0)+
+	addi.w	#80-15,d1
+	cmpi.w	#16+176,d1
+	bmi.s	.Right_Ok
+	move.w	#16+176-8,d1
+.Right_Ok:
+	move.w	d1,(a0)+
 	move.w	Mapbuf_Y,d0
 	subq.w	#1,d0
 	lsl.w	#4,d0
-	addi.w	#49+7,d0
+	addi.w	#49-9,d0
+	move.w	d0,d1
+	cmpi.w	#49,d0
+	bpl.s	.Top_Ok
+	move.w	#49+7,d0
+.Top_Ok:
 	move.w	d0,(a0)+
-	addi.w	#48-15,d0
-	move.w	d0,(a0)+
+	addi.w	#80-15,d1
+	cmpi.w	#49+144,d1
+	bmi.s	.Bottom_Ok
+	move.w	#49+144-8,d1
+.Bottom_Ok:
+	move.w	d1,(a0)+
 	subq.l	#8,a0
 	jsr	Push_MA
 	rts	
-T_0ddf0:
-	lea.l	Made_area,a0
-	move.w	Mapbuf_X,d0
-	subq.w	#$1,d0
-	lsl.w	#$4,d0
-	addq.w	#$7,d0
-	move.w	d0,d1
-	cmpi.w	#$10,d0
-	bpl.b	T_0de0e
-	move.w	#$17,d0
-T_0de0e:
-	move.w	d0,(a0)+
-	addi.w	#$41,d1
-	cmpi.w	#$c0,d1
-	bmi.b	T_0de1e
-	move.w	#$b8,d1
-T_0de1e:
-	move.w	d1,(a0)+
-	move.w	Mapbuf_Y,d0
-	subq.w	#$1,d0
-	lsl.w	#$4,d0
-	addi.w	#$28,d0
-	move.w	d0,d1
-	cmpi.w	#$31,d0
-	bpl.b	T_0de3a
-	move.w	#$38,d0
-T_0de3a:
-	move.w	d0,(a0)+
-	addi.w	#$41,d1
-	cmpi.w	#$c1,d1
-	bmi.b	T_0de4a
-	move.w	#$b9,d1
-T_0de4a:
-	move.w	d1,(a0)+
-	subq.l	#$8,a0
-	jsr	Push_MA
-	rts
+T_0ddf0	equ	Make_area_MOUTH+60
 T_0de56:
 	movem.l	d0-d3/a0/a5,-(a7)
 	move.w	d0,d2
@@ -16234,20 +16479,20 @@ T_0de56:
 	move.b	(a5),d0
 	cmpi.w	#$3,d0
 	bne.b	T_0de80
-	st.b	B_58494
-	bsr.w	T_07b76
-	sf.b	B_58494
+	st.b	Eye_flag
+	bsr.w	Handle_event
+	sf.b	Eye_flag
 	bra.b	T_0defa
 T_0de80:
 	cmpi.w	#$4,d0
 	bne.b	T_0de92
 	jsr	T_01ff6
-	bsr.w	T_07b76
+	bsr.w	Handle_event
 	bra.b	T_0defa
 T_0de92:
 	cmpi.w	#$e,d0
 	bne.b	T_0de9e
-	bsr.w	T_07b76
+	bsr.w	Handle_event
 	bra.b	T_0defa
 T_0de9e:
 	lea.l	D_26358,a0
@@ -16295,21 +16540,22 @@ T_0df30:
 T_0df40:
 	movem.l	(a7)+,d0-d1/a0
 	rts
-T_0df46:
+; ---- Mouth_clicked (original source: MAIN/EYE.ASM)
+Mouth_clicked:
 	move.w	Mouse_X,d0
 	move.w	Mouse_Y,d1
-	subi.w	#$10,d0
-	subi.w	#$31,d1
-	lsr.w	#$4,d0
-	lsr.w	#$4,d1
+	subi.w	#16,d0
+	subi.w	#49,d1
+	lsr.w	#4,d0
+	lsr.w	#4,d1
 	sub.w	Mapbuf_X,d0
 	sub.w	Mapbuf_Y,d1
 	add.w	Map_Xcoord,d0
 	add.w	Map_Ycoord,d1
-	bsr.w	T_0dda8
-T_0df7a:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0df7a
+	bsr.w	Eye_exit
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bra.w	Talk
 ; ---- Talk (original source: MAIN/EYE.ASM)
 Talk:
@@ -16463,7 +16709,7 @@ Dialogue_DisInit:
 	move.w	#$3f,Mesmin_Y
 	move.w	#$b0,Mesmin_Wd
 	move.l	#Code0006Sys,Textfile_ptr
-	move.l	#D_2645e,PlusMes_info
+	move.l	#Lay8_PlusMes,PlusMes_info
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	movea.l	Off_screen,a6
@@ -16631,102 +16877,105 @@ Dialogue_DisUpd:
 	move.w	#32,d2
 	bsr.w	Print_centered_string
 	rts	
+; ---- DialogueCIL_evaluate (original source: MAIN/EYE.ASM)
 DialogueCIL_evaluate:
-	movem.l	d0/d7/a1-a2,-(a7)
+	movem.l	d0/d7/a1/a2,-(sp)
 	movea.l	a0,a2
-	moveq	#8,d7
-T_0e4b2:
-	bclr	#$7,(a2)+
-	dbra	d7,T_0e4b2
+	moveq.l	#9-1,d7
+.Loop0:
+	bclr	#7,(a2)+
+	dbra	d7,.Loop0
 	lea.l	Sold_slots,a1
 	move.b	(a1)+,d0
-	moveq	#10,d7
-T_0e4c4:
+	moveq.l	#11-1,d7
+.Loop1:
 	and.b	(a1)+,d0
-	dbra	d7,T_0e4c4
+	dbra	d7,.Loop1
 	tst.b	d0
-	beq.b	T_0e4fc
-	bset	#$7,$2(a0)
-	bset	#$7,$3(a0)
-	bset	#$7,$4(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$7(a0)
-	bset	#$7,$8(a0)
-	bra.w	T_0e580
-T_0e4fc:
+	beq.s	.Ok1
+	bset	#7,2(a0)
+	bset	#7,3(a0)
+	bset	#7,4(a0)
+	bset	#7,5(a0)
+	bset	#7,6(a0)
+	bset	#7,7(a0)
+	bset	#7,8(a0)
+	bra.w	.Ok6
+.Ok1:
 	lea.l	Sold_slots,a1
 	move.b	(a1)+,d0
-	moveq	#10,d7
-T_0e506:
+	moveq.l	#11-1,d7
+.Loop2:
 	or.b	(a1)+,d0
-	dbra	d7,T_0e506
+	dbra	d7,.Loop2
 	tst.b	d0
-	beq.b	T_0e518
-	bset	#$7,$2(a0)
-	bra.b	T_0e522
-T_0e518:
-	bset	#$7,(a0)
-	bset	#$7,$1(a0)
-T_0e522:
+	beq.s	.All_MT
+	bset	#7,2(a0)
+	bra.s	.Ok2
+.All_MT:
+	bset	#7,(a0)
+	bset	#7,1(a0)
+.Ok2:
 	movea.l	Current_active_char_data,a1
-	lea.l	$2b(a1),a2
+	lea.l	Inventory_1_place_counter(a1),a2
 	move.b	(a2)+,d0
-	moveq	#10,d7
-T_0e530:
+	moveq.l	#11-1,d7
+.Loop3:
 	or.b	(a2)+,d0
-	dbra	d7,T_0e530
+	dbra	d7,.Loop3
 	tst.b	d0
-	bne.b	T_0e546
-	bset	#$7,$3(a0)
-	bset	#$7,$6(a0)
-T_0e546:
-	tst.w	$90(a1)
-	bne.b	T_0e552
-	bset	#$7,$7(a0)
-T_0e552:
-	tst.w	$92(a1)
-	bne.b	T_0e55e
-	bset	#$7,$8(a0)
-T_0e55e:
-	cmpi.w	#$6,Nr_members
-	bpl.b	T_0e57a
-	movea.l	Action_ptr,a1
-	moveq	#9,d7
-T_0e570:
-	cmpi.b	#$6,(a1)+
-	beq.b	T_0e580
-	dbra	d7,T_0e570
-T_0e57a:
-	bset	#$7,$5(a0)
-T_0e580:
+	bne.s	.Ok3
+	bset	#7,3(a0)
+	bset	#7,6(a0)
+.Ok3:
+	tst.w	Gold_coins(a1)
+	bne.s	.Ok4
+	bset	#7,7(a0)
+.Ok4:
+	tst.w	Food_rations(a1)
+	bne.s	.Ok5
+	bset	#7,8(a0)
+.Ok5:
+	cmpi.w	#6,Nr_members
+	bpl.b	.c_0e57a	; CHANGE: was "bmi.s .Ok6"
+	movea.l	Action_ptr,a1	; CHANGE: added
+	moveq	#9,d7	; CHANGE: added
+.c_0e570:
+	cmpi.b	#$6,(a1)+	; CHANGE: added
+	beq.b	.Ok6	; CHANGE: added
+	dbra	d7,.c_0e570	; CHANGE: added
+.c_0e57a:
+	bset	#7,5(a0)
+.Ok6:
 	tst.b	Joined
-	beq.b	T_0e5ac
-	bset	#$7,$3(a0)
-	bset	#$7,$4(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$7(a0)
-	bset	#$7,$8(a0)
-T_0e5ac:
-	movem.l	(a7)+,d0/d7/a1-a2
-	rts
+	beq.s	.Ok7
+	bset	#7,3(a0)
+	bset	#7,4(a0)
+	bset	#7,5(a0)
+	bset	#7,6(a0)
+	bset	#7,7(a0)
+	bset	#7,8(a0)
+.Ok7:
+	movem.l	(sp)+,d0/d7/a1/a2
+	rts	
 T_0e5b2:
 	lea.l	DIADropItem_Mod,a0
 	bra.w	Push_Module
+; ---- TIDIA_DisInit (original source: MAIN/EYE.ASM)
 DIADropItem_DisInit:
+TIDIA_DisInit:
 	lea.l	Lay3_L2,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
 	move.l	#Code0001Sys,Textfile_ptr
-	move.w	#$0,d0
+	move.w	#$0,d0	; CHANGE: was "MesMin 4"
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0e5ec:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0e5ec
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 T_0e5f8:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0e5f8
@@ -16825,6 +17074,7 @@ T_0e75c:
 	lea.l	ShowItem_Mod,a0
 	bra.w	Push_Module
 ; ---- ShowItem_DisInit (original source: MAIN/EYE.ASM)
+GiveItem_DisInit:
 ShowItem_DisInit:
 	lea.l	Lay8_PA,a0
 	bsr.w	Push_PA
@@ -16842,6 +17092,7 @@ ShowItem_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
+; ---- ShowItem_DisExit (original source: MAIN/EYE.ASM)
 ShowItem_DisExit:
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
@@ -16852,14 +17103,15 @@ ShowItem_DisExit:
 	jsr	Copy_screen
 	jsr	Pop_MA
 	bsr.w	Pop_PA
-T_0e7f8:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0e7f8
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
+; ---- ShowItem_DisUpd (original source: MAIN/EYE.ASM)
 ShowItem_DisUpd:
 	bsr.w	Update_status_block
 	bsr.w	Update_quantity_colours
-	rts
+	rts	
 T_0e80e:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0e80e
@@ -16895,60 +17147,63 @@ T_0e862:
 	bsr.w	Plus_message
 T_0e872:
 	bra.w	Pop_Module
-T_0e876:
+; ---- DIA_Give_gold (original source: MAIN/EYE.ASM)
+DIA_Give_gold:
 	movea.l	Off_screen,a6
 	move.l	#Code0001Sys,Textfile_ptr
-	move.w	#$6,d0
+	move.w	#6,d0
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0e89a:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0e89a
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Current_active_char_data,a0
-	moveq	#0,d0
-	move.w	$90(a0),d0
+	moveq.l	#0,d0
+	move.w	Gold_coins(a0),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	DIATransGold_Mod,a0
 	bsr.w	Push_Module
-	rts
+	rts	
+; ---- DIATG_Return (original source: MAIN/EYE.ASM)
+DIATF_Return:
 DIATG_Return:
 	move.l	ItemW_nr,d1
-	beq.b	T_0e91c
+	beq.s	.Exit
 	movea.l	Action_ptr,a0
 	movea.l	Act_dat_ptr,a1
-	moveq	#0,d0
-	moveq	#9,d7
-T_0e8e0:
-	cmpi.b	#$4,(a0)+
-	bne.b	T_0e902
+	moveq.l	#0,d0
+	moveq.l	#10-1,d7
+.Loop:
+	cmpi.b	#4,(a0)+
+	bne.s	.Next
 	cmp.w	(a1),d1
-	bmi.b	T_0e90a
+	bmi.s	.No_way
 	movea.l	Current_active_char_data,a0
-	sub.w	d1,$90(a0)
-	mulu.w	#$a,d1
-	sub.l	d1,$ec(a0)
+	sub.w	d1,Gold_coins(a0)
+	mulu.w	#Gold_weight,d1
+	sub.l	d1,Weight_normal(a0)
 	bsr.w	Do_results
-	bra.b	T_0e91c
-T_0e902:
-	addq.l	#$1,d0
-	addq.l	#$2,a1
-	dbra	d7,T_0e8e0
-T_0e90a:
+	bra.s	.Exit
+.Next:
+	addq.l	#1,d0
+	addq.l	#2,a1
+	dbra	d7,.Loop
+.No_way:
 	move.l	#Code0006Sys,Textfile_ptr
-	move.w	#$7,d0
+	move.w	#7,d0
 	bsr.w	Plus_message
-T_0e91c:
+.Exit:
 	move.l	#Code0006Sys,Textfile_ptr
-T_0e926:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0e926
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 T_0e932:
 	lea.l	TIDIA_Mod,a0
 	bra.w	Push_Module
-TIDIA_DisInit:
+T_0e93c:
 	lea.l	Lay3_L2,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
@@ -16961,7 +17216,7 @@ T_0e96c:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0e96c
 	rts
-T_0e978:
+Do_TIDIA:
 	tst.b	d0
 	bne.b	T_0e980
 T_0e97c:
@@ -17068,24 +17323,23 @@ T_0eace:
 	bne.b	T_0eace
 	lea.l	GiveItem_Mod,a0
 	bra.w	Push_Module
-; ---- GiveItem_DisInit (original source: MAIN/EYE.ASM)
-GiveItem_DisInit:
+T_0eae2:
 	lea.l	Lay8_PA,a0
 	bsr.w	Push_PA
 	lea.l	L3_objects_area,a0
 	jsr	Push_MA
 	movea.l	Current_active_char_data,a0
-	lea.l	Inventory_1_place_counter(a0),a1
-	lea.l	Inv_data+360(a0),a0
+	lea.l	$2b(a0),a1
+	lea.l	$29a(a0),a0
 	move.l	a0,Itemdata_ptr
 	move.l	a1,Itemslots_ptr
 	movea.l	Off_screen,a6
-	move.w	#6,d0
+	move.w	#$6,d0
 	bsr.w	Hash_message
 	bsr.w	Show_objects_LAY3
 	jsr	Switch_screen
 	jsr	Copy_screen
-	rts	
+	rts
 T_0eb32:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0eb32
@@ -17130,25 +17384,26 @@ T_0ebb0:
 	bsr.w	Plus_message
 T_0ebc0:
 	bra.w	Pop_Module
-T_0ebc4:
+; ---- DIA_Give_food (original source: MAIN/EYE.ASM)
+DIA_Give_food:
 	movea.l	Off_screen,a6
 	move.l	#Code0001Sys,Textfile_ptr
-	move.w	#$7,d0
+	move.w	#7,d0
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0ebe8:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0ebe8
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Current_active_char_data,a0
-	moveq	#0,d0
-	move.w	$92(a0),d0
+	moveq.l	#0,d0
+	move.w	Food_rations(a0),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	DIATransFood_Mod,a0
 	bsr.w	Push_Module
-	rts
-DIATF_Return:
+	rts	
+T_0ec16:
 	move.l	ItemW_nr,d1
 	beq.b	T_0ec6a
 	movea.l	Action_ptr,a0
@@ -17263,45 +17518,44 @@ T_0ed78:
 	dbra	d7,T_0ed6c
 T_0ed80:
 	rts
+; ---- Do_results (original source: MAIN/EYE.ASM)
 Do_results:
-	movem.l	d0/d7/a0-a4,-(a7)
+	movem.l	d0/d7/a0-a4,-(sp)
 	movea.l	Result_ptr,a0
 	movea.l	Res_dat1_ptr,a1
 	movea.l	Res_dat2_ptr,a2
 	movea.l	Res_dat3_ptr,a3
-	mulu.w	#$5,d0
+	mulu.w	#5,d0
 	adda.w	d0,a0
 	adda.w	d0,a1
 	adda.w	d0,a2
 	adda.w	d0,a3
 	adda.w	d0,a3
-	moveq	#0,d0
-	moveq	#4,d7
-T_0edb0:
+	moveq.l	#0,d0
+	moveq.l	#5-1,d7
+.Loop:
 	move.b	(a0)+,d0
-	beq.b	T_0edd0
+	beq.s	.Exit
 	add.w	d0,d0
 	add.w	d0,d0
-	movea.l	T_0edd0+2(pc,d0.w),a4
-	movem.l	d0-d7/a0-a6,-(a7)
+	movea.l	Results-4(pc,d0.w),a4
+	movem.l	d0-d7/a0-a6,-(sp)
 	jsr	(a4)
-	movem.l	(a7)+,d0-d7/a0-a6
-	addq.l	#$1,a1
-	addq.l	#$1,a2
-	addq.l	#$2,a3
-	dbra	d7,T_0edb0
-T_0edd0:
-	movem.l	(a7)+,d0/d7/a0-a4
-	rts
-	dc.l	T_0edf2
-	dc.l	Word_res
-	dc.l	T_0ee40
-	dc.l	T_0eea8
-	dc.l	T_0eeae
-	dc.l	T_0eeb4
-	dc.l	T_0eece
-T_0edf2:
-	lea.l	D_2645e,a0
+	movem.l	(sp)+,d0-d7/a0-a6
+	addq.l	#1,a1
+	addq.l	#1,a2
+	addq.l	#2,a3
+	dbra	d7,.Loop
+.Exit:
+	movem.l	(sp)+,d0/d7/a0-a4
+	rts	
+Results:
+	dc.l	Text_res,Word_res,Item_res,Gold_res,Food_res
+	dc.l	Quest_res,Data_res
+T_0edd0	equ	Do_results+78
+; ---- Text_res (original source: MAIN/EYE.ASM)
+Text_res:
+	lea.l	Lay8_PlusMes,a0
 	jsr	Push_MA
 	lea.l	Lay8_PA,a0
 	bsr.w	Push_PA
@@ -17310,10 +17564,10 @@ T_0edf2:
 	bsr.w	Mr_Blue_Sky
 	bsr.w	Pop_PA
 	jsr	Pop_MA
-T_0ee1e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0ee1e
-	rts
+.c_0ee1e:
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	.c_0ee1e	; CHANGE: added
+	rts	
 ; ---- Word_res (original source: MAIN/EYE.ASM)
 Word_res:
 	move.w	(a3),d0
@@ -17323,7 +17577,7 @@ Word_res:
 	lea.l	WD,a0
 	bset	d1,0(a0,d0.w)
 	rts	
-T_0ee40:
+Item_res:
 	movea.l	Dialogue_chard_ptr,a0
 	lea.l	$10a(a0),a0
 	move.w	(a3),d0
@@ -17351,22 +17605,25 @@ T_0ee76:
 	dc.l	Copy_screen
 T_0eea6:
 	rts
-T_0eea8:
+; ---- Gold_res (original source: MAIN/EYE.ASM)
+Gold_res:
 	move.w	(a3),d0
 	bra.w	Divide_gold
-T_0eeae:
+; ---- Food_res (original source: MAIN/EYE.ASM)
+Food_res:
 	move.w	(a3),d0
-	bra.w	T_0cbec
-T_0eeb4:
+	bra.w	T_0cbec	; CHANGE: was "jmp Divide_food"
+; ---- Quest_res (original source: MAIN/EYE.ASM)
+Quest_res:
 	move.w	(a3),d0
 	move.w	d0,d1
-	andi.w	#$7,d1
-	lsr.w	#$3,d0
+	andi.w	#7,d1
+	lsr.w	#3,d0
 	lea.l	Quest,a0
-	bset	d1,(a0,d0.w)
+	bset	d1,0(a0,d0.w)
 	bsr.w	Set_interaction_ptrs
-	rts
-T_0eece:
+	rts	
+Data_res:
 	movea.l	Current_active_char_data,a0
 	moveq	#0,d0
 	move.b	(a1),d0
@@ -17503,7 +17760,7 @@ Change_travelmode:
 	jsr	Switch_screen
 	lea.l	D_2d540,a0
 	bsr.w	Push_Module
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	bra.b	T_0f0dc
 T_0f062:
 	cmpi.w	#$6,Travel_mode
@@ -17531,7 +17788,7 @@ T_0f0a6:
 T_0f0b8:
 	moveq	#0,d0
 	jsr	Set_new_travel_mode
-	bsr.w	T_07af4
+	bsr.w	Event_handler
 	bra.b	T_0f0dc
 T_0f0c6:
 	jsr	Seek_transport
@@ -17973,9 +18230,12 @@ Set_automap_bit:
 	bset	d0,0(a0,d1.w)
 	movem.l	(sp)+,d0/d1
 	rts	
+; ---- Options_menu (original source: MAIN/EYE.ASM)
 T_0f696:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0f696
+Options_menu:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Exit_display
 	lea.l	Options_Mod,a0
 	bra.w	Push_Module
@@ -18038,9 +18298,12 @@ OptionsCIL_evaluate:
 	bclr	#7,4(a0)
 .Exit:
 	rts	
+; ---- Exit_options (original source: MAIN/EYE.ASM)
 T_0f7a6:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0f7a6
+Exit_options:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Pop_Module
 	bra.w	Init_display
 T_0f7b8:
@@ -18162,9 +18425,12 @@ SaveGame_ModExit:
 	jsr	Pop_Root
 	jsr	Pop_MA
 	rts	
+; ---- Exit_SaveGame (original source: MAIN/EYE.ASM)
 T_0f9a4:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0f9a4
+Exit_SaveGame:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Pop_Module
 	bra.w	Init_display
 T_0f9b6:
@@ -18320,7 +18586,7 @@ T_0fb94:
 	jsr	Init_RText
 	lea.l	$f0(a2),a0
 	jsr	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
 	move.w	#$16,d0
 	lea.l	Code0005Sys,a1
@@ -18328,8 +18594,8 @@ T_0fb94:
 	jsr	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0798a
-	jsr	T_0784c
+	jsr	Exit_RText
+	jsr	Wait_4_user
 	movea.l	Off_screen,a6
 	jsr	Erase_text_window
 	jsr	Switch_screen
@@ -18401,13 +18667,14 @@ T_0fd02:
 	bsr.w	Exit_display
 	lea.l	Camp_Mod,a0
 	bra.w	Push_Module
+; ---- Camp_DisUpd (original source: MAIN/EYE.ASM)
 Camp_DisUpd:
 	jsr	Update_status_block
-	lea.l	D_264ee,a0
+	lea.l	Camp_CIL,a0
 	lea.l	CampCIL_evaluate,a1
 	bsr.w	Update_control_icons
-	bsr.w	Update_quantity_colours
-	rts
+	bsr.w	Update_quantity_colours	; CHANGE: added
+	rts	
 Camp_ModInit:
 	jsr	T_0025a
 	moveq	#17,d0
@@ -18418,20 +18685,22 @@ Camp_ModInit:
 	bsr.w	Load_80x80_picture
 	jsr	T_00208
 	bra.w	Camp_DisInit
+; ---- Camp_ModExit (original source: MAIN/EYE.ASM)
 Camp_ModExit:
 	movea.l	Pic80_ptr,a0
 	jsr	Free_memory
-	jsr	T_02754
+	jsr	Set_spell_area	; CHANGE: added
 	bra.w	Fadeout_lay3
+; ---- Camp_DisInit (original source: MAIN/EYE.ASM)
 Camp_DisInit:
-	move.w	#$3,Spell_area_type
+	move.w	#3,Spell_area_type
 	move.l	#Lay3_PlusMes,PlusMes_info
 	move.l	#Code0005Sys,Textfile_ptr
 	movea.l	Off_screen,a6
-	moveq	#3,d0
+	moveq.l	#3,d0
 	jsr	Show_layout
 	bsr.w	Display_80x80_picture
-	lea.l	D_264ee,a0
+	lea.l	Camp_CIL,a0
 	bsr.w	CampCIL_evaluate
 	move.l	a0,Control_list_ptr
 	jsr	Show_control_icons
@@ -18439,7 +18708,7 @@ Camp_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	bra.w	T_0a2ce
+	bra.w	Fadein_lay3
 ; ---- CampCIL_evaluate (original source: MAIN/EYE.ASM)
 CampCIL_evaluate:
 	bclr	#7,6(a0)
@@ -18456,20 +18725,23 @@ CampCIL_evaluate:
 	bset	#7,3(a0)
 .Exit:
 	rts	
+; ---- Exit_camp (original source: MAIN/EYE.ASM)
 T_0fe0c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0fe0c
+Exit_camp:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	tst.b	Inn_flag
-	beq.b	T_0fe52
+	beq.s	.Exit
 	movea.l	Placedat_ptr,a0
-	move.w	$2(a0),Map_Xcoord
-	move.w	$4(a0),Map_Ycoord
-	move.w	$6(a0),View_direction
-	cmpi.b	#$0,Current_map_type
-	bne.b	T_0fe52
+	move.w	2(a0),Map_Xcoord
+	move.w	4(a0),Map_Ycoord
+	move.w	6(a0),View_direction
+	cmpi.b	#0,Current_map_type
+	bne.s	.Exit
 	jsr	Recalc_mapbuf_coords
-	sf.b	Inn_flag
-T_0fe52:
+	sf	Inn_flag
+.Exit:
 	bsr.w	Pop_Module
 	bra.w	Init_display
 T_0fe5a:
@@ -18477,7 +18749,7 @@ T_0fe5a:
 	bne.b	T_0fe5a
 	lea.l	LearnSpell_Mod,a0
 	bra.w	Push_Module
-LearnSpell_DisInit:
+T_0fe6e:
 	lea.l	L3_objects_area,a0
 	jsr	Push_MA
 	movea.l	Current_active_char_data,a0
@@ -18690,7 +18962,7 @@ T_10160:
 	jsr	Init_RText
 	lea.l	$f0(a4),a0
 	jsr	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
 	tst.w	$92(a4)
 	bne.b	T_101a2
@@ -18723,7 +18995,7 @@ T_101cc:
 	sub.w	$86(a4),d0
 T_101de:
 	move.w	d2,$86(a4)
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	moveq	#0,d0
@@ -18755,7 +19027,7 @@ T_1021e:
 	move.b	#$50,(a3)+
 	move.b	#$20,(a3)+
 	clr.b	(a3)
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	jsr	Add_ASCII_2_RText
 	moveq	#19,d0
 	jsr	Add_encoded_2_RText
@@ -18765,11 +19037,11 @@ T_10264:
 	jsr	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0798a
+	jsr	Exit_RText
 T_1027c:
 	btst	#$1,Mouse_button_state
 	bne.b	T_1027c
-	jsr	T_0784c
+	jsr	Wait_4_user
 T_1028c:
 	addq.l	#$4,a2
 	dbra	d6,T_10160
@@ -18789,7 +19061,7 @@ T_102a6:
 	jsr	Init_RText
 	lea.l	$f0(a4),a0
 	jsr	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
 	moveq	#18,d0
 	jsr	Add_encoded_2_RText
@@ -18801,7 +19073,7 @@ T_102a6:
 	moveq	#0,d0
 T_102f0:
 	add.w	d0,$86(a4)
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	moveq	#0,d0
@@ -18821,18 +19093,18 @@ T_10312:
 	move.b	#$50,(a3)+
 	move.b	#$20,(a3)+
 	clr.b	(a3)
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	jsr	Add_ASCII_2_RText
 	moveq	#19,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0798a
+	jsr	Exit_RText
 T_10364:
 	btst	#$1,Mouse_button_state
 	bne.b	T_10364
-	jsr	T_0784c
+	jsr	Wait_4_user
 T_10374:
 	addq.l	#$4,a2
 	dbra	d6,T_102a6
@@ -18987,7 +19259,7 @@ Heard_it:
 	bsr.w	Push_Module
 	movem.l	(sp)+,d0/d1/d7/a0/a1/a3
 	rts	
-HearTxtW_ModInit:
+T_1056e:
 	move.w	Lines_in_text,d0
 	mulu.w	#$7,d0
 	moveq	#15,d3
@@ -19021,7 +19293,7 @@ T_1058a:
 	jsr	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0798a
+	jsr	Exit_RText
 	rts
 T_105e6:
 	btst	#$1,Mouse_button_state
@@ -19249,30 +19521,32 @@ T_1088e:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bra.w	Pop_Module
+; ---- Init_display (original source: MAIN/MODCON.ASM)
 Init_display:
-	movem.l	d0-d7/a0-a6,-(a7)
-	move.w	#$0,Draw_Cicon
-	jsr	My_vsync
+	movem.l	d0-d7/a0-a6,-(sp)
+	move.w	#$0,Draw_Cicon	; CHANGE: added
+	jsr	My_vsync	; CHANGE: added
 	movea.l	Module_sp,a1
-	move.l	$1c(a1),d0
-	beq.b	T_10908
+	move.l	DisInit_ptr(a1),d0
+	beq.s	.Exit
 	movea.l	d0,a0
 	jsr	(a0)
-T_10908:
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+.Exit:
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
+; ---- Exit_display (original source: MAIN/MODCON.ASM)
 Exit_display:
-	movem.l	d0-d7/a0-a6,-(a7)
-	move.w	#$0,Draw_Cicon
-	jsr	My_vsync
+	movem.l	d0-d7/a0-a6,-(sp)
+	move.w	#$0,Draw_Cicon	; CHANGE: added
+	jsr	My_vsync	; CHANGE: added
 	movea.l	Module_sp,a1
-	move.l	$20(a1),d0
-	beq.b	T_10930
+	move.l	DisExit_ptr(a1),d0
+	beq.s	.Exit
 	movea.l	d0,a0
 	jsr	(a0)
-T_10930:
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+.Exit:
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
 T_10936:
 	movem.l	d0-d7/a0-a6,-(a7)
 	st.b	Abort_list
@@ -19522,7 +19796,7 @@ T_10c20:
 	add.w	d2,d0
 	move.w	d3,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dbdf,a3
+	lea.l	Skill_txt,a3
 	moveq	#48,d1
 	moveq	#0,d0
 	move.b	(a4)+,d0
@@ -19532,7 +19806,7 @@ T_10c20:
 	moveq	#0,d0
 	move.b	$9(a4),d0
 	bsr.w	RConvert_number
-	lea.l	D_2dbdf,a0
+	lea.l	Skill_txt,a0
 	jsr	IG_Print
 	addq.w	#$7,d3
 	addq.w	#$1,d6
@@ -19565,7 +19839,7 @@ T_10cba:
 	add.w	d2,d0
 	move.w	d3,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dbe7,a3
+	lea.l	Attr_txt,a3
 	moveq	#48,d1
 	move.w	(a4)+,d0
 	add.w	(a5)+,d0
@@ -19573,7 +19847,7 @@ T_10cba:
 	addq.l	#$1,a3
 	move.w	$12(a4),d0
 	bsr.w	RConvert_number
-	lea.l	D_2dbe7,a0
+	lea.l	Attr_txt,a0
 	jsr	IG_Print
 	addq.w	#$7,d3
 	addq.w	#$1,d6
@@ -19721,15 +19995,17 @@ Get_word:
 T_10f10:
 	btst	#$1,Mouse_button_state
 	bne.b	T_10f10
+; ---- Go_Inv2 (original source: MAIN/INVENT.ASM)
+Go_Inv2:
 	movea.l	Current_inventory_chardat_ptr,a0
-	move.w	#$482,d0
-	and.w	$3a(a0),d0
-	bne.b	T_10f38
+	move.w	#$482,d0	; CHANGE: was "move.w #$0402,d0"
+	and.w	Body_conditions(a0),d0
+	bne.s	.Exit
 	bsr.w	Exit_display
 	lea.l	Inv2_Mod,a0
 	bsr.w	Push_Module
-T_10f38:
-	rts
+.Exit:
+	rts	
 T_10f3a:
 	btst	#$1,Mouse_button_state
 	bne.b	T_10f3a
@@ -19747,18 +20023,18 @@ Inv2_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Update_quantity_colours
 	rts
-Inv2_DisInit:
+T_10f7a:
 	lea.l	D_2e7ae,a0
 	jsr	Push_PA
 	lea.l	D_2e7a6,a0
 	jsr	Push_MA
-	bra.w	T_10fac
+	bra.w	Inv2_DisInit
 T_10f96:
 	clr.w	B_5891c
 	jsr	Pop_MA
 	jsr	Pop_PA
 	bra.w	Inv2_DisExit
-T_10fac:
+Inv2_DisInit:
 	move.w	#$10,Mesmin_X
 	move.w	#$32,Mesmin_Y
 	move.w	#$b0,Mesmin_Wd
@@ -19979,75 +20255,76 @@ T_11292:
 	move.w	#$50,d2
 	jsr	Print_centered_string
 	rts
+; ---- Inv2CIL_evaluate (original source: MAIN/INVENT.ASM)
 Inv2CIL_evaluate:
-	movem.l	d0/d7/a1-a2,-(a7)
+	movem.l	d0/d7/a1/a2,-(sp)
 	lea.l	(a0),a2
-	moveq	#8,d7
-T_112cc:
-	bclr	#$7,(a2)+
-	dbra	d7,T_112cc
+	moveq.l	#9-1,d7
+.Loop0:
+	bclr	#7,(a2)+
+	dbra	d7,.Loop0
 	movea.l	Current_inventory_chardat_ptr,a1
-	tst.b	Battling
-	beq.b	T_11310
-	bset	#$7,$1(a0)
-	bset	#$7,$4(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$7(a0)
-	bset	#$7,$8(a0)
-	move.w	$3a(a1),d0
-	andi.w	#$e480,d0
-	beq.b	T_11310
-	bset	#$7,$3(a0)
-T_11310:
-	cmpi.b	#$9,$5(a1)
-	bmi.b	T_11330
-	bset	#$7,$3(a0)
-	bset	#$7,$4(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$7(a0)
-T_11330:
-	lea.l	$2b(a1),a2
+	tst.b	Battling	; CHANGE: added
+	beq.b	.c_11310	; CHANGE: added
+	bset	#$7,$1(a0)	; CHANGE: added
+	bset	#$7,$4(a0)	; CHANGE: added
+	bset	#$7,$6(a0)	; CHANGE: added
+	bset	#$7,$7(a0)	; CHANGE: added
+	bset	#$7,$8(a0)	; CHANGE: added
+	move.w	$3a(a1),d0	; CHANGE: added
+	andi.w	#$e480,d0	; CHANGE: added
+	beq.b	.c_11310	; CHANGE: added
+	bset	#$7,$3(a0)	; CHANGE: added
+.c_11310:
+	cmpi.b	#9,Character_class(a1)
+	bmi.s	.No_special
+	bset	#7,3(a0)
+	bset	#7,4(a0)
+	bset	#7,5(a0)
+	bset	#7,7(a0)
+.No_special:
+	lea.l	Inventory_1_place_counter(a1),a2
 	move.b	(a2)+,d0
-	moveq	#10,d7
-T_11338:
+	moveq.l	#11-1,d7
+.Loop1:
 	or.b	(a2)+,d0
-	dbra	d7,T_11338
+	dbra	d7,.Loop1
 	tst.b	d0
-	bne.b	T_1136c
-	bset	#$7,$1(a0)
-	bset	#$7,$6(a0)
-	lea.l	$22(a1),a2
+	bne.s	.Check_gold
+	bset	#7,1(a0)
+	bset	#7,6(a0)
+	lea.l	Neck_place_counter(a1),a2
 	move.b	(a2)+,d0
-	moveq	#7,d7
-T_11356:
+	moveq.l	#8-1,d7
+.Loop2:
 	or.b	(a2)+,d0
-	dbra	d7,T_11356
+	dbra	d7,.Loop2
 	tst.b	d0
-	bne.b	T_1136c
-	bset	#$7,$3(a0)
-	bset	#$7,$5(a0)
-T_1136c:
-	tst.w	$90(a1)
-	bne.b	T_11378
-	bset	#$7,$7(a0)
-T_11378:
-	move.w	$48(a1),d0
-	add.w	$9c(a1),d0
-	mulu.w	#$3e8,d0
-	cmp.l	$ec(a1),d0
-	bls.b	T_11394
+	bne.s	.Check_gold
+	bset	#7,3(a0)
+	bset	#7,5(a0)
+.Check_gold:
+	tst.w	Gold_coins(a1)
+	bne.s	.Check_weight
+	bset	#7,7(a0)
+.Check_weight:
+	move.w	Attr_1_normal(a1),d0
+	add.w	Attr_1_normal_magic(a1),d0
+	mulu.w	#1000,d0
+	cmp.l	Weight_normal(a1),d0
+	bls.s	.No_way
 	move.w	#$e000,d0
-	and.w	$3a(a1),d0
-	beq.b	T_1139a
-T_11394:
-	bset	#$7,$4(a0)
-T_1139a:
-	tst.w	$92(a1)
-	bne.b	T_113a6
-	bset	#$7,$8(a0)
-T_113a6:
-	movem.l	(a7)+,d0/d7/a1-a2
-	rts
+	and.w	Body_conditions(a1),d0
+	beq.s	.Check_food
+.No_way:
+	bset	#7,4(a0)
+.Check_food:
+	tst.w	Food_rations(a1)
+	bne.s	.Exit
+	bset	#7,8(a0)
+.Exit:
+	movem.l	(sp)+,d0/d7/a1/a2
+	rts	
 ; ---- Update_CIL (original source: MAIN/INVENT.ASM)
 Update_CIL:
 	tst.b	CIL_update
@@ -20150,93 +20427,94 @@ T_114b6:
 	addi.w	#$30,d0
 	lea.l	$50(a0),a0
 	jsr	Blot_unmasked_block
-	bsr.w	T_1154a
+	bsr.w	Update_character_info
 	movem.l	(a7)+,d0-d1/d6-d7/a0/a2-a3
 	rts
-T_1154a:
-	movem.l	d0-d1/d7/a0-a1/a3/a6,-(a7)
+; ---- Update_character_info (original source: MAIN/INVENT.ASM)
+Update_character_info:
+	movem.l	d0/d1/d7/a0/a1/a3/a6,-(sp)
 	movea.l	Current_inventory_chardat_ptr,a1
 	movea.l	Off_screen,a6
-	moveq	#15,d0
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#2,d0
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
-	move.w	#$dc,d0
-	move.w	#$5c,d1
+	move.w	#208+12,d0
+	move.w	#85+7,d1
 	jsr	IG_Set_cursor
-	moveq	#48,d1
-	moveq	#3,d7
-	move.w	$86(a1),d0
-	lea.l	D_2dbbc,a3
+	moveq.l	#"0",d1
+	moveq.l	#3,d7
+	move.w	Life_points_normal(a1),d0
+	lea.l	LP_txt+5,a3
 	bsr.w	RConvert_number
-	move.w	$88(a1),d0
-	add.w	$98(a1),d0
-	lea.l	D_2dbc0,a3
+	move.w	Life_points_max(a1),d0
+	add.w	Life_points_max_magic(a1),d0
+	lea.l	LP_txt+9,a3
 	bsr.w	RConvert_number
 	lea.l	LP_txt,a0
 	jsr	IG_Print
-	move.w	#$dc,d0
-	move.w	#$63,d1
+	move.w	#208+12,d0
+	move.w	#85+14,d1
 	jsr	IG_Set_cursor
-	move.w	$8c(a1),d0
-	add.w	$9a(a1),d0
-	beq.b	T_11610
-	moveq	#48,d1
-	lea.l	D_2dbcd,a3
+	move.w	Power_points_max(a1),d0
+	add.w	Power_points_max_magic(a1),d0
+	beq.s	.No_magic
+	moveq.l	#"0",d1
+	lea.l	PP_txt+9,a3
 	bsr.w	RConvert_number
-	move.w	$8a(a1),d0
-	lea.l	D_2dbc9,a3
+	move.w	Power_points_normal(a1),d0
+	lea.l	PP_txt+5,a3
 	bsr.w	RConvert_number
-	lea.l	D_2dbc4,a0
+	lea.l	PP_txt,a0
 	jsr	IG_Print
-	move.w	#$dc,d0
-	move.w	#$6a,d1
+	move.w	#208+12,d0
+	move.w	#85+21,d1
 	jsr	IG_Set_cursor
-	move.w	$8e(a1),d0
-	moveq	#48,d1
-	lea.l	D_2dbd6,a3
+	move.w	Nr_spell_learn_points(a1),d0
+	moveq.l	#"0",d1
+	lea.l	SLP_txt+5,a3
 	bsr.w	RConvert_number
-	lea.l	D_2dbd1,a0
+	lea.l	SLP_txt,a0
 	jsr	IG_Print
-T_11610:
-	move.w	#$d6,d0
-	move.w	#$71,d1
+.No_magic:
+	move.w	#208+6,d0
+	move.w	#85+28,d1
 	jsr	IG_Set_cursor
-	moveq	#48,d1
-	lea.l	D_2dae8,a0
-	move.w	$90(a1),d0
-	moveq	#5,d7
-	lea.l	$2(a0),a3
+	moveq.l	#"0",d1
+	lea.l	Goldfood_txt,a0
+	move.w	Gold_coins(a1),d0
+	moveq.l	#5,d7
+	lea.l	2(a0),a3
 	bsr.w	RConvert_number
-	move.w	$92(a1),d0
-	moveq	#4,d7
-	lea.l	$a(a0),a3
-	bsr.w	RConvert_number
-	jsr	IG_Print
-	move.w	#$e2,d0
-	move.w	#$7a,d1
-	jsr	IG_Set_cursor
-	moveq	#3,d7
-	lea.l	D_2dbda,a0
-	moveq	#0,d0
-	move.b	$1f(a1),d0
-	add.w	$96(a1),d0
-	moveq	#48,d1
-	lea.l	$1(a0),a3
+	move.w	Food_rations(a1),d0
+	moveq.l	#4,d7
+	lea.l	10(a0),a3
 	bsr.w	RConvert_number
 	jsr	IG_Print
-	move.w	#$112,d0
-	move.w	#$7a,d1
+	move.w	#208+18,d0
+	move.w	#85+35+2,d1
 	jsr	IG_Set_cursor
-	moveq	#0,d0
-	move.b	$1e(a1),d0
-	add.w	$94(a1),d0
-	moveq	#48,d1
-	lea.l	$1(a0),a3
+	moveq.l	#3,d7
+	lea.l	ProtDam_txt,a0
+	moveq.l	#0,d0
+	move.b	Damage(a1),d0
+	add.w	Damage_magic(a1),d0
+	moveq.l	#"0",d1
+	lea.l	1(a0),a3
 	bsr.w	RConvert_number
 	jsr	IG_Print
-	movem.l	(a7)+,d0-d1/d7/a0-a1/a3/a6
-	rts
+	move.w	#208+18+48,d0
+	move.w	#85+35+2,d1
+	jsr	IG_Set_cursor
+	moveq.l	#0,d0
+	move.b	Protection(a1),d0
+	add.w	Protection_magic(a1),d0
+	moveq.l	#"0",d1
+	lea.l	1(a0),a3
+	bsr.w	RConvert_number
+	jsr	IG_Print
+	movem.l	(sp)+,d0/d1/d7/a0/a1/a3/a6
+	rts	
 ; ---- RConvert_number (original source: MAIN/INVENT.ASM)
 RConvert_number:
 	movem.l	d0/d7/a0,-(sp)
@@ -20323,30 +20601,33 @@ Inv2_Mright:
 .Exit:
 	movem.l	(sp)+,d0/a0
 	rts	
+; ---- Show_object_name (original source: MAIN/INVENT.ASM)
 Show_object_name:
 	tst.b	d0
-	beq.b	T_117ea
+	beq.s	.Exit
 	move.w	#$ff00,d1
 	and.w	d0,d1
-	cmpi.w	#$300,d1
-	bmi.b	T_117b4
-	addi.b	#$9,d0
-T_117b4:
+	cmpi.w	#$0300,d1
+	bmi.s	.Body
+	addi.b	#9,d0
+.Body:
 	movea.l	Current_inventory_chardat_ptr,a0
-	lea.l	$21(a0),a3
+	lea.l	Neck_place_counter-1(a0),a3
 	ext.w	d0
-	tst.b	(a3,d0.w)
-	beq.b	T_117ea
-	lea.l	$10a(a0),a0
-	mulu.w	#$28,d0
+	tst.b	0(a3,d0.w)
+	beq.s	.Exit
+	lea.l	Inv_data-40(a0),a0
+	mulu.w	#40,d0
 	adda.w	d0,a0
-	move.w	$26(a0),d0
+; CHANGE: removed "cmpi.b #17,Item_type(a0)"
+; CHANGE: removed "beq.s .Exit"
+	move.w	Name_word_nr(a0),d0
 	cmp.w	Object_name_nr,d0
-	beq.b	T_117ea
+	beq.s	.Exit
 	move.w	d0,Object_name_nr
-	move.b	#$2,Print_objname_flag
-T_117ea:
-	rts
+	move.b	#2,Print_objname_flag
+.Exit:
+	rts	
 ; ---- Erase_object_name (original source: MAIN/INVENT.ASM)
 Erase_object_name:
 	tst.b	d0
@@ -20404,29 +20685,31 @@ T_118a4:
 	lea.l	DropItem_Mod,a0
 	bsr.w	Push_Module
 	rts
-TransferItem_DisInit:
+; ---- TransferItem_DisInit (original source: MAIN/INVENT.ASM)
 DropItem_DisInit:
+TransferItem_DisInit:
 	lea.l	Backpack_area,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
-	move.w	#$0,d0
+	move.w	#$0,d0	; CHANGE: was "MesMin 4"
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_118e2:
-	btst	#$1,Mouse_button_state
-	bne.b	T_118e2
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
+; ---- Transparent_DisExit (original source: MAIN/INVENT.ASM)
 Transparent_DisExit:
 	movea.l	Off_screen,a6
 	jsr	Erase_message_minus
 	jsr	Switch_screen
 	jsr	Copy_screen
 	jsr	Pop_MA
-T_1190c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_1190c
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Exit_DropItem (original source: MAIN/INVENT.ASM)
 Exit_DropItem:
 	bsr.w	Pop_Module
@@ -20501,9 +20784,9 @@ T_119bc:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bra.w	Pop_Module
-; ---- DropMItem_DisInit (original source: MAIN/INVENT.ASM)
-TransMItem_DisInit:
+; ---- TransMItem_DisInit (original source: MAIN/INVENT.ASM)
 DropMItem_DisInit:
+TransMItem_DisInit:
 	movem.l	d0-d7/a0-a6,-(sp)
 	move.w	#First_add,Adding
 	moveq.l	#15,d0
@@ -20534,7 +20817,7 @@ DropMItem_DisInit:
 	move.w	#32+17,d0
 	move.w	#80+38+32,d1
 	jsr	IG_Set_cursor
-	moveq.l	#15,d0
+	moveq	#15,d0	; CHANGE: was "moveq.l #14,d0"
 	lea.l	Code0001Sys,a1
 	jsr	Convert_text_line
 	lea.l	Line_buffer,a0
@@ -20595,30 +20878,31 @@ T_11baa:
 	mulu.w	$22(a2),d0
 	sub.l	d0,$ec(a0)
 	bra.w	Pop_Module
+; ---- ItemW_DisUpd (original source: MAIN/INVENT.ASM)
 ItemW_DisUpd:
-	movem.l	d0-d7/a0-a6,-(a7)
+	movem.l	d0-d7/a0-a6,-(sp)
 	movea.l	Off_screen,a6
-	moveq	#15,d0
-	jsr	IG_Set_ink
-	moveq	#2,d0
-	jsr	IG_Set_paper
-	move.w	#$59,d0
-	move.w	#$8d,d1
-	move.w	#$77,d2
-	move.w	#$94,d3
-	moveq	#2,d6
+	moveq	#15,d0	; CHANGE: added
+	jsr	IG_Set_ink	; CHANGE: added
+	moveq	#2,d0	; CHANGE: added
+	jsr	IG_Set_paper	; CHANGE: added
+	move.w	#89,d0
+	move.w	#141,d1
+	move.w	#89+30,d2
+	move.w	#141+7,d3
+	moveq.l	#2,d6
 	jsr	Draw_box
 	jsr	IG_Set_cursor
 	move.l	ItemW_nr,d0
-	moveq	#32,d1
-	moveq	#5,d7
+	moveq	#32,d1	; CHANGE: was "moveq.l #" ",d1"
+	moveq.l	#5,d7
 	lea.l	Line_buffer,a0
 	lea.l	(a0),a3
 	bsr.w	RConvert_number
 	clr.b	(a3)
 	jsr	IG_Print
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
 ItemW_DisInit:
 	movem.l	d0-d3/d6-d7/a0/a6,-(a7)
 	moveq	#32,d0
@@ -20741,20 +21025,22 @@ T_11dac:
 	btst	#$1,Mouse_button_state
 	bne.b	T_11dac
 	rts
-T_11db8:
+; ---- Use_backpack_item (original source: MAIN/INVENT.ASM)
+Use_backpack_item:
 	tst.b	d0
-	beq.b	T_11dc4
+	beq.s	.Exit
 	ext.w	d0
-	addi.w	#$9,d0
-	bra.b	UseItem_entry
-T_11dc4:
+	addi.w	#9,d0
+	bra.s	UseItem_entry
+.Exit:
 	bra.w	Pop_Module
-T_11dc8:
+; ---- Use_body_item (original source: MAIN/INVENT.ASM)
+Use_body_item:
 	tst.b	d0
-	beq.b	T_11dd0
+	beq.s	.Exit
 	ext.w	d0
-	bra.b	UseItem_entry
-T_11dd0:
+	bra.s	UseItem_entry
+.Exit:
 	bra.w	Pop_Module
 UseItem_entry:
 	btst	#$1,Mouse_button_state
@@ -21047,9 +21333,12 @@ Pool_gold_INV2:
 	mulu.w	#Gold_weight,d0
 	add.l	d0,Weight_normal(a0)
 	rts	
+; ---- View_item (original source: MAIN/INVENT.ASM)
 T_12202:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12202
+View_item:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	lea.l	ViewItem_Mod,a0
 	bra.w	Push_Module
 ViewItem_DisInit:
@@ -21091,7 +21380,7 @@ T_12284:
 	tst.b	(a0)
 	beq.b	Exit_view_item
 	move.b	d0,Object_slot_number
-	lea.l	ItemView1_Mod,a0
+	lea.l	D_28160,a0
 	bsr.w	Push_Module
 	rts
 T_122b0:
@@ -21541,42 +21830,45 @@ T_1297c:
 Exit_TransferItem:
 	bsr.w	Pop_Module
 	rts	
+; ---- Do_TransferItem (original source: MAIN/INVENT.ASM)
 T_1298e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_1298e
+Do_TransferItem:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	tst.b	d0
-	beq.b	Exit_TransferItem
+	beq.s	Exit_TransferItem
 	ext.w	d0
-	addi.w	#$9,d0
+	addi.w	#9,d0
 	movea.l	Current_inventory_chardat_ptr,a0
-	lea.l	$21(a0),a1
+	lea.l	Neck_place_counter-1(a0),a1
 	adda.w	d0,a1
 	tst.b	(a1)
-	beq.b	Exit_TransferItem
-	lea.l	$10a(a0),a2
-	moveq	#40,d1
+	beq.s	Exit_TransferItem
+	lea.l	Inv_data-40(a0),a2
+	moveq.l	#40,d1
 	mulu.w	d0,d1
 	adda.w	d1,a2
 	move.b	d0,Object_slot_number
-	moveq	#-1,d1
-	btst	#$2,$18(a2)
-	beq.b	T_129d6
-	cmpi.b	#$1,(a1)
-	bhi.b	T_129e2
-	move.w	$24(a2),d1
-T_129d6:
-	moveq	#0,d0
-	move.w	$22(a2),d0
-	moveq	#1,d2
-	bra.w	T_12ad4
-T_129e2:
-	moveq	#0,d0
+	moveq.l	#-1,d1
+	btst	#2,Item_stat_bits(a2)
+	beq.s	.Single
+	cmpi.b	#1,(a1)
+	bhi.s	.Multiple
+	move.w	Item_ID(a2),d1
+.Single:
+	moveq.l	#0,d0
+	move.w	Weight(a2),d0
+	moveq.l	#1,d2
+	bra.w	Continue_transfer_item
+.Multiple:
+	moveq.l	#0,d0
 	move.b	(a1),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	TransMItem_Mod,a0
 	bsr.w	Push_Module
-	rts
+	rts	
 T_129fe:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.w	#$60,Adding
@@ -21632,24 +21924,25 @@ TransMItem_Return:
 	move.w	d2,d0
 	mulu.w	Weight(a0),d0
 	move.w	Item_ID(a0),d1
-T_12ad4:
+; ---- Continue_transfer_item (original source: MAIN/INVENT.ASM)
+Continue_transfer_item:
 	movea.l	Current_inventory_chardat_ptr,a0
 	bsr.w	Scan_4_transfer_victims
-	bne.b	T_12aee
-	move.w	#$5,d0
+	bne.s	.Go
+	move.w	#5,d0
 	jsr	Plus_message
 	bra.w	Pop_Module
-T_12aee:
+.Go:
 	bsr.w	Show_transfer_victims
 	move.b	Object_slot_number,d0
 	ext.w	d0
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	movea.l	Current_inventory_chardat_ptr,a0
-	lea.l	$10a(a0),a0
-	move.b	(a0,d0.w),TIVS_Icon_nr
-	move.l	#T_12b2a,TIVS_Ptr
+	lea.l	Inv_data-40(a0),a0
+	move.b	0(a0,d0.w),TIVS_Icon_nr
+	move.l	#T_12b2a,TIVS_Ptr	; CHANGE: was "move.l #Inv2_Do_TI,TIVS_Ptr"
 	lea.l	TIVS1_Mod,a0
-	move.w	#$18,$2c(a0)
+	move.w	#24,Mouse_ptr(a0)
 	bra.w	Push_Module
 T_12b2a:
 	btst	#$1,Mouse_button_state
@@ -21747,71 +22040,73 @@ Inv2_Do_TI:
 T_12c3e:
 	btst	#$1,Mouse_button_state
 	bne.b	T_12c3e
+; ---- Transfer_gold (original source: MAIN/INVENT.ASM)
+Transfer_gold:
 	movea.l	Off_screen,a6
-	move.w	#$6,d0
+	move.w	#6,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_12c64:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12c64
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Current_inventory_chardat_ptr,a0
-	moveq	#0,d0
-	move.w	$90(a0),d0
+	moveq.l	#0,d0
+	move.w	Gold_coins(a0),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
-	st.b	B_587f9
-	lea.l	TransGold_Mod,a0
-	bsr.w	Push_Module
-	sf.b	B_587f9
-	rts
-T_12c9e:
-	moveq	#15,d0
-	jsr	IG_Set_ink
-	moveq	#2,d0
-	jsr	IG_Set_paper
-	moveq	#32,d0
-	moveq	#112,d1
-	moveq	#10,d2
-	moveq	#6,d3
-	moveq	#1,d6
-	lea.l	D_2f90a,a0
-	jsr	Open_window
-	move.w	d0,B_58256
-	movea.l	Off_screen,a6
-	moveq	#2,d6
-	moveq	#16,d7
-	move.w	#$30,d0
-	move.w	#$a0,d1
-	lea.l	D_38060,a0
-	jsr	Blot_unmasked_block
-	move.w	#$30,d0
-	move.w	#$b0,d1
-	lea.l	D_38160,a0
-	jsr	Blot_unmasked_block
-	move.w	#$80,d0
-	move.w	#$b0,d1
-	lea.l	D_39d60,a0
-	jsr	Blot_unmasked_block
-	bsr.w	ItemW_DisUpd
-	tst.b	B_587f9
-	beq.b	T_12d34
-	move.w	#$80,d0
-	move.w	#$a0,d1
-	moveq	#2,d6
-	moveq	#16,d7
-	lea.l	D_3a160,a0
-	jsr	Blot_unmasked_block
-T_12d34:
-	move.w	#$31,d0
-	move.w	#$96,d1
-	jsr	IG_Set_cursor
-	moveq	#14,d0
-	lea.l	Code0001Sys,a1
-	jsr	Convert_text_line
-	lea.l	Line_buffer,a0
-	jsr	IG_Print
-	rts
+	st.b	B_587f9	; CHANGE: added
+	lea.l	TransGold_Mod,a0	; CHANGE: added
+	bsr.w	Push_Module	; CHANGE: added
+	sf.b	B_587f9	; CHANGE: added
+	rts	; CHANGE: added
+	moveq	#15,d0	; CHANGE: added
+	jsr	IG_Set_ink	; CHANGE: added
+	moveq	#2,d0	; CHANGE: added
+	jsr	IG_Set_paper	; CHANGE: added
+	moveq	#32,d0	; CHANGE: added
+	moveq	#112,d1	; CHANGE: added
+	moveq	#10,d2	; CHANGE: added
+	moveq	#6,d3	; CHANGE: added
+	moveq	#1,d6	; CHANGE: added
+	lea.l	D_2f90a,a0	; CHANGE: added
+	jsr	Open_window	; CHANGE: added
+	move.w	d0,B_58256	; CHANGE: added
+	movea.l	Off_screen,a6	; CHANGE: added
+	moveq	#2,d6	; CHANGE: added
+	moveq	#16,d7	; CHANGE: added
+	move.w	#$30,d0	; CHANGE: added
+	move.w	#$a0,d1	; CHANGE: added
+	lea.l	D_38060,a0	; CHANGE: added
+	jsr	Blot_unmasked_block	; CHANGE: added
+	move.w	#$30,d0	; CHANGE: added
+	move.w	#$b0,d1	; CHANGE: added
+	lea.l	D_38160,a0	; CHANGE: added
+	jsr	Blot_unmasked_block	; CHANGE: added
+	move.w	#$80,d0	; CHANGE: added
+	move.w	#$b0,d1	; CHANGE: added
+	lea.l	D_39d60,a0	; CHANGE: added
+	jsr	Blot_unmasked_block	; CHANGE: added
+	bsr.w	ItemW_DisUpd	; CHANGE: added
+	tst.b	B_587f9	; CHANGE: added
+	beq.b	.c_12d34	; CHANGE: added
+	move.w	#$80,d0	; CHANGE: added
+	move.w	#$a0,d1	; CHANGE: added
+	moveq	#2,d6	; CHANGE: added
+	moveq	#16,d7	; CHANGE: added
+	lea.l	D_3a160,a0	; CHANGE: added
+	jsr	Blot_unmasked_block	; CHANGE: added
+.c_12d34:
+	move.w	#$31,d0	; CHANGE: added
+	move.w	#$96,d1	; CHANGE: added
+	jsr	IG_Set_cursor	; CHANGE: added
+	moveq	#14,d0	; CHANGE: added
+	lea.l	Code0001Sys,a1	; CHANGE: added
+	jsr	Convert_text_line	; CHANGE: added
+	lea.l	Line_buffer,a0	; CHANGE: was "Push Module,TransGold_Mod"
+	jsr	IG_Print	; CHANGE: was "Push Module,TransGold_Mod"
+	rts	
+T_12c9e	equ	Transfer_gold+86
 T_12d5e:
 	move.w	#$60,Adding
 	bsr.w	T_12c9e
@@ -21885,25 +22180,27 @@ T_12e5c:
 T_12e78:
 	btst	#$1,Mouse_button_state
 	bne.b	T_12e78
+; ---- Transfer_food (original source: MAIN/INVENT.ASM)
+Transfer_food:
 	movea.l	Off_screen,a6
-	move.w	#$7,d0
+	move.w	#7,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_12e9e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12e9e
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Current_inventory_chardat_ptr,a0
-	moveq	#0,d0
-	move.w	$92(a0),d0
+	moveq.l	#0,d0
+	move.w	Food_rations(a0),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
-	st.b	B_587f9
+	st.b	B_587f9	; CHANGE: added
 	lea.l	TransFood_Mod,a0
 	bsr.w	Push_Module
-	sf.b	B_587f9
-	rts
-TransFood_DisInit:
+	sf.b	B_587f9	; CHANGE: added
+	rts	
+T_12ed8:
 	move.w	#$60,Adding
 	bsr.w	T_12c9e
 	movea.l	Off_screen,a6
@@ -22387,20 +22684,23 @@ TIVS_ModExit:
 	jsr	Copy_screen
 	jsr	Pop_MA
 	rts	
+; ---- TIVS_Action (original source: MAIN/INVENT.ASM)
 T_134e4:
-	btst	#$1,Mouse_button_state
-	bne.b	T_134e4
+TIVS_Action:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	move.w	Transfer_victims,d1
-	lsr.w	#$8,d0
+	lsr.w	#8,d0
 	btst	d0,d1
-	beq.b	T_13510
+	beq.s	.Exit
 	lea.l	Chard_ptrs,a0
 	add.w	d0,d0
 	add.w	d0,d0
-	movea.l	-$4(a0,d0.w),a0
+	movea.l	-4(a0,d0.w),a0
 	movea.l	TIVS_Ptr,a1
 	jsr	(a1)
-T_13510:
+.Exit:
 	bra.w	Pop_Module
 ; ---- Scan_4_transfer_victims (original source: MAIN/INVENT.ASM)
 Scan_4_transfer_victims:
@@ -22546,50 +22846,53 @@ Build_object_mptr:
 	dbra	d7,.Loop
 	movem.l	(sp)+,d0/d7/a0/a1
 	rts	
+; ---- Pool_gold (original source: MAIN/INVENT.ASM)
 Pool_gold:
-	movem.l	d1-d5/d7/a0-a2,-(a7)
+	movem.l	d1-d5/d7/a0-a2,-(sp)
 	lea.l	Chard_ptrs,a1
 	move.w	d0,d3
-	moveq	#0,d0
-	moveq	#5,d7
-T_1369e:
+	moveq.l	#0,d0
+	moveq.l	#6-1,d7
+.Loop:
 	tst.l	(a1)
-	beq.b	T_136ea
+	beq.s	.Next
 	cmpa.l	(a1),a0
-	beq.b	T_136ea
+	beq.s	.Next
 	movea.l	(a1),a2
-	move.w	#$402,d5
-	and.w	$3a(a2),d5
-	bne.b	T_136ea
-	move.w	$90(a2),d4
+	move.w	#$0402,d5
+	and.w	Body_conditions(a2),d5
+	bne.s	.Next
+	move.w	Gold_coins(a2),d4
 	move.w	d4,d5
 	add.w	d3,d5
-	bvc.b	T_136c4
-	move.w	#$7fff,d4
-	sub.w	d3,d4
-	moveq	#0,d7
-T_136c4:
-	moveq	#10,d5
+	bvc.s	.Not_too_much
+	move.w	#$7fff,d4	; CHANGE: was "move.w #32767,d5"
+	sub.w	d3,d4	; CHANGE: was "sub.w d3,d5"
+; CHANGE: removed "sub.w d4,d5"
+; CHANGE: removed "move.w d5,d4"
+	moveq.l	#0,d7
+.Not_too_much:
+	moveq.l	#Gold_weight,d5
 	mulu.w	d4,d5
 	add.l	d1,d5
 	cmp.l	d2,d5
-	bls.b	T_136da
+	bls.s	.Not_too_heavy
 	move.l	d2,d5
 	sub.l	d1,d5
-	divu.w	#$a,d5
+	divu.w	#Gold_weight,d5
 	move.w	d5,d4
-	moveq	#0,d7
-T_136da:
-	sub.w	d4,$90(a2)
+	moveq.l	#0,d7
+.Not_too_heavy:
+	sub.w	d4,Gold_coins(a2)
 	add.w	d4,d0
-	mulu.w	#$a,d4
-	sub.l	d4,$ec(a2)
-	add.l	d4,d1
-T_136ea:
-	addq.l	#$4,a1
-	dbra	d7,T_1369e
-	movem.l	(a7)+,d1-d5/d7/a0-a2
-	rts
+	mulu.w	#Gold_weight,d4
+	sub.l	d4,Weight_normal(a2)
+	add.l	d4,d1	; CHANGE: added
+.Next:
+	addq.l	#4,a1
+	dbra	d7,.Loop
+	movem.l	(sp)+,d1-d5/d7/a0-a2
+	rts	
 ; ---- Remove_boni (original source: MAIN/INVENT.ASM)
 Remove_boni:
 	movem.l	d0/d2/a0-a2/a5,-(sp)
@@ -22748,7 +23051,7 @@ T_138d6:
 	dc.l	T_13bd0
 	dc.l	T_13c12
 	dc.l	T_13c96
-	dc.l	T_13d20
+	dc.l	Resurrect
 	dc.l	T_13d9a
 	dc.l	T_13da2
 	dc.l	T_13daa
@@ -22759,8 +23062,8 @@ T_138d6:
 	dc.l	T_13dca
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_13e44
-	dc.l	T_13fda
+	dc.l	Weapon_gunk
+	dc.l	Create_food
 T_13946:
 	dc.l	T_14016
 	dc.l	T_1402e
@@ -22780,9 +23083,9 @@ T_13946:
 	dc.l	T_1417e
 	dc.l	T_14196
 	dc.l	T_141ae
-	dc.l	T_141c6
+	dc.l	Magic_sphere
 	dc.l	T_1422e
-	dc.l	T_142a8
+	dc.l	Identify
 	dc.l	T_14432
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_144dc
@@ -22793,14 +23096,14 @@ T_139ae:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_1460e
 	dc.b	$00,$00,$00,$00
-	dc.l	T_14ca8
-	dc.l	T_14d2a
+	dc.l	Spellpts1
+	dc.l	Spellpts2
 	dc.l	T_14d9a
-	dc.l	T_14ffc
+	dc.l	Youth
 	dc.b	$00,$00,$00,$00
 	dc.l	T_150a8
 	dc.l	T_152fc
-T_139fe:
+Handle_spell:
 	movem.l	d0-d1/a0-a1,-(a7)
 	tst.b	Magic_object_flag
 	beq.b	T_13a72
@@ -22874,59 +23177,60 @@ T_13afa:
 	mulu.w	#$5,d0
 	swap	d0
 	addq.w	#$1,d0
-	bra.w	T_13b52
+	bra.w	Common_heal
 T_13b0c:
 	jsr	Random
 	mulu.w	#$8,d0
 	swap	d0
 	addq.w	#$2,d0
-	bra.w	T_13b52
+	bra.w	Common_heal
 T_13b1e:
 	jsr	Random
 	mulu.w	#$10,d0
 	swap	d0
 	addq.w	#$4,d0
-	bra.w	T_13b52
+	bra.w	Common_heal
 T_13b30:
 	jsr	Random
 	mulu.w	#$20,d0
 	swap	d0
 	addq.w	#$8,d0
-	bra.w	T_13b52
+	bra.w	Common_heal
 T_13b42:
 	dc.b	$4e,$b9
 	dc.l	Random
 	dc.b	$c0,$fc,$00,$40,$48,$40,$06,$40,$00,$10
-T_13b52:
-	move.w	d0,B_5883a
+; ---- Common_heal (original source: MAIN/MAGIC.ASM)
+Common_heal:
+	move.w	d0,Added_LP
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
-	move.w	#$1,WText_nr
+	move.w	#1,WText_nr
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_13b92,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_13b92:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_13bce
+	beq.s	.Exit
 	movea.l	Victim_ptr,a0
-	move.w	$3a(a0),d0
+	move.w	Body_conditions(a0),d0
 	andi.w	#$e000,d0
-	bne.b	T_13bce
-	bsr.w	T_139fe
-	bmi.b	T_13bce
-	move.w	B_5883a,d0
+	bne.s	.Exit
+	bsr.w	Handle_spell
+	bmi.s	.Exit
+	move.w	Added_LP,d0
 	movea.l	Victim_ptr,a0
 	bsr.w	Increase_LP
 	move.w	Victim_nr,d0
 	bsr.w	Do_sparkle
-T_13bce:
-	rts
+.Exit:
+	rts	
 T_13bd0:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_13c10
 	lea.l	Chard_ptrs,a1
 	moveq	#1,d7
@@ -22970,7 +23274,7 @@ T_13c4c:
 	btst	#$5,d0
 	beq.b	T_13c94
 	bclr	#$5,d0
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_13c82
 	move.b	d0,$3a(a0)
 	move.w	Victim_nr,d0
@@ -23002,7 +23306,7 @@ T_13cd0:
 	btst	#$6,d0
 	beq.b	T_13d1e
 	bclr	#$6,d0
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_13d06
 	move.b	d0,$3a(a0)
 	move.w	Victim_nr,d0
@@ -23016,7 +23320,8 @@ T_13d0e:
 	jsr	Force_char_update
 T_13d1e:
 	rts
-T_13d20:
+Resurrect:
+Change_ashes:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$4,WText_nr
@@ -23034,7 +23339,7 @@ T_13d5a:
 	move.b	$3a(a0),d0
 	btst	#$7,d0
 	beq.b	T_13d98
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_13d98
 	bclr	#$7,d0
 	move.b	d0,$3a(a0)
@@ -23047,30 +23352,31 @@ T_13d98:
 T_13d9a:
 	moveq	#5,d0
 	moveq	#9,d1
-	bra.w	T_13dce
+	bra.w	Common_heal_condition
 T_13da2:
 	moveq	#6,d0
 	moveq	#8,d1
-	bra.w	T_13dce
+	bra.w	Common_heal_condition
 T_13daa:
 	moveq	#7,d0
 	moveq	#11,d1
-	bra.w	T_13dce
+	bra.w	Common_heal_condition
 T_13db2:
 	moveq	#8,d0
 	moveq	#12,d1
-	bra.w	T_13dce
+	bra.w	Common_heal_condition
 T_13dba:
 	moveq	#9,d0
 	moveq	#10,d1
-	bra.w	T_13dce
+	bra.w	Common_heal_condition
 T_13dc2:
 	moveq	#12,d0
 	moveq	#4,d1
-	bra.w	T_13dce
+	bra.w	Common_heal_condition
 T_13dca:
 	dc.b	$70,$0d,$72,$01
-T_13dce:
+; ---- Common_heal_condition (original source: MAIN/MAGIC.ASM)
+Common_heal_condition:
 	move.w	d1,Condition_nr
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
@@ -23079,62 +23385,66 @@ T_13dce:
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_13e0c,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_13e0c:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_13e42
+	beq.s	.Exit
 	movea.l	Victim_ptr,a0
-	move.w	$3a(a0),d0
+	move.w	Body_conditions(a0),d0
 	move.w	Condition_nr,d1
 	btst	d1,d0
-	beq.b	T_13e42
-	bsr.w	T_139fe
-	bmi.b	T_13e42
+	beq.s	.Exit
+	bsr.w	Handle_spell
+	bmi.s	.Exit
 	bclr	d1,d0
-	move.w	d0,$3a(a0)
+	move.w	d0,Body_conditions(a0)
 	move.w	Victim_nr,d0
 	bsr.w	Do_sparkle
-T_13e42:
-	rts
-T_13e44:
+.Exit:
+	rts	
+; ---- Weapon_gunk (original source: MAIN/MAGIC.ASM)
+Remove_curse:
+Weapon_gunk:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
-	move.w	#$18,WText_nr
+	move.w	#$18,WText_nr	; CHANGE: was "move.w #21,WText_nr"
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_13e7e,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_13e7e:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_13ea0
+	beq.s	.Exit
 	tst.b	Magic_object_flag
-	bne.b	T_13e96
+	bne.s	.Already
 	bsr.w	Exit_display
-T_13e96:
-	lea.l	RemCurse2_Mod,a0
+.Already:
+	lea.l	RemCurse2_Mod,a0	; CHANGE: was ".Already: Push Module,Gunk_Mod"
 	bsr.w	Push_Module
-T_13ea0:
-	rts
-RemCurse2_DisInit:
+.Exit:
+	rts	
+; ---- RemCurse2_DisInit (original source: MAIN/MAGIC.ASM)
 Lore_DisInit:
+Gunk_DisInit:
+RemCurse2_DisInit:
 	tst.b	Magic_object_flag
-	sne.b	Fade_block
+	sne	Fade_block
 	move.l	Victim_ptr,Current_inventory_chardat_ptr
-	bsr.w	T_10fac
+	bsr.w	Inv2_DisInit
 	movea.l	Off_screen,a6
 	move.l	#Code0007Sys,Textfile_ptr
-	move.w	#$15,d0
+	move.w	#21,d0
 	jsr	Hash_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-	lea.l	D_2de36,a0
+	lea.l	RemCurse_MA,a0
 	jsr	Push_MA
-	rts
+	rts	
 RemCurse2_DisExit:
 	jsr	Pop_MA
 	movea.l	Off_screen,a6
@@ -23164,7 +23474,7 @@ T_13f1c:
 	adda.w	d0,a2
 	btst	#$0,$18(a2)
 	beq.b	T_13fc6
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_13fb0
 	jsr	Mouse_off
 	moveq	#50,d0
@@ -23203,157 +23513,158 @@ T_13fc8:
 	bsr.w	Init_display
 T_13fd8:
 	rts
-T_13fda:
-	bsr.w	T_139fe
-	bmi.b	T_14014
+; ---- Create_food (original source: MAIN/MAGIC.ASM)
+Create_food:
+	bsr.w	Handle_spell
+	bmi.s	.Exit
 	lea.l	Chard_ptrs,a0
-	moveq	#1,d0
-	move.l	#$fa,d1
-T_13fee:
+	moveq.l	#1,d0
+	move.l	#Food_weight,d1
+.Loop:
 	tst.l	(a0)
-	beq.b	T_1400a
-	movea.l	(a0),a1
-	move.w	$3a(a1),d2
-	andi.w	#$e000,d2
-	bne.b	T_1400a
-	addq.w	#$1,$92(a1)
-	add.l	d1,$ec(a1)
-	bsr.w	Do_sparkle
-T_1400a:
-	addq.l	#$4,a0
-	addq.w	#$1,d0
-	cmpi.w	#$7,d0
-	bmi.b	T_13fee
-T_14014:
-	rts
+	beq.s	.Next
+	movea.l	(a0),a1	; CHANGE: added
+	move.w	$3a(a1),d2	; CHANGE: was "move.w Body_conditions(a0),d1"
+	andi.w	#$e000,d2	; CHANGE: was "andi.w #$e000,d1"
+	bne.s	.Next
+	addq.w	#$1,$92(a1)	; CHANGE: was "addq.w #1,Food_rations(a0)"
+	add.l	d1,$ec(a1)	; CHANGE: was "add.l d1,Weight_normal(a0)"
+	bsr.w	Do_sparkle	; CHANGE: added
+.Next:
+	addq.l	#4,a0
+	addq.w	#1,d0
+	cmpi.w	#6+1,d0
+	bmi.s	.Loop
+.Exit:
+	rts	
 T_14016:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1402c
 	move.w	#$2,Spell_1_data
 	move.w	#$18,Spell_1_duration
 T_1402c:
 	rts
 T_1402e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14044
 	move.w	#$4,Spell_1_data
 	move.w	#$60,Spell_1_duration
 T_14044:
 	rts
 T_14046:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1405c
 	move.w	#$6,Spell_1_data
 	move.w	#$c0,Spell_1_duration
 T_1405c:
 	rts
 T_1405e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14074
 	move.w	#$5,B_5933e
 	move.w	#$18,B_59328
 T_14074:
 	rts
 T_14076:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1408c
 	move.w	#$a,B_5933e
 	move.w	#$60,B_59328
 T_1408c:
 	rts
 T_1408e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_140a4
 	move.w	#$f,B_5933e
 	move.w	#$c0,B_59328
 T_140a4:
 	rts
 T_140a6:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_140bc
 	move.w	#$5,B_59340
 	move.w	#$18,B_5932a
 T_140bc:
 	rts
 T_140be:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_140d4
 	move.w	#$a,B_59340
 	move.w	#$60,B_5932a
 T_140d4:
 	rts
 T_140d6:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_140ec
 	move.w	#$f,B_59340
 	move.w	#$c0,B_5932a
 T_140ec:
 	rts
 T_140ee:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14104
 	move.w	#$5,B_59342
 	move.w	#$18,B_5932c
 T_14104:
 	rts
 T_14106:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1411c
 	move.w	#$a,B_59342
 	move.w	#$60,B_5932c
 T_1411c:
 	rts
 T_1411e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14134
 	move.w	#$f,B_59342
 	move.w	#$c0,B_5932c
 T_14134:
 	rts
 T_14136:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1414c
 	move.w	#$2,B_59344
 	move.w	#$18,B_5932e
 T_1414c:
 	rts
 T_1414e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14164
 	move.w	#$4,B_59344
 	move.w	#$60,B_5932e
 T_14164:
 	rts
 T_14166:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1417c
 	move.w	#$6,B_59344
 	move.w	#$c0,B_5932e
 T_1417c:
 	rts
 T_1417e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14194
 	move.w	#$0,Spell_6_data
 	move.w	#$18,Spell_6_duration
 T_14194:
 	rts
 T_14196:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_141ac
 	move.w	#$0,Spell_6_data
 	move.w	#$60,Spell_6_duration
 T_141ac:
 	rts
 T_141ae:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_141c4
 	move.w	#$0,Spell_6_data
 	move.w	#$c0,Spell_6_duration
 T_141c4:
 	rts
-T_141c6:
-	bsr.w	T_139fe
+Magic_sphere:
+	bsr.w	Handle_spell
 	bmi.b	T_1422c
 	move.w	#$6,Spell_1_data
 	move.w	#$c0,Spell_1_duration
@@ -23370,7 +23681,7 @@ T_141c6:
 T_1422c:
 	rts
 T_1422e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1423e
 	lea.l	MagicCompass_Mod,a0
 	bsr.w	Push_Module
@@ -23405,28 +23716,29 @@ MagicComp_DisExit:
 	move.w	B_58256,d0
 	jsr	Close_window
 	rts
-T_142a8:
+; ---- Identify (original source: MAIN/MAGIC.ASM)
+Identify:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
-	move.w	#$19,WText_nr
+	move.w	#$19,WText_nr	; CHANGE: was "move.w #21,WText_nr"
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_142e2,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_142e2:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_14304
+	beq.s	.Exit
 	tst.b	Magic_object_flag
-	bne.b	T_142fa
+	bne.s	.Already
 	bsr.w	Exit_display
-T_142fa:
+.Already:
 	lea.l	Lore_Mod,a0
 	bsr.w	Push_Module
-T_14304:
-	rts
+.Exit:
+	rts	
 T_14306:
 	tst.b	Magic_object_flag
 	beq.b	T_1431e
@@ -23434,7 +23746,7 @@ T_14306:
 	move.l	Current_inventory_chardat_ptr,B_58812
 T_1431e:
 	move.l	Victim_ptr,Current_inventory_chardat_ptr
-	bsr.w	T_10fac
+	bsr.w	Inv2_DisInit
 	movea.l	Off_screen,a6
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
@@ -23483,7 +23795,7 @@ T_14396:
 	bsr.w	T_14f00
 	st.b	B_58833
 T_143e2:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14430
 	bset	#$7,$18(a2)
 	moveq	#0,d0
@@ -23514,7 +23826,7 @@ T_14432:
 	bne.b	T_1445c
 	tst.b	$3(a5)
 	bne.b	T_1445c
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.w	Exit_levitate
 	bra.b	T_1449a
 T_1445c:
@@ -23552,7 +23864,7 @@ Exit_levitate:
 T_144dc:
 	cmpi.b	#$1,Current_map_type
 	bne.b	T_14526
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_14526
 	move.w	View_direction,d0
 	add.w	d0,d0
@@ -23648,7 +23960,7 @@ T_145dc:
 T_145e4:
 	cmpi.b	#$2,Current_map_type
 	bpl.b	T_1460c
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1460c
 	move.w	B_5930c,d0
 	addi.w	#$a,d0
@@ -23658,7 +23970,7 @@ T_145e4:
 T_1460c:
 	rts
 T_1460e:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1466a
 	movea.l	Mapd_ptr,a0
 	move.b	$5(a0),d0
@@ -23684,245 +23996,257 @@ T_14660:
 	dc.b	$61,$00,$c3,$08
 T_1466a:
 	rts
+; ---- Minimap_DisUpd (original source: MAIN/MAGIC.ASM)
 Minimap_DisUpd:
 	jsr	Update_status_block
 	tst.b	Minimap_update
-	beq.b	T_1468a
+	beq.s	.No_update
 	movea.l	Off_screen,a6
 	bsr.w	Display_minimap
-	subq.b	#$1,Minimap_update
-T_1468a:
+	subq.b	#1,Minimap_update
+.No_update:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	cmpi.b	#$1,Current_map_type
-	bne.b	T_146ba
+	cmpi.b	#1,Current_map_type
+	bne.s	.No_wild
 	move.w	Quad_index,d2
-	btst	#$0,d2
-	beq.b	T_146b0
-	addi.w	#$32,d0
-T_146b0:
-	btst	#$1,d2
-	beq.b	T_146ba
-	addi.w	#$32,d1
-T_146ba:
-	subq.w	#$1,d0
-	subq.w	#$1,d1
+	btst	#0,d2
+	beq.s	.Zero
+	addi.w	#Submap_width,d0
+.Zero:
+	btst	#1,d2
+	beq.s	.No_wild
+	addi.w	#Submap_height,d1
+.No_wild:
+	subq.w	#1,d0
+	subq.w	#1,d1
+; CHANGE: removed "move.w d0,d2"
+; CHANGE: removed "move.w d1,d3"
+; CHANGE: removed "lsr.w #3,d2"
+; CHANGE: removed "lsr.w #3,d3"
+; CHANGE: removed "sub.w Minimap_X,d2"
+; CHANGE: removed "sub.w Minimap_Y,d3"
+; CHANGE: removed "cmpi.w #12,d2"
+; CHANGE: removed "bhi.s .Exit"
+; CHANGE: removed "cmpi.w #10,d3"
+; CHANGE: removed "bhi.s .Exit"
 	move.w	Minimap_X,d2
 	move.w	Minimap_Y,d3
-	lsl.w	#$3,d2
-	lsl.w	#$3,d3
+	lsl.w	#3,d2
+	lsl.w	#3,d3
 	sub.w	d2,d0
 	sub.w	d3,d1
-	cmpi.w	#$57,d0
-	bhi.b	T_14710
-	cmpi.w	#$47,d1
-	bhi.b	T_14710
+	cmpi.w	#$57,d0	; CHANGE: added
+	bhi.b	.Exit	; CHANGE: added
+	cmpi.w	#$47,d1	; CHANGE: added
+	bhi.b	.Exit	; CHANGE: added
 	add.w	d0,d0
 	add.w	d1,d1
-	addi.w	#$10,d0
-	addi.w	#$31,d1
+	addi.w	#16,d0
+	addi.w	#49,d1
 	move.w	d0,d2
 	move.w	d1,d3
-	addq.w	#$1,d2
-	addq.w	#$1,d3
+	addq.w	#1,d2
+	addq.w	#1,d3
 	move.w	Minimap_colour,d6
-	addq.w	#$1,d6
+	addq.w	#1,d6
 	andi.w	#$f,d6
 	move.w	d6,Minimap_colour
 	movea.l	Off_screen,a6
 	jsr	Draw_box
-T_14710:
-	rts
+.Exit:
+	rts	
+; ---- Minimap_ModInit (original source: MAIN/MAGIC.ASM)
 Minimap_ModInit:
 	lea.l	Load_area,a0
 	jsr	Push_MA
-	move.w	#$10,d0
+	move.w	#16,d0
 	jsr	Push_Mptr
 	lea.l	Minimap_CIL,a0
-	moveq	#8,d7
-T_14730:
-	bclr	#$7,(a0)+
-	dbra	d7,T_14730
-	lea.l	-$9(a0),a0
-	move.w	#$0,Minimap_X
-	move.w	#$0,Minimap_Y
-	cmpi.b	#$1,Current_map_type
-	bne.w	T_1487c
-	move.w	#$32,d0
+	moveq.l	#9-1,d7
+.Loop:
+	bclr	#7,(a0)+
+	dbra	d7,.Loop
+	lea.l	-9(a0),a0
+	move.w	#0,Minimap_X
+	move.w	#0,Minimap_Y
+	cmpi.b	#1,Current_map_type
+	bne.w	.No_wild
+	move.w	#Submap_width,d0
 	add.w	d0,d0
-	cmpi.w	#$58,d0
-	bpl.b	T_14786
-	bset	#$7,(a0)
-	bset	#$7,$2(a0)
-	bset	#$7,$3(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$8(a0)
-T_14786:
-	move.w	#$32,d0
+	cmpi.w	#8*11,d0
+	bpl.s	.Ok1
+	bset	#7,(a0)
+	bset	#7,2(a0)
+	bset	#7,3(a0)
+	bset	#7,5(a0)
+	bset	#7,6(a0)
+	bset	#7,8(a0)
+.Ok1:
+	move.w	#Submap_height,d0
 	add.w	d0,d0
-	cmpi.w	#$48,d0
-	bpl.b	T_147b6
-	bset	#$7,$0(a0)
-	bset	#$7,$1(a0)
-	bset	#$7,$2(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$7(a0)
-	bset	#$7,$8(a0)
-T_147b6:
-	move.w	#$32,d0
+	cmpi.w	#8*9,d0
+	bpl.s	.Ok2
+	bset	#7,0(a0)
+	bset	#7,1(a0)
+	bset	#7,2(a0)
+	bset	#7,6(a0)
+	bset	#7,7(a0)
+	bset	#7,8(a0)
+.Ok2:
+	move.w	#Submap_width,d0
 	add.w	d0,d0
-	addq.w	#$7,d0
-	lsr.w	#$3,d0
+	addq.w	#$7,d0	; CHANGE: was "addi.w #7,d0"
+	lsr.w	#3,d0
 	move.w	d0,Minimap_width
-	move.w	#$32,d1
+	move.w	#Submap_height,d1
 	add.w	d1,d1
-	addq.w	#$7,d1
-	lsr.w	#$3,d1
+	addq.w	#$7,d1	; CHANGE: was "addi.w #7,d1"
+	lsr.w	#3,d1
 	move.w	d1,Minimap_height
 	mulu.w	d1,d0
-	lsl.l	#$7,d0
+	lsl.l	#7,d0
 	jsr	Allocate_memory
 	move.l	a1,Minimap_ptr
-	moveq	#0,d1
-	lsr.w	#$2,d0
-	subq.w	#$1,d0
-T_147ec:
+	moveq.l	#0,d1
+	lsr.w	#2,d0
+	subq.w	#1,d0
+.Clear1:
 	move.l	d1,(a1)+
-	dbra	d0,T_147ec
+	dbra	d0,.Clear1
 	lea.l	Quad_map,a3
-	moveq	#0,d1
-	moveq	#0,d4
+	moveq.l	#0,d1
+	moveq.l	#0,d4
 	movea.l	(a3)+,a0
-	bsr.w	T_1482c
-	moveq	#0,d1
-	move.w	#$32,d4
+	bsr.w	.Do_it
+	moveq.l	#0,d1
+	move.w	#Submap_width,d4
 	movea.l	(a3)+,a0
-	bsr.w	T_1482c
-	move.w	#$32,d1
-	moveq	#0,d4
+	bsr.w	.Do_it
+	move.w	#Submap_height,d1
+	moveq.l	#0,d4
 	movea.l	(a3)+,a0
-	bsr.w	T_1482c
-	move.w	#$32,d1
-	move.w	#$32,d4
+	bsr.w	.Do_it
+	move.w	#Submap_height,d1
+	move.w	#Submap_width,d4
 	movea.l	(a3),a0
-	bsr.w	T_1482c
-	bra.w	T_149ac
-T_1482c:
-	lea.l	$ac5(a0),a0
+	bsr.w	.Do_it
+	bra.w	.Exit
+.Do_it:
+	lea.l	Map_data(a0),a0
 	movea.l	Icondata_ptr,a1
-	lea.l	$6d8(a1),a1
-	moveq	#0,d2
+	lea.l	Map_icon_color(a1),a1
+	moveq.l	#0,d2
 	move.w	Size_of_map,d5
 	move.w	Height_of_map,d7
-	subq.w	#$1,d7
-T_1484a:
+	subq.w	#1,d7
+.LoopY1:
 	move.w	d4,d0
 	move.w	Width_of_map,d6
-	subq.w	#$1,d6
-T_14854:
+	subq.w	#1,d6
+.LoopX1:
 	move.b	(a0),d2
-	move.b	-$1(a1,d2.w),d2
+	move.b	-1(a1,d2.w),d2
 	bsr.w	Set1_minimap_element
-	move.b	(a0,d5.w),d2
-	beq.b	T_1486c
-	move.b	-$1(a1,d2.w),d2
+	move.b	0(a0,d5.w),d2
+	beq.s	.Next1
+	move.b	-1(a1,d2.w),d2
 	bsr.w	Set2_minimap_element
-T_1486c:
-	addq.l	#$1,a0
-	addq.w	#$1,d0
-	dbra	d6,T_14854
-	addq.w	#$1,d1
-	dbra	d7,T_1484a
-	rts
-T_1487c:
+.Next1:
+	addq.l	#1,a0
+	addq.w	#1,d0
+	dbra	d6,.LoopX1
+	addq.w	#1,d1
+	dbra	d7,.LoopY1
+	rts	
+.No_wild:
 	move.w	Width_of_map,d0
-	cmpi.w	#$58,d0
-	bpl.b	T_148aa
-	bset	#$7,(a0)
-	bset	#$7,$2(a0)
-	bset	#$7,$3(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$8(a0)
-T_148aa:
+	cmpi.w	#8*11,d0
+	bpl.s	.Ok3
+	bset	#7,(a0)
+	bset	#7,2(a0)
+	bset	#7,3(a0)
+	bset	#7,5(a0)
+	bset	#7,6(a0)
+	bset	#7,8(a0)
+.Ok3:
 	move.w	Height_of_map,d0
-	cmpi.w	#$48,d0
-	bpl.b	T_148da
-	bset	#$7,$0(a0)
-	bset	#$7,$1(a0)
-	bset	#$7,$2(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$7(a0)
-	bset	#$7,$8(a0)
-T_148da:
+	cmpi.w	#8*9,d0
+	bpl.s	.Ok4
+	bset	#7,0(a0)
+	bset	#7,1(a0)
+	bset	#7,2(a0)
+	bset	#7,6(a0)
+	bset	#7,7(a0)
+	bset	#7,8(a0)
+.Ok4:
 	move.w	Width_of_map,d0
-	addq.w	#$7,d0
-	lsr.w	#$3,d0
+	addq.w	#7,d0
+	lsr.w	#3,d0
 	move.w	d0,Minimap_width
 	move.w	Height_of_map,d1
-	addq.w	#$7,d1
-	lsr.w	#$3,d1
+	addq.w	#7,d1
+	lsr.w	#3,d1
 	move.w	d1,Minimap_height
 	mulu.w	d1,d0
-	lsl.l	#$7,d0
+	lsl.l	#7,d0
 	jsr	Allocate_memory
 	move.l	a1,Minimap_ptr
-	moveq	#0,d1
-	lsr.w	#$2,d0
-	subq.w	#$1,d0
-T_14910:
+	moveq.l	#0,d1
+	lsr.w	#2,d0
+	subq.w	#1,d0
+.Clear2:
 	move.l	d1,(a1)+
-	dbra	d0,T_14910
-	cmpi.b	#$2,Current_map_type
-	bmi.b	T_1495a
+	dbra	d0,.Clear2
+	cmpi.b	#2,Current_map_type
+	bmi.s	.No_3D
 	movea.l	Map_pointer,a0
 	movea.l	Lab_IC_ptr,a1
-	moveq	#0,d1
-	moveq	#0,d2
+	moveq.l	#0,d1
+	moveq.l	#0,d2
 	move.w	Height_of_map,d7
-	subq.w	#$1,d7
-T_14938:
-	moveq	#0,d0
+	subq.w	#1,d7
+.LoopY2:
+	moveq.l	#0,d0
 	move.w	Width_of_map,d6
-	subq.w	#$1,d6
-T_14942:
+	subq.w	#1,d6
+.LoopX2:
 	move.b	(a0)+,d2
-	move.b	-$1(a1,d2.w),d2
+	move.b	-1(a1,d2.w),d2
 	bsr.w	Set1_minimap_element
-	addq.w	#$1,d0
-	dbra	d6,T_14942
-	addq.w	#$1,d1
-	dbra	d7,T_14938
-	bra.b	T_149ac
-T_1495a:
+	addq.w	#1,d0
+	dbra	d6,.LoopX2
+	addq.w	#1,d1
+	dbra	d7,.LoopY2
+	bra.s	.Exit
+.No_3D:
 	movea.l	Map_pointer,a0
 	movea.l	Icondata_ptr,a1
-	lea.l	$6d8(a1),a1
-	moveq	#0,d1
-	moveq	#0,d2
+	lea.l	Map_icon_color(a1),a1
+	moveq.l	#0,d1
+	moveq.l	#0,d2
 	move.w	Size_of_map,d5
 	move.w	Height_of_map,d7
-	subq.w	#$1,d7
-T_1497c:
-	moveq	#0,d0
+	subq.w	#1,d7
+.LoopY3:
+	moveq.l	#0,d0
 	move.w	Width_of_map,d6
-	subq.w	#$1,d6
-T_14986:
+	subq.w	#1,d6
+.LoopX3:
 	move.b	(a0),d2
-	move.b	-$1(a1,d2.w),d2
+	move.b	-1(a1,d2.w),d2
 	bsr.w	Set1_minimap_element
-	move.b	(a0,d5.w),d2
-	beq.b	T_1499e
-	move.b	-$1(a1,d2.w),d2
+	move.b	0(a0,d5.w),d2
+	beq.s	.Next3
+	move.b	-1(a1,d2.w),d2
 	bsr.w	Set2_minimap_element
-T_1499e:
-	addq.l	#$1,a0
-	addq.w	#$1,d0
-	dbra	d6,T_14986
-	addq.w	#$1,d1
-	dbra	d7,T_1497c
-T_149ac:
+.Next3:
+	addq.l	#1,a0
+	addq.w	#1,d0
+	dbra	d6,.LoopX3
+	addq.w	#1,d1
+	dbra	d7,.LoopY3
+.Exit:
 	jsr	Pop_Mptr
 	jsr	Pop_MA
 	bra.w	Init_display
@@ -23960,7 +24284,7 @@ Minimap_DisInit:
 T_14a50:
 	movea.l	Colpall_ptrs,a0
 T_14a56:
-	lea.l	B_57c74,a1
+	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
 T_14a68:
@@ -23974,29 +24298,32 @@ T_14a68:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts
+; ---- Minimap_DisExit (original source: MAIN/MAGIC.ASM)
 Minimap_DisExit:
 	lea.l	Void,a1
 	lea.l	Subfade1,a2
-T_14aa8:
+.Again:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Below_pal_2D,a0
 	jsr	Fade_pal
-	bne.b	T_14aa8
+	bne.s	.Again
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	jsr	Pop_MA
-	rts
-T_14ae2:
+	rts	
+; ---- Minimap_exit (original source: MAIN/MAGIC.ASM)
+Minimap_exit:
 	bsr.w	Pop_Module
 	tst.b	Magic_object_flag
-	beq.b	T_14af2
+	beq.s	.No
 	bsr.w	Pop_Module
-T_14af2:
+.No:
 	bsr.w	Init_display
-	rts
+.Exit:
+	rts	
 ; ---- Minimap_up (original source: MAIN/MAGIC.ASM)
 Minimap_up:
 	move.w	Minimap_Y,d0
@@ -24027,17 +24354,19 @@ Minimap_right:
 	move.b	#2,Minimap_update
 .Exit:
 	rts	
+; ---- Minimap_down (original source: MAIN/MAGIC.ASM)
 T_14b52:
+Minimap_down:
 	move.w	Minimap_Y,d0
-	addq.w	#$1,d0
+	addq.w	#1,d0
 	move.w	Minimap_height,d1
-	subq.w	#$8,d1
+	subq.w	#$8,d1	; CHANGE: was "subi.w #9-1,d1"
 	cmp.w	d1,d0
-	bpl.b	T_14b74
+	bpl.s	.Exit
 	move.w	d0,Minimap_Y
-	move.b	#$2,Minimap_update
-T_14b74:
-	rts
+	move.b	#2,Minimap_update
+.Exit:
+	rts	
 T_14b76:
 	bsr.w	Minimap_up
 	bra.w	Minimap_left
@@ -24050,40 +24379,41 @@ T_14b86:
 T_14b8e:
 	bsr.w	T_14b52
 	bra.w	Minimap_right
+; ---- Display_minimap (original source: MAIN/MAGIC.ASM)
 Display_minimap:
-	movem.l	d0-d2/d5-d7/a0,-(a7)
-	moveq	#11,d6
+	movem.l	d0-d2/d5-d7/a0,-(sp)
+	moveq.l	#11,d6
 	cmp.w	Minimap_width,d6
-	bmi.b	T_14baa
+	bmi.s	.Ok1
 	move.w	Minimap_width,d6
-T_14baa:
-	moveq	#9,d5
+.Ok1:
+	moveq.l	#9,d5
 	cmp.w	Minimap_height,d5
-	bmi.b	T_14bba
+	bmi.s	.Ok2
 	move.w	Minimap_height,d5
-T_14bba:
+.Ok2:
 	movea.l	Minimap_ptr,a0
 	move.w	Minimap_Y,d0
 	mulu.w	Minimap_width,d0
-	lsl.w	#$7,d0
+	lsl.w	#7,d0
 	adda.w	d0,a0
 	move.w	Minimap_X,d0
-	lsl.w	#$3,d0
+	lsl.w	#3,d0
 	adda.w	d0,a0
-	moveq	#16,d0
-	moveq	#49,d1
+	moveq.l	#16,d0
+	moveq.l	#49,d1
 	move.w	Minimap_width,d2
-	lsl.w	#$3,d2
-	lsl.w	#$4,d5
-	subq.w	#$1,d5
-	moveq	#1,d7
-T_14bec:
+	lsl.w	#3,d2
+	lsl.w	#4,d5
+	subq.w	#1,d5
+	moveq.l	#1,d7
+.Loop:
 	jsr	Blot_unmasked_block
-	addq.w	#$1,d1
+	addq.w	#1,d1
 	adda.w	d2,a0
-	dbra	d5,T_14bec
-	movem.l	(a7)+,d0-d2/d5-d7/a0
-	rts
+	dbra	d5,.Loop
+	movem.l	(sp)+,d0-d2/d5-d7/a0
+	rts	
 ; ---- Set1_minimap_element (original source: MAIN/MAGIC.ASM)
 Set1_minimap_element:
 	movem.l	d0-d3/d6/d7/a0,-(sp)
@@ -24154,65 +24484,67 @@ Set2_minimap_element:
 	dbra	d7,.Loop
 	movem.l	(sp)+,d0-d3/d6/d7/a0
 	rts	
-T_14ca8:
+; ---- Spellpts1 (original source: MAIN/MAGIC.ASM)
+Spellpts1:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0008Sys,Textfile_ptr
-	move.w	#$5,WText_nr
+	move.w	#5,WText_nr
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_14ce2,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_14ce2:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_14d28
-	bsr.w	T_139fe
-	bmi.b	T_14d28
+	beq.s	.Exit
+	bsr.w	Handle_spell
+	bmi.s	.Exit
 	movea.l	Victim_ptr,a0
 	jsr	Random
-	mulu.w	#$19,d0
-	swap	d0
-	addq.w	#$1,d0
-	add.w	$8a(a0),d0
-	move.w	$8c(a0),d1
-	add.w	$9a(a0),d1
+	mulu.w	#25,d0
+	swap.w	d0
+	addq.w	#1,d0
+	add.w	$8a(a0),d0	; CHANGE: was "add.w Power_points_normal(a0),d1"
+	move.w	$8c(a0),d1	; CHANGE: was "move.w Power_points_max(a0),d0"
+	add.w	$9a(a0),d1	; CHANGE: was "add.w Power_points_max_magic(a0),d0"
 	cmp.w	d1,d0
-	bpl.b	T_14d1a
+	bpl.s	.Skip
 	move.w	d0,d1
-T_14d1a:
-	move.w	d1,$8a(a0)
+.Skip:
+	move.w	d1,Power_points_normal(a0)
 	move.w	Victim_nr,d0
 	bsr.w	Do_sparkle
-T_14d28:
-	rts
-T_14d2a:
+.Exit:
+	rts	
+; ---- Spellpts2 (original source: MAIN/MAGIC.ASM)
+Spellpts2:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0008Sys,Textfile_ptr
-	move.w	#$5,WText_nr
+	move.w	#5,WText_nr
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_14d64,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_14d64:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_14d98
-	bsr.w	T_139fe
-	bmi.b	T_14d98
+	beq.s	.Exit
+	bsr.w	Handle_spell
+	bmi.s	.Exit
 	movea.l	Victim_ptr,a0
-	move.w	$8c(a0),d0
-	add.w	$9a(a0),d0
-	cmp.w	$8a(a0),d0
-	bmi.b	T_14d98
-	move.w	d0,$8a(a0)
+	move.w	Power_points_max(a0),d0
+	add.w	Power_points_max_magic(a0),d0
+	cmp.w	Power_points_normal(a0),d0
+	bmi.s	.Exit
+	move.w	d0,Power_points_normal(a0)
 	move.w	Victim_nr,d0
 	bsr.w	Do_sparkle
-T_14d98:
-	rts
+.Exit:
+	rts	
 T_14d9a:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0006Sys,Textfile_ptr
@@ -24231,11 +24563,11 @@ T_14dd4:
 	bsr.w	Push_Module
 T_14dea:
 	rts
-Gunk_DisInit:
+T_14dec:
 	st.b	Fade_block
 	move.l	Current_inventory_chardat_ptr,B_58812
 	move.l	Victim_ptr,Current_inventory_chardat_ptr
-	bsr.w	T_10fac
+	bsr.w	Inv2_DisInit
 	movea.l	Off_screen,a6
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0008Sys,Textfile_ptr
@@ -24385,52 +24717,53 @@ T_14fae:
 T_14ff6:
 	movem.l	(a7)+,d0-d1/a0-a2/a6
 	rts
-T_14ffc:
+; ---- Youth (original source: MAIN/MAGIC.ASM)
+Youth:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0008Sys,Textfile_ptr
-	move.w	#$7,WText_nr
+	move.w	#7,WText_nr
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
 	move.l	a0,Textfile_ptr
 	lea.l	VictimSel_Mod,a0
-	move.l	#T_15036,$28(a0)
+	move.l	#.Continue,Return_ptr(a0)
 	bra.w	Push_Module
-T_15036:
+.Continue:
 	bsr.w	Pop_Module
 	tst.b	Victim_selected
-	beq.b	T_150a6
-	bsr.w	T_139fe
-	bmi.b	T_150a6
+	beq.s	.Exit
+	bsr.w	Handle_spell
+	bmi.s	.Exit
 	movea.l	Victim_ptr,a0
-	move.w	$58(a0),d1
+	move.w	Attr_9_normal(a0),d1
 	jsr	Random
-	mulu.w	#$a,d0
-	swap	d0
-	addq.w	#$1,d0
+	mulu.w	#10,d0
+	swap.w	d0
+	addq.w	#1,d0
 	sub.w	d0,d1
-	cmpi.w	#$f,d1
-	bpl.b	T_1506a
-	moveq	#15,d1
-T_1506a:
-	move.w	d1,$58(a0)
+	cmpi.w	#15,d1
+	bpl.b	.c_1506a	; CHANGE: was "bmi.s .Exit"
+	moveq	#15,d1	; CHANGE: added
+.c_1506a:
+	move.w	d1,Attr_9_normal(a0)
 	move.w	Victim_nr,d0
 	bsr.w	Do_sparkle
-	tst.b	Magic_object_flag
-	beq.b	T_150a6
-	movea.l	Victim_ptr,a1
-	cmpa.l	Current_inventory_chardat_ptr,a1
-	bne.b	T_150a6
-	moveq	#33,d7
-	movea.l	Off_screen,a6
-	bsr.w	Display_character
-	jsr	Switch_screen
-	jsr	Copy_screen
-T_150a6:
-	rts
+	tst.b	Magic_object_flag	; CHANGE: added
+	beq.b	.Exit	; CHANGE: added
+	movea.l	Victim_ptr,a1	; CHANGE: added
+	cmpa.l	Current_inventory_chardat_ptr,a1	; CHANGE: added
+	bne.b	.Exit	; CHANGE: added
+	moveq	#33,d7	; CHANGE: added
+	movea.l	Off_screen,a6	; CHANGE: added
+	bsr.w	Display_character	; CHANGE: added
+	jsr	Switch_screen	; CHANGE: added
+	jsr	Copy_screen	; CHANGE: added
+.Exit:
+	rts	
 T_150a8:
 	tst.w	Travel_mode
 	bne.b	T_150d8
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_150d8
 	tst.b	Magic_object_flag
 	beq.b	T_150c6
@@ -24587,7 +24920,7 @@ T_152d2:
 	movem.l	(a7)+,d2/a0-a1
 	rts
 T_152fc:
-	bsr.w	T_139fe
+	bsr.w	Handle_spell
 	bmi.b	T_1530c
 	lea.l	D_2d860,a0
 	bsr.w	Push_Module
@@ -24919,22 +25252,24 @@ T_1569e:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
+; ---- SpSelW_DisUpd (original source: MAIN/MAGIC.ASM)
 SpSelW_DisUpd:
 	move.w	Spell_list_pos,d0
-	mulu.w	#$7,d0
+	mulu.w	#7,d0
 	movea.l	PA_sp,a5
 	movea.l	(a5),a5
 	movea.l	Off_screen,a6
 	jsr	Refresh_text_window
-	jsr	Update_status_block
-	rts
+	jsr	Update_status_block	; CHANGE: added
+	rts	
+; ---- SpSelW_ModExit (original source: MAIN/MAGIC.ASM)
 SpSelW_ModExit:
 	jsr	Pop_PA
 	movea.l	Text_graphics_buffer,a0
 	jsr	Free_memory
 	move.w	SpSelW_handle,d0
 	jsr	Close_window
-	rts
+	rts	
 T_157aa:
 	btst	#$1,Mouse_button_state
 	bne.b	T_157aa
@@ -24997,7 +25332,6 @@ T_1584a:
 T_1585e:
 	tst.b	B_58830
 	bne.b	T_15880
-SpSel_UP:
 	move.w	Spell_list_pos,d1
 	sub.w	d0,d1
 	bpl.b	T_1587a
@@ -25023,14 +25357,16 @@ T_158b0:
 	move.w	d1,Spell_list_pos
 T_158b6:
 	rts
+; ---- VictimSel_ModInit (original source: MAIN/MAGIC.ASM)
 VictimSel_ModInit:
-	sf.b	Victim_selected
+	sf	Victim_selected
 	lea.l	Load_area,a0
 	jsr	Push_MA
-	rts
+	rts	
+; ---- VictimSel_ModExit (original source: MAIN/MAGIC.ASM)
 VictimSel_ModExit:
 	jsr	Pop_MA
-	rts
+	rts	
 T_158d4:
 	btst	#$1,Mouse_button_state
 	bne.b	T_158d4
@@ -25496,7 +25832,7 @@ T_15e96:
 T_15e9e:
 	adda.w	#$a,a4
 	dbra	d7,T_15e76
-	jsr	T_02754
+	jsr	Set_spell_area
 	jsr	Pop_PA
 	rts
 Combat_DisInit:
@@ -26664,7 +27000,7 @@ T_16c2e:
 	moveq	#0,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 	move.l	#T_160ec,B_58920
@@ -26779,7 +27115,7 @@ T_16dde:
 	moveq	#1,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 T_16e48:
@@ -27372,7 +27708,7 @@ T_17512:
 	moveq	#11,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	bsr.w	T_15f8c
 	jsr	Switch_screen
 	jsr	Copy_screen
@@ -27666,7 +28002,7 @@ T_1782c:
 	jsr	Add_ASCII_2_RText
 	move.w	d4,d0
 	moveq	#4,d7
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	move.b	#$20,(a3)+
@@ -27676,7 +28012,7 @@ T_1782c:
 	moveq	#9,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	movem.l	(a7)+,a0-a1
 	tst.b	(a5)
 	bne.b	T_1796e
@@ -27685,7 +28021,7 @@ T_1782c:
 	move.b	$1(a5),d0
 	move.w	d4,d1
 	bsr.w	T_160ce
-	jsr	T_07e22
+	jsr	Do_damage
 	tst.w	$86(a1)
 	bgt.w	T_17a22
 	moveq	#0,d0
@@ -27867,7 +28203,7 @@ T_17ba2:
 	movea.l	$c(a4),a0
 	lea.l	$f0(a0),a0
 	jsr	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
 	move.w	#$d,d0
 	lea.l	Code0004Sys,a1
@@ -27881,7 +28217,7 @@ T_17ba2:
 	add.w	d0,d0
 	move.w	-$2(a1,d0.w),d0
 	jsr	Find_word
-	lea.l	B_5814e,a1
+	lea.l	Number_buffer,a1
 	moveq	#0,d0
 	move.b	(a0)+,d0
 	subq.w	#$1,d0
@@ -27892,10 +28228,10 @@ T_17c08:
 	dbra	d0,T_17c06
 	move.b	#$20,(a1)+
 	clr.b	(a1)
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	jsr	Add_ASCII_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bsr.w	T_18668
@@ -27910,13 +28246,13 @@ T_17c08:
 	movea.l	$c(a4),a0
 	lea.l	$f0(a0),a0
 	jsr	Add_ASCII_2_RText
-	lea.l	D_1e45e,a0
+	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
 	move.w	#$5,d0
 	lea.l	Code0004Sys,a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	bra.b	T_17cd2
 T_17c96:
 	dc.b	$4e,$b9
@@ -27924,7 +28260,7 @@ T_17c96:
 	dc.b	$20,$6c,$00,$0c,$41,$e8,$00,$f0,$4e,$b9
 	dc.l	Add_ASCII_2_RText
 	dc.b	$41,$f9
-	dc.l	D_1e45e
+	dc.l	Space
 	dc.b	$4e,$b9
 	dc.l	Add_ASCII_2_RText
 	dc.b	$30,$3c,$00,$06,$43,$f9
@@ -27934,7 +28270,7 @@ T_17c96:
 	dc.b	$4e,$b9
 	dc.l	T_0707a
 	dc.b	$4e,$b9
-	dc.l	T_0798a
+	dc.l	Exit_RText
 T_17cd2:
 	moveq	#0,d0
 	rts
@@ -28029,7 +28365,7 @@ T_17de2:
 	movea.l	B_58e5a,a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 	lea.l	B_58aec,a1
@@ -28105,7 +28441,7 @@ T_17f00:
 	movea.l	B_58e5a,a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 	lea.l	B_58aec,a1
@@ -28176,7 +28512,7 @@ T_18018:
 	movea.l	B_58e5a,a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 	lea.l	B_58aec,a1
@@ -28277,7 +28613,7 @@ T_18176:
 	lea.l	D_4a180,a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	movem.l	(a7)+,a0-a1
 	rts
 T_181b8:
@@ -28291,7 +28627,7 @@ T_181b8:
 	movem.l	(a7)+,d0/a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	rts
 T_181f4:
 	movem.l	a0-a1,-(a7)
@@ -28303,7 +28639,7 @@ T_181f4:
 	lea.l	D_4a180,a1
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bsr.w	T_18668
@@ -28651,7 +28987,7 @@ T_18696:
 	bsr.w	T_15f86
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0784c
+	jsr	Wait_4_user
 T_186b2:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
@@ -29487,7 +29823,7 @@ T_1923c:
 	dc.b	$c0,$fc,$00,$06,$d0,$c0,$4c,$90,$00,$0e,$94,$41,$4e,$b9
 	dc.l	Random
 	dc.b	$c0,$c2,$48,$40,$52,$40,$d2,$40,$30,$07,$4e,$b9
-	dc.l	T_07e22
+	dc.l	Do_damage
 	dc.b	$61,$00,$ce,$62
 T_1926e:
 	movem.l	(a7)+,d0-d3/a0
@@ -29777,7 +30113,7 @@ T_19646:
 	rts
 T_19660:
 	sf.b	Battling
-	jsr	Set_spell_area
+	jsr	T_02724
 	move.w	B_57a62,d0
 	beq.b	T_196ac
 	move.w	d0,d1
@@ -29982,7 +30318,7 @@ T_198c4:
 	lea.l	Code0004Sys,a1
 	move.w	#$e,d0
 	jsr	Add_encoded_2_RText
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	move.l	d6,d0
 	moveq	#4,d7
@@ -29991,10 +30327,10 @@ T_198c4:
 	lea.l	D_26128,a0
 	jsr	Add_ASCII_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0784c
+	jsr	Wait_4_user
 	movea.l	Off_screen,a6
 	jsr	Erase_text_window
 	jsr	Switch_screen
@@ -30066,7 +30402,7 @@ T_19a6a:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	jmp	T_0a2ce
+	jmp	Fadein_lay3
 T_19aa4:
 	movea.l	Off_screen,a6
 	jsr	Update_status_block
@@ -30222,7 +30558,7 @@ T_19c8a:
 T_19cd4:
 	move.w	$26(a3),d0
 	jsr	Find_word
-	lea.l	B_5814e,a1
+	lea.l	Number_buffer,a1
 	moveq	#0,d0
 	move.b	(a0)+,d0
 	subq.w	#$1,d0
@@ -30233,7 +30569,7 @@ T_19cee:
 	dbra	d0,T_19cec
 	move.b	#$d,(a1)+
 	clr.b	(a1)
-	lea.l	B_5814e,a0
+	lea.l	Number_buffer,a0
 	jsr	Add_ASCII_2_RText
 T_19d04:
 	lea.l	$28(a3),a3
@@ -30244,8 +30580,8 @@ T_19d08:
 	jsr	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_0798a
-	jsr	T_0784c
+	jsr	Exit_RText
+	jsr	Wait_4_user
 	movea.l	Off_screen,a6
 	jsr	Erase_text_window
 	jsr	Switch_screen
@@ -30363,7 +30699,7 @@ T_19f0a:
 	lea.l	D_2d4a0,a0
 	jsr	Push_Module
 	rts
-TFMFOOD_Return:
+T_19f36:
 	move.l	ItemW_nr,d0
 	beq.w	T_19fd0
 	mulu.w	#$fa,d0
@@ -30467,7 +30803,7 @@ T_1a05c:
 	move.w	#$b,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	moveq	#2,d6
 	moveq	#16,d7
 	move.w	#$b0,d0
@@ -30532,7 +30868,7 @@ T_1a198:
 	move.w	#$c,d0
 	jsr	Add_encoded_2_RText
 	jsr	T_0707a
-	jsr	T_0798a
+	jsr	Exit_RText
 	moveq	#2,d6
 	moveq	#16,d7
 	move.w	#$b0,d0
@@ -30599,7 +30935,7 @@ T_1a2c6:
 T_1a2d6:
 	clr.w	(a0)+
 	dbra	d7,T_1a2d6
-	sf.b	B_592dc
+	sf.b	First
 	sf.b	Which_CIL
 	sf.b	Battling
 	sf.b	Party_invisible
@@ -30704,27 +31040,28 @@ T_1a496:
 T_1a49c:
 	movem.l	(a7)+,a1-a2
 	rts
+; ---- Find_object (original source: LAYOUT/OBJFIND.ASM)
 Find_object:
-	movem.l	d4/a0,-(a7)
-	moveq	#0,d2
+	movem.l	d4/a0,-(sp)
+	moveq.l	#0,d2
 	movea.l	Object_sp,a0
 	move.l	(a0),d4
 	jsr	Search_layer
 	tst.b	d2
-	beq.b	T_1a4da
-	swap	d2
-	move.l	$e(a0),d4
-	beq.b	T_1a4da
+	beq.s	.Exit
+	swap.w	d2
+	move.l	Obj_child(a0),d4
+	beq.s	.Exit
 	jsr	Search_layer
 	tst.b	d2
-	beq.b	T_1a4da
-	lsl.w	#$8,d2
-	move.l	$e(a0),d4
-	beq.b	T_1a4da
+	beq.s	.Exit
+	lsl.w	#8,d2
+	move.l	Obj_child(a0),d4
+	beq.s	.Exit
 	jsr	Search_layer
-T_1a4da:
-	movem.l	(a7)+,d4/a0
-	rts
+.Exit:
+	movem.l	(sp)+,d4/a0
+	rts	
 ; ---- Search_layer (original source: LAYOUT/OBJFIND.ASM)
 Search_layer:
 .Loop:
@@ -30744,45 +31081,47 @@ Search_layer:
 	bne.s	.Loop
 .Exit:
 	rts	
+; ---- Translate_object_branch (original source: LAYOUT/OBJFIND.ASM)
 Translate_object_branch:
-	movem.l	d2/a0,-(a7)
+	movem.l	d2/a0,-(sp)
 	move.l	a0,d2
-T_1a50c:
+.Loop1:
 	movea.l	d2,a0
 	add.w	d0,(a0)
-	add.w	d0,$2(a0)
-	add.w	d1,$4(a0)
-	add.w	d1,$6(a0)
-	move.l	$e(a0),d2
-	beq.w	T_1a55e
-	move.l	a0,-(a7)
-T_1a526:
+	add.w	d0,2(a0)
+	add.w	d1,4(a0)
+	add.w	d1,6(a0)
+	move.l	Obj_child(a0),d2
+	beq.w	.Next1
+	move.l	a0,-(sp)
+.Loop2:
 	movea.l	d2,a0
 	add.w	d0,(a0)
-	add.w	d0,$2(a0)
-	add.w	d1,$4(a0)
-	add.w	d1,$6(a0)
-	move.l	$e(a0),d2
-	beq.b	T_1a556
-	move.l	a0,-(a7)
-T_1a53e:
+	add.w	d0,2(a0)
+	add.w	d1,4(a0)
+	add.w	d1,6(a0)
+	move.l	Obj_child(a0),d2
+	beq.s	.Next2
+	move.l	a0,-(sp)
+.Loop3:
 	movea.l	d2,a0
 	add.w	d0,(a0)
-	add.w	d0,$2(a0)
-	add.w	d1,$4(a0)
-	add.w	d1,$6(a0)
-	move.l	$a(a0),d2
-	bne.b	T_1a53e
-	movea.l	(a7)+,a0
-T_1a556:
-	move.l	$a(a0),d2
-	bne.b	T_1a526
-	movea.l	(a7)+,a0
-T_1a55e:
-	move.l	$a(a0),d2
-	bne.b	T_1a50c
-	movem.l	(a7)+,d2/a0
-	rts
+	add.w	d0,2(a0)
+	add.w	d1,4(a0)
+	add.w	d1,6(a0)
+	move.l	Obj_brother(a0),d2
+	bne.s	.Loop3
+	movea.l	(sp)+,a0
+.Next2:
+	move.l	Obj_brother(a0),d2
+	bne.s	.Loop2
+	movea.l	(sp)+,a0
+.Next1:
+	move.l	Obj_brother(a0),d2
+	bne.s	.Loop1
+.Exit:
+	movem.l	(sp)+,d2/a0
+	rts	
 Push_Root:
 	move.l	a1,-(a7)
 	movea.l	Object_sp,a1
@@ -30880,7 +31219,7 @@ T_1a63a:
 	jsr	Put_masked_block
 	addi.w	#$10,d1
 	lea.l	$80(a0),a0
-	bsr.w	T_1a7da
+	bsr.w	Draw_vertical_border
 	jsr	Put_masked_block
 	addi.w	#$10,d1
 	lea.l	$80(a0),a0
@@ -30895,11 +31234,11 @@ T_1a63a:
 	addi.w	#$10,d0
 	exg.l	d5,d1
 	lea.l	$80(a0),a0
-	bsr.w	Draw_vertical_border
+	bsr.w	Draw_horizontal_border
 	move.w	d4,d0
 	addi.w	#$20,d0
 	exg.l	d5,d1
-	bsr.w	Draw_vertical_border
+	bsr.w	Draw_horizontal_border
 	exg.l	d5,d1
 	jsr	Put_masked_block
 	exg.l	d5,d1
@@ -30914,7 +31253,7 @@ T_1a63a:
 	jsr	Put_masked_block
 	addi.w	#$10,d1
 	lea.l	$80(a0),a0
-	bsr.w	T_1a7da
+	bsr.w	Draw_vertical_border
 	jsr	Put_masked_block
 	addi.w	#$10,d1
 	lea.l	$80(a0),a0
@@ -30965,29 +31304,30 @@ T_1a7b4:
 	jsr	Mouse_on
 	movem.l	(a7)+,d1-d7/a0-a2/a6
 	rts
-Draw_vertical_border:
+; ---- Draw_horizontal_border (original source: LAYOUT/WINDOWS.ASM)
 Draw_horizontal_border:
-	move.l	d2,-(a7)
-	bra.b	T_1a7ce
-T_1a7c4:
+	move.l	d2,-(sp)
+	bra.s	.Entry
+.Loop:
 	jsr	Put_masked_block
-	addi.w	#$10,d0
-T_1a7ce:
-	dbra	d2,T_1a7c4
-	lea.l	$80(a0),a0
-	move.l	(a7)+,d2
-	rts
-T_1a7da:
-	move.l	d3,-(a7)
-	bra.b	T_1a7e8
-T_1a7de:
+	addi.w	#16,d0
+.Entry:
+	dbra	d2,.Loop
+	lea.l	128(a0),a0
+	move.l	(sp)+,d2
+	rts	
+; ---- Draw_vertical_border (original source: LAYOUT/WINDOWS.ASM)
+Draw_vertical_border:
+	move.l	d3,-(sp)
+	bra.s	.Entry
+.Loop:
 	jsr	Put_masked_block
-	addi.w	#$10,d1
-T_1a7e8:
-	dbra	d3,T_1a7de
-	lea.l	$80(a0),a0
-	move.l	(a7)+,d3
-	rts
+	addi.w	#16,d1
+.Entry:
+	dbra	d3,.Loop
+	lea.l	128(a0),a0
+	move.l	(sp)+,d3
+	rts	
 Close_window:
 	movem.l	d0-d1/d6-d7/a0-a1/a6,-(a7)
 	jsr	Mouse_off
@@ -32129,7 +32469,7 @@ T_1b7e0:
 	move.b	(a5),d0
 	move.l	d7,d1
 	moveq	#0,d2
-	jsr	T_1d3fc
+	jsr	File_allocate
 	movea.l	a1,a4
 	movea.l	a5,a0
 	addq.l	#$1,a0
@@ -32403,7 +32743,7 @@ T_1bb04:
 	move.b	(a5),d0
 	move.l	d7,d1
 	move.w	d5,d2
-	jsr	T_1d3fc
+	jsr	File_allocate
 	movea.l	a1,a4
 	move.w	#$0,-(a7)
 	move.w	d6,-(a7)
@@ -32458,7 +32798,7 @@ T_1bbac:
 	andi.l	#$ffffff,d1
 	addi.l	#$800,d1
 	move.w	d5,d2
-	jsr	T_1d3fc
+	jsr	File_allocate
 	movea.l	a1,a4
 	movea.l	a4,a0
 	move.l	B_5d0fc,(a0)+
@@ -33055,7 +33395,7 @@ T_1c202:
 T_1c20c:
 	move.l	(a7)+,d0
 	rts
-T_1c210:
+DI_Input:
 	movem.l	d2-d4/d7/a0-a1,-(a7)
 	bsr.w	DI_Print
 	lea.l	D_51b30,a0
@@ -33111,49 +33451,56 @@ T_1c29c:
 T_1c2ac:
 	movem.l	(a7)+,d2-d4/d7/a0-a1
 	rts
-	movem.l	d7/a0,-(a7)
-	moveq	#2,d7
-	jsr	T_1d692
+; ---- DI_Hexw_print (original source: NUCLEUS/DIAGNOST.ASM)
+DI_Hexl_print:
+DI_Hexb_print:
+DI_Hexw_print:
+	movem.l	d7/a0,-(sp)
+	moveq	#2,d7	; CHANGE: was "moveq.l #4,d7"
+	jsr	Hex_convert
 	bsr.w	DI_Print
-	movem.l	(a7)+,d7/a0
-	rts
+	movem.l	(sp)+,d7/a0
+	rts	
 	movem.l	d7/a0,-(a7)
 	moveq	#4,d7
-	jsr	T_1d692
+	jsr	Hex_convert
 	bsr.w	DI_Print
 	movem.l	(a7)+,d7/a0
 	rts
 T_1c2de:
 	movem.l	d7/a0,-(a7)
 	moveq	#8,d7
-	jsr	T_1d692
+	jsr	Hex_convert
 	bsr.w	DI_Print
 	movem.l	(a7)+,d7/a0
 	rts
-T_1c2f4:
-	movem.l	d7/a0,-(a7)
+; ---- DI_Decb_print (original source: NUCLEUS/DIAGNOST.ASM)
+DI_Decb_print:
+	movem.l	d7/a0,-(sp)
 	ext.w	d0
 	ext.l	d0
-	moveq	#3,d7
+	moveq.l	#3,d7
 	jsr	Dec_convert
 	bsr.w	DI_Print
-	movem.l	(a7)+,d7/a0
-	rts
-T_1c30e:
-	movem.l	d7/a0,-(a7)
+	movem.l	(sp)+,d7/a0
+	rts	
+; ---- DI_Decw_print (original source: NUCLEUS/DIAGNOST.ASM)
+DI_Decw_print:
+	movem.l	d7/a0,-(sp)
 	ext.l	d0
-	moveq	#5,d7
+	moveq.l	#5,d7
 	jsr	Dec_convert
 	bsr.w	DI_Print
-	movem.l	(a7)+,d7/a0
-	rts
-T_1c326:
-	movem.l	d7/a0,-(a7)
-	moveq	#10,d7
+	movem.l	(sp)+,d7/a0
+	rts	
+; ---- DI_Decl_print (original source: NUCLEUS/DIAGNOST.ASM)
+DI_Decl_print:
+	movem.l	d7/a0,-(sp)
+	moveq.l	#10,d7
 	jsr	Dec_convert
 	bsr.w	DI_Print
-	movem.l	(a7)+,d7/a0
-	rts
+	movem.l	(sp)+,d7/a0
+	rts	
 ; ---- DI_Print (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Print:
 	movem.l	d0/a0/a1,-(sp)
@@ -33402,28 +33749,30 @@ Duplicate_block:
 	dbra	d7,.Loop_1
 	movem.l	(sp)+,d2-d7/a0/a1
 	rts	
+; ---- Get2_block (original source: NUCLEUS/GFXROUTS.ASM)
 Get2_block:
-	movem.l	d2-d7/a0-a1,-(a7)
+	movem.l	d2-d7/a0/a1,-(sp)
 	jsr	Mouse_off
 	bsr.w	Coord_convert
-	lea.l	(a6,d2.w),a1
+	lea.l	0(a6,d2.w),a1
 	move.w	d6,d5
-	lsl.w	#$3,d5
-	subi.w	#$a0,d5
+	lsl.w	#3,d5
+	subi.w	#160,d5
 	neg.w	d5
-	subq.w	#$1,d7
-	subq.w	#$1,d6
-T_1c616:
+	subq.w	#1,d7
+	subq.w	#1,d6
+.Loop_1:
 	move.w	d6,d4
-T_1c618:
+.Loop_2:
 	move.l	(a1)+,(a0)+
 	move.l	(a1)+,(a0)+
-	dbra	d4,T_1c618
+	dbra	d4,.Loop_2
 	adda.w	d5,a1
-	dbra	d7,T_1c616
+	dbra	d7,.Loop_1
 	jsr	Mouse_on
-	movem.l	(a7)+,d2-d7/a0-a1
-	rts
+	movem.l	(sp)+,d2-d7/a0/a1
+	rts	
+Blit_unmasked_block:
 	movem.l	d0-d5/d7/a0-a1,-(a7)
 	bsr.w	Coord_convert
 	lea.l	(a6,d2.w),a1
@@ -33875,10 +34224,10 @@ T_1cbc6:
 	rts
 T_1cbc8:
 	dc.b	$46,$fc,$25,$00
+; ---- Old_mkb (original source: NUCLEUS/INTROUTS.ASM)
 Old_mkb:
-	dc.b	$4e,$f9
-T_1cbce:
-	dc.b	$00,$fc,$00,$00
+	jmp	$fc0000
+T_1cbce	equ	Old_mkb+2
 T_1cbd2:
 	dc.b	$46,$fc,$25,$00,$4e,$f9
 T_1cbd8:
@@ -33903,10 +34252,10 @@ T_1cc0c:
 	dc.l	B_5d8b0
 	dc.b	$4e,$b9
 	dc.l	T_10b1e
+; ---- Old_vbi (original source: NUCLEUS/INTROUTS.ASM)
 Old_vbi:
-	dc.b	$4e,$f9
-T_1cc20:
-	dc.b	$00,$fc,$00,$00
+	jmp	$fc0000
+T_1cc20	equ	Old_vbi+2
 ; ---- IFF_pal_convert (original source: NUCLEUS/INTROUTS.ASM)
 IFF_pal_convert:
 	movem.l	d0/d7/a0/a1,-(sp)
@@ -34565,37 +34914,38 @@ T_1d38e:
 T_1d39e:
 	movem.l	(a7)+,d0-d1/a0-a2
 	rts
+; ---- Reallocate_memory (original source: NUCLEUS/MEMORY.ASM)
 Reallocate_memory:
-	movem.l	d0-d2/a1,-(a7)
-	lsl.w	#$8,d0
-	swap	d0
+	movem.l	d0-d2/a1,-(sp)
+	lsl.w	#8,d0
+	swap.w	d0
 	move.w	d1,d0
-	ori.l	#$80000000,d0
-	move.l	#$bf00ffff,d1
+	ori.l	#$80000000,d0	; CHANGE: added
+	move.l	#$bf00ffff,d1	; CHANGE: was "move.l #$3f00ffff,d1"
 	lea.l	Memory_list,a0
 	movea.l	Memlist_end,a1
-	bra.b	T_1d3d6
-T_1d3c8:
+	bra.s	.Entry
+.Loop:
 	move.l	d1,d2
-	and.l	$8(a0),d2
+	and.l	8(a0),d2
 	cmp.l	d0,d2
-	beq.b	T_1d3de
-	lea.l	$c(a0),a0
-T_1d3d6:
+	beq.s	.Found
+	lea.l	12(a0),a0
+.Entry:
 	cmpa.l	a1,a0
-	bmi.b	T_1d3c8
+	bmi.s	.Loop
 	suba.l	a0,a0
-	bra.b	T_1d3f6
-T_1d3de:
-	bclr	#$7,$8(a0)
-	move.l	$4(a0),d0
+	bra.s	.Exit
+.Found:
+	bclr	#7,8(a0)
+	move.l	4(a0),d0
 	sub.l	d0,Size_of_free_memory
-	ori.b	#$38,$9(a0)
+	ori.b	#7*8,9(a0)
 	movea.l	(a0),a0
-T_1d3f6:
-	movem.l	(a7)+,d0-d2/a1
-	rts
-T_1d3fc:
+.Exit:
+	movem.l	(sp)+,d0-d2/a1
+	rts	
+File_allocate:
 	movem.l	d0-d3/d7/a0,-(a7)
 	addq.l	#$1,d1
 	andi.b	#$fe,d1
@@ -34740,53 +35090,55 @@ T_1d5b0:
 T_1d5ba:
 	movea.l	(a7)+,a1
 	rts
+; ---- Connect_memory (original source: NUCLEUS/MEMORY.ASM)
 Connect_memory:
-	movem.l	d0-d1/a0-a1,-(a7)
+	movem.l	d0/d1/a0/a1,-(sp)
 	lea.l	Memory_list,a0
-	bra.b	T_1d630
-T_1d5ca:
-	btst	#$7,$8(a0)
-	beq.b	T_1d62c
-	cmp.b	$9(a0),d0
-	bmi.b	T_1d62c
-	moveq	#-1,d1
-	lea.l	$c(a0),a1
-	bra.b	T_1d5f4
-T_1d5e0:
-	addq.w	#$1,d1
-	btst	#$7,$8(a1)
-	beq.b	T_1d5fc
-	cmp.b	$9(a1),d0
-	bmi.b	T_1d5fc
-	lea.l	$c(a1),a1
-T_1d5f4:
+	bra.s	.Entry1
+.Loop1:
+	btst	#7,8(a0)
+	beq.s	.Next1
+	cmp.b	9(a0),d0
+	bmi.s	.Next1
+	moveq.l	#-1,d1
+	lea.l	12(a0),a1
+	bra.s	.Entry2
+.Loop2:
+	addq.w	#1,d1
+	btst	#7,8(a1)
+	beq.s	.End2
+	cmp.b	9(a1),d0
+	bmi.s	.End2
+	lea.l	12(a1),a1
+.Entry2:
 	cmpa.l	Memlist_end,a1
-	bmi.b	T_1d5e0
-T_1d5fc:
+	bmi.s	.Loop2
+.End2:
 	tst.w	d1
-	beq.b	T_1d62c
-	move.l	a1,-(a7)
-	move.l	$4(a0),d1
-	bra.b	T_1d60c
-T_1d608:
-	add.l	$4(a1),d1
-T_1d60c:
-	lea.l	-$c(a1),a1
+	beq.s	.Next1
+	move.l	a1,-(sp)
+	move.l	4(a0),d1
+	bra.s	.Entry3
+.Loop3:
+	add.l	4(a1),d1
+.Entry3:
+	lea.l	-12(a1),a1
 	cmpa.l	a0,a1
-	bhi.b	T_1d608
-	move.l	d1,$4(a0)
-	move.l	#$80000000,$8(a0)
-	lea.l	$c(a0),a0
-	movea.l	(a7)+,a1
+	bhi.s	.Loop3
+.End3:
+	move.l	d1,4(a0)
+	move.l	#$80000000,$8(a0)	; CHANGE: was "move.w #$8000,8(a0)"
+	lea.l	12(a0),a0
+	movea.l	(sp)+,a1
 	bsr.w	Delete_memblocks
-	bra.b	T_1d630
-T_1d62c:
-	lea.l	$c(a0),a0
-T_1d630:
+	bra.s	.Entry1
+.Next1:
+	lea.l	12(a0),a0
+.Entry1:
 	cmpa.l	Memlist_end,a0
-	bmi.b	T_1d5ca
-	movem.l	(a7)+,d0-d1/a0-a1
-	rts
+	bmi.s	.Loop1
+	movem.l	(sp)+,d0/d1/a0/a1
+	rts	
 ; ---- Insert_memblock (original source: NUCLEUS/MEMORY.ASM)
 Insert_memblock:
 	movem.l	d0/d1/a1,-(sp)
@@ -34821,33 +35173,34 @@ Delete_memblocks:
 .Exit:
 	movem.l	(sp)+,d0/d1/a0-a2
 	rts	
-T_1d692:
-	movem.l	d0-d1/d7,-(a7)
-	lea.l	B_637d4,a0
-	move.l	#$20202020,(a0)
-	move.l	#$20202020,$4(a0)
-	move.l	#$20202020,$8(a0)
+; ---- Hex_convert (original source: NUCLEUS/NUMERIC.ASM)
+Hex_convert:
+	movem.l	d0/d1/d7,-(sp)
+	lea.l	Output_string,a0
+	move.l	#"    ",(a0)
+	move.l	#"    ",4(a0)
+	move.l	#"    ",8(a0)
 	adda.w	d7,a0
-	move.b	#$20,(a0)
-	move.b	#$20,$1(a0)
-	move.b	#$0,$2(a0)
-	subq.w	#$1,d7
-T_1d6c6:
-	moveq	#15,d1
+	move.b	#" ",(a0)
+	move.b	#" ",1(a0)
+	move.b	#0,2(a0)
+	subq.w	#1,d7
+.Loop:
+	moveq.l	#$f,d1
 	and.w	d0,d1
 	cmpi.w	#$a,d1
-	bmi.b	T_1d6d6
-	addi.w	#$37,d1
-	bra.b	T_1d6da
-T_1d6d6:
-	addi.w	#$30,d1
-T_1d6da:
+	bmi.s	.No_letter
+	addi.w	#"A"-10,d1
+	bra.s	.Skip
+.No_letter:
+	addi.w	#"0",d1
+.Skip:
 	move.b	d1,-(a0)
-	ror.l	#$4,d0
-	dbra	d7,T_1d6c6
-	lea.l	B_637d4,a0
-	movem.l	(a7)+,d0-d1/d7
-	rts
+	ror.l	#4,d0
+	dbra	d7,.Loop
+	lea.l	Output_string,a0
+	movem.l	(sp)+,d0/d1/d7
+	rts	
 Dec_convert:
 	movem.l	d0-d3/d7/a1,-(a7)
 	cmpi.w	#$b,d7
@@ -34856,7 +35209,7 @@ Dec_convert:
 	jsr	DI_Error
 	bra.w	T_1d79c
 T_1d708:
-	lea.l	B_637d4,a0
+	lea.l	Output_string,a0
 	move.l	#$20202020,(a0)
 	move.l	#$20202020,$4(a0)
 	move.l	#$20202020,$8(a0)
@@ -34911,7 +35264,7 @@ T_1d78a:
 	move.b	#$20,(a0)+
 	move.b	#$20,(a0)+
 	move.b	#$0,(a0)
-	lea.l	B_637d4,a0
+	lea.l	Output_string,a0
 T_1d79c:
 	movem.l	(a7)+,d0-d3/d7/a1
 	rts
@@ -34928,22 +35281,23 @@ Init_screen:
 	bsr.w	Set_screen
 	movem.l	(sp)+,d0/d1
 	rts	
+; ---- Copy_screen (original source: NUCLEUS/SCREEN.ASM)
 Copy_screen:
-	movem.l	d0-d7/a0-a6,-(a7)
+	movem.l	d0-d7/a0-a6,-(sp)
 	jsr	Mouse_off
 	movea.l	Screen_base,a0
 	movea.l	Off_screen,a1
-	move.w	#$299,d7
-T_1d7ec:
+	move.w	#666-1,d7
+.Loop:
 	movem.l	(a0)+,d0-d6/a2-a6
 	movem.l	d0-d6/a2-a6,(a1)
-	lea.l	$30(a1),a1
-	dbra	d7,T_1d7ec
+	lea.l	48(a1),a1
+	dbra	d7,.Loop
 	movem.l	(a0),d0-d6/a2
 	movem.l	d0-d6/a2,(a1)
 	jsr	Mouse_on
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
 Set_screen:
 	movem.l	d0/a0,-(a7)
 	tst.b	d0
@@ -35052,47 +35406,48 @@ IG_Set_cursor:
 	move.w	d0,B_73702
 	move.w	d1,Print_Y
 	rts
+; ---- IG_Print (original source: NUCLEUS/TEXTPUT.ASM)
 IG_Print:
-	movem.l	d0/a0-a1,-(a7)
-T_1d96e:
-	moveq	#0,d0
+	movem.l	d0/a0/a1,-(sp)
+.Again:
+	moveq.l	#0,d0
 	move.b	(a0)+,d0
-	beq.b	T_1d9cc
-	cmpi.b	#$d,d0
-	bne.b	T_1d982
+	beq.s	.Exit
+	cmpi.b	#13,d0
+	bne.s	.Skip1
 	jsr	IG_Carriage_return
-	bra.b	T_1d96e
-T_1d982:
-	cmpi.b	#$1,d0
-	bne.b	T_1d994
+	bra.s	.Again
+.Skip1:
+	cmpi.b	#1,d0
+	bne.s	.Skip2
 	move.b	(a0)+,d0
 	ext.w	d0
 	jsr	IG_Set_ink
-	bra.b	T_1d96e
-T_1d994:
-	cmpi.b	#$2,d0
-	bne.b	T_1d9a6
+	bra.s	.Again
+.Skip2:
+	cmpi.b	#2,d0
+	bne.s	.Skip3
 	move.b	(a0)+,d0
 	ext.w	d0
 	jsr	IG_Set_paper
-	bra.b	T_1d96e
-T_1d9a6:
-	cmpi.b	#$e,d0
-	bne.b	T_1d9b4
+	bra.s	.Again
+.Skip3:
+	cmpi.b	#14,d0
+	bne.s	.Skip4
 	jsr	IG_Backspace
-	bra.b	T_1d96e
-T_1d9b4:
-	cmpi.b	#$7e,d0
-	bne.b	T_1d9c2
+	bra.s	.Again
+.Skip4:
+	cmpi.b	#$7e,d0	; CHANGE: was ".Skip4: cmpi.b #"~",d0"
+	bne.s	.Skip5
 	not.b	Rune_flag
-	bra.b	T_1d96e
-T_1d9c2:
+	bra.s	.Again
+.Skip5:
 	movea.l	Pchar_ptr,a1
 	jsr	(a1)
-	bra.b	T_1d96e
-T_1d9cc:
-	movem.l	(a7)+,d0/a0-a1
-	rts
+	bra.s	.Again
+.Exit:
+	movem.l	(sp)+,d0/a0/a1
+	rts	
 IG_Pchar_TRANS:
 	movem.l	d0-d7/a0-a2,-(a7)
 	lea.l	D_526ce,a0
@@ -35503,42 +35858,42 @@ Cut_table_3D:
 	dc.b	$01,$03,$ff,$03,$00,$03,$01,$02,$ff,$02,$00,$02,$01,$01,$ff,$01
 	dc.b	$00,$01,$01,$00,$ff,$00,$00,$00,$fd,$01,$fd,$ff,$fd,$00,$fe,$01
 	dc.b	$fe,$ff,$fe,$00,$ff,$01,$ff,$ff,$ff,$00,$00,$01,$00,$ff,$00,$00
-D_1e170:
+M3_CIL:
 	dc.b	$2c,$27,$2b,$2a,$07,$29,$10,$28,$31,$00
 D_1e17a:
-	dc.l	T_03718
-	dc.l	T_03798
+	dc.l	D3_turnleft
+	dc.l	D3_right
 	dc.l	T_0373a
 	dc.l	T_037f0
 	dc.l	T_06716
 	dc.l	T_03848
-	dc.l	T_0375c
+	dc.l	D3_fullturnleft
 	dc.l	T_038a0
 	dc.l	T_0377a
-D_1e19e:
+C2_CIL:
 	dc.b	$2e,$01,$2d,$04,$07,$03,$30,$02,$2f,$00
 D_1e1a8:
-	dc.l	T_04766
-	dc.l	T_047ee
-	dc.l	T_04656
-	dc.l	T_0491a
+	dc.l	W2_upleft
+	dc.l	W2_up
+	dc.l	W2_upright
+	dc.l	W2_left
 	dc.l	T_06716
-	dc.l	T_048b6
-	dc.l	T_046de
-	dc.l	T_04852
-	dc.l	T_045ce
-D_1e1cc:
+	dc.l	W2_right
+	dc.l	W2_downleft
+	dc.l	W2_down
+	dc.l	W2_downright
+W2_CIL:
 	dc.b	$2e,$01,$2d,$04,$07,$03,$30,$02,$2f,$00
 D_1e1d6:
-	dc.l	T_04f68
-	dc.l	T_04fc8
-	dc.l	T_04ea8
-	dc.l	T_050b2
+	dc.l	C2_upleft
+	dc.l	C2_up
+	dc.l	C2_upright
+	dc.l	C2_left
 	dc.l	T_06716
-	dc.l	T_05064
-	dc.l	T_04f08
-	dc.l	T_05016
-	dc.l	T_04e48
+	dc.l	C2_right
+	dc.l	C2_downleft
+	dc.l	C2_down
+	dc.l	C2_downright
 D_1e1fa:
 	dc.b	$ff,$00
 Spiral_table:
@@ -35574,7 +35929,7 @@ D_1e3b4:
 	dc.b	$00,$20,$00,$44,$01,$00,$00,$30,$00,$0f,$00,$02
 Second_CIL:
 	dc.b	$0b,$0a,$11,$15,$0c,$13,$39,$26,$3c,$00
-	dc.l	T_0dd06
+	dc.l	Eye_spy
 	dc.l	Ear_action
 	dc.l	T_0df00
 	dc.l	Change_travelmode
@@ -35613,9 +35968,9 @@ PA_sp:
 	dc.l	PA_Stack
 D_1e456:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-D_1e45e:
+Space:
 	dc.b	$20,$00
-D_1e460:
+Return:
 	dc.b	$0d,$00,$20,$ff,$ff,$ff,$ff,$ff,$ff,$27,$ff,$ff,$ff,$ff,$ff,$ff
 	dc.b	$ff,$ff,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$ff,$ff,$ff,$ff
 	dc.b	$ff,$ff,$ff,$41,$42,$43,$44,$45,$46,$47,$48,$49,$4a,$4b,$4c,$4d
@@ -37666,7 +38021,7 @@ Door_CIL:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_08332
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-D_26034:
+ClosedChest_CIL:
 	dc.b	$0f,$20,$1e,$0d,$a3,$a1,$0e,$92,$b2,$00
 	dc.l	T_0809a
 	dc.l	T_08bf6
@@ -37675,7 +38030,7 @@ D_26034:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_08332
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-D_26062:
+OpenedChest_CIL:
 	dc.b	$8f,$a0,$1e,$8d,$23,$21,$8e,$12,$32,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
 	dc.l	T_08aba
@@ -37724,8 +38079,8 @@ Guild_CIL:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
-D_2615c:
+	dc.l	Transfer_gold_PLACES
+MOBJC_CIL:
 	dc.b	$36,$38,$1e,$37,$23,$21,$1f,$32,$12,$00
 	dc.l	T_0bdb4
 	dc.b	$00,$00,$00,$00
@@ -37735,17 +38090,17 @@ D_2615c:
 	dc.l	T_0c22c
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 MFOOD_CIL:
 	dc.b	$38,$38,$1e,$40,$33,$14,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
 	dc.l	Exit_PLACES
 	dc.l	T_0c9f2
 	dc.l	T_0c9d4
-	dc.l	T_0c8be
+	dc.l	MFOOD_Transfer_food
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 MHORSE_CIL:
 	dc.b	$38,$38,$1e,$05,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
@@ -37754,7 +38109,7 @@ MHORSE_CIL:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 D_261e6:
 	dc.b	$38,$38,$1e,$06,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
@@ -37763,7 +38118,7 @@ D_261e6:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 D_26214:
 	dc.b	$38,$38,$1e,$16,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
@@ -37772,7 +38127,7 @@ D_26214:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 Healer_CIL:
 	dc.b	$38,$38,$1e,$0c,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
@@ -37781,7 +38136,7 @@ Healer_CIL:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 MMAGIC_CIL:
 	dc.b	$36,$38,$1e,$38,$23,$21,$1f,$32,$12,$00
 	dc.l	T_0bdb4
@@ -37792,7 +38147,7 @@ MMAGIC_CIL:
 	dc.l	T_0c22c
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 Sage_CIL:
 	dc.b	$09,$38,$1e,$1d,$38,$38,$1f,$32,$12,$00
 	dc.l	Show_body_items
@@ -37802,7 +38157,7 @@ Sage_CIL:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
+	dc.l	Transfer_gold_PLACES
 Inn_CIL:
 	dc.b	$38,$38,$1e,$13,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
@@ -37811,8 +38166,8 @@ Inn_CIL:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Pool_gold_PLACES
 	dc.l	T_0ad52
-	dc.l	T_0ad70
-D_262fa:
+	dc.l	Transfer_gold_PLACES
+XLay3_target_hbl:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42
@@ -37856,15 +38211,15 @@ Dialogue_CIL:
 	dc.l	T_0e6e4
 	dc.l	T_0ec80
 	dc.l	T_0eace
-	dc.l	T_0e876
-	dc.l	T_0ebc4
+	dc.l	DIA_Give_gold
+	dc.l	DIA_Give_food
 D_26442:
 	dc.b	$00,$10,$00,$bf,$00,$31,$00,$bf
 Lay6_PlusMes:
 	dc.b	$00,$d0,$01,$2f,$00,$31,$00,$80
 Lay6_PA:
 	dc.b	$00,$d0,$00,$31,$00,$60,$00,$50,$00,$0f,$00,$02
-D_2645e:
+Lay8_PlusMes:
 	dc.b	$00,$10,$00,$bf,$00,$31,$00,$80
 Lay8_PA:
 	dc.b	$00,$10,$00,$31,$00,$b0,$00,$4d,$00,$0f,$00,$02
@@ -37888,7 +38243,7 @@ D_264a0:
 Lay6_target:
 	dc.b	$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31,$02,$00
 	dc.b	$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10,$07,$65
-D_264ee:
+Camp_CIL:
 	dc.b	$0c,$38,$1e,$3a,$38,$38,$07,$38,$38,$00
 	dc.l	T_13772
 	dc.b	$00,$00,$00,$00
@@ -38176,13 +38531,13 @@ Map_Kev:
 	dc.b	$00,$ff,$00,$00,$00,$69,$00,$00
 	dc.l	T_005ae
 	dc.b	$00,$ff,$00,$00,$00,$4b,$00,$00
-	dc.l	T_0491a
+	dc.l	W2_left
 	dc.b	$00,$ff,$00,$00,$00,$4d,$00,$00
-	dc.l	T_048b6
+	dc.l	W2_right
 	dc.b	$00,$ff,$00,$00,$00,$48,$00,$00
-	dc.l	T_047ee
+	dc.l	W2_up
 	dc.b	$00,$ff,$00,$00,$00,$50,$00,$00
-	dc.l	T_04852
+	dc.l	W2_down
 	dc.b	$00,$ff,$00,$00,$00,$72,$00,$00
 	dc.l	Switch_control_icons
 	dc.b	$00,$ff,$00,$00,$00,$02,$00,$00
@@ -38292,13 +38647,13 @@ D_26d40:
 	dc.b	$00,$ff,$00,$00,$00,$69,$00,$00
 	dc.l	T_005ae
 	dc.b	$00,$ff,$00,$00,$00,$4b,$00,$00
-	dc.l	T_050b2
+	dc.l	C2_left
 	dc.b	$00,$ff,$00,$00,$00,$4d,$00,$00
-	dc.l	T_05064
+	dc.l	C2_right
 	dc.b	$00,$ff,$00,$00,$00,$48,$00,$00
-	dc.l	T_04fc8
+	dc.l	C2_up
 	dc.b	$00,$ff,$00,$00,$00,$50,$00,$00
-	dc.l	T_05016
+	dc.l	C2_down
 	dc.b	$00,$ff,$00,$00,$00,$72,$00,$00
 	dc.l	Switch_control_icons
 	dc.b	$00,$ff,$00,$00,$00,$02,$00,$00
@@ -38381,7 +38736,7 @@ D3map_Mod:
 	dc.l	Map_Mev
 	dc.l	D_26fda
 	dc.l	D3_ModInit
-	dc.l	D3_ModExit
+	dc.l	T_05358
 	dc.l	D3_DisInit
 	dc.l	T_053c2
 	dc.l	D3map_Mod_ID
@@ -38412,11 +38767,11 @@ D_26fda:
 	dc.b	$00,$ff,$00,$00,$00,$4d,$00,$00
 	dc.l	T_03848
 	dc.b	$00,$ff,$00,$00,$00,$48,$00,$00
-	dc.l	T_03798
+	dc.l	D3_right
 	dc.b	$00,$ff,$00,$00,$00,$50,$00,$00
 	dc.l	T_038a0
 	dc.b	$00,$ff,$00,$00,$00,$52,$00,$00
-	dc.l	T_03718
+	dc.l	D3_turnleft
 	dc.b	$00,$ff,$00,$00,$00,$47,$00,$00
 	dc.l	T_0373a
 	dc.b	$00,$ff,$00,$00,$00,$72,$00,$00
@@ -38501,7 +38856,7 @@ C3map_Mod:
 	dc.l	Map_Mev
 	dc.l	D_26fda
 	dc.l	C3_ModInit
-	dc.l	C3_ModExit
+	dc.l	T_05604
 	dc.l	C3_DisInit
 	dc.l	T_0566e
 	dc.l	C3map_Mod_ID
@@ -38521,7 +38876,7 @@ Eye2D_Mod_ID:
 	dc.b	$32,$44,$20,$45,$79,$65,$20,$61,$63,$74,$69,$6f,$6e,$2e,$00,$00
 Eye2D_Mod_Kev:
 	dc.b	$00,$ff,$00,$00,$00,$39,$00,$00
-	dc.l	T_0dda8
+	dc.l	Eye_exit
 	dc.b	$00,$ff,$00,$00,$00,$01,$00,$00
 	dc.l	T_01038
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
@@ -38571,9 +38926,9 @@ Eye2D_Mod_Kev:
 	dc.b	$00,$00,$00,$00
 Eye2D_Mod_Mev:
 	dc.b	$0c,$00,$00,$00,$08,$00,$00,$00
-	dc.l	T_0dd66
+	dc.l	Eye_clicked
 	dc.b	$0c,$00,$00,$00,$04,$00,$00,$00
-	dc.l	T_0dda8
+	dc.l	Eye_exit
 	dc.b	$00,$00,$00,$00
 Pic80_Mod:
 	dc.l	Basic_DisUpd
@@ -38770,9 +39125,9 @@ Inv2_Mod:
 	dc.l	Inv2_Mod_ScrQ
 	dc.l	Inv2_Mod_Mev
 	dc.l	Inv2_Mod_Kev
-	dc.l	Inv2_DisInit
+	dc.l	T_10f7a
 	dc.l	T_10f96
-	dc.l	T_10fac
+	dc.l	Inv2_DisInit
 	dc.l	Inv2_DisExit
 	dc.l	Inv2_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -38787,7 +39142,7 @@ Inv2_Mod_ScrQ:
 	dc.l	T_1186e
 	dc.l	Update_CIL
 	dc.l	T_11244
-	dc.l	T_1154a
+	dc.l	Update_character_info
 	dc.l	T_06752
 	dc.b	$00,$00,$00,$00
 Inv2_Mod_Mev:
@@ -38893,7 +39248,7 @@ D_27a50:
 	dc.l	T_11812
 	dc.l	T_1186e
 	dc.l	T_06752
-	dc.l	T_1154a
+	dc.l	Update_character_info
 	dc.b	$00,$00,$00,$00
 DropItem_Mod:
 	dc.l	Inv2_DisUpd
@@ -39073,9 +39428,9 @@ UseItem_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$03,$00
 	dc.l	Show_object_name
 	dc.b	$0c,$ff,$ff,$00,$08,$02,$02,$00
-	dc.l	T_11dc8
+	dc.l	Use_body_item
 	dc.b	$0c,$ff,$ff,$00,$08,$02,$03,$00
-	dc.l	T_11db8
+	dc.l	Use_backpack_item
 	dc.b	$0f,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Erase_object_name
 	dc.b	$0c,$00,$00,$00,$04,$00,$00,$00
@@ -39209,7 +39564,7 @@ ViewItem_Mod_Kev:
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
 	dc.l	T_01086
 	dc.b	$00,$00,$00,$00
-ItemView1_Mod:
+D_28160:
 	dc.l	Basic_DisUpd
 	dc.l	Basic_VblQ
 	dc.l	Basic_ScrQ
@@ -39406,7 +39761,7 @@ TransFood_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	D_285c4
 	dc.l	ItemW_Kev
-	dc.l	TransFood_DisInit
+	dc.l	T_12ed8
 	dc.l	ItemW_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TransFood_Mod_ID
@@ -39694,7 +40049,7 @@ OpenedChest_Mod:
 	dc.l	OpenedChest_Mod_ScrQ
 	dc.l	OpenedChest_Mod_Mev
 	dc.l	Chest_Kev
-	dc.l	OpenedChest_ModInit
+	dc.l	T_08cd2
 	dc.l	OpenedChest_ModExit
 	dc.l	OpenedChest_DisInit
 	dc.l	Fadeout_lay3
@@ -39747,7 +40102,7 @@ UseItemChest_Mod_ScrQ:
 	dc.b	$00,$00,$00,$00
 UseItemChest_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
-	dc.l	T_08c00
+	dc.l	UseItemChest_objselect
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
 	dc.l	Pop_Module
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
@@ -39761,7 +40116,7 @@ TIChest_Mod:
 	dc.l	TIChest_Mod_ScrQ
 	dc.l	TIChest_Mod_Mev
 	dc.l	Wait_Kev
-	dc.l	TIChest_DisInit
+	dc.l	T_08f9e
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TIChest_Mod_ID
@@ -39781,7 +40136,7 @@ TIChest_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
 	dc.l	Show2_object_name
 	dc.b	$0c,$ff,$ff,$00,$08,$02,$02,$00
-	dc.l	T_08fe8
+	dc.l	Do_TIChest
 	dc.b	$0f,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Erase2_object_name
 	dc.b	$0c,$00,$00,$00,$04,$00,$00,$00
@@ -39797,7 +40152,7 @@ TransGoldCHEST_Mod:
 	dc.l	ItemW_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TransGoldCHEST_Mod_ID
-	dc.l	TGCHEST_Return
+	dc.l	TGPLACES_Return
 	dc.b	$00,$00
 TransGoldCHEST_Mod_ID:
 	dc.b	$4f,$70,$65,$6e,$65,$64,$20,$63,$68,$65,$73,$74,$20,$2d,$20,$47
@@ -39809,7 +40164,7 @@ RiddleM_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	RiddleM_Mod_Mev
 	dc.l	RiddleM_Mod_Kev
-	dc.l	RiddleM_ModInit
+	dc.l	T_09606
 	dc.l	RiddleM_ModExit
 	dc.l	RiddleM_DisInit
 	dc.l	RiddleM_DisExit
@@ -40073,7 +40428,7 @@ Guild_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	Guild_Mod_Mev
 	dc.l	Places_Kev
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	Guild_DisInit
 	dc.l	Fadeout_lay3
@@ -40084,7 +40439,7 @@ Guild_Mod_ID:
 	dc.b	$75,$69,$6c,$64,$2e,$00
 Guild_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
-	dc.l	T_0b2d0
+	dc.l	Guild_Member_left
 	dc.b	$01,$ff,$00,$00,$01,$01,$00,$00
 	dc.l	T_004ce
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
@@ -40174,7 +40529,7 @@ MerchOBJC_Mod:
 	dc.l	MerchOBJC_Mod_ScrQ
 	dc.l	MerchOBJC_Mod_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	MerchOBJC_DisInit
 	dc.l	Fadeout_lay3
@@ -40210,7 +40565,7 @@ MerchFOOD_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	Places_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	MerchFOOD_DisInit
 	dc.l	Fadeout_lay3
@@ -40225,7 +40580,7 @@ MerchHORSE_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	Places_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	MerchHORSE_DisInit
 	dc.l	Fadeout_lay3
@@ -40262,7 +40617,7 @@ Healer_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
 	dc.l	Do_control_icons
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
-	dc.l	T_0d69e
+	dc.l	Healer_Member_left
 	dc.b	$01,$ff,$00,$00,$01,$01,$00,$00
 	dc.l	T_004ce
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
@@ -40356,7 +40711,7 @@ Sage_Mod:
 	dc.l	Sage_Mod_ScrQ
 	dc.l	Sage_Mod_Mev
 	dc.l	D_29a36
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	Sage_DisInit
 	dc.l	Fadeout_lay3
@@ -40385,7 +40740,7 @@ Sage_Mod_Mev:
 	dc.b	$0f,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Erase2_object_name
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
-	dc.l	T_0d9b2
+	dc.l	Lore_item
 	dc.b	$00,$00,$00,$00
 D_29a36:
 	dc.b	$00,$ff,$00,$00,$00,$6d,$00,$00
@@ -40471,9 +40826,9 @@ MerchRAFT_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	Places_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
-	dc.l	MerchRAFT_DisInit
+	dc.l	MerchSHIP_DisInit
 	dc.l	Fadeout_lay3
 	dc.l	MerchRAFT_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -40486,9 +40841,9 @@ MerchSHIP_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	Places_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
-	dc.l	MerchSHIP_DisInit
+	dc.l	T_0cede
 	dc.l	Fadeout_lay3
 	dc.l	MerchSHIP_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -40501,7 +40856,7 @@ Inn_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	Places_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	Inn_DisInit
 	dc.l	Fadeout_lay3
@@ -40516,7 +40871,7 @@ MerchMAGIC_Mod:
 	dc.l	MerchMAGIC_Mod_ScrQ
 	dc.l	MerchMAGIC_Mod_Mev
 	dc.l	D_29178
-	dc.l	Places_ModInit
+	dc.l	T_0ab46
 	dc.l	Places_ModExit
 	dc.l	MerchMAGIC_DisInit
 	dc.l	Fadeout_lay3
@@ -40556,7 +40911,7 @@ TransGoldPLACES_Mod:
 	dc.l	ItemW_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TransGoldPLACES_Mod_ID
-	dc.l	TGPLACES_Return
+	dc.l	T_0add6
 	dc.b	$00,$00
 TransGoldPLACES_Mod_ID:
 	dc.b	$50,$6c,$61,$63,$65,$73,$20,$65,$76,$65,$6e,$74,$20,$2d,$20,$47
@@ -40610,7 +40965,7 @@ Mouth2D_Mod_ID:
 	dc.b	$00,$00
 Mouth2D_Mod_Kev:
 	dc.b	$00,$ff,$00,$00,$00,$39,$00,$00
-	dc.l	T_0dda8
+	dc.l	Eye_exit
 	dc.b	$00,$ff,$00,$00,$00,$01,$00,$00
 	dc.l	T_01038
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
@@ -40660,9 +41015,9 @@ Mouth2D_Mod_Kev:
 	dc.b	$00,$00,$00,$00
 Mouth2D_Mod_Mev:
 	dc.b	$0c,$00,$00,$00,$08,$00,$00,$00
-	dc.l	T_0df46
+	dc.l	Mouth_clicked
 	dc.b	$0c,$00,$00,$00,$04,$00,$00,$00
-	dc.l	T_0dda8
+	dc.l	Eye_exit
 	dc.b	$00,$00,$00,$00
 SellItem_Mod:
 	dc.l	SellItem_DisUpd
@@ -40748,7 +41103,7 @@ BuyItem_Mod:
 	dc.l	BuyItem_Mod_Mev
 	dc.l	Wait_Kev
 	dc.l	BuyItem_DisInit
-	dc.l	BuyItem_DisExit
+	dc.l	T_0be3e
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	BuyItem_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -40926,7 +41281,7 @@ BuyHORSEReq_Mod:
 	dc.l	BuyHORSEReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	BuyHORSEReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	BuyHORSEReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -40946,7 +41301,7 @@ BuyRAFTReq_Mod:
 	dc.l	BuyRAFTReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	BuyRAFTReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	BuyRAFTReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -40955,7 +41310,7 @@ BuyRAFTReq_Mod_ID:
 	dc.b	$42,$75,$79,$20,$72,$65,$71,$75,$65,$73,$74,$65,$72,$2e,$00,$00
 BuyRAFTReq_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
-	dc.l	BuyRAFTYes
+	dc.l	BuySHIPYes
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
 	dc.l	Pop_Module
 	dc.b	$00,$00,$00,$00
@@ -40966,7 +41321,7 @@ BuySHIPReq_Mod:
 	dc.l	BuySHIPReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	BuySHIPReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	BuySHIPReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -40975,7 +41330,7 @@ BuySHIPReq_Mod_ID:
 	dc.b	$42,$75,$79,$20,$72,$65,$71,$75,$65,$73,$74,$65,$72,$2e,$00,$00
 BuySHIPReq_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
-	dc.l	BuySHIPYes
+	dc.l	T_0cf94
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
 	dc.l	Pop_Module
 	dc.b	$00,$00,$00,$00
@@ -40986,7 +41341,7 @@ HealCondReq_Mod:
 	dc.l	HealCondReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	HealCondReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	HealCondReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -41014,7 +41369,7 @@ RemCurseReq_Mod:
 	dc.l	RemCurseReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	RemCurseReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	RemCurseReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -41031,7 +41386,7 @@ RemCurseReq_Mod_ScrQ:
 	dc.b	$00,$00,$00,$00
 RemCurseReq_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
-	dc.l	T_0d42a
+	dc.l	RemCurseYes
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
 	dc.l	Pop_Module
 	dc.b	$00,$00,$00,$00
@@ -41053,7 +41408,7 @@ RemCurse_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Display_quantities
 	dc.l	T_11244
-	dc.l	T_1154a
+	dc.l	Update_character_info
 	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -41162,7 +41517,7 @@ LoreItemReq_Mod:
 	dc.l	LoreItemReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	LoreItemReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	LoreItemReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -41182,7 +41537,7 @@ GuestroomReq_Mod:
 	dc.l	GuestroomReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	GuestroomReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	GuestroomReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -41445,7 +41800,7 @@ TIDIA_Mod:
 	dc.l	TIDIA_Mod_ScrQ
 	dc.l	TIDIA_Mod_Mev
 	dc.l	TIDIA_Mod_Kev
-	dc.l	TIDIA_DisInit
+	dc.l	T_0e93c
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TIDIA_Mod_ID
@@ -41465,7 +41820,7 @@ TIDIA_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
 	dc.l	Show2_object_name
 	dc.b	$0c,$ff,$ff,$00,$08,$02,$02,$00
-	dc.l	T_0e978
+	dc.l	Do_TIDIA
 	dc.b	$0f,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Erase2_object_name
 	dc.b	$0c,$00,$00,$00,$04,$00,$00,$00
@@ -41610,7 +41965,7 @@ GiveItem_Mod:
 	dc.l	GiveItem_Mod_ScrQ
 	dc.l	GiveItem_Mod_Mev
 	dc.l	GiveItem_Mod_Kev
-	dc.l	GiveItem_DisInit
+	dc.l	T_0eae2
 	dc.l	ShowItem_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	GiveItem_Mod_ID
@@ -41708,11 +42063,11 @@ DIATransFood_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	ItemW_Mev
 	dc.l	ItemW_Kev
-	dc.l	TransFood_DisInit
+	dc.l	T_12ed8
 	dc.l	ItemW_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	DIATransFood_Mod_ID
-	dc.l	DIATF_Return
+	dc.l	T_0ec16
 	dc.b	$00,$00
 DIATransFood_Mod_ID:
 	dc.b	$44,$69,$61,$6c,$6f,$67,$75,$65,$20,$2d,$20,$47,$69,$76,$65,$20
@@ -41723,7 +42078,7 @@ DIADropItem_Mod:
 	dc.l	DIADropItem_Mod_ScrQ
 	dc.l	DIADropItem_Mod_Mev
 	dc.l	DIADropItem_Mod_Kev
-	dc.l	DIADropItem_DisInit
+	dc.l	TIDIA_DisInit
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	DIADropItem_Mod_ID
@@ -42029,7 +42384,7 @@ LearnSpell_Mod:
 	dc.l	LearnSpell_Mod_ScrQ
 	dc.l	LearnSpell_Mod_Mev
 	dc.l	LearnSpell_Mod_Kev
-	dc.l	LearnSpell_DisInit
+	dc.l	T_0fe6e
 	dc.l	LearnSpell_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	LearnSpell_Mod_ID
@@ -42217,7 +42572,7 @@ RemCurse2_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Display_quantities
 	dc.l	T_11244
-	dc.l	T_1154a
+	dc.l	Update_character_info
 	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -42283,7 +42638,7 @@ HearTxtW_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	HearTxtW_Mod_Mev
 	dc.l	Wait_Kev
-	dc.l	HearTxtW_ModInit
+	dc.l	T_1056e
 	dc.l	TxtW_ModExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	HearTxtW_Mod_ID
@@ -42306,11 +42661,11 @@ TFMFOOD_Mod:
 	dc.l	Basic_ScrQ
 	dc.l	ItemW_Mev
 	dc.l	ItemW_Kev
-	dc.l	TransFood_DisInit
+	dc.l	T_12ed8
 	dc.l	ItemW_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TFMFOOD_Mod_ID
-	dc.l	T_0c924
+	dc.l	TFMFOOD_Return
 	dc.b	$00,$00
 TFMFOOD_Mod_ID:
 	dc.b	$46,$6f,$6f,$64,$20,$6d,$65,$72,$63,$68,$61,$6e,$74,$20,$2d,$20
@@ -42323,7 +42678,7 @@ BuyFoodReq_Mod:
 	dc.l	BuyFoodReq_Mod_Mev
 	dc.l	Basic_Kev
 	dc.l	BuyFoodReq_ModInit
-	dc.l	BuyTRANSReq_ModExit
+	dc.l	T_0d132
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	BuyFoodReq_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -42468,7 +42823,7 @@ Lore_Mod_ScrQ:
 	dc.l	T_11812
 	dc.l	T_1186e
 	dc.l	T_11244
-	dc.l	T_1154a
+	dc.l	Update_character_info
 	dc.l	T_06752
 	dc.b	$00,$00,$00,$00
 Lore_Mod_Mev:
@@ -42541,7 +42896,7 @@ Gunk_Mod:
 	dc.l	Gunk_Mod_ScrQ
 	dc.l	Gunk_Mod_Mev
 	dc.l	Gunk_Mod_Kev
-	dc.l	Gunk_DisInit
+	dc.l	T_14dec
 	dc.l	RemCurse2_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Gunk_Mod_ID
@@ -42554,7 +42909,7 @@ Gunk_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Display_quantities
 	dc.l	T_11244
-	dc.l	T_1154a
+	dc.l	Update_character_info
 	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -42735,7 +43090,7 @@ ViewItemMOBJC_Mod:
 	dc.l	ViewItemMOBJC_Mod_Mev
 	dc.l	Wait_Kev
 	dc.l	ViewItemMOBJC_DisInit
-	dc.l	BuyItem_DisExit
+	dc.l	T_0be3e
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	ViewItemMOBJC_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$11
@@ -43207,11 +43562,11 @@ D_2d4a0:
 	dc.l	Basic_ScrQ
 	dc.l	ItemW_Mev
 	dc.l	ItemW_Kev
-	dc.l	TransFood_DisInit
+	dc.l	T_12ed8
 	dc.l	ItemW_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	D_2d4ce
-	dc.l	TFMFOOD_Return
+	dc.l	T_19f36
 	dc.b	$00,$00
 D_2d4ce:
 	dc.b	$41,$70,$72,$65,$73,$20,$43,$6f,$6d,$62,$61,$74,$20,$2d,$20,$46
@@ -43485,7 +43840,7 @@ Gold_txt:
 	dc.b	$47,$4f,$4c,$44,$00
 Food_txt:
 	dc.b	$52,$41,$54,$49,$4f,$4e,$53,$00
-D_2dae8:
+Goldfood_txt:
 	dc.b	$47,$3a,$30,$31,$32,$33,$34,$20,$52,$3a,$30,$31,$32,$33,$00
 Male_name:
 	dc.b	$4d,$41,$4c,$45,$00
@@ -43530,21 +43885,21 @@ D_2dbbc:
 	dc.b	$20,$20,$20,$2f
 D_2dbc0:
 	dc.b	$20,$20,$20,$00
-D_2dbc4:
+PP_txt:
 	dc.b	$53,$50,$20,$3a,$20
 D_2dbc9:
 	dc.b	$20,$20,$20,$2f
 D_2dbcd:
 	dc.b	$20,$20,$20,$00
-D_2dbd1:
+SLP_txt:
 	dc.b	$53,$4c,$50,$3a,$20
 D_2dbd6:
 	dc.b	$20,$20,$20,$00
-D_2dbda:
+ProtDam_txt:
 	dc.b	$3a,$20,$20,$20,$00
-D_2dbdf:
+Skill_txt:
 	dc.b	$20,$20,$25,$2f,$20,$20,$25,$00
-D_2dbe7:
+Attr_txt:
 	dc.b	$20,$20,$20,$2f,$20,$20,$20,$00
 D_2dbef:
 	dc.b	$01,$00,$02,$02,$20,$20,$20,$20,$4b,$47,$2f,$20,$20,$20,$20,$4b
@@ -43633,7 +43988,7 @@ D_2ddaa:
 	dc.b	$00,$b0,$00,$96
 Load_area:
 	dc.b	$00,$00,$01,$3f,$00,$01,$00,$23
-D_2de36:
+RemCurse_MA:
 	dc.b	$00,$10,$00,$5f,$00,$51,$00,$a0
 Minimap_CIL:
 	dc.b	$2e,$01,$2d,$04,$1e,$03,$30,$02,$2f,$00
@@ -43641,7 +43996,7 @@ Minimap_CIL:
 	dc.l	Minimap_up
 	dc.l	T_14b7e
 	dc.l	Minimap_left
-	dc.l	T_14ae2
+	dc.l	Minimap_exit
 	dc.l	Minimap_right
 	dc.l	T_14b86
 	dc.l	T_14b52
@@ -44260,11 +44615,11 @@ D_2f26a:
 	dc.b	$01,$50,$41,$52,$54,$59,$44,$41,$54,$2e,$53,$41,$56,$00
 Chard_filename:
 	dc.b	$03,$43,$48,$41,$52,$44,$41,$54,$41,$2e,$41,$4d,$42,$00
-D_2f286:
+Lay1_c1:
 	dc.b	$00,$10,$00,$bf,$00,$31,$00,$c0,$02,$00
 	dc.l	Control_area
 	dc.b	$00,$00,$00,$00
-D_2f298:
+Lay5_c1:
 	dc.b	$00,$20,$00,$af,$00,$31,$00,$c0,$02,$00
 	dc.l	Control_area
 	dc.b	$00,$00,$00,$00
@@ -51255,9 +51610,8 @@ D_4738e:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$01,$00,$0a,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-Class_dat:
-	dc.b	$63,$63,$63,$63,$63,$63,$63,$63,$63,$63,$05,$f5,$e0,$ff,$00,$00
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$63,$63,$63,$63,$63,$63
+	dc.b	$63,$63,$63,$63,$05,$f5,$e0,$ff,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -51279,9 +51633,9 @@ Class_dat:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.b	$00,$00,$00,$01,$03,$e7,$03,$e7,$03,$e7,$00,$00,$00,$00,$00,$00
-	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$fe,$00
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$03,$e7
+	dc.b	$03,$e7,$03,$e7,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00,$fe,$00
 D_48472:
 	dc.b	$00,$13,$00,$14,$00,$15,$00,$16,$00,$17,$00,$18,$00,$19,$00,$1a
 	dc.b	$00,$1b,$00,$08,$00,$09
@@ -54113,7 +54467,7 @@ D_52b18:
 
 Void:
 	ds.b	1024
-B_52f3e:
+New_map:
 	ds.b	2
 B_52f40:
 	ds.b	1
@@ -54165,9 +54519,9 @@ B_57914:
 	ds.b	2
 Nr_labblocks:
 	ds.b	2
-B_57918:
+INB_ptr:
 	ds.b	4
-B_5791c:
+OUH_ptr:
 	ds.b	4
 Lab_IC_ptr:
 	ds.b	4
@@ -54217,7 +54571,7 @@ VChar_data:
 	ds.b	480
 CombatReq:
 	ds.b	1
-B_57c4b:
+Pause_Upd:
 	ds.b	1
 B_57c4c:
 	ds.b	2
@@ -54259,11 +54613,11 @@ B_57c68:
 	ds.b	2
 Mouse_direction:
 	ds.b	2
-B_57c6c:
+Mousemove_ptr:
 	ds.b	4
 First_CIL_ptr:
 	ds.b	4
-B_57c74:
+Pal_buffer:
 	ds.b	32
 Width_of_map:
 	ds.b	2
@@ -54335,7 +54689,7 @@ B_57dce:
 	ds.b	640
 Line_buffer:
 	ds.b	256
-B_5814e:
+Number_buffer:
 	ds.b	64
 PA_Stack:
 	ds.b	64
@@ -54384,7 +54738,7 @@ Door_opened:
 	ds.b	1
 Doorexit_flag:
 	ds.b	1
-B_58222:
+Gold_in_chest_flag:
 	ds.b	2
 Current_chest_gold:
 	ds.b	2
@@ -54472,7 +54826,7 @@ Current_healer_victim:
 	ds.b	4
 Healer_victim_nr:
 	ds.b	2
-B_58494:
+Eye_flag:
 	ds.b	1
 Joined:
 	ds.b	1
@@ -54626,7 +54980,7 @@ Victim_nr:
 	ds.b	2
 Victim_ptr:
 	ds.b	4
-B_5883a:
+Added_LP:
 	ds.b	2
 Condition_nr:
 	ds.b	2
@@ -54820,7 +55174,7 @@ Nr_of_modifications:
 	ds.b	2
 Modifications_ptr:
 	ds.b	1028
-B_592dc:
+First:
 	ds.b	1
 B_592dd:
 	ds.b	1
@@ -54894,7 +55248,7 @@ B_59344:
 	ds.b	2
 Spell_6_data:
 	ds.b	2
-B_59348:
+Year:
 	ds.b	2
 Map_nr:
 	ds.b	2
@@ -54902,7 +55256,7 @@ Member_1_nr:
 	ds.b	2
 B_5934e:
 	ds.b	10
-B_59358:
+Nr_travelled_days:
 	ds.b	2
 Time_data_year:
 	ds.b	2
@@ -55080,7 +55434,7 @@ Memlist_end:
 	ds.b	4
 Memory_list:
 	ds.b	24000
-B_637d4:
+Output_string:
 	ds.b	34
 On_screen:
 	ds.b	4

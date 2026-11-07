@@ -17,8 +17,8 @@ reconstructed from the disassembly, using the names the original code uses where
 | Step | State |
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
-| 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1240 names for 1222 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 285 routines of the original source (`merged/`) |
+| 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 492 routines of the original source, 79 of them with the changes of the shipped program (`merged/`, `CHANGES.md`) |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | open |
 
 ## The program file
@@ -107,8 +107,12 @@ and the constants of the other modules).
 `tools/merge.py` checks the routines (`origsrc.py` reads the original source for it and for `symmatch.py`):
 
 ```
-python merge.py <original src folder> <inner program> SYMBOLS.txt <vasm> merge.json
+python ambrdis.py <inner program> plain.s                          (also writes plain.s.code.tsv)
+python symmatch.py <original src folder> plain.s.code.tsv SYMBOLS.txt <inner program>
+python ambrdis.py <inner program> named.s SYMBOLS.txt              (also writes named.s.code.tsv)
+python merge.py <original src folder> <inner program> SYMBOLS.txt <vasm> merge.json plain.s.code.tsv named.s.code.tsv
 python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i
+python changes.py merged.s CHANGES.md
 ```
 
 * Each routine of the original is converted to vasm syntax (GFA directives, the macros of the original) and
@@ -117,11 +121,16 @@ python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.con
   their addresses. The routine which follows a confirmed routine in its file is tried at its end.
 * The assembler which built the shipped program optimized the code: `jsr`/`jmp` to a routine in reach became
   `bsr.w`/`bra.w`, and branches without a size became short branches where possible. The conversion does the same.
-* A routine is only taken if no label inside it is used from outside.
+* Routines which differ are aligned instruction by instruction with the program. Equal instructions keep the line of
+  the original source, the others are taken from the program with a comment: `; CHANGE: was "…"`,
+  `; CHANGE: added` or `; CHANGE: removed "…"`. The local labels of the original stay at their addresses, new
+  branch targets get local labels `.c_<address>`. The result must assemble to the same bytes as well.
+* Labels inside a taken routine which are used from outside are defined behind it, relative to its start
+  (`T_004e6 equ Member_left+24`).
 
-So far 294 routines assemble to the same bytes, 285 of them are taken (the others have labels which are used from
-outside). Most of the other routines differ because the shipped program is a later version than the source. These
-changes will be merged with comments in the next part of step 3.
+So far 525 routines assemble to the same bytes (372 unchanged, 153 with changes), 492 of them are taken (the others
+overlap with other routines). `CHANGES.md` lists the changes of the 79 routines which have changes. The other
+routines of the original source could not be found in the program yet or differ too much to be aligned.
 
 ## Known differences between the original source and the shipped program
 

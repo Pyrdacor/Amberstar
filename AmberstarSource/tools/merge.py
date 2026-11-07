@@ -227,3 +227,188 @@ with open(out_json + '.constants.i', 'w') as f:
     for nm in sorted(consts):
         if nm not in sym and re.fullmatch(r'[A-Za-z_]\w*', nm):
             f.write('%s\tequ\t%d\n' % (nm, consts[nm]))
+
+# ------------------------------------------------------------------ routines which differ: merged with the program
+# The instructions of the original routine are aligned with the instructions of the program. Equal instructions keep
+# the original line, the others take the instruction of the program with a comment.
+import difflib
+if len(sys.argv) > 7 and not only:
+    plain_tsv, named_tsv = sys.argv[6], sys.argv[7]
+    prog = []   # (addr, size, full, shape, refs, named text)
+    plain = [l.rstrip('\n').split('\t', 1) for l in open(plain_tsv, encoding='latin-1') if l.strip()]
+    named = [l.rstrip('\n').split('\t', 1) for l in open(named_tsv, encoding='latin-1') if l.strip()]
+    for (a, t), (_, nt) in zip(plain, named):
+        parts = t.split('\t', 1)
+        mn, ops = parts[0], parts[1] if len(parts) > 1 else ''
+        if mn.startswith('dc.'): full, shape, refs = 'dc', 'dc', []
+        else: full, shape, refs = norm_instr(mn, ops, 'd')
+        prog.append([int(a, 16), 0, full, shape, refs, nt])
+    for k in range(len(prog) - 1): prog[k][1] = prog[k + 1][0] - prog[k][0]
+    prog_index = {p[0]: k for k, p in enumerate(prog)}
+
+    def source_items(lines):
+        # (kind, text, normalized, source line) for labels and instructions; macros are expanded
+        items = []
+        for l in lines:
+            pl = parse_line(l)
+            if not pl: continue
+            label, mn, ops = pl
+            if label: items.append(('label', label, None, l))
+            if not mn: continue
+            ex = expand(mn, ops)
+            if ex is not None:
+                for emn, eops in ex:
+                    if eops == '*': eops = '.wait_loop'
+                    items.append(('ins', '%s\t%s' % (emn, eops), norm_instr(emn, eops, 'o'), l.strip()))
+                continue
+            up = mn.upper()
+            if up in DIRECTIVES or up.startswith('.') or not re.fullmatch(r'[A-Za-z]+(\.[bwlsBWLS])?', mn): continue
+            items.append(('ins', '%s\t%s' % (mn, ops), norm_instr(mn, ops, 'o'), l.strip()))
+        return items
+
+    def refs_equal(oref, pref, ptext=''):
+        for ro, rp in zip(oref, pref):
+            if (ro is None) != (rp is None): return False
+            if ro is None: continue
+            if ro[0] != 'name' or rp[0] != 'addr': return False
+            if ro[1].startswith('.'): continue   # local label (checked by the assembler)
+            if ro[1] in sym:
+                if sym[ro[1]] + ro[2] != rp[1]: return False
+            elif not re.search(r'\b%s\b' % re.escape(ro[1]), ptext):
+                return False   # the name of the program line is another one
+        return True
+
+    def comment_text(s):
+        return re.sub(r'\s+', ' ', s.split(';')[0]).strip()
+
+    refined, rcounts = {}, collections.Counter()
+    for nm, v in results.items():
+        if v['state'] != 'different': continue
+        rel, lines = routine_lines[nm]
+        addr = v['addr']
+        if addr not in prog_index: rcounts['no code'] += 1; continue
+        items = source_items(lines)
+        ins = [it for it in items if it[0] == 'ins']
+        if not ins: continue
+        start = prog_index[addr]
+        window = prog[start:start + len(ins) * 2 + 40]
+        sm = difflib.SequenceMatcher(None, [i[2][1] for i in ins], [p[3] for p in window], autojunk=False)
+        ops_list = sm.get_opcodes()
+        # the routine ends behind the program instruction which is aligned with the last original instruction
+        last = [op for op in ops_list if op[0] == 'equal']
+        if not last or last[-1][2] != len(ins) or last[0][1] != 0 or last[0][3] != 0:
+            rcounts['unaligned'] += 1; continue
+        end_k = last[-1][4]
+        end_addr = window[end_k - 1][0] + window[end_k - 1][1]
+        # program position of every original instruction (for the labels)
+        out, ins_pos = [], {}
+        lines_out = []
+        k_ins = 0
+        changes = 0
+        prog_lines = {}
+        for tag, i1, i2, j1, j2 in ops_list:
+            if j1 >= end_k and tag != 'delete': break
+            j2 = min(j2, end_k)
+            if tag == 'equal':
+                for d in range(i2 - i1):
+                    o, p = ins[i1 + d], window[j1 + d]
+                    ins_pos[i1 + d] = p[0]
+                    if refs_equal(o[2][2], p[4], p[5]) and o[2][1] == p[3] and (o[2][0] == p[2] or '?' in o[2][0]):
+                        lines_out.append((p[0], 'orig', o, p))
+                    else:
+                        lines_out.append((p[0], 'replace', o, p)); changes += 1
+            elif tag == 'replace':
+                n = max(i2 - i1, j2 - j1)
+                for d in range(n):
+                    o = ins[i1 + d] if i1 + d < i2 else None
+                    p = window[j1 + d] if j1 + d < j2 else None
+                    if p is None:
+                        lines_out.append((None, 'delete', o, None))
+                    else:
+                        if o is not None: ins_pos[i1 + d] = p[0]
+                        lines_out.append((p[0], 'replace' if o else 'insert', o, p))
+                    changes += 1
+            elif tag == 'delete':
+                for d in range(i2 - i1):
+                    lines_out.append((None, 'delete', ins[i1 + d], None)); changes += 1
+            elif tag == 'insert':
+                for d in range(j2 - j1):
+                    p = window[j1 + d]
+                    lines_out.append((p[0], 'insert', None, p)); changes += 1
+        # addresses of the original labels: the address of the next original instruction
+        label_at = collections.defaultdict(list)
+        pending = []
+        idx = 0
+        for it in items:
+            if it[0] == 'label':
+                pending.append(it[1])
+            else:
+                if pending:
+                    pos = ins_pos.get(idx)
+                    if pos is None:
+                        later = [ins_pos[x] for x in range(idx, len(ins)) if x in ins_pos]
+                        pos = later[0] if later else end_addr
+                    label_at[pos].extend(pending)
+                    pending = []
+                idx += 1
+        if pending: label_at[end_addr].extend(pending)
+        local_of = {a: [x for x in l if x.startswith('.')] for a, l in label_at.items()}
+        # program lines with branch targets inside the routine use local labels
+        new_locals = {}
+        def fix_targets(text):
+            def repl(m):
+                t = int(m.group(1), 16)
+                if addr <= t < end_addr:
+                    if local_of.get(t): return local_of[t][0]
+                    new_locals[t] = '.c_%05x' % t
+                    return new_locals[t]
+                return m.group(0)
+            return re.sub(r'\bT_([0-9a-f]{5})\b', repl, text)
+        body = []
+        emitted_labels = set()
+        def emit_labels(a):
+            for lab in label_at.get(a, []):
+                if lab not in emitted_labels:
+                    body.append(lab + ':'); emitted_labels.add(lab)
+        texts = []
+        for a, kind, o, p in lines_out:
+            if kind == 'orig':
+                txt = o[1]
+                mn = txt.split('\t')[0]
+                pm = p[5].split('\t')[0]
+                # sizes and jsr -> bsr.w of the program
+                if BRANCH.match(mn.lower().split('.')[0]) or mn.lower() in ('jsr', 'jmp'):
+                    if pm.split('.')[0] in ('bsr', 'bra') or BRANCH.match(pm.split('.')[0]):
+                        size = pm.split('.')[1] if '.' in pm else ''
+                        base = pm.split('.')[0]
+                        txt = '%s%s\t%s' % (base, '.' + ('s' if size == 'b' else size) if size else '', txt.split('\t', 1)[1])
+                texts.append((a, '\t' + txt))
+            elif kind == 'replace':
+                texts.append((a, '\t%s\t; CHANGE: was "%s"' % (fix_targets(p[5]), comment_text(o[3]))))
+            elif kind == 'insert':
+                texts.append((a, '\t%s\t; CHANGE: added' % fix_targets(p[5])))
+            elif kind == 'delete':
+                texts.append((None, '; CHANGE: removed "%s"' % comment_text(o[3])))
+        for a, t in texts:
+            if a is not None:
+                for lab in sorted(set(label_at.get(a, []))):
+                    if lab not in emitted_labels:
+                        body.append(lab + ':'); emitted_labels.add(lab)
+                if a in new_locals and new_locals[a] not in emitted_labels:
+                    body.append(new_locals[a] + ':'); emitted_labels.add(new_locals[a])
+            body.append(t)
+        body = [l.replace('.wait_loop', '*-8') for l in body]
+        # check
+        current_addr = addr
+        eq = equates_for(sym, nm)
+        tnames = set(re.findall(r'\b[TDB]_([0-9a-f]{5})\b', '\n'.join(body)))
+        eq += ['%s_%s\tequ\t$%s' % ('T' if int(x, 16) < tlen else 'D' if int(x, 16) < tlen + dlen else 'B', x, x) for x in tnames]
+        b, src, out = assemble(addr, body, eq)
+        if b is None:
+            rcounts['error'] += 1; v['refine_error'] = [x for x in out.splitlines() if 'error' in x][:2]; continue
+        if b != img[addr:addr + len(b)] or addr + len(b) != end_addr:
+            rcounts['different'] += 1; continue
+        v['state'] = 'same'; v['size'] = len(b); v['source'] = body; v['changes'] = changes
+        rcounts['merged'] += 1
+    print('refined', dict(rcounts))
+    json.dump(results, open(out_json, 'w'), indent=1)

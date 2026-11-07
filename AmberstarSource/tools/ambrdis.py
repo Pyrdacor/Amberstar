@@ -199,14 +199,7 @@ for a, i in code.items():
     for m in re.finditer(r'\$([0-9a-f]+)\(pc', i.op_str):
         add_ref(int(m.group(1), 16) + pc_fix(i), a)
 
-# routines of the original source replace the disassembly if no label inside them is used from outside
-for a in list(merge):
-    nm, size, src, f = merge[a]
-    if a + size > tlen or any(a < x < a + size for x in merge if x != a):
-        del merge[a]; continue
-    for t, srcs in refs_from.items():
-        if a < t < a + size and any(not (a <= s < a + size) for s in srcs):
-            del merge[a]; break
+
 
 def section_of(t):
     return 'T' if t < tlen else 'D' if t < tlen + dlen else 'B'
@@ -236,6 +229,17 @@ for start in set(inside.values()):
 # labels must not split relocated longwords
 for t in list(labels):
     if t in inside: del labels[t]
+
+# routines of the original source replace the disassembly; labels inside them which are used from outside are
+# defined relative to the start of the routine
+merge_inner = {}
+for a in list(merge):
+    nm, size, src, f = merge[a]
+    if a + size > tlen or any(a < x < a + size for x in merge if x != a):
+        del merge[a]; continue
+    merge_inner[a] = sorted(t for t, srcs in refs_from.items() if a < t < a + size and any(not (a <= s < a + size) for s in srcs))
+    merge_inner[a] += sorted(t for t in symbol_names if a < t < a + size and t not in merge_inner[a])
+    merge_inner[a] += sorted(t for t in set(inside.values()) if a < t < a + size and t not in merge_inner[a])
 def ref(t):
     if t in inside: return '%s+%d' % (name(inside[t]), t - inside[t])
     return name(t)
@@ -303,10 +307,17 @@ merged_count = 0
 while pos < tlen:
     if pos in merge:
         nm, size, src, f = merge[pos]
-        own = src[0].rstrip(':') if src and src[0].endswith(':') else None
+        own = nm
+        body_labels = {l[:-1] for l in src if re.fullmatch(r'[A-Za-z_]\w*:', l)}
         lines.append('; ---- %s (original source: %s)' % (nm, f))
-        lines.extend(l for l in label_lines(pos) if l.rstrip(':') != own)
-        lines.extend(src)
+        lines.extend(l for l in label_lines(pos) if l.rstrip(':') not in body_labels)
+        # address names of program lines refer to the current names
+        lines.extend(re.sub(r'\b[TDB]_([0-9a-f]{5})\b', lambda m: ref(int(m.group(1), 16)), l) for l in src)
+        own_name = own or nm
+        for t in merge_inner.get(pos, []):
+            for n in (symbol_names.get(t) or [name(t)]):
+                lines.append('%s	equ	%s+%d' % (n, own_name, t - pos))
+            if t not in symbol_names: pass
         merged_count += 1
         pos += size
         continue
