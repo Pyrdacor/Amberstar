@@ -1,11 +1,22 @@
 # Disassembles an Atari ST program (PRG) into vasm source which assembles to the same file.
 # Relocated longwords become labels, code is found by following the control flow.
-import sys, struct, re
+import sys, os, struct, re
 from capstone import Cs, CS_ARCH_M68K, CS_MODE_BIG_ENDIAN, CS_MODE_M68K_000
 
 src = open(sys.argv[1], 'rb').read()
 out_path = sys.argv[2]
-extra_seeds = [int(x, 16) for x in sys.argv[3:] if not x.endswith('.txt')]
+extra_seeds = [int(x, 16) for x in sys.argv[3:] if not x.endswith(('.txt', '.json', '.i'))]
+# optional merge.json: routines of the original source which assemble to the same bytes
+import json
+merge = {}
+constants_include = None
+for x in sys.argv[3:]:
+    if x.endswith('.json'):
+        for nm, v in json.load(open(x)).items():
+            if v.get('state') == 'same' and v.get('source'):
+                merge[v['addr']] = (nm, v['size'], v['source'], v['file'])
+    if x.endswith('.i'):
+        constants_include = x
 # optional SYMBOLS.txt with the names of the original source
 symbol_names = {}
 for x in sys.argv[3:]:
@@ -14,6 +25,12 @@ for x in sys.argv[3:]:
             if l.startswith('#') or not l.strip(): continue
             c = l.rstrip('\n').split('\t')
             symbol_names.setdefault(int(c[0], 16), []).append(c[2].replace('.', '_'))
+for x in sys.argv[3:]:
+    if x.endswith('.json') and os.path.exists(x + '.names.txt'):
+        for l in open(x + '.names.txt'):
+            c = l.rstrip('\n').split('\t')
+            if len(c) >= 2 and c[1] not in symbol_names.get(int(c[0], 16), []):
+                symbol_names.setdefault(int(c[0], 16), []).append(c[1])
 
 magic, tlen, dlen, blen, slen, res1, flags, absflag = struct.unpack('>HIIIIIIH', src[:28])
 img = src[28:28 + tlen + dlen]
@@ -165,13 +182,31 @@ labels = {}
 def want(t):
     labels.setdefault(t, None)
 
-for r in relocs: want(lval(r))
+# all named addresses get a label (the merged original code refers to them)
+for t in symbol_names:
+    if t <= end: want(t)
+
+refs_from = {}   # label -> addresses which refer to it
+def add_ref(t, src_addr):
+    want(t)
+    refs_from.setdefault(t, set()).add(src_addr)
+
+for r in relocs: add_ref(lval(r), r)
 for a, i in code.items():
     if BRANCH.match(i.mnemonic):
         m = re.search(r'\$([0-9a-f]+)$', i.op_str)
-        if m: want(int(m.group(1), 16))
+        if m: add_ref(int(m.group(1), 16), a)
     for m in re.finditer(r'\$([0-9a-f]+)\(pc', i.op_str):
-        want(int(m.group(1), 16) + pc_fix(i))
+        add_ref(int(m.group(1), 16) + pc_fix(i), a)
+
+# routines of the original source replace the disassembly if no label inside them is used from outside
+for a in list(merge):
+    nm, size, src, f = merge[a]
+    if a + size > tlen or any(a < x < a + size for x in merge if x != a):
+        del merge[a]; continue
+    for t, srcs in refs_from.items():
+        if a < t < a + size and any(not (a <= s < a + size) for s in srcs):
+            del merge[a]; break
 
 def section_of(t):
     return 'T' if t < tlen else 'D' if t < tlen + dlen else 'B'
@@ -262,7 +297,19 @@ lines = ['; Amberstar (Atari ST) - disassembly of AMBRSTAR.68K', '', '\tsection\
 pos = 0
 failed = 0
 code_list = []
+if constants_include:
+    lines[2:2] = ['\tinclude\t"%s"' % constants_include, '']
+merged_count = 0
 while pos < tlen:
+    if pos in merge:
+        nm, size, src, f = merge[pos]
+        own = src[0].rstrip(':') if src and src[0].endswith(':') else None
+        lines.append('; ---- %s (original source: %s)' % (nm, f))
+        lines.extend(l for l in label_lines(pos) if l.rstrip(':') != own)
+        lines.extend(src)
+        merged_count += 1
+        pos += size
+        continue
     if pos in code and pos in labels: lines.extend(label_lines(pos))
     if pos in code:
         i = code[pos]
@@ -289,6 +336,11 @@ while pos < tlen:
         emit_bytes(lines, pos, nxt)
         pos = nxt
 
+# names of addresses inside an instruction (or a relocated longword) are defined relative to its start
+for t in sorted(inside):
+    for n in symbol_names.get(t, []):
+        lines.append('%s\tequ\t%s' % (n, ref(t)))
+
 lines += ['', '\tsection\tdata', '']
 emit_bytes(lines, tlen, tlen + dlen)
 
@@ -302,4 +354,4 @@ if end > pos: lines.append('\tds.b\t%d' % (end - pos))
 
 open(out_path, 'w', encoding='latin-1').write('\n'.join(lines) + '\n')
 open(out_path + '.code.tsv', 'w', encoding='latin-1').write('\n'.join(code_list) + '\n')
-print('code instructions', len(code), 'code bytes', len(code_bytes), 'of', tlen, 'labels', len(labels), 'inside', len(inside), 'unconverted', failed)
+print('merged routines', merged_count, 'code instructions', len(code), 'code bytes', len(code_bytes), 'of', tlen, 'labels', len(labels), 'inside', len(inside), 'unconverted', failed)

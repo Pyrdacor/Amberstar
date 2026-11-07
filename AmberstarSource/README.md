@@ -18,7 +18,7 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1240 names for 1222 addresses |
-| 3. Original modules merged with the changes of the shipped program | open |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 285 routines of the original source (`merged/`) |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | open |
 
 ## The program file
@@ -89,6 +89,39 @@ python ambrdis.py <inner program> <named.s> SYMBOLS.txt
 * An address can have several names. The first one is used for references, the others are additional labels.
 
 Names which are not in the original source (e.g. the music) will be added in step 4.
+
+## The merged source (`merged/`)
+
+`merged/AMBRSTAR_GERMAN.S` and `merged/AMBRSTAR_ENGLISH.S` are the disassemblies in which the routines of the original
+source replace the disassembled code wherever they assemble to the same bytes. Each of them starts with a comment
+`; ---- <name> (original source: <file>)`. They assemble to byte-identical programs as well:
+
+```
+cd merged
+vasmm68k_mot -m68000 -Ftos -tos-flags=1 -nosym -no-opt -o AMBRSTAR.PRG AMBRSTAR_GERMAN.S
+```
+
+`CONSTANTS.I` contains the constants of the original source (`CONST5X.ASM`, the structure offsets of `OFFSETS.ASM`
+and the constants of the other modules).
+
+`tools/merge.py` checks the routines (`origsrc.py` reads the original source for it and for `symmatch.py`):
+
+```
+python merge.py <original src folder> <inner program> SYMBOLS.txt <vasm> merge.json
+python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i
+```
+
+* Each routine of the original is converted to vasm syntax (GFA directives, the macros of the original) and
+  assembled at its address with all known names as constants. If the bytes are the same as in the program, the
+  routine is taken. Names which are still unknown get marker values: if all other bytes match, the program gives
+  their addresses. The routine which follows a confirmed routine in its file is tried at its end.
+* The assembler which built the shipped program optimized the code: `jsr`/`jmp` to a routine in reach became
+  `bsr.w`/`bra.w`, and branches without a size became short branches where possible. The conversion does the same.
+* A routine is only taken if no label inside it is used from outside.
+
+So far 294 routines assemble to the same bytes, 285 of them are taken (the others have labels which are used from
+outside). Most of the other routines differ because the shipped program is a later version than the source. These
+changes will be merged with comments in the next part of step 3.
 
 ## Known differences between the original source and the shipped program
 
