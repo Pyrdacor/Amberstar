@@ -93,6 +93,65 @@ while queue:
         code[i.address] = i
         code_bytes.update(range(i.address, i.address + i.size))
 
+# --- more code: other pointers into the text and gaps behind the end of a routine.
+# A candidate is only taken if it decodes cleanly up to the end of a routine.
+def try_path(a, limit=600):
+    path, pos = [], a
+    while len(path) < limit:
+        if pos >= tlen or pos in code_bytes: return None
+        i = decode(pos)
+        if i is None or isinstance(i, Pseudo) or i.mnemonic in ('illegal',): return None
+        if any(pos < x < pos + i.size for x in code): return None
+        # data which decodes as code mostly contains absolute addresses which are not relocated
+        if re.search(r'\$[0-9a-f]{5,}\.l', i.op_str) and not any(r in relocs for r in range(pos + 2, pos + i.size)):
+            return None
+        # relocated longwords must be operands of the instruction (and not start inside it)
+        for r in range(pos + 1, pos + i.size):
+            if r in relocs:
+                h = '$%x' % lval(r)
+                if r == pos + 1 or r + 4 > pos + i.size or ('#' + h not in i.op_str and h + '.l' not in i.op_str):
+                    return None
+        if any(r in relocs for r in range(pos - 3, pos)):
+            return None
+        path.append(i)
+        pos += i.size
+        if i.mnemonic.split('.')[0] in END: return path
+    return None
+
+def add_code_from(a):
+    # follows the control flow like the first pass, but only accepts clean paths
+    todo, added = [a], 0
+    while todo:
+        s = todo.pop()
+        if s in code or s >= tlen or s % 2: continue
+        path = try_path(s)
+        if not path: continue
+        for i in path:
+            code[i.address] = i
+            code_bytes.update(range(i.address, i.address + i.size))
+            added += 1
+            mn = i.mnemonic.split('.')[0]
+            if BRANCH.match(i.mnemonic) or mn in ('jsr',):
+                m = re.search(r'\$([0-9a-f]+)(?:\.l)?$', i.op_str)
+                if m:
+                    t = int(m.group(1), 16)
+                    if mn == 'jsr' and not any(r in relocs for r in range(i.address + 2, i.address + i.size)): continue
+                    if t < tlen and t % 2 == 0: todo.append(t)
+    return added
+
+for _ in range(3):
+    extra = 0
+    for r in sorted(relocs):
+        t = lval(r)
+        if t < tlen and t not in code_bytes:
+            extra += add_code_from(t)
+    for a in sorted(code):
+        i = code[a]
+        nxt = a + i.size
+        if i.mnemonic.split('.')[0] in END and nxt < tlen and nxt not in code_bytes:
+            extra += add_code_from(nxt)
+    if not extra: break
+
 # --- labels
 def pc_fix(i):
     # capstone takes the address of the instruction + 2 as the PC, but it is the address of the extension word
@@ -210,7 +269,16 @@ while pos < tlen:
         text = convert(i)
         if text is None:
             failed += 1
-            lines.append('\tdc.w\t' + ','.join('$%04x' % struct.unpack('>H', img[x:x + 2])[0] for x in range(pos, pos + i.size, 2)) + '\t; ' + i.mnemonic + ' ' + i.op_str)
+            # relocated longwords stay label references
+            x, parts = pos, []
+            while x < pos + i.size:
+                if x in relocs:
+                    if parts: lines.append('\tdc.w\t' + ','.join(parts)); parts = []
+                    lines.append('\tdc.l\t' + ref(lval(x))); x += 4
+                else:
+                    parts.append('$%04x' % struct.unpack('>H', img[x:x + 2])[0]); x += 2
+            if parts: lines.append('\tdc.w\t' + ','.join(parts))
+            lines[-1] += '\t; ' + i.mnemonic + ' ' + i.op_str
         else:
             lines.append('\t' + text)
             code_list.append('%x\t%s' % (pos, text))

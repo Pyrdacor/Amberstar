@@ -17,7 +17,7 @@ reconstructed from the disassembly, using the names the original code uses where
 | Step | State |
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
-| 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **first pass**: 1103 names for 842 addresses |
+| 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1240 names for 1222 addresses |
 | 3. Original modules merged with the changes of the shipped program | open |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | open |
 
@@ -48,8 +48,9 @@ vasmm68k_mot -m68000 -Ftos -tos-flags=1 -nosym -no-opt -o AMBRSTAR.PRG AMBRSTAR_
 * Labels are named after their section and offset: `T_` text, `D_` data, `B_` BSS (e.g. `T_00f12`).
 * Every relocated longword of the program is a label reference, so the assembled program has the same relocations.
 * Code is found by following the control flow from the start of the program and from the code pointers in the data
-  (e.g. the module tables). Everything else is written as data (`dc.b`/`dc.l`). Some code which is only reached
-  by indirect jumps is still data.
+  (e.g. the module tables). Other pointers into the text and the gaps behind the end of a routine are taken as code
+  if they decode cleanly up to the end of a routine. 95% of the text are code now, the rest is written as data
+  (`dc.b`/`dc.l`).
 * Instructions which can't be written so that vasm creates the same bytes are written as `dc.w` with the instruction
   as a comment (e.g. `cmpi.b #$ff` which the original assembler encoded as `$ffff`).
 
@@ -81,10 +82,11 @@ python ambrdis.py <inner program> <named.s> SYMBOLS.txt
   vote for `Hour` = `B_5c34e`. A name needs at least 2 votes and a clear majority. The start of a routine is only
   taken from the alignment if almost all of its instructions match.
 * Pointer tables of the data (e.g. the module tables in `MODULES.ASM`) are aligned with the relocated longwords of
-  the program, using the entries whose names are already known.
-* An address can have several names. The first one is used for references, the others are additional labels. Some
-  names come from the position in a table only: several `…_ModExit` entries of the shipped program point to the
-  same routine (`$162`), so all their names are at that address.
+  the program. Anchors are entries whose names are already known and which are only in this table, and the texts
+  of the table (e.g. the ID `Camp screen.` of a module).
+* The matching is repeated with the found names as part of the instructions (`jsr Free_memory` instead of a
+  generic call), which makes short routines distinct.
+* An address can have several names. The first one is used for references, the others are additional labels.
 
 Names which are not in the original source (e.g. the music) will be added in step 4.
 
