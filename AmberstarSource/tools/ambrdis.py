@@ -5,7 +5,15 @@ from capstone import Cs, CS_ARCH_M68K, CS_MODE_BIG_ENDIAN, CS_MODE_M68K_000
 
 src = open(sys.argv[1], 'rb').read()
 out_path = sys.argv[2]
-extra_seeds = [int(x, 16) for x in sys.argv[3:]]
+extra_seeds = [int(x, 16) for x in sys.argv[3:] if not x.endswith('.txt')]
+# optional SYMBOLS.txt with the names of the original source
+symbol_names = {}
+for x in sys.argv[3:]:
+    if x.endswith('.txt'):
+        for l in open(x):
+            if l.startswith('#') or not l.strip(): continue
+            c = l.rstrip('\n').split('\t')
+            symbol_names.setdefault(int(c[0], 16), []).append(c[2].replace('.', '_'))
 
 magic, tlen, dlen, blen, slen, res1, flags, absflag = struct.unpack('>HIIIIIIH', src[:28])
 img = src[28:28 + tlen + dlen]
@@ -109,7 +117,10 @@ for a, i in code.items():
 def section_of(t):
     return 'T' if t < tlen else 'D' if t < tlen + dlen else 'B'
 
-def name(t): return '%s_%05x' % (section_of(t), t)
+def name(t): return symbol_names[t][0] if t in symbol_names else '%s_%05x' % (section_of(t), t)
+def label_lines(t):
+    # all names of an address (the first one is used for references)
+    return [n + ':' for n in symbol_names.get(t, [])] or [name(t) + ':']
 
 # a label must be at a boundary of an instruction; inside one it becomes an expression
 inside = {}
@@ -177,7 +188,7 @@ def emit_bytes(lines, a, b_end):
     pos = a
     while pos < b_end:
         if pos in labels and pos not in inside:
-            lines.append(name(pos) + ':')
+            lines.extend(label_lines(pos))
         if pos in relocs:
             lines.append('\tdc.l\t%s' % ref(lval(pos)))
             pos += 4
@@ -191,8 +202,9 @@ def emit_bytes(lines, a, b_end):
 lines = ['; Amberstar (Atari ST) - disassembly of AMBRSTAR.68K', '', '\tsection\ttext', '']
 pos = 0
 failed = 0
+code_list = []
 while pos < tlen:
-    if pos in code and pos in labels: lines.append(name(pos) + ':')
+    if pos in code and pos in labels: lines.extend(label_lines(pos))
     if pos in code:
         i = code[pos]
         text = convert(i)
@@ -201,6 +213,7 @@ while pos < tlen:
             lines.append('\tdc.w\t' + ','.join('$%04x' % struct.unpack('>H', img[x:x + 2])[0] for x in range(pos, pos + i.size, 2)) + '\t; ' + i.mnemonic + ' ' + i.op_str)
         else:
             lines.append('\t' + text)
+            code_list.append('%x\t%s' % (pos, text))
         pos += i.size
     else:
         nxt = pos + 1
@@ -216,8 +229,9 @@ bss_labels = sorted(t for t in labels if t >= tlen + dlen)
 pos = tlen + dlen
 for t in bss_labels:
     if t > pos: lines.append('\tds.b\t%d' % (t - pos)); pos = t
-    lines.append(name(t) + ':')
+    lines.extend(label_lines(t))
 if end > pos: lines.append('\tds.b\t%d' % (end - pos))
 
 open(out_path, 'w', encoding='latin-1').write('\n'.join(lines) + '\n')
+open(out_path + '.code.tsv', 'w', encoding='latin-1').write('\n'.join(code_list) + '\n')
 print('code instructions', len(code), 'code bytes', len(code_bytes), 'of', tlen, 'labels', len(labels), 'inside', len(inside), 'unconverted', failed)

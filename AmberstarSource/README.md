@@ -17,7 +17,7 @@ reconstructed from the disassembly, using the names the original code uses where
 | Step | State |
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
-| 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | open |
+| 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **first pass**: 1103 names for 842 addresses |
 | 3. Original modules merged with the changes of the shipped program | open |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | open |
 
@@ -56,9 +56,37 @@ vasmm68k_mot -m68000 -Ftos -tos-flags=1 -nosym -no-opt -o AMBRSTAR.PRG AMBRSTAR_
 `tools/ambrdis.py` creates the disassembly (Python 3 with [capstone](https://www.capstone-engine.org/)):
 
 ```
-python ambrdis.py <inner program> <output.s>
+python ambrdis.py <inner program> <output.s> [SYMBOLS.txt]
 python compare.py <inner program> <assembled program>
 ```
+
+## The names (`SYMBOLS.txt`, `SYMBOLS_ENGLISH.txt`)
+
+The labels of the disassembly have the names of the original source where they could be found. `SYMBOLS.txt` lists
+them: address, label without a name, name in the original source, file of the original source and the number of
+votes for the name. Labels without a name keep their address name (`T_00f12`).
+
+`tools/symmatch.py` finds the names:
+
+```
+python ambrdis.py <inner program> <output.s>          (also writes <output.s>.code.tsv)
+python symmatch.py <original src folder> <output.s>.code.tsv SYMBOLS.txt <inner program>
+python ambrdis.py <inner program> <named.s> SYMBOLS.txt
+```
+
+* Both the routines of the original source (with the macros of the original expanded) and the code of the
+  disassembly are turned into normalized instructions. Each routine of the original is searched in the disassembly
+  by rare sequences of instructions and aligned with it.
+* Aligned instructions give the names of their operands: `move.w Hour,d0` aligned with `move.w B_5c34e,d0` is one
+  vote for `Hour` = `B_5c34e`. A name needs at least 2 votes and a clear majority. The start of a routine is only
+  taken from the alignment if almost all of its instructions match.
+* Pointer tables of the data (e.g. the module tables in `MODULES.ASM`) are aligned with the relocated longwords of
+  the program, using the entries whose names are already known.
+* An address can have several names. The first one is used for references, the others are additional labels. Some
+  names come from the position in a table only: several `…_ModExit` entries of the shipped program point to the
+  same routine (`$162`), so all their names are at that address.
+
+Names which are not in the original source (e.g. the music) will be added in step 4.
 
 ## Known differences between the original source and the shipped program
 
