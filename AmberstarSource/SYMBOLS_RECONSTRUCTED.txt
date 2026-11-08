@@ -6,7 +6,44 @@
 # ---- music (not part of the original source)
 00f12	Play_song	MAIN/TEST.ASM	Plays the song in d0 (1-19, 0 stops the music, 20 and more are ignored). The current song is in Current_song.
 02754	Set_map_music	MAIN/MAP/MAP.ASM	Plays the song of the map: on the world map (maps 1-64) the song of the travel mode, otherwise the song of the map data (byte 6).
-1a88e	Coso_player	MAIN/COMBAT.ASM	Entry of the COSO music player by Jochen Hippel: d0 = 0 init, 1 play module a0.
+1a88e	Coso_player	MAIN/COMBAT.ASM	Jump table of the COSO music player by Jochen Hippel: +0 start song d0 of the module a0 (0 stops), +4 sound effect d0 (not used), +8 play (timer interrupt), +12 set the volume reduction, +16 mute.
+# ---- original names which the matching did not find (the shipped program differs)
+10b20	VblQ_handler	MAIN/MODCON.ASM	Calls the vertical blank routines of the module stack (the check of DangerZone was removed).
+1cb2e	Init_computer	NUCLEUS/INTROUTS.ASM	The shipped program also sets the vector of timer D for the music (My_timer_D).
+1cbc8	Dummy	NUCLEUS/INTROUTS.ASM
+1cbca	My_mkb	NUCLEUS/INTROUTS.ASM
+1cbd4	My_timer_C	NUCLEUS/INTROUTS.ASM
+1cbd8	Old_timer_C	NUCLEUS/INTROUTS.ASM
+1cc0e	My_vbi	NUCLEUS/INTROUTS.ASM
+1cefa	My_mouse	NUCLEUS/KBDROUTS.ASM
+# ---- music player (COSO by Jochen Hippel, not part of the original source)
+1a8ba	Coso_start_song	MAIN/COMBAT.ASM	Starts the song d0 of the module a0 (0 stops the music), all registers are restored.
+1a8c8	Coso_sound_effect	MAIN/COMBAT.ASM	Starts the sound effect d0 (4 bytes per effect), all registers are restored. Amberstar does not call it.
+1a896	Coso_interrupt	MAIN/COMBAT.ASM	Called by the timer interrupt (My_timer_D, 50 times per second).
+1a8f0	Coso_init_song	MAIN/COMBAT.ASM	Song d0 (6 bytes per song: first and last position, speed) or stop.
+1a920	Coso_init_module	MAIN/COMBAT.ASM	Pointers to the parts of the module a0 (offsets at 4-$1c). "MMME" at $20 marks the newer format.
+1a99c	Coso_init_samples	MAIN/COMBAT.ASM	Converts the samples of a "MARCHI" module once (d0 = mode) and sets the sample interrupt.
+1aa9a	Coso_saved_MFP	MAIN/COMBAT.ASM	The vector $110 and the MFP registers before the samples were set up.
+1aaa6	Coso_sample_interrupt	MAIN/COMBAT.ASM	move.b (a6)+,$ffff8832.w / rte (written as data).
+1aaac	Coso_play	MAIN/COMBAT.ASM	One step of the music: the 3 channels and the sound effect, then the YM2149 registers are written.
+1ac3a	Coso_channel_sequence	MAIN/COMBAT.ASM	Next note of a channel when its duration is over.
+1ad8a	Coso_init_positions	MAIN/COMBAT.ASM	Initialises the channels for the positions d0 to d1 (12 bytes per position).
+1ae96	Coso_start_effect	MAIN/COMBAT.ASM	The sound effect is played on the effect channel.
+1af2e	Coso_channel_frame	MAIN/COMBAT.ASM	Period (d0) and volume (d1) of a channel for this step.
+1b3c6	Coso_select_register	MAIN/COMBAT.ASM	Selects the YM2149 register 10 (15 in sample mode 2).
+1b3ee	Coso_YM_registers	MAIN/COMBAT.ASM	The YM2149 registers 0-10 as pairs of register and value, written with movem to the mirrors of $ffff8800.
+1b41a	Coso_effect_registers	MAIN/COMBAT.ASM	Offsets of the registers in Coso_YM_registers of the channel which plays the sound effect.
+1b42c	Coso_volume_reduction	MAIN/COMBAT.ASM	Is subtracted from the volume of each channel (Coso_player+12).
+1b436	Coso_speed_counter	MAIN/COMBAT.ASM	Steps until the next notes, followed by the speed of the song.
+1b43c	Coso_channel_A	MAIN/COMBAT.ASM	State of a channel (52 bytes).
+1b470	Coso_channel_B	MAIN/COMBAT.ASM
+1b4a4	Coso_channel_C	MAIN/COMBAT.ASM
+1b4d8	Coso_effect_channel	MAIN/COMBAT.ASM
+1b52e	Coso_module	MAIN/COMBAT.ASM	The module which is played.
+1b536	Coso_mute	MAIN/COMBAT.ASM	If set, the YM2149 registers are not written (Coso_player+16).
+1b538	Coso_sample_mode	MAIN/COMBAT.ASM	$ff: no samples, otherwise the mode d0 of Coso_init_samples.
+1b53a	Coso_period_table	MAIN/COMBAT.ASM	YM2149 periods of the notes.
+1cbde	My_timer_D	NUCLEUS/INTROUTS.ASM	Timer D interrupt of the music (set by Play_song to 50 Hz): calls Coso_interrupt.
 # ---- party death (Docs/Combat.md)
 006fe	Check_party_alive	MAIN/TEST.ASM	If no member can be the active member, a battle ends or the party is dead (Shandra's rescue or game over).
 009a8	Resurrection_sequence	MAIN/TEST.ASM	Shandra rescues the party once: song 19, next day 7:20, map 70 at 16,13, conditions cleared, hit points filled.

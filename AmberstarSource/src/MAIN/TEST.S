@@ -32,7 +32,7 @@ T_00022:
 	lea.l	B_5fee2,a7
 	jsr	T_1c1a0
 	jsr	T_1c9b0
-	jsr	T_1cb2e
+	jsr	Init_computer
 	movea.l	B_5eed6,a0
 	jsr	T_1d192
 	jsr	T_1ceea

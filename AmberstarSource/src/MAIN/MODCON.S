@@ -184,7 +184,8 @@ ScrQ_handler:
 .Exit:
 	movem.l	(sp)+,d0-d7/a0-a6
 	rts	
-T_10b20:
+; Calls the vertical blank routines of the module stack (the check of DangerZone was removed).
+VblQ_handler:
 	movem.l	d0-d7/a0-a6,-(a7)
 	movea.l	Module_sp,a0
 	move.l	$4(a0),d0

@@ -32,7 +32,7 @@ T_00022:
 	lea.l	B_5fee2,a7
 	jsr	T_1c1a0
 	jsr	T_1c9b0
-	jsr	T_1cb2e
+	jsr	Init_computer
 	movea.l	B_5eed6,a0
 	jsr	T_1d192
 	jsr	T_1ceea
@@ -19209,7 +19209,8 @@ ScrQ_handler:
 .l_10b1a:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-T_10b20:
+; Calls the vertical blank routines of the module stack (the check of DangerZone was removed).
+VblQ_handler:
 	movem.l	d0-d7/a0-a6,-(a7)
 	movea.l	Module_sp,a0
 	move.l	$4(a0),d0
@@ -30819,36 +30820,39 @@ Close_window:
 	jsr	Mouse_on
 	movem.l	(a7)+,d0-d1/d6-d7/a0-a1/a6
 	rts
-; Entry of the COSO music player by Jochen Hippel: d0 = 0 init, 1 play module a0.
+; Jump table of the COSO music player by Jochen Hippel: +0 start song d0 of the module a0 (0 stops), +4 sound effect d0 (not used), +8 play (timer interrupt), +12 set the volume reduction, +16 mute.
 Coso_player:
-	bra.w	T_1a8ba
-	bra.w	T_1a8c8
-T_1a896:
-	bra.w	T_1aaac
+	bra.w	Coso_start_song
+	bra.w	Coso_sound_effect
+; Called by the timer interrupt (My_timer_D, 50 times per second).
+Coso_interrupt:
+	bra.w	Coso_play
 	bra.w	.l_1a8ae
 	bra.w	.l_1a8a2
 .l_1a8a2:
 	pea.l	(a0)
-	lea.l	T_1b536(pc),a0
+	lea.l	Coso_mute(pc),a0
 	move.b	d0,(a0)
 	movea.l	(a7)+,a0
 	rts
 .l_1a8ae:
 	pea.l	(a0)
-	lea.l	T_1b42c(pc),a0
+	lea.l	Coso_volume_reduction(pc),a0
 	move.w	d0,(a0)+
 	movea.l	(a7)+,a0
 	rts
-T_1a8ba:
+; Starts the song d0 of the module a0 (0 stops the music), all registers are restored.
+Coso_start_song:
 	movem.l	d0-d7/a0-a5,-(a7)
 	move.w	d1,d2
-	bsr.b	T_1a8f0
+	bsr.b	Coso_init_song
 	movem.l	(a7)+,d0-d7/a0-a5
 	rts
-T_1a8c8:
+; Starts the sound effect d0 (4 bytes per effect), all registers are restored. Amberstar does not call it.
+Coso_sound_effect:
 	movem.l	d0-d7/a0-a5,-(a7)
 	lea.l	T_1b63a(pc),a0
-	bsr.b	T_1a920
+	bsr.b	Coso_init_module
 	movea.l	T_1b526(pc),a1
 	add.w	d0,d0
 	add.w	d0,d0
@@ -30857,11 +30861,12 @@ T_1a8c8:
 	move.w	(a1)+,(a5)
 	moveq	#0,d0
 	move.w	(a1)+,d0
-	bsr.w	T_1ae96
+	bsr.w	Coso_start_effect
 	movem.l	(a7)+,d0-d7/a0-a5
 	rts
-T_1a8f0:
-	bsr.b	T_1a920
+; Song d0 (6 bytes per song: first and last position, speed) or stop.
+Coso_init_song:
+	bsr.b	Coso_init_module
 	tst.w	d0
 	beq.b	.l_1a910
 	subq.w	#$1,d0
@@ -30872,20 +30877,21 @@ T_1a8f0:
 	move.w	(a1)+,d1
 	lea.l	T_1b438(pc),a5
 	move.w	(a1),(a5)
-	bra.w	T_1ad8a
+	bra.w	Coso_init_positions
 .l_1a910:
 	andi.b	#$f0,$fffffa1d.w
 	lea.l	T_1b43a(pc),a0
 	st.b	(a0)
-	bra.w	T_1aaac
-T_1a920:
+	bra.w	Coso_play
+; Pointers to the parts of the module a0 (offsets at 4-$1c). "MMME" at $20 marks the newer format.
+Coso_init_module:
 	lea.l	T_1b537(pc),a1
 	sf.b	(a1)
 	cmpi.l	#$4d4d4d45,$20(a0)
 	bne.b	.l_1a934
 	move.b	#$1,(a1)
 .l_1a934:
-	lea.l	T_1b52e(pc),a5
+	lea.l	Coso_module(pc),a5
 	move.l	a0,(a5)
 	movea.l	$4(a0),a1
 	adda.l	a0,a1
@@ -30921,8 +30927,9 @@ T_1a920:
 	rts
 T_1a99a:
 	rts
-T_1a99c:
-	lea.l	T_1b538(pc),a0
+; Converts the samples of a "MARCHI" module once (d0 = mode) and sets the sample interrupt.
+Coso_init_samples:
+	lea.l	Coso_sample_mode(pc),a0
 	move.b	d0,(a0)
 	movea.l	T_1b532(pc),a0
 	cmpi.l	#$4d415243,$f8(a0)
@@ -30932,7 +30939,7 @@ T_1a99c:
 	move.l	#$48492020,$f4(a0)
 	tst.b	d0
 	beq.b	.l_1aa0c
-	lea.l	T_1aa9a(pc),a1
+	lea.l	Coso_saved_MFP(pc),a1
 	tst.l	(a1)
 	bne.b	.l_1aa0c
 	move.w	sr,-(a7)
@@ -30982,7 +30989,7 @@ T_1a99c:
 	move.b	(a0),d0
 	ori.b	#$20,d0
 	move.b	d0,$2(a0)
-	lea.l	T_1aaa6(pc),a0
+	lea.l	Coso_sample_interrupt(pc),a0
 T_1aa64:
 	move.l	a0,$110.w
 	move.b	#$66,$fffffa25.w
@@ -30996,17 +31003,20 @@ T_1aa70:
 	move.b	.l_1aa8a(pc,d0.w),(a1)+
 	cmpa.l	a2,a1
 	blt.b	T_1aa70
-	lea.l	T_1aaa6(pc),a0
+	lea.l	Coso_sample_interrupt(pc),a0
 	bra.b	T_1aa64
 .l_1aa8a:
 	dc.b	$00,$07,$09,$0a,$0b,$0c,$0c,$0d,$0d,$0d,$0e,$0e,$0e,$0f,$0f,$0f
-T_1aa9a:
+; The vector $110 and the MFP registers before the samples were set up.
+Coso_saved_MFP:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-T_1aaa6:
+; move.b (a6)+,$ffff8832.w / rte (written as data).
+Coso_sample_interrupt:
 	dc.b	$11,$de,$88,$32,$4e,$73
-T_1aaac:
-	lea.l	T_1b3ee(pc),a5
-	lea.l	T_1b436(pc),a4
+; One step of the music: the 3 channels and the sound effect, then the YM2149 registers are written.
+Coso_play:
+	lea.l	Coso_YM_registers(pc),a5
+	lea.l	Coso_speed_counter(pc),a4
 	tst.b	$4(a4)
 	beq.b	.l_1aafa
 	tst.b	$5(a4)
@@ -31018,32 +31028,32 @@ T_1aaac:
 	move.b	d0,$22(a5)
 	move.b	d0,$26(a5)
 	move.b	d0,$2a(a5)
-	move.b	T_1b536(pc),d4
+	move.b	Coso_mute(pc),d4
 	bne.b	.l_1aaf8
 	move.w	sr,-(a7)
 	move.w	#$2700,sr
 	movem.l	$10(a5),d0-d6
 	movem.l	d0-d6,$ffff8830.w
-	bsr.w	T_1b3c6
+	bsr.w	Coso_select_register
 	move.w	(a7)+,sr
 .l_1aaf8:
 	rts
 .l_1aafa:
 	lea.l	T_1b42e(pc),a4
-	lea.l	T_1b43c(pc),a0
-	bsr.w	T_1af2e
+	lea.l	Coso_channel_A(pc),a0
+	bsr.w	Coso_channel_frame
 	move.w	d0,-(a7)
 	move.b	(a7)+,$6(a5)
 	move.b	d0,$2(a5)
 	move.b	d1,$22(a5)
-	lea.l	T_1b470(pc),a0
-	bsr.w	T_1af2e
+	lea.l	Coso_channel_B(pc),a0
+	bsr.w	Coso_channel_frame
 	move.w	d0,-(a7)
 	move.b	(a7)+,$e(a5)
 	move.b	d0,$a(a5)
 	move.b	d1,$26(a5)
-	lea.l	T_1b4a4(pc),a0
-	bsr.w	T_1af2e
+	lea.l	Coso_channel_C(pc),a0
+	bsr.w	Coso_channel_frame
 	move.w	d0,-(a7)
 	move.b	(a7)+,$16(a5)
 	move.b	d0,$12(a5)
@@ -31051,8 +31061,8 @@ T_1aaac:
 	move.w	$4(a4),d0
 	beq.b	.l_1ab84
 	move.w	d0,-(a7)
-	lea.l	T_1b4d8(pc),a0
-	bsr.w	T_1af2e
+	lea.l	Coso_effect_channel(pc),a0
+	bsr.w	Coso_channel_frame
 	movea.l	$4(a0),a1
 	adda.w	$16(a0),a1
 	cmpi.b	#$e1,(a1)
@@ -31060,7 +31070,7 @@ T_1aaac:
 	clr.w	$4(a4)
 .l_1ab62:
 	move.w	(a7)+,d7
-	lea.l	T_1b41a(pc),a1
+	lea.l	Coso_effect_registers(pc),a1
 	add.w	d7,d7
 	add.w	d7,d7
 	adda.w	d7,a1
@@ -31078,15 +31088,15 @@ T_1aaac:
 	move.b	#$7,$ffff8830.w
 	move.b	$ffff8830.w,d6
 	andi.w	#$c0,d6
-	bsr.w	T_1b3c6
+	bsr.w	Coso_select_register
 	move.w	(a7)+,sr
 	move.b	(a4)+,d7
 	or.b	d6,d7
 	move.b	d7,$1e(a5)
 	move.b	(a4)+,$1a(a5)
-	move.b	T_1b536(pc),d0
+	move.b	Coso_mute(pc),d0
 	bne.b	.l_1ac10
-	move.b	T_1b538(pc),d0
+	move.b	Coso_sample_mode(pc),d0
 	bne.b	.l_1abc2
 	btst	#$0,$ffff8901.w
 	bne.b	.l_1abcc
@@ -31105,7 +31115,7 @@ T_1aaac:
 	move.w	#$2700,sr
 	movem.l	d0-d7/a0-a1,$ffff8840.w
 	moveq	#10,d0
-	move.b	T_1b538(pc),d1
+	move.b	Coso_sample_mode(pc),d1
 	cmp.b	#$2,d1
 	bne.b	.l_1abfe
 	clr.w	$2(a5)
@@ -31119,22 +31129,23 @@ T_1aaac:
 	movem.l	(a5),d0-d7/a0-a2
 	movem.l	d0-d7/a0-a2,$ffff8840.w
 .l_1ac10:
-	lea.l	T_1b436(pc),a5
+	lea.l	Coso_speed_counter(pc),a5
 	subq.w	#$1,(a5)+
 	bne.b	T_1ac38
 	move.w	(a5),-(a5)
 	moveq	#0,d5
 	moveq	#0,d4
-	lea.l	T_1b43c(pc),a0
-	bsr.w	T_1ac3a
+	lea.l	Coso_channel_A(pc),a0
+	bsr.w	Coso_channel_sequence
 	st.b	d4
-	lea.l	T_1b470(pc),a0
-	bsr.w	T_1ac3a
-	lea.l	T_1b4a4(pc),a0
-	bsr.w	T_1ac3a
+	lea.l	Coso_channel_B(pc),a0
+	bsr.w	Coso_channel_sequence
+	lea.l	Coso_channel_C(pc),a0
+	bsr.w	Coso_channel_sequence
 T_1ac38:
 	rts
-T_1ac3a:
+; Next note of a channel when its duration is over.
+Coso_channel_sequence:
 	subq.b	#$1,$1a(a0)
 	bpl.b	T_1ac38
 	move.b	$1b(a0),$1a(a0)
@@ -31179,7 +31190,7 @@ T_1ac3a:
 	add.w	d1,d1
 	movea.l	T_1b510(pc),a3
 	movea.w	(a3,d1.w),a3
-	adda.l	T_1b52e(pc),a3
+	adda.l	Coso_module(pc),a3
 	move.l	a3,$c(a0)
 	addi.w	#$c,$14(a0)
 	bra.w	.l_1ac46
@@ -31215,7 +31226,7 @@ T_1ac3a:
 	movea.l	T_1b518(pc),a2
 	add.w	d1,d1
 	movea.w	(a2,d1.w),a2
-	adda.l	T_1b52e(pc),a2
+	adda.l	Coso_module(pc),a2
 	move.w	d5,$16(a0)
 	move.b	(a2),$23(a0)
 	move.b	(a2)+,$22(a0)
@@ -31234,17 +31245,18 @@ T_1ac3a:
 	movea.l	T_1b514(pc),a2
 	add.w	d1,d1
 	movea.w	(a2,d1.w),a2
-	adda.l	T_1b52e(pc),a2
+	adda.l	Coso_module(pc),a2
 	move.l	a2,$8(a0)
 	move.w	d5,$18(a0)
 	move.b	d5,$25(a0)
 	move.b	d5,$24(a0)
 .l_1ad88:
 	rts
-T_1ad8a:
+; Initialises the channels for the positions d0 to d1 (12 bytes per position).
+Coso_init_positions:
 	movem.l	d0-d1,-(a7)
 	move.w	d2,d0
-	bsr.w	T_1a99c
+	bsr.w	Coso_init_samples
 	movem.l	(a7)+,d0-d1
 	andi.b	#$f0,$fffffa1d.w
 	move.l	d0,d7
@@ -31256,7 +31268,7 @@ T_1ad8a:
 	lea.l	T_1b50e(pc),a0
 	move.w	d1,(a0)
 	moveq	#2,d0
-	lea.l	T_1b43c(pc),a0
+	lea.l	Coso_channel_A(pc),a0
 	lea.l	T_1b3e2(pc),a1
 	lea.l	T_1b3ea(pc),a2
 .l_1adc2:
@@ -31294,7 +31306,7 @@ T_1ad8a:
 	add.w	d1,d1
 	movea.l	T_1b510(pc),a4
 	movea.w	(a4,d1.w),a4
-	adda.l	T_1b52e(pc),a4
+	adda.l	Coso_module(pc),a4
 	move.l	a4,$c(a0)
 	clr.w	$1a(a0)
 	move.b	#$2,$32(a0)
@@ -31314,16 +31326,17 @@ T_1ad8a:
 	clr.l	$10(a0)
 	lea.l	$34(a0),a0
 	dbra	d0,.l_1adc2
-	lea.l	T_1b436(pc),a0
+	lea.l	Coso_speed_counter(pc),a0
 	move.w	#$1,(a0)
 	clr.w	$4(a0)
 	rts
-T_1ae96:
+; The sound effect is played on the effect channel.
+Coso_start_effect:
 	move.w	T_1b52c(pc),d2
 	move.w	T_1b52a(pc),d1
 	tst.w	d2
 	beq.w	.l_1af2c
-	lea.l	T_1b4d8(pc),a0
+	lea.l	Coso_effect_channel(pc),a0
 	lea.l	T_1b42e(pc),a5
 	move.b	d2,$1e(a0)
 	move.b	d1,$2e(a0)
@@ -31333,7 +31346,7 @@ T_1ae96:
 	movea.l	T_1b518(pc),a2
 	add.w	d0,d0
 	movea.w	(a2,d0.w),a2
-	adda.l	T_1b52e(pc),a2
+	adda.l	Coso_module(pc),a2
 	move.w	d5,$16(a0)
 	move.b	(a2),$23(a0)
 	move.b	(a2)+,$22(a0)
@@ -31348,7 +31361,7 @@ T_1ae96:
 	movea.l	T_1b514(pc),a2
 	add.w	d0,d0
 	movea.w	(a2,d0.w),a2
-	adda.l	T_1b52e(pc),a2
+	adda.l	Coso_module(pc),a2
 	move.l	a2,$8(a0)
 	move.w	d5,$18(a0)
 	sf.b	$24(a0)
@@ -31361,7 +31374,8 @@ T_1ae96:
 	move.w	d1,$4(a5)
 .l_1af2c:
 	rts
-T_1af2e:
+; Period (d0) and volume (d1) of a channel for this step.
+Coso_channel_frame:
 	moveq	#0,d7
 	move.b	d7,$2d(a0)
 	tst.b	$25(a0)
@@ -31460,7 +31474,7 @@ T_1b1ae:
 	add.b	$21(a0),d0
 .l_1b1bc:
 	andi.w	#$7f,d0
-	lea.l	T_1b53a(pc),a1
+	lea.l	Coso_period_table(pc),a1
 	add.w	d0,d0
 	move.w	d0,d1
 	move.w	(a1,d0.w),d0
@@ -31553,7 +31567,7 @@ T_1b1ae:
 .l_1b2a4:
 	move.b	$2f(a0),d1
 	sub.b	$30(a0),d1
-	sub.w	T_1b42c(pc),d1
+	sub.w	Coso_volume_reduction(pc),d1
 	sub.b	$31(a0),d1
 	bpl.b	.l_1b2b8
 	moveq	#0,d1
@@ -31568,7 +31582,7 @@ T_1b1ae:
 	move.w	#$2700,sr
 	move.l	#$c000d0a,d4
 	movep.l	d4,$8(a3)
-	bsr.w	T_1b3c6
+	bsr.w	Coso_select_register
 	move.w	(a7)+,sr
 .l_1b2e0:
 	btst	#$1,d7
@@ -31592,9 +31606,9 @@ T_1b1ae:
 	move.w	#$2700,sr
 	move.b	#$b,(a3)
 	move.b	d7,$a(a3)
-	move.b	T_1b538(pc),d3
+	move.b	Coso_sample_mode(pc),d3
 	beq.b	.l_1b318
-	bsr.w	T_1b3c6
+	bsr.w	Coso_select_register
 .l_1b318:
 	move.w	(a7)+,sr
 .l_1b31a:
@@ -31667,17 +31681,18 @@ T_1b1ae:
 .l_1b3b0:
 	move.b	$2f(a0),d1
 	sub.b	$30(a0),d1
-	sub.w	T_1b42c(pc),d1
+	sub.w	Coso_volume_reduction(pc),d1
 	sub.b	$31(a0),d1
 	bpl.b	.l_1b3c4
 	moveq	#0,d1
 .l_1b3c4:
 	rts
-T_1b3c6:
+; Selects the YM2149 register 10 (15 in sample mode 2).
+Coso_select_register:
 	move.w	d0,-(a7)
 	move.l	d1,-(a7)
 	moveq	#10,d1
-	move.b	T_1b538(pc),d0
+	move.b	Coso_sample_mode(pc),d0
 	cmp.b	#$2,d0
 	bne.b	.l_1b3d8
 	addq.w	#$5,d1
@@ -31690,40 +31705,45 @@ T_1b3e2:
 	dc.b	$01,$00,$00,$00,$00,$00,$00,$e1
 T_1b3ea:
 	dc.b	$00,$01,$02,$00
-T_1b3ee:
+; The YM2149 registers 0-10 as pairs of register and value, written with movem to the mirrors of $ffff8800.
+Coso_YM_registers:
 	dc.b	$00,$00,$00,$00,$01,$00,$00,$00,$02,$00,$00,$00,$03,$00,$00,$00
 	dc.b	$04,$00,$00,$00,$05,$00,$00,$00,$06,$00,$00,$00,$07,$00,$ff,$00
 	dc.b	$08,$00,$00,$00,$09,$00,$00,$00,$0a,$00,$00,$00
-T_1b41a:
+; Offsets of the registers in Coso_YM_registers of the channel which plays the sound effect.
+Coso_effect_registers:
 	dc.b	$00,$00,$00,$00,$02,$06,$22,$00,$0a,$0e,$26,$00,$12,$16,$2a,$00
 T_1b42a:
 	dc.b	$00,$00
-T_1b42c:
+; Is subtracted from the volume of each channel (Coso_player+12).
+Coso_volume_reduction:
 	dc.b	$00,$00
 T_1b42e:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-T_1b436:
+; Steps until the next notes, followed by the speed of the song.
+Coso_speed_counter:
 	dc.b	$00,$04
 T_1b438:
 	dc.b	$00,$04
 T_1b43a:
 	dc.b	$ff,$00
-T_1b43c:
+; State of a channel (52 bytes).
+Coso_channel_A:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00
-T_1b470:
+Coso_channel_B:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00
-T_1b4a4:
+Coso_channel_C:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00
-T_1b4d8:
+Coso_effect_channel:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -31746,17 +31766,21 @@ T_1b52a:
 	dc.b	$00,$00
 T_1b52c:
 	dc.b	$00,$00
-T_1b52e:
+; The module which is played.
+Coso_module:
 	dc.b	$00,$00,$00,$00
 T_1b532:
 	dc.b	$00,$00,$00,$00
-T_1b536:
+; If set, the YM2149 registers are not written (Coso_player+16).
+Coso_mute:
 	dc.b	$00
 T_1b537:
 	dc.b	$00
-T_1b538:
+; $ff: no samples, otherwise the mode d0 of Coso_init_samples.
+Coso_sample_mode:
 	dc.b	$ff,$00
-T_1b53a:
+; YM2149 periods of the notes.
+Coso_period_table:
 	dc.b	$0e,$ee,$0e,$17,$0d,$4d,$0c,$8e,$0b,$d9,$0b,$2f,$0a,$8e,$09,$f7
 	dc.b	$09,$67,$08,$e0,$08,$61,$07,$e8,$07,$77,$07,$0b,$06,$a6,$06,$47
 	dc.b	$05,$ec,$05,$97,$05,$47,$04,$fb,$04,$b3,$04,$70,$04,$30,$03,$f4
@@ -33623,7 +33647,8 @@ Restore_computer:
 	move.l	B_6089a,$404.w
 	movem.l	(a7)+,d0-d7/a0
 	rts
-T_1cb2e:
+; The shipped program also sets the vector of timer D for the music (My_timer_D).
+Init_computer:
 	movem.l	d0-d7/a0,-(a7)
 	move.l	#T_1ccae,$404.w
 	move.w	sr,-(a7)
@@ -33637,15 +33662,15 @@ T_1cb2e:
 	move.b	#$48,$fffffa17.w
 	move.b	#$0,$fffffa1b.w
 	andi.b	#$f0,$fffffa1d.w
-	move.l	#T_1cbd4,$114.w
-	move.l	#T_1cbde,$110.w
-	move.l	#.l_1cbca,$118.w
-	move.l	#T_1cc0e,$70.w
+	move.l	#My_timer_C,$114.w
+	move.l	#My_timer_D,$110.w
+	move.l	#My_mkb,$118.w
+	move.l	#My_vbi,$70.w
 	clr.w	$454.w
-	move.l	#.l_1cbc8,$502.w
+	move.l	#Dummy,$502.w
 	move.b	#$8,$484.w
 	movea.l	KBD_vec,a0
-	move.l	#T_1cefa,$10(a0)
+	move.l	#My_mouse,$10(a0)
 	move.w	(a7)+,sr
 	move.w	#$25,-(a7)
 	trap	#$e
@@ -33653,38 +33678,41 @@ T_1cb2e:
 	move.b	#$0,$ffff8260.w
 	jsr	Init_screen
 	movem.l	(a7)+,d0-d7/a0
-.l_1cbc8:
+Dummy:
 	rts
-.l_1cbca:
+My_mkb:
 	dc.b	$46,$fc,$25,$00
 Old_mkb:
 	dc.b	$4e,$f9
 T_1cbd0:
 	dc.b	$00,$fc,$00,$00
-T_1cbd4:
-	dc.b	$46,$fc,$25,$00,$4e,$f9
+My_timer_C:
+	dc.b	$46,$fc,$25,$00
+Old_timer_C:
+	dc.b	$4e,$f9
 T_1cbda:
 	dc.b	$00,$fc,$00,$00
-T_1cbde:
+; Timer D interrupt of the music (set by Play_song to 50 Hz): calls Coso_interrupt.
+My_timer_D:
 	move.w	#$2500,sr
 	tst.w	B_5c36c
 	bne.b	.l_1cc06
 	andi.b	#$f0,$fffffa1d.w
 	movem.l	d0-d7/a0-a6,-(a7)
 	moveq	#1,d1
-	jsr	T_1a896
+	jsr	Coso_interrupt
 	movem.l	(a7)+,d0-d7/a0-a6
 	ori.b	#$7,$fffffa1d.w
 .l_1cc06:
 	bclr	#$4,$fffffa11.w
 	rte
-T_1cc0e:
+My_vbi:
 	dc.b	$4e,$b9
 	dc.l	HBL_handler
 	dc.b	$52,$79
 	dc.l	B_608e2
 	dc.b	$4e,$b9
-	dc.l	T_10b20
+	dc.l	VblQ_handler
 Old_vbi:
 	dc.b	$4e,$f9
 T_1cc22:
@@ -33945,7 +33973,7 @@ T_1ceea:
 	move.l	#D_54caa,B_608e4
 	bsr.w	T_1cfe4
 	rts
-T_1cefa:
+My_mouse:
 	movea.l	MA_sp,a1
 	movea.l	(a1),a1
 	moveq	#3,d0

@@ -1,6 +1,6 @@
-﻿# Changes compared to the original source code
+# Changes compared to the original source code
 
-This list is generated from the `; CHANGE:` comments of the merged source (`src/`).
+This list is generated from the `; CHANGE:` comments of the merged source (`merged/AMBRSTAR_GERMAN.S`).
 It shows how the shipped program (German Atari ST version) differs from the original source in the routines
 which are taken from the original source. The original source is an older snapshot, so these are the changes
 of the later development (bugfixes and other changes).
@@ -10,7 +10,7 @@ of the later development (bugfixes and other changes).
 * `removed "…"` – an instruction of the original source which is not in the program
 
 Some changes may also come from the assembler which built the program (e.g. other encodings of the same
-instruction). 577 routines are taken from the original source, 131 of them have changes.
+instruction). 580 routines are taken from the original source, 131 of them have changes.
 
 ## LAYOUT/LAYOUT.ASM
 
@@ -897,7 +897,7 @@ instruction). 577 routines are taken from the original source, 131 of them have 
 
 ## NUCLEUS/INTROUTS.ASM
 
-4 routines taken, 0 with changes.
+7 routines taken, 0 with changes.
 
 ## NUCLEUS/KBDROUTS.ASM
 

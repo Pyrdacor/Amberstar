@@ -18,8 +18,8 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 577 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
-| 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 60 reconstructed names with comments (`SYMBOLS_RECONSTRUCTED.txt`), the code is still the disassembly |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 580 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
+| 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 95 names with comments (`SYMBOLS_RECONSTRUCTED.txt`), among them the COSO music player, the code is still the disassembly |
 
 ## The program file
 
@@ -90,8 +90,11 @@ python ambrdis.py <inner program> <named.s> SYMBOLS.txt
 * An address can have several names. The first one is used for references, the others are additional labels.
 
 Names which are not in the original source are in `SYMBOLS_RECONSTRUCTED.txt` (addresses of the German version):
-the music (`Play_song`, `Set_map_music`, `Coso_player`, `Current_song`, `Song_table`), the death of the party, the
-items in battles and about 55 routines of the combat (`Get_melee_targets`, `Flee`, `Execute_attacks`, `End_of_combat`, …).
+the music (`Play_song`, `Set_map_music`, `Current_song`, `Song_table`, the timer interrupt `My_timer_D` and about 30 names
+of the COSO music player by Jochen Hippel: `Coso_player`, `Coso_play`, `Coso_init_module`, `Coso_YM_registers`, …), the
+death of the party, the items in battles and about 55 routines of the combat (`Get_melee_targets`, `Flee`,
+`Execute_attacks`, `End_of_combat`, …). It also contains 8 names of the original source which the matching did not find
+because the shipped program differs there (e.g. `Init_computer`, which also sets the vector of timer D for the music).
 They come from the notes of the Amberstar.net project (its `Docs/Combat.md` and the comments of its code) and have a
 comment which is written in front of the label. The file also corrects names which were found at a wrong address
 (e.g. `Set_spell_area` was found at the start of `Set_map_music`, because the shipped program calls the new music
@@ -156,7 +159,7 @@ python changes.py merged.s CHANGES.md
 * The boundaries of the modules are chosen so that as few known routines as possible are in another module than
   their file (a few names of the original are used in several modules).
 
-So far 576 routines of the original source are in the merged source (German version), 131 of them with changes.
+So far 580 routines of the original source are in the merged source (German version), 131 of them with changes.
 `CHANGES.md` lists these changes. About 140 routines of the original could not be found in the program yet, the
 others could not be aligned or assembled.
 ## Known differences between the original source and the shipped program

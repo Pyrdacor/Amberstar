@@ -177,7 +177,7 @@ T_1ceea:
 	move.l	#D_54caa,B_608e4
 	bsr.w	Draw_mouse
 	rts
-T_1cefa:
+My_mouse:
 	movea.l	MA_sp,a1
 	movea.l	(a1),a1
 	moveq	#3,d0

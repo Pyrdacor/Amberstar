@@ -55,4 +55,5 @@ T_0ddf0	equ	Make_area_MOUTH+60
 T_0edd0	equ	Do_results+78
 T_12c9e	equ	Transfer_gold+86
 T_1cbce	equ	Old_mkb+2
+T_1cbd8	equ	Old_timer_C+2
 T_1cc20	equ	Old_vbi+2

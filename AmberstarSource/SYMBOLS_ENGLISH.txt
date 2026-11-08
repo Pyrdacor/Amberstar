@@ -474,6 +474,7 @@
 109d4	T_109d4	Pop_Module	MAIN/MODCON.ASM	76	
 10ac8	T_10ac8	Handle_list	MAIN/MODCON.ASM	2	
 10af6	T_10af6	ScrQ_handler	MAIN/MODCON.ASM	0	
+10b1e	T_10b1e	VblQ_handler	MAIN/MODCON.ASM	R	Calls the vertical blank routines of the module stack (the check of DangerZone was removed).
 10b46	T_10b46	Basic_DisUpd	MAIN/MODULES.ASM	2	
 10b4e	T_10b4e	Inv1_DisUpd	MAIN/INVENT.ASM	2	
 10b68	T_10b68	Inv1_ModInit	MAIN/INVENT.ASM	2	
@@ -649,7 +650,33 @@
 1a7c0	T_1a7c0	Draw_horizontal_border	LAYOUT/WINDOWS.ASM	2	
 1a7da	T_1a7da	Draw_vertical_border	LAYOUT/WINDOWS.ASM	2	
 1a7f4	T_1a7f4	Close_window	LAYOUT/WINDOWS.ASM	10	
-1a88c	T_1a88c	Coso_player	MAIN/COMBAT.ASM	R	Entry of the COSO music player by Jochen Hippel: d0 = 0 init, 1 play module a0.
+1a88c	T_1a88c	Coso_player	MAIN/COMBAT.ASM	R	Jump table of the COSO music player by Jochen Hippel: +0 start song d0 of the module a0 (0 stops), +4 sound effect d0 (not used), +8 play (timer interrupt), +12 set the volume reduction, +16 mute.
+1a894	T_1a894	Coso_interrupt	MAIN/COMBAT.ASM	R	Called by the timer interrupt (My_timer_D, 50 times per second).
+1a8b8	T_1a8b8	Coso_start_song	MAIN/COMBAT.ASM	R	Starts the song d0 of the module a0 (0 stops the music), all registers are restored.
+1a8c6	T_1a8c6	Coso_sound_effect	MAIN/COMBAT.ASM	R	Starts the sound effect d0 (4 bytes per effect), all registers are restored. Amberstar does not call it.
+1a8ee	T_1a8ee	Coso_init_song	MAIN/COMBAT.ASM	R	Song d0 (6 bytes per song: first and last position, speed) or stop.
+1a91e	T_1a91e	Coso_init_module	MAIN/COMBAT.ASM	R	Pointers to the parts of the module a0 (offsets at 4-$1c). "MMME" at $20 marks the newer format.
+1a99a	T_1a99a	Coso_init_samples	MAIN/COMBAT.ASM	R	Converts the samples of a "MARCHI" module once (d0 = mode) and sets the sample interrupt.
+1aa98	T_1aa98	Coso_saved_MFP	MAIN/COMBAT.ASM	R	The vector $110 and the MFP registers before the samples were set up.
+1aaa4	T_1aaa4	Coso_sample_interrupt	MAIN/COMBAT.ASM	R	move.b (a6)+,$ffff8832.w / rte (written as data).
+1aaaa	T_1aaaa	Coso_play	MAIN/COMBAT.ASM	R	One step of the music: the 3 channels and the sound effect, then the YM2149 registers are written.
+1ac38	T_1ac38	Coso_channel_sequence	MAIN/COMBAT.ASM	R	Next note of a channel when its duration is over.
+1ad88	T_1ad88	Coso_init_positions	MAIN/COMBAT.ASM	R	Initialises the channels for the positions d0 to d1 (12 bytes per position).
+1ae94	T_1ae94	Coso_start_effect	MAIN/COMBAT.ASM	R	The sound effect is played on the effect channel.
+1af2c	T_1af2c	Coso_channel_frame	MAIN/COMBAT.ASM	R	Period (d0) and volume (d1) of a channel for this step.
+1b3c4	T_1b3c4	Coso_select_register	MAIN/COMBAT.ASM	R	Selects the YM2149 register 10 (15 in sample mode 2).
+1b3ec	T_1b3ec	Coso_YM_registers	MAIN/COMBAT.ASM	R	The YM2149 registers 0-10 as pairs of register and value, written with movem to the mirrors of $ffff8800.
+1b418	T_1b418	Coso_effect_registers	MAIN/COMBAT.ASM	R	Offsets of the registers in Coso_YM_registers of the channel which plays the sound effect.
+1b42a	T_1b42a	Coso_volume_reduction	MAIN/COMBAT.ASM	R	Is subtracted from the volume of each channel (Coso_player+12).
+1b434	T_1b434	Coso_speed_counter	MAIN/COMBAT.ASM	R	Steps until the next notes, followed by the speed of the song.
+1b43c	T_1b43c	Coso_channel_A	MAIN/COMBAT.ASM	R	State of a channel (52 bytes).
+1b470	T_1b470	Coso_channel_B	MAIN/COMBAT.ASM	R	
+1b4a4	T_1b4a4	Coso_channel_C	MAIN/COMBAT.ASM	R	
+1b4d8	T_1b4d8	Coso_effect_channel	MAIN/COMBAT.ASM	R	
+1b52c	T_1b52c	Coso_module	MAIN/COMBAT.ASM	R	The module which is played.
+1b534	T_1b534	Coso_mute	MAIN/COMBAT.ASM	R	If set, the YM2149 registers are not written (Coso_player+16).
+1b536	T_1b536	Coso_sample_mode	MAIN/COMBAT.ASM	R	$ff: no samples, otherwise the mode d0 of Coso_init_samples.
+1b538	T_1b538	Coso_period_table	MAIN/COMBAT.ASM	R	YM2149 periods of the notes.
 1b892	T_1b892	Save_file	NUCLEUS/AMBRFILE.ASM	3	
 1ba1c	T_1ba1c	Load_subfile	NUCLEUS/AMBRFILE.ASM	19	
 1bc70	T_1bc70	Save_subfile	NUCLEUS/AMBRFILE.ASM	2	
@@ -689,7 +716,14 @@
 1c966	T_1c966	Update_HBL	NUCLEUS/HBI.ASM	53	
 1c974	T_1c974	Copy_HBL_list	NUCLEUS/HBI.ASM	0	
 1ca6e	T_1ca6e	Restore_computer	NUCLEUS/INTROUTS.ASM	0	
+1cb2c	T_1cb2c	Init_computer	NUCLEUS/INTROUTS.ASM	R	The shipped program also sets the vector of timer D for the music (My_timer_D).
+1cbc6	T_1cbc6	Dummy	NUCLEUS/INTROUTS.ASM	R	
+1cbc8	T_1cbc8	My_mkb	NUCLEUS/INTROUTS.ASM	R	
 1cbcc	T_1cbcc	Old_mkb	NUCLEUS/INTROUTS.ASM	2	
+1cbd2	T_1cbd2	My_timer_C	NUCLEUS/INTROUTS.ASM	R	
+1cbd6	T_1cbd6	Old_timer_C	NUCLEUS/INTROUTS.ASM	R	
+1cbdc	T_1cbdc	My_timer_D	NUCLEUS/INTROUTS.ASM	R	Timer D interrupt of the music (set by Play_song to 50 Hz): calls Coso_interrupt.
+1cc0c	T_1cc0c	My_vbi	NUCLEUS/INTROUTS.ASM	R	
 1cc1e	T_1cc1e	Old_vbi	NUCLEUS/INTROUTS.ASM	2	
 1cc24	T_1cc24	IFF_pal_convert	NUCLEUS/INTROUTS.ASM	5	
 1cc42	T_1cc42	Random	NUCLEUS/INTROUTS.ASM	20	
@@ -699,6 +733,7 @@
 1ce0a	T_1ce0a	Pop_Mptr	NUCLEUS/KBDROUTS.ASM	2	
 1ce3c	T_1ce3c	Change_Mptr	NUCLEUS/KBDROUTS.ASM	2	
 1ced6	T_1ced6	Wait_4_key	NUCLEUS/KBDROUTS.ASM	2	
+1cef8	T_1cef8	My_mouse	NUCLEUS/KBDROUTS.ASM	R	
 1cf82	T_1cf82	Mouse_on	NUCLEUS/KBDROUTS.ASM	14	
 1cfa0	T_1cfa0	Mouse_off	NUCLEUS/KBDROUTS.ASM	15	
 1cfbe	T_1cfbe	EraseM_entry	NUCLEUS/KBDROUTS.ASM	0	

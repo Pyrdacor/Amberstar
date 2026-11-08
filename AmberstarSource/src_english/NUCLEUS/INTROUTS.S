@@ -40,7 +40,8 @@ Restore_computer:
 	move.l	B_5d868,$404.w
 	movem.l	(a7)+,d0-d7/a0
 	rts
-T_1cb2c:
+; The shipped program also sets the vector of timer D for the music (My_timer_D).
+Init_computer:
 	movem.l	d0-d7/a0,-(a7)
 	move.l	#T_1ccac,$404.w
 	move.w	sr,-(a7)
@@ -54,15 +55,15 @@ T_1cb2c:
 	move.b	#$48,$fffffa17.w
 	move.b	#$0,$fffffa1b.w
 	andi.b	#$f0,$fffffa1d.w
-	move.l	#T_1cbd2,$114.w
-	move.l	#T_1cbdc,$110.w
+	move.l	#My_timer_C,$114.w
+	move.l	#My_timer_D,$110.w
 	move.l	#My_mkb,$118.w
-	move.l	#T_1cc0c,$70.w
+	move.l	#My_vbi,$70.w
 	clr.w	$454.w
-	move.l	#.l_1cbc6,$502.w
+	move.l	#Dummy,$502.w
 	move.b	#$8,$484.w
 	movea.l	KBD_vec,a0
-	move.l	#T_1cef8,$10(a0)
+	move.l	#My_mouse,$10(a0)
 	move.w	(a7)+,sr
 	move.w	#$25,-(a7)
 	trap	#$e
@@ -70,38 +71,42 @@ T_1cb2c:
 	move.b	#$0,$ffff8260.w
 	jsr	Init_screen
 	movem.l	(a7)+,d0-d7/a0
-.l_1cbc6:
-	rts
+; ---- Dummy (original source: NUCLEUS/INTROUTS.ASM)
+Dummy:
+	rts	
 ; ---- My_mkb (original source: NUCLEUS/INTROUTS.ASM)
 My_mkb:
 	move.w	#$2500,sr
 ; ---- Old_mkb (original source: NUCLEUS/INTROUTS.ASM)
 Old_mkb:
 	jmp	$fc0000
-T_1cbd2:
-	dc.b	$46,$fc,$25,$00,$4e,$f9
-T_1cbd8:
-	dc.b	$00,$fc,$00,$00
-T_1cbdc:
+; ---- My_timer_C (original source: NUCLEUS/INTROUTS.ASM)
+My_timer_C:
+	move.w	#$2500,sr
+; ---- Old_timer_C (original source: NUCLEUS/INTROUTS.ASM)
+Old_timer_C:
+	jmp	$fc0000
+; Timer D interrupt of the music (set by Play_song to 50 Hz): calls Coso_interrupt.
+My_timer_D:
 	move.w	#$2500,sr
 	tst.w	Music_block
 	bne.b	.l_1cc04
 	andi.b	#$f0,$fffffa1d.w
 	movem.l	d0-d7/a0-a6,-(a7)
 	moveq	#1,d1
-	jsr	T_1a894
+	jsr	Coso_interrupt
 	movem.l	(a7)+,d0-d7/a0-a6
 	ori.b	#$7,$fffffa1d.w
 .l_1cc04:
 	bclr	#$4,$fffffa11.w
 	rte
-T_1cc0c:
+My_vbi:
 	dc.b	$4e,$b9
 	dc.l	HBL_handler
 	dc.b	$52,$79
 	dc.l	B_5d8b0
 	dc.b	$4e,$b9
-	dc.l	T_10b1e
+	dc.l	VblQ_handler
 ; ---- Old_vbi (original source: NUCLEUS/INTROUTS.ASM)
 Old_vbi:
 	jmp	$fc0000
