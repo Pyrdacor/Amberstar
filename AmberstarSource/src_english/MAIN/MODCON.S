@@ -1,5 +1,7 @@
 ; MAIN/MODCON.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Init_display (original source: MAIN/MODCON.ASM)
 Init_display:
 	movem.l	d0-d7/a0-a6,-(sp)
@@ -200,3 +202,15 @@ T_10b1e:
 .l_10b40:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
+
+	section	data
+
+Module_sp:
+	dc.l	Res_dat2_ptr
+
+	section	bss
+
+Abort_list:
+	ds.b	2
+B_584f8:
+	ds.b	736

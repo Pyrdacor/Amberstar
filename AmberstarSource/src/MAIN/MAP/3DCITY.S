@@ -1,5 +1,7 @@
 ; MAIN/MAP/3DCITY.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 C3_ModInit:
 	move.l	a5,Mapd_ptr
 	bsr.w	Prepare_3D_map
@@ -273,3 +275,22 @@ T_05836:
 .l_058c4:
 	movem.l	(a7)+,d0-d5/d7/a0-a6
 	rts
+
+	section	bss
+
+Blending:
+	ds.b	2
+Blend_ptr:
+	ds.b	4
+Sky_ptr:
+	ds.b	4
+Skypal_buffer:
+	ds.b	32
+B_5a9ea:
+	ds.b	166
+B_5aa90:
+	ds.b	2
+B_5aa92:
+	ds.b	2
+B_5aa94:
+	ds.b	2

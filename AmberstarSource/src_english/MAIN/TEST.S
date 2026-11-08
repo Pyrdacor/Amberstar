@@ -1,5 +1,7 @@
 ; MAIN/TEST.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 	dc.w	$a00a
 	movea.l	$4(a7),a0
 	move.l	a0,B_5bea4
@@ -1683,3 +1685,13 @@ T_019b2:
 	beq.b	T_019d4
 	moveq	#20,d0
 	bsr.w	Delay
+
+	section	data
+
+D_1dc92:
+	dc.b	$00
+
+	section	bss
+
+Void:
+	ds.b	1024

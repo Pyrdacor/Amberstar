@@ -1,5 +1,7 @@
 ; MAIN/MAP/MAP.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 Init_map:
 	movem.l	d0/a0/a5,-(a7)
 	bsr.w	T_00194

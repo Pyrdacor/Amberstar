@@ -1,5 +1,7 @@
 ; MAIN/MAP/SHADOW.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Do_shadow (original source: MAIN/MAP/SHADOW.ASM)
 Do_shadow:
 	movem.l	d0-d7,-(sp)
@@ -187,3 +189,50 @@ Quadrant_3:
 	bra.b	Quadrant_3
 .l_05ac0:
 	rts
+
+	section	data
+
+Spiral_table:
+	dc.b	$00,$ff,$01,$ff,$01,$00,$01,$01,$00,$01,$ff,$01,$ff,$00,$ff,$ff
+	dc.b	$ff,$fe,$00,$fe,$01,$fe,$02,$fe,$02,$ff,$02,$00,$02,$01,$02,$02
+	dc.b	$01,$02,$00,$02,$ff,$02,$fe,$02,$fe,$01,$fe,$00,$fe,$ff,$fe,$fe
+	dc.b	$fe,$fd,$ff,$fd,$00,$fd,$01,$fd,$02,$fd,$03,$fd,$03,$fe,$03,$ff
+	dc.b	$03,$00,$03,$01,$03,$02,$03,$03,$02,$03,$01,$03,$00,$03,$ff,$03
+	dc.b	$fe,$03,$fd,$03,$fd,$02,$fd,$01,$fd,$00,$fd,$ff,$fd,$fe,$fd,$fd
+	dc.b	$fd,$fc,$fe,$fc,$ff,$fc,$00,$fc,$01,$fc,$02,$fc,$03,$fc,$04,$fc
+	dc.b	$04,$fd,$04,$fe,$04,$ff,$04,$00,$04,$01,$04,$02,$04,$03,$04,$04
+	dc.b	$03,$04,$02,$04,$01,$04,$00,$04,$ff,$04,$fe,$04,$fd,$04,$fc,$04
+	dc.b	$fc,$03,$fc,$02,$fc,$01,$fc,$00,$fc,$ff,$fc,$fe,$fc,$fd,$fc,$fc
+	dc.b	$fc,$fb,$fd,$fb,$fe,$fb,$ff,$fb,$00,$fb,$01,$fb,$02,$fb,$03,$fb
+	dc.b	$04,$fb,$05,$fb,$05,$fc,$05,$fd,$05,$fe,$05,$ff,$05,$00,$05,$01
+	dc.b	$05,$02,$05,$03,$05,$04,$05,$05,$04,$05,$03,$05,$02,$05,$01,$05
+	dc.b	$00,$05,$ff,$05,$fe,$05,$fd,$05,$fc,$05,$fb,$05,$fb,$04,$fb,$03
+	dc.b	$fb,$02,$fb,$01,$fb,$00,$fb,$ff,$fb,$fe,$fb,$fd,$fb,$fc,$fb,$fb
+	dc.b	$fb,$fa,$fc,$fa,$fd,$fa,$fe,$fa,$ff,$fa,$00,$fa,$01,$fa,$02,$fa
+	dc.b	$03,$fa,$04,$fa,$05,$fa,$06,$fa,$06,$fb,$06,$fc,$06,$fd,$06,$fe
+	dc.b	$06,$ff,$06,$00,$06,$01,$06,$02,$06,$03,$06,$04,$06,$05,$06,$06
+	dc.b	$05,$06,$04,$06,$03,$06,$02,$06,$01,$06,$00,$06,$ff,$06,$fe,$06
+	dc.b	$fd,$06,$fc,$06,$fb,$06,$fa,$06,$fa,$05,$fa,$04,$fa,$03,$fa,$02
+	dc.b	$fa,$01,$fa,$00,$fa,$ff,$fa,$fe,$fa,$fd,$fa,$fc,$fa,$fb,$fa,$fa
+	dc.b	$07,$fa,$07,$fb,$07,$fc,$07,$fd,$07,$fe,$07,$ff,$07,$00,$07,$01
+	dc.b	$07,$02,$07,$03,$07,$04,$07,$05,$07,$06,$f9,$06,$f9,$05,$f9,$04
+	dc.b	$f9,$03,$f9,$02,$f9,$01,$f9,$00,$f9,$ff,$f9,$fe,$f9,$fd,$f9,$fc
+	dc.b	$f9,$fb,$f9,$fa,$08,$fa,$08,$fb,$08,$fc,$08,$fd,$08,$fe,$08,$ff
+	dc.b	$08,$00,$08,$01,$08,$02,$08,$03,$08,$04,$08,$05,$08,$06,$f8,$06
+	dc.b	$f8,$05,$f8,$04,$f8,$03,$f8,$02,$f8,$01,$f8,$00,$f8,$ff,$f8,$fe
+	dc.b	$f8,$fd,$f8,$fc,$f8,$fb,$f8,$fa
+D_1e3b6:
+	dc.b	$00,$20,$00,$44,$01,$00,$00,$30,$00,$0f,$00,$02
+Second_CIL:
+	dc.b	$0b,$0a,$11,$15,$0c,$13,$39,$26,$3c,$00
+	dc.l	Eye_spy
+	dc.l	Ear_action
+	dc.l	T_0df02
+	dc.l	Change_travelmode
+	dc.l	T_13774
+	dc.l	T_0fd04
+	dc.l	Automapper
+	dc.l	T_105e8
+	dc.l	Options_menu
+Vbl_per_step:
+	dc.b	$01,$f4

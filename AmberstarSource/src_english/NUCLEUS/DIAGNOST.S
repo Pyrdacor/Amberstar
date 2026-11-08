@@ -1,5 +1,7 @@
 ; NUCLEUS/DIAGNOST.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 DI_Error:
 	movem.l	d0-d2/a0-a2/a6,-(a7)
 	bsr.w	T_1c0e8
@@ -283,3 +285,41 @@ DI_Pchar:
 .l_1c410:
 	movem.l	(a7)+,d0-d2/d7/a1/a6
 	rts
+
+	section	data
+
+Diag_pal:
+	dc.b	$00,$00,$07,$77
+D_51ad2:
+	dc.b	$00,$57,$05,$55
+Ink:
+	dc.b	$01
+D_51ad7:
+	dc.b	$03,$02,$01,$20,$21,$21,$21,$20,$41,$6e,$20,$45,$52,$52,$4f,$52
+	dc.b	$20,$68,$61,$73,$20,$6f,$63,$63,$75,$72,$72,$65,$64,$20,$21,$21
+	dc.b	$21,$20,$0d,$0d,$02,$03,$01,$00
+D_51aff:
+	dc.b	$0d,$03,$02,$01,$20,$50,$72,$65,$73,$73,$20,$61,$6e,$79,$20,$6b
+	dc.b	$65,$79,$20,$74,$6f,$20,$63,$6f,$6e,$74,$69,$6e,$75,$65,$2e,$2e
+	dc.b	$2e,$20,$20,$0d,$0d,$02,$00
+D_51b26:
+	dc.b	$0e,$0e,$5f,$20,$0e,$00
+D_51b2c:
+	dc.b	$0e,$20,$0d,$00
+D_51b30:
+	dc.b	$0e,$20,$5f,$00
+
+	section	bss
+
+Prev_screen:
+	ds.b	4
+B_5d44c:
+	ds.b	2
+B_5d44e:
+	ds.b	2
+Inverse:
+	ds.b	2
+DI_Font_ptr:
+	ds.b	4
+HBL_flag:
+	ds.b	2

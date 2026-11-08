@@ -1,5 +1,7 @@
 ; NUCLEUS/MEMORY.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Next_generation (original source: NUCLEUS/MEMORY.ASM)
 Next_generation:
 	movem.l	d0/d1/a0/a1,-(sp)
@@ -378,3 +380,16 @@ Delete_memblocks:
 .Exit:
 	movem.l	(sp)+,d0/d1/a0-a2
 	rts	
+
+	section	bss
+
+Size_of_free_memory:
+	ds.b	4
+B_5da0c:
+	ds.b	4
+Memlist_end:
+	ds.b	4
+Memory_list:
+	ds.b	24000
+Output_string:
+	ds.b	34

@@ -1,5 +1,7 @@
 ; NUCLEUS/NUMERIC.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Hex_convert (original source: NUCLEUS/NUMERIC.ASM)
 Hex_convert:
 	movem.l	d0/d1/d7,-(sp)

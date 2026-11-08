@@ -1,5 +1,7 @@
 ; MAIN/MAP/2DWILD.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 W2_ModInit:
 	move.l	a5,Mapd_ptr
 	bsr.w	M2_time_evaluate
@@ -1083,3 +1085,37 @@ Enter_transport_icons:
 	dbra	d3,.Loop
 	movem.l	(sp)+,d0-d7/a0-a2
 	rts	
+
+	section	data
+
+W2_CIL:
+	dc.b	$2e,$01,$2d,$04,$07,$03,$30,$02,$2f,$00
+D_1e1d6:
+	dc.l	C2_upleft
+	dc.l	C2_up
+	dc.l	C2_upright
+	dc.l	C2_left
+	dc.l	Zzz
+	dc.l	C2_right
+	dc.l	C2_downleft
+	dc.l	C2_down
+	dc.l	C2_downright
+D_1e1fa:
+	dc.b	$ff,$00
+
+	section	bss
+
+World_X:
+	ds.b	2
+World_Y:
+	ds.b	2
+Quad_X:
+	ds.b	2
+Quad_Y:
+	ds.b	2
+Quad_index:
+	ds.b	1
+B_5795d:
+	ds.b	1
+Quad_map:
+	ds.b	48

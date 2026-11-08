@@ -4,8 +4,6 @@
 
 	include	"CONSTANTS.I"
 
-	section	text
-
 	include	"MAIN/TEST.S"
 	include	"MAIN/STATUS.S"
 	include	"MAIN/MAP/MAP.S"
@@ -31,6 +29,7 @@
 	include	"MAIN/COMBAT.S"
 	include	"LAYOUT/OBJFIND.S"
 	include	"LAYOUT/WINDOWS.S"
+	include	"LAYOUT/GRAPHICS.S"
 	include	"NUCLEUS/AMBRFILE.S"
 	include	"NUCLEUS/COLOFADE.S"
 	include	"NUCLEUS/DIAGNOST.S"
@@ -42,6 +41,8 @@
 	include	"NUCLEUS/NUMERIC.S"
 	include	"NUCLEUS/SCREEN.S"
 	include	"NUCLEUS/TEXTPUT.S"
+
+	section	text
 
 T_019d4	equ	Status_F0+20
 T_03299	equ	Display_element+77
@@ -55,9 +56,3 @@ T_0edd2	equ	Do_results+78
 T_12ca0	equ	Transfer_gold+86
 T_1cbd0	equ	Old_mkb+2
 T_1cc22	equ	Old_vbi+2
-
-	section	data
-	include	"DATA.S"
-
-	section	bss
-	include	"BSS.S"

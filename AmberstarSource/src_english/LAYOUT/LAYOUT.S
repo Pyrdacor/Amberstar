@@ -1,5 +1,7 @@
 ; LAYOUT/LAYOUT.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Show_updated_status_block (original source: LAYOUT/LAYOUT.ASM)
 Show_updated_status_block:
 	tst.b	Updated
@@ -704,3 +706,53 @@ T_070b2:
 	dbra	d7,T_070a2
 	movem.l	(a7)+,d0/d7/a0/a6
 	rts
+
+	section	data
+
+Erase_icon:
+	dc.b	$47,$48,$49,$4c,$4e,$4d,$4a,$5b,$4b
+D_1e3f9:
+	dc.b	$4e,$4e,$4e,$4e,$4e,$4e,$4e,$4e,$4e,$4e,$4e,$4e,$00
+Status_PA:
+	dc.b	$00,$00,$00,$00,$01,$3f,$00,$22
+D_1e40e:
+	dc.b	$00,$09,$00,$00
+Icon_pos:
+	dc.b	$00,$d0,$00,$91,$00,$f0,$00,$91,$01,$10,$00,$91,$00,$d0,$00,$a1
+	dc.b	$00,$f0,$00,$a1,$01,$10,$00,$a1,$00,$d0,$00,$b1,$00,$f0,$00,$b1
+	dc.b	$01,$10,$00,$b1
+Temp_name:
+	dc.b	$01,$00,$02,$00
+D_1e43a:
+	dc.b	$20,$20,$20,$20,$20,$00
+Time_string:
+	dc.b	$01,$0f
+D_1e442:
+	dc.b	$02,$02,$20,$20,$3a,$20,$20,$00
+AutoIcon_flag:
+	dc.b	$ff,$00
+
+	section	bss
+
+Control_icon_flag:
+	ds.b	2
+Feedback_screen:
+	ds.b	4
+Draw_Cicon:
+	ds.b	2
+Erase_Cicon:
+	ds.b	2
+Control_list_ptr:
+	ds.b	4
+XActive_member:
+	ds.b	2
+Shadow_data:
+	ds.b	84
+Updated:
+	ds.b	2
+B_57d58:
+	ds.b	12
+B_57d64:
+	ds.b	2
+Input_buffer:
+	ds.b	50

@@ -1,5 +1,7 @@
 ; MAIN/MAP/2DCITY.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- C2_ModInit (original source: MAIN/MAP/2DCITY.ASM)
 ; CHANGE: removed "Pop MA"
 C2_ModInit:

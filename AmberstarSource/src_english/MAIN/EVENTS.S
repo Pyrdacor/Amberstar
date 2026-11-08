@@ -1,5 +1,7 @@
 ; MAIN/EVENTS.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Event_handler (original source: MAIN/EVENTS.ASM)
 Event_handler:
 	movem.l	d0/d1/a5,-(sp)
@@ -3228,3 +3230,131 @@ Remove_event:
 	clr.b	(a0)
 	movem.l	(sp)+,d1/a0
 	rts	
+
+	section	data
+
+L3_objects_area:
+	dc.b	$00,$10,$00,$bf,$00,$91,$00,$c0
+TxtW_PA:
+	dc.b	$00,$20
+D_25f80:
+	dc.b	$00,$00,$01,$00
+D_25f84:
+	dc.b	$00,$00,$00,$0f,$00,$03
+D_25f8a:
+	dc.b	$00,$20,$00,$44,$01,$00,$00,$70,$00,$0f,$00,$03
+P80_PA:
+	dc.b	$00,$70,$00,$31,$00,$c0,$00,$8c,$00,$0f,$00,$02
+Lay3_PlusMes:
+	dc.b	$00,$70,$01,$2f,$00,$31,$00,$60
+Lay3_PA:
+	dc.b	$00,$70,$00,$31,$00,$c0,$00,$30,$00,$0f,$00,$02
+Lay9_PlusMes:
+	dc.b	$00,$10,$00,$bf,$00,$31,$00,$c0
+D_25fbe:
+	dc.b	$00,$10,$00,$31,$00,$b0,$00,$90,$00,$0f,$00,$02
+D_25fca:
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$07
+D_25fd2:
+	dc.b	$00,$0f,$00,$03
+Door_object_pos_list:
+	dc.b	$00,$10,$00,$91,$00,$30,$00,$91,$00,$50,$00,$91,$00,$70,$00,$91
+	dc.b	$00,$90,$00,$91,$00,$b0,$00,$91,$00,$10,$00,$b1,$00,$30,$00,$b1
+	dc.b	$00,$50,$00,$b1,$00,$70,$00,$b1,$00,$90,$00,$b1,$00,$b0,$00,$b1
+Door_CIL:
+	dc.b	$0f,$20,$1e,$0d,$38,$38,$0e,$38,$38,$00
+	dc.l	T_0809a
+	dc.l	T_0813c
+	dc.l	T_08084
+	dc.l	Find_trap_DOOR
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	T_08332
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+ClosedChest_CIL:
+	dc.b	$0f,$20,$1e,$0d,$a3,$a1,$0e,$92,$b2,$00
+	dc.l	T_0809a
+	dc.l	Use_item_CHEST
+	dc.l	T_08aba
+	dc.l	Find_trap_DOOR
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	T_08332
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+OpenedChest_CIL:
+	dc.b	$8f,$a0,$1e,$8d,$23,$21,$8e,$12,$32,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	T_08aba
+	dc.b	$00,$00,$00,$00
+	dc.l	T_08f2c
+	dc.l	T_08f8a
+	dc.b	$00,$00,$00,$00
+	dc.l	T_09138
+	dc.l	Divide_gold_CHEST
+RiddleM_CIL:
+	dc.b	$38,$38,$1e,$38,$38,$38,$11,$38,$0a,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	RiddleM_Exit
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Answer_riddleM
+	dc.b	$00,$00,$00,$00
+	dc.l	Ask_riddleM
+Lay3_target_hbl:
+	dc.b	$00,$00
+D_260c0:
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00,$00,$00,$06,$51,$03,$33,$02,$22,$01,$11,$05,$31,$04,$21
+	dc.b	$01,$24,$02,$36,$06,$10,$03,$10,$05,$41,$03,$40,$04,$51,$04,$44
+	dc.b	$07,$65
+D_26102:
+	dc.b	$00,$30,$00,$38,$00,$80,$00,$70,$00,$0f,$00,$03
+
+	section	bss
+
+Palette_buffer:
+	ds.b	32
+B_58216:
+	ds.b	2
+B_58218:
+	ds.b	2
+B_5821a:
+	ds.b	2
+B_5821c:
+	ds.b	2
+Trap_found:
+	ds.b	1
+Trap_disarmed:
+	ds.b	1
+Door_opened:
+	ds.b	1
+Doorexit_flag:
+	ds.b	1
+Gold_in_chest_flag:
+	ds.b	2
+Current_chest_gold:
+	ds.b	2
+Current_chest_slots:
+	ds.b	1
+B_58227:
+	ds.b	1
+Chest_slot_list:
+	ds.b	12
+Divide_gold_workspace:
+	ds.b	12
+Itemdata_ptr:
+	ds.b	4
+Itemslots_ptr:
+	ds.b	4
+EVENT_ptr:
+	ds.b	4
+EVENT_bit:
+	ds.b	2
+Event_nr:
+	ds.b	2
+Event_data_ptr:
+	ds.b	4
+WText_nr:
+	ds.b	2
+B_58256:
+	ds.b	2
+B_58258:
+	ds.b	2

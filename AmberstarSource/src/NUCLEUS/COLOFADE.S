@@ -1,5 +1,7 @@
 ; NUCLEUS/COLOFADE.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Fade_pal (original source: NUCLEUS/COLOFADE.ASM)
 Fade_pal:
 	movem.l	d0/d1/d5-d7/a0/a1,-(sp)

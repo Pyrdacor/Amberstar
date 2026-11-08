@@ -1,6 +1,6 @@
 # Disassembles an Atari ST program (PRG) into vasm source which assembles to the same file.
 # Relocated longwords become labels, code is found by following the control flow.
-import sys, os, struct, re
+import sys, os, struct, re, collections
 from capstone import Cs, CS_ARCH_M68K, CS_MODE_BIG_ENDIAN, CS_MODE_M68K_000
 
 src = open(sys.argv[1], 'rb').read()
@@ -332,10 +332,11 @@ def convert(i):
         ops = re.sub(r'#\$([0-9a-f]+)', lambda m: '#%d' % (int(m.group(1), 16) - 256 if int(m.group(1), 16) >= 0x80 else int(m.group(1), 16)), ops)
     return '%s\t%s' % (mn, ops) if ops else mn
 
-def emit_bytes(lines, a, b_end):
+def emit_bytes(lines, a, b_end, on_pos=None):
     # data bytes with relocated longwords as labels and labels at their offsets
     pos = a
     while pos < b_end:
+        if on_pos: on_pos(pos)
         if pos in labels and pos not in inside:
             lines.extend(label_lines(pos))
         if pos in relocs:
@@ -360,32 +361,39 @@ for a, v in merge.items(): file_of_addr[a] = v[3]
 segments = [(len(lines), MODULE_ORDER[0])]
 # The modules follow each other in MODULE_ORDER. The boundaries are chosen so that as few known routines as
 # possible are in another module than their file (single misplaced names don't move a boundary).
-known = sorted((a, MODULE_ORDER.index(fl)) for a, fl in file_of_addr.items() if a < tlen and fl in MODULE_ORDER)
-M = len(MODULE_ORDER)
-INF = 10 ** 9
-cost = [0] * M
-back = []
-for a, m in known:
-    best_prev, best_idx = INF, 0
-    new_cost, choice = [0] * M, [0] * M
-    run_min, run_arg = INF, 0
-    for k in range(M):
-        if cost[k] < run_min: run_min, run_arg = cost[k], k
-        new_cost[k] = run_min + (0 if k == m else 1)
-        choice[k] = run_arg
-    back.append(choice)
-    cost = new_cost
-k = min(range(M), key=lambda x: cost[x])
-assign = [0] * len(known)
-for i in range(len(known) - 1, -1, -1):
-    assign[i] = k
-    k = back[i][k]
-boundaries = {}
-prev = 0
-for (a, _), m in zip(known, assign):
-    if m != prev:
-        boundaries[a] = MODULE_ORDER[m]
-        prev = m
+def module_boundaries(lo, hi):
+    # The modules follow each other in MODULE_ORDER (in the text, the data and the BSS). The boundaries are chosen so
+    # that as few known names as possible are in another module than their file (single misplaced names don't count).
+    known = sorted((a, MODULE_ORDER.index(fl)) for a, fl in file_of_addr.items() if lo <= a < hi and fl in MODULE_ORDER)
+    M = len(MODULE_ORDER)
+    INF = 10 ** 9
+    cost = [0] * M
+    back = []
+    for a, m in known:
+        new_cost, choice = [0] * M, [0] * M
+        run_min, run_arg = INF, 0
+        for k in range(M):
+            if cost[k] < run_min: run_min, run_arg = cost[k], k
+            new_cost[k] = run_min + (0 if k == m else 1)
+            choice[k] = run_arg
+        back.append(choice)
+        cost = new_cost
+    if not known: return {}
+    k = min(range(M), key=lambda x: cost[x])
+    assign = [0] * len(known)
+    for i in range(len(known) - 1, -1, -1):
+        assign[i] = k
+        k = back[i][k]
+    result, prev = {}, 0
+    for (a, _), m in zip(known, assign):
+        if m != prev:
+            result[a] = MODULE_ORDER[m]
+            prev = m
+    return result
+boundaries = module_boundaries(0, tlen)
+data_boundaries = module_boundaries(tlen, tlen + dlen)
+bss_boundaries = module_boundaries(tlen + dlen, end + 1)
+data_segments, bss_segments = [], []
 def module_boundary(p):
     if p in boundaries:
         segments.append((len(lines), boundaries[p]))
@@ -441,13 +449,19 @@ for t in sorted(inside):
 
 text_end = len(lines)
 lines += ['', '\tsection\tdata', '']
-emit_bytes(lines, tlen, tlen + dlen)
+data_segments.append((len(lines), MODULE_ORDER[0]))
+def data_boundary(p):
+    if split_dir and p in data_boundaries: data_segments.append((len(lines), data_boundaries[p]))
+emit_bytes(lines, tlen, tlen + dlen, data_boundary)
+data_end = len(lines)
 
 lines += ['', '\tsection\tbss', '']
+bss_segments.append((len(lines), MODULE_ORDER[0]))
 bss_labels = sorted(t for t in labels if t >= tlen + dlen)
 pos = tlen + dlen
 for t in bss_labels:
     if t > pos: lines.append('\tds.b\t%d' % (t - pos)); pos = t
+    if split_dir and t in bss_boundaries: bss_segments.append((len(lines), bss_boundaries[t]))
     lines.extend(label_lines(t))
 if end > pos: lines.append('\tds.b\t%d' % (end - pos))
 
@@ -461,21 +475,31 @@ if split_dir:
     build = ['; Amberstar (Atari ST) - main program AMBRSTAR.68K', '; Build file: includes the modules in the order of',
              '; the program (TEST.ASM includes them in this order, the other parts are linked behind it).', '']
     if constants_include: build += ['\tinclude\t"CONSTANTS.I"', '']
-    build += ['\tsection\ttext', '']
-    bounds = segments + [(text_end, None)]
-    # the equates of names inside instructions are behind the text
+    # the equates of names inside instructions are behind the modules
     EQU_LINE = re.compile(r'^\S+\tequ\t')
     inner_equ = [l for l in lines[text_start:text_end] if EQU_LINE.match(l)]
-    for (start, fl), (stop, _) in zip(bounds, bounds[1:]):
+    parts = collections.defaultdict(lambda: {'text': [], 'data': [], 'bss': []})
+    def collect(segs, stop_line, kind, skip_equ=False):
+        bounds = segs + [(stop_line, None)]
+        for (start, fl), (stop, _) in zip(bounds, bounds[1:]):
+            part = lines[start:stop]
+            if skip_equ: part = [l for l in part if not EQU_LINE.match(l)]
+            parts[fl][kind] += part
+    collect([(max(s, text_start), fl) for s, fl in segments], text_end, 'text', True)
+    collect(data_segments, data_end, 'data')
+    collect(bss_segments, len(lines), 'bss')
+    for fl in MODULE_ORDER:
+        if fl not in parts: continue
+        p = parts[fl]
         rel = fl.replace('.ASM', '.S')
-        part = [l for l in lines[max(start, text_start):stop] if not EQU_LINE.match(l)]
-        write(rel, ['; ' + fl + ' (original module, merged with the disassembly of the shipped program)', ''] + part)
+        content = ['; ' + fl + ' (original module, merged with the disassembly of the shipped program)', '', '\tsection\ttext', '']
+        content += p['text']
+        # vasm appends the sections in the order of the modules, so the data and the variables stay at their place
+        if any(l.strip() for l in p['data']): content += ['', '\tsection\tdata', ''] + p['data']
+        if any(l.strip() for l in p['bss']): content += ['', '\tsection\tbss', ''] + p['bss']
+        write(rel, content)
         build.append('\tinclude\t"%s"' % rel)
-    build += [''] + inner_equ + ['', '\tsection\tdata', '\tinclude\t"DATA.S"', '', '\tsection\tbss', '\tinclude\t"BSS.S"']
-    data_start = text_end + 3
-    bss_start = lines.index('\tsection\tbss', data_start)
-    write('DATA.S', ['; Data of all modules (disassembly)', ''] + lines[data_start:bss_start - 1])
-    write('BSS.S', ['; Variables of all modules (disassembly)', ''] + lines[bss_start + 2:])
+    build += ['', '\tsection\ttext', ''] + inner_equ
     write('AMBRSTAR.S', build)
 open(out_path + '.code.tsv', 'w', encoding='latin-1').write('\n'.join(code_list) + '\n')
 print('merged routines', merged_count, 'code instructions', len(code), 'code bytes', len(code_bytes), 'of', tlen, 'labels', len(labels), 'inside', len(inside), 'unconverted', failed)

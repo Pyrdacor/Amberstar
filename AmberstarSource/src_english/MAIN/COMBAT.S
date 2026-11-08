@@ -1,5 +1,7 @@
 ; MAIN/COMBAT.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 Combat_ModInit:
 	sf.b	B_58aae
 	jsr	T_00194

@@ -104,7 +104,10 @@ In `SYMBOLS.txt` these names have an `R` instead of the number of votes.
 `src/` (German version) and `src_english/` contain the source in the structure of the original: one file per module of
 the original source (`MAIN/EVENTS.S`, `MAIN/MAP/2DMAP.S`, `NUCLEUS/MEMORY.S`, …). `AMBRSTAR.S` includes them in the
 order of the program, which is the order in which `TEST.ASM` includes the modules (followed by the layout and nucleus
-modules which are linked behind it). The data and the variables of all modules are in `DATA.S` and `BSS.S` for now.
+modules which are linked behind it). Each module file contains its code, its data (`section data`) and its variables
+(`section bss`) like the original modules. vasm appends the parts of a section in the order of the modules, so they
+are at the same place as in the program. The boundaries of the modules in the data and the BSS are found in the same way
+as in the code (by the names whose file is known).
 Both versions assemble to byte-identical programs:
 
 ```

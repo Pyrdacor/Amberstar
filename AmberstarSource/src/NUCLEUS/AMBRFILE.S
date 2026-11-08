@@ -1,5 +1,7 @@
 ; NUCLEUS/AMBRFILE.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 Save_file:
 	movem.l	d0-d7/a0-a6,-(a7)
 	moveq	#0,d6

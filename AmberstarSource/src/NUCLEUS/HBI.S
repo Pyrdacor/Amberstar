@@ -1,5 +1,7 @@
 ; NUCLEUS/HBI.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- HBL_handler (original source: NUCLEUS/HBI.ASM)
 HBL_handler:
 	movem.l	d0-d7/a0-a2,-(sp)
@@ -194,3 +196,18 @@ T_1c9b0:
 	move.w	(a7)+,sr
 	movem.l	(a7)+,d0-d7/a0
 	rts
+
+	section	bss
+
+New_HBL_list:
+	ds.b	4
+User_HBL_list:
+	ds.b	4
+HBL_list_ptr:
+	ds.b	4
+HBL_list:
+	ds.b	1024
+B_60896:
+	ds.b	4
+B_6089a:
+	ds.b	4

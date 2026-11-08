@@ -1,5 +1,7 @@
 ; MAIN/MAP/3DMAP.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Cut_from_3D_map (original source: MAIN/MAP/3DMAP.ASM)
 Cut_from_3D_map:
 	movem.l	d0-d4/d7/a0-a3,-(sp)
@@ -1026,3 +1028,56 @@ Prepare_3D_map:
 .l_03c5e:
 	movem.l	(a7)+,d0-d1/d7/a0-a3
 	rts
+
+	section	data
+
+Cut_table_3D:
+	dc.b	$ff,$fd,$01,$fd,$00,$fd,$ff,$fe,$01,$fe,$00,$fe,$ff,$ff,$01,$ff
+	dc.b	$00,$ff,$ff,$00,$01,$00,$00,$00,$03,$ff,$03,$01,$03,$00,$02,$ff
+	dc.b	$02,$01,$02,$00,$01,$ff,$01,$01,$01,$00,$00,$ff,$00,$01,$00,$00
+	dc.b	$01,$03,$ff,$03,$00,$03,$01,$02,$ff,$02,$00,$02,$01,$01,$ff,$01
+	dc.b	$00,$01,$01,$00,$ff,$00,$00,$00,$fd,$01,$fd,$ff,$fd,$00,$fe,$01
+	dc.b	$fe,$ff,$fe,$00,$ff,$01,$ff,$ff,$ff,$00,$00,$01,$00,$ff,$00,$00
+M3_CIL:
+	dc.b	$2c,$27,$2b,$2a,$07,$29,$10,$28,$31,$00
+D_1e17a:
+	dc.l	D3_turnleft
+	dc.l	D3_right
+	dc.l	T_0373a
+	dc.l	T_037f0
+	dc.l	Zzz
+	dc.l	T_03848
+	dc.l	D3_fullturnleft
+	dc.l	T_038a0
+	dc.l	D3_fullturnright
+C2_CIL:
+	dc.b	$2e,$01,$2d,$04,$07,$03,$30,$02,$2f,$00
+D_1e1a8:
+	dc.l	W2_upleft
+	dc.l	W2_up
+	dc.l	W2_upright
+	dc.l	W2_left
+	dc.l	Zzz
+	dc.l	W2_right
+	dc.l	W2_downleft
+	dc.l	W2_down
+	dc.l	W2_downright
+
+	section	bss
+
+Nr_labblocks:
+	ds.b	2
+INB_ptr:
+	ds.b	4
+OUH_ptr:
+	ds.b	4
+Lab_IC_ptr:
+	ds.b	4
+Map_buffer_3D:
+	ds.b	12
+Persons_buf_3D:
+	ds.b	10
+B_5793a:
+	ds.b	2
+Hash_buffer_3D:
+	ds.b	24

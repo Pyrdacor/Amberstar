@@ -1,5 +1,7 @@
 ; MAIN/MAGIC.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 Do_magic:
 	tst.b	Battling
 	bne.b	.l_137ec
@@ -2474,3 +2476,387 @@ Do_sparkle:
 	move.b	#10,-1(a0,d0.w)
 	movea.l	(sp)+,a0
 	rts	
+
+	section	bss
+
+SpSelW_handle:
+	ds.b	2
+Selected_class:
+	ds.b	2
+Selected_spell:
+	ds.b	2
+Spell_area_type:
+	ds.b	2
+B_5b854:
+	ds.b	2
+B_5b856:
+	ds.b	4
+B_5b85a:
+	ds.b	4
+Victim_selected:
+	ds.b	1
+No_spell_selected:
+	ds.b	1
+Magic_object_flag:
+	ds.b	1
+B_5b861:
+	ds.b	1
+B_5b862:
+	ds.b	1
+B_5b863:
+	ds.b	1
+B_5b864:
+	ds.b	1
+B_5b865:
+	ds.b	1
+Victim_nr:
+	ds.b	2
+Victim_ptr:
+	ds.b	4
+Added_LP:
+	ds.b	2
+Condition_nr:
+	ds.b	2
+B_5b870:
+	ds.b	2
+Spell_table:
+	ds.b	180
+Spell_list_pos:
+	ds.b	2
+Nr_of_spells:
+	ds.b	2
+Minimap_X:
+	ds.b	2
+Minimap_Y:
+	ds.b	2
+Minimap_colour:
+	ds.b	2
+Minimap_height:
+	ds.b	2
+Minimap_width:
+	ds.b	2
+Minimap_ptr:
+	ds.b	4
+Minimap_update:
+	ds.b	2
+B_5b93a:
+	ds.b	4
+B_5b93e:
+	ds.b	4
+B_5b942:
+	ds.b	2
+B_5b944:
+	ds.b	4
+B_5b948:
+	ds.b	4
+B_5b94c:
+	ds.b	2
+B_5b94e:
+	ds.b	2
+B_5b950:
+	ds.b	2
+B_5b952:
+	ds.b	4
+B_5b956:
+	ds.b	48
+B_5b986:
+	ds.b	4
+B_5b98a:
+	ds.b	2
+B_5b98c:
+	ds.b	4
+B_5b990:
+	ds.b	2
+B_5b992:
+	ds.b	2
+B_5b994:
+	ds.b	4
+B_5b998:
+	ds.b	2
+B_5b99a:
+	ds.b	72
+B_5b9e2:
+	ds.b	18
+B_5b9f4:
+	ds.b	18
+B_5ba06:
+	ds.b	2
+B_5ba08:
+	ds.b	2
+B_5ba0a:
+	ds.b	2
+B_5ba0c:
+	ds.b	2
+B_5ba0e:
+	ds.b	2
+B_5ba10:
+	ds.b	2
+B_5ba12:
+	ds.b	2
+B_5ba14:
+	ds.b	2
+B_5ba16:
+	ds.b	2
+B_5ba18:
+	ds.b	2
+B_5ba1a:
+	ds.b	36
+B_5ba3e:
+	ds.b	2
+B_5ba40:
+	ds.b	48
+B_5ba70:
+	ds.b	24
+B_5ba88:
+	ds.b	48
+B_5bab8:
+	ds.b	4
+B_5babc:
+	ds.b	30
+Party_advantage:
+	ds.b	1
+Monster_advantage:
+	ds.b	1
+B_5badc:
+	ds.b	1
+B_5badd:
+	ds.b	1
+B_5bade:
+	ds.b	1
+B_5badf:
+	ds.b	1
+B_5bae0:
+	ds.b	2
+B_5bae2:
+	ds.b	2
+B_5bae4:
+	ds.b	4
+B_5bae8:
+	ds.b	1
+B_5bae9:
+	ds.b	1
+B_5baea:
+	ds.b	2
+B_5baec:
+	ds.b	4
+B_5baf0:
+	ds.b	4
+B_5baf4:
+	ds.b	4
+B_5baf8:
+	ds.b	2
+B_5bafa:
+	ds.b	36
+B_5bb1e:
+	ds.b	2
+B_5bb20:
+	ds.b	874
+B_5be8a:
+	ds.b	2
+B_5be8c:
+	ds.b	4
+B_5be90:
+	ds.b	2
+B_5be92:
+	ds.b	2
+B_5be94:
+	ds.b	4
+B_5be98:
+	ds.b	4
+B_5be9c:
+	ds.b	2
+B_5be9e:
+	ds.b	2
+B_5bea0:
+	ds.b	2
+B_5bea2:
+	ds.b	2
+B_5bea4:
+	ds.b	1
+B_5bea5:
+	ds.b	1
+B_5bea6:
+	ds.b	2
+B_5bea8:
+	ds.b	2
+B_5beaa:
+	ds.b	2
+B_5beac:
+	ds.b	2
+B_5beae:
+	ds.b	48
+B_5bede:
+	ds.b	4
+; The song which is played (see Play_song).
+Current_song:
+	ds.b	2
+Magic_anim_counter:
+	ds.b	2
+Char_damage:
+	ds.b	12
+B_5bef2:
+	ds.b	1
+B_5bef3:
+	ds.b	5
+Magic_timers:
+	ds.b	6
+Char_status_icons:
+	ds.b	6
+Current_active_char_data:
+	ds.b	4
+Nr_of_modifications:
+	ds.b	2
+Modifications_ptr:
+	ds.b	1028
+First:
+	ds.b	1
+B_5c30f:
+	ds.b	1
+B_5c310:
+	ds.b	2
+B_5c312:
+	ds.b	2
+ReqText_nr:
+	ds.b	2
+ReqDo_ptr:
+	ds.b	4
+B_5c31a:
+	ds.b	2
+B_5c31c:
+	ds.b	32
+B_5c33c:
+	ds.b	2
+B_5c33e:
+	ds.b	6
+B_5c344:
+	ds.b	6
+Month:
+	ds.b	2
+Day:
+	ds.b	2
+Hour:
+	ds.b	2
+Minute:
+	ds.b	2
+Map_Xcoord:
+	ds.b	2
+Map_Ycoord:
+	ds.b	2
+View_direction:
+	ds.b	1
+B_5c357:
+	ds.b	1
+Spell_1_duration:
+	ds.b	2
+Spell_2_duration:
+	ds.b	2
+Spell_3_duration:
+	ds.b	2
+Spell_4_duration:
+	ds.b	2
+Spell_5_duration:
+	ds.b	2
+Spell_6_duration:
+	ds.b	2
+Nr_members:
+	ds.b	2
+Active_member:
+	ds.b	2
+Travel_mode:
+	ds.b	2
+Special_item_flags:
+	ds.b	1
+B_5c36b:
+	ds.b	1
+Music_block:
+	ds.b	2
+Spell_1_data:
+	ds.b	2
+Spell_2_data:
+	ds.b	2
+Spell_3_data:
+	ds.b	2
+Spell_4_data:
+	ds.b	2
+Spell_5_data:
+	ds.b	2
+Spell_6_data:
+	ds.b	2
+Year:
+	ds.b	2
+Map_nr:
+	ds.b	2
+Member_1_nr:
+	ds.b	2
+B_5c380:
+	ds.b	10
+Nr_travelled_days:
+	ds.b	2
+Time_data_year:
+	ds.b	2
+Trans_T:
+	ds.b	150
+Quest:
+	ds.b	32
+B_5c444:
+	ds.b	4061
+B_5d421:
+	ds.b	3
+CD:
+	ds.b	1502
+WD:
+	ds.b	626
+Chest:
+	ds.b	1500
+Chest_gold:
+	ds.b	1988
+B_5ea14:
+	ds.b	1212
+B_5eed0:
+	ds.b	6
+B_5eed6:
+	ds.b	4
+B_5eeda:
+	ds.b	4
+B_5eede:
+	ds.b	4100
+B_5fee2:
+	ds.b	256
+Icondata_ptr:
+	ds.b	4
+Labblock_ptrs:
+	ds.b	200
+Ceiling_ptr:
+	ds.b	4
+Floor_ptr:
+	ds.b	4
+Colpall_ptrs:
+	ds.b	4
+Mapd_ptr:
+	ds.b	4
+Dictionary_ptr:
+	ds.b	4
+Maptext_ptr:
+	ds.b	4
+Pic80_ptr:
+	ds.b	4
+Pic80pal_ptr:
+	ds.b	4
+Chestdata_ptr:
+	ds.b	4
+B_600d2:
+	ds.b	4
+B_600d6:
+	ds.b	4
+Waredat_ptr:
+	ds.b	4
+Codetxt_ptr:
+	ds.b	4
+Chard_ptrs:
+	ds.b	4
+B_600e6:
+	ds.b	16
+B_600f6:
+	ds.b	4
+B_600fa:
+	ds.b	32

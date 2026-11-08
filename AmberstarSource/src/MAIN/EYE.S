@@ -1,5 +1,7 @@
 ; MAIN/EYE.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Eye_spy (original source: MAIN/EYE.ASM)
 Eye_spy:
 	movem.l	d0/a0/a5,-(sp)
@@ -3168,3 +3170,161 @@ T_10890:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bra.w	Pop_Module
+
+	section	data
+
+Automap_CIL:
+	dc.b	$2e,$01,$2d,$04,$1e,$03,$30,$02,$2f,$00
+	dc.l	Automap_upleft
+	dc.l	Automap_up
+	dc.l	Automap_upright
+	dc.l	Automap_left
+	dc.l	Automap_exit
+	dc.l	Automap_right
+	dc.l	Automap_downleft
+	dc.l	Automap_down
+	dc.l	Automap_downright
+D_2930c:
+	dc.b	$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31
+	dc.b	$02,$00,$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10
+	dc.b	$07,$65,$00,$00,$00,$00,$06,$51,$03,$33,$02,$22,$01,$11,$05,$31
+	dc.b	$04,$21,$01,$24,$02,$36,$06,$10,$03,$10,$05,$41,$03,$40,$04,$51
+	dc.b	$04,$44,$07,$65
+D_29350:
+	dc.b	$00,$00,$05,$00,$03,$33,$02,$22,$01,$11,$04,$44,$05,$55,$02,$10
+	dc.b	$03,$20,$04,$31,$05,$42,$00,$12,$01,$23,$03,$51,$02,$30,$06,$66
+Cut_table:
+	dc.b	$ff,$ff,$ff,$00,$ff,$01,$00,$ff,$00,$00,$00,$01,$01,$ff,$01,$00
+	dc.b	$01,$01
+Dialogue_CIL:
+	dc.b	$21,$22,$1e,$23,$11,$43,$3d,$3f,$3e,$00
+	dc.l	DIA_Transfer_item
+	dc.l	DIA_Drop_item
+	dc.l	DIA_Exit
+	dc.l	T_0e75e
+	dc.l	T_0e6e6
+	dc.l	T_0ec82
+	dc.l	T_0ead0
+	dc.l	DIA_Give_gold
+	dc.l	DIA_Give_food
+D_293b0:
+	dc.b	$00,$10,$00,$bf,$00,$31,$00,$bf
+Lay6_PlusMes:
+	dc.b	$00,$d0,$01,$2f,$00,$31,$00,$80
+Lay6_PA:
+	dc.b	$00,$d0,$00,$31,$00,$60,$00,$50,$00,$0f,$00,$02
+Lay8_PlusMes:
+	dc.b	$00,$10,$00,$bf,$00,$31,$00,$80
+Lay8_PA:
+	dc.b	$00,$10,$00,$31,$00,$b0,$00,$4d,$00,$0f,$00,$02
+Options_CIL:
+	dc.b	$41,$38,$1e,$19,$1a,$38,$17,$18,$38,$00
+	dc.l	Quit_game
+	dc.b	$00,$00,$00,$00
+	dc.l	Exit_options
+	dc.l	Music_on
+	dc.l	Music_off
+	dc.b	$00,$00,$00,$00
+	dc.l	T_0f822
+	dc.l	T_0fcc2
+	dc.b	$00,$00,$00,$00
+D_2940e:
+	dc.b	$38,$38,$1e,$38,$38,$38,$38,$38,$38,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	T_10766
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+Lay6_target:
+	dc.b	$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31,$02,$00
+	dc.b	$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10,$07,$65
+Camp_CIL:
+	dc.b	$0c,$38,$1e,$3a,$38,$38,$07,$38,$38,$00
+	dc.l	T_13774
+	dc.b	$00,$00,$00,$00
+	dc.l	Exit_camp
+	dc.l	Learn_spell
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	T_10068
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+Spiral_lengths:
+	dc.b	$00,$08,$00,$10,$00,$18,$00,$20,$00,$28
+Hear_table:
+	dc.b	$0a,$03,$04,$09,$00,$05,$08,$07,$06,$00
+Portrait_pos_list:
+	dc.b	$00,$10,$00,$31,$00,$10,$00,$55,$00,$70,$00,$49,$00,$6a,$00,$6d
+	dc.b	$00,$10,$00,$61,$00,$10,$00,$85,$00,$70,$00,$79,$00,$6a,$00,$9d
+	dc.b	$00,$10,$00,$91
+D_294c2:
+	dc.b	$00,$10,$00,$b5
+D_294c6:
+	dc.b	$00,$10,$00,$31,$00,$40,$00,$31,$00,$70,$00,$31,$00,$a0,$00,$31
+	dc.b	$00,$d0,$00,$31,$01,$00,$00,$31,$00,$10,$00,$61,$00,$40,$00,$61
+	dc.b	$00,$70,$00,$61,$00,$a0,$00,$61,$00,$d0,$00,$61,$01,$00,$00,$61
+D_294f6:
+	dc.b	$00,$10,$00,$bf,$00,$91,$00,$c0,$00,$10,$00,$91,$00,$b0,$00,$30
+	dc.b	$00,$0f,$00,$02
+
+	section	bss
+
+Eye_flag:
+	ds.b	1
+Joined:
+	ds.b	1
+Inn_flag:
+	ds.b	1
+Slept:
+	ds.b	1
+Made_area:
+	ds.b	8
+Automap_ptr:
+	ds.b	4
+Automapicon_ptr:
+	ds.b	4
+Automap_X:
+	ds.b	2
+Automap_Y:
+	ds.b	2
+Automap_width:
+	ds.b	2
+Automap_height:
+	ds.b	2
+Party_automap_icon:
+	ds.b	2
+Dialogue_chard_ptr:
+	ds.b	4
+Dialogue_char_nr:
+	ds.b	2
+Dialogue_VChar_index:
+	ds.b	2
+Action_ptr:
+	ds.b	4
+Act_dat_ptr:
+	ds.b	4
+Result_ptr:
+	ds.b	4
+Res_dat1_ptr:
+	ds.b	4
+Res_dat2_ptr:
+	ds.b	4
+Res_dat3_ptr:
+	ds.b	4
+Dialogue_text_ptr:
+	ds.b	4
+Hearing:
+	ds.b	2
+Hear_direction:
+	ds.b	2
+Hearing_txt:
+	ds.b	6
+SaveGame_bitlist:
+	ds.b	2
+B_5b514:
+	ds.b	4
+B_5b518:
+	ds.b	1
+B_5b519:
+	ds.b	1
+B_5b51a:
+	ds.b	12
+B_5b526:
+	ds.b	2

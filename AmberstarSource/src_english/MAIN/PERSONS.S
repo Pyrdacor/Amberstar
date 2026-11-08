@@ -1,5 +1,7 @@
 ; MAIN/PERSONS.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Init_persons (original source: MAIN/PERSONS.ASM)
 Init_persons:
 	movem.l	d0/d6/d7/a0-a3,-(sp)
@@ -839,3 +841,86 @@ T_06494:
 	bsr.w	T_063fc
 .l_064f2:
 	rts
+
+	section	bss
+
+CD_value:
+	ds.b	4
+Length_of_day:
+	ds.b	2
+VChar_data:
+	ds.b	480
+CombatReq:
+	ds.b	1
+Pause_Upd:
+	ds.b	1
+B_57c4c:
+	ds.b	2
+B_57c4e:
+	ds.b	2
+B_57c50:
+	ds.b	2
+B_57c52:
+	ds.b	2
+B_57c54:
+	ds.b	2
+B_57c56:
+	ds.b	2
+B_57c58:
+	ds.b	2
+B_57c5a:
+	ds.b	2
+Stygian:
+	ds.b	1
+Bumped:
+	ds.b	1
+New_move:
+	ds.b	1
+Anim_count:
+	ds.b	1
+Anim_speed:
+	ds.b	1
+B_57c61:
+	ds.b	1
+Current_map_type:
+	ds.b	1
+Which_CIL:
+	ds.b	1
+Party_invisible:
+	ds.b	2
+B_57c66:
+	ds.b	2
+B_57c68:
+	ds.b	2
+Mouse_direction:
+	ds.b	2
+Mousemove_ptr:
+	ds.b	4
+First_CIL_ptr:
+	ds.b	4
+Pal_buffer:
+	ds.b	32
+Width_of_map:
+	ds.b	2
+Height_of_map:
+	ds.b	2
+Size_of_map:
+	ds.b	2
+Map_pointer:
+	ds.b	4
+Iconstats_ptr:
+	ds.b	4
+Anim_bias:
+	ds.b	2
+Circle_anim:
+	ds.b	4
+B_57ca8:
+	ds.b	28
+Wave_anim:
+	ds.b	8
+B_57ccc:
+	ds.b	24
+B_57ce4:
+	ds.b	8
+Time_lock:
+	ds.b	1

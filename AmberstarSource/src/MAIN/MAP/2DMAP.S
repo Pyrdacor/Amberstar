@@ -1,5 +1,7 @@
 ; MAIN/MAP/2DMAP.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 M2_time_evaluate:
 	movem.l	d0-d1/a0,-(a7)
 	movea.l	Current_active_char_data,a0
@@ -756,3 +758,46 @@ Draw_two_lines:
 	and.w	d3,-(a1)	; CHANGE: added
 .Exit:
 	rts	
+
+	section	bss
+
+Current_radius:
+	ds.b	2
+New_radius:
+	ds.b	2
+Mapbuf_X:
+	ds.b	2
+Mapbuf_Y:
+	ds.b	2
+Buffer_X:
+	ds.b	2
+Buffer_Y:
+	ds.b	2
+Half_X:
+	ds.b	2
+Half_Y:
+	ds.b	2
+Scroll_X:
+	ds.b	2
+Scroll_Y:
+	ds.b	2
+Underlay_buf:
+	ds.b	14
+B_55f98:
+	ds.b	57
+B_55fd1:
+	ds.b	72
+Overlay_buf:
+	ds.b	14
+B_56027:
+	ds.b	129
+Persons_buf:
+	ds.b	143
+Trans_buf:
+	ds.b	143
+Graphics_buf:
+	ds.b	1672
+B_5684e:
+	ds.b	16632
+B_5a946:
+	ds.b	2

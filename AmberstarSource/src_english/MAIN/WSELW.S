@@ -1,5 +1,7 @@
 ; MAIN/WSELW.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 WSelW_ModInit:
 	movem.l	d0-d7/a0-a6,-(a7)
 	sf.b	No_word_entered
@@ -370,3 +372,18 @@ Search_word:
 .Found:
 	movem.l	(sp)+,d4-d7/a1-a3
 	rts	
+
+	section	bss
+
+No_word_entered:
+	ds.b	2
+Found_word:
+	ds.b	2
+WSelW_handle:
+	ds.b	2
+Word_list_ptr:
+	ds.b	4
+Nr_of_known_words:
+	ds.b	2
+Word_list_pos:
+	ds.b	2

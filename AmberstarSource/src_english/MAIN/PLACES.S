@@ -1,5 +1,7 @@
 ; MAIN/PLACES.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 Places:
 	moveq	#0,d0
 	move.b	$1(a5),d0
@@ -3538,3 +3540,176 @@ T_0dcdc:
 	dbra	d7,.l_0dcea
 	movem.l	(a7)+,d7/a0-a1
 	rts
+
+	section	data
+
+GoldDis_text:
+	dc.b	$30
+D_2610f:
+	dc.b	$31,$32,$33,$34,$00
+Make_level_txt:
+	dc.b	$30,$31,$25,$00
+Bonus_txt:
+	dc.b	$42,$4f,$4e,$55,$53,$20,$3a,$20,$30,$31,$25,$00
+Multi_txt:
+	dc.b	$20,$78,$20,$00
+D_26128:
+	dc.b	$20,$45,$50,$2e,$00,$00
+Guild_CIL:
+	dc.b	$34,$38,$1e,$35,$38,$38,$1f,$32,$12,$00
+	dc.l	T_0b1c0
+	dc.b	$00,$00,$00,$00
+	dc.l	Exit_PLACES
+	dc.l	T_0b22e
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+MOBJC_CIL:
+	dc.b	$36,$38,$1e,$37,$23,$21,$1f,$32,$12,$00
+	dc.l	Buy_item
+	dc.b	$00,$00,$00,$00
+	dc.l	Exit_PLACES
+	dc.l	T_0b9a8
+	dc.l	View_item_MOBJC
+	dc.l	Transfer_item_MOBJC
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+MFOOD_CIL:
+	dc.b	$38,$38,$1e,$40,$33,$14,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	Exit_PLACES
+	dc.l	T_0c9f2
+	dc.l	T_0c9d4
+	dc.l	MFOOD_Transfer_food
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+MHORSE_CIL:
+	dc.b	$38,$38,$1e,$05,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	Exit_PLACES
+	dc.l	Buy_horses
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+D_261e6:
+	dc.b	$38,$38,$1e,$06,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	Exit_PLACES
+	dc.l	T_0ce6c
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+D_26214:
+	dc.b	$38,$38,$1e,$16,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	Exit_PLACES
+	dc.l	T_0cf6e
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+Healer_CIL:
+	dc.b	$38,$38,$1e,$0c,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	Exit_PLACES
+	dc.l	Healer_Remove_curse
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+MMAGIC_CIL:
+	dc.b	$36,$38,$1e,$38,$23,$21,$1f,$32,$12,$00
+	dc.l	Buy_item
+	dc.b	$00,$00,$00,$00
+	dc.l	Exit_PLACES
+	dc.b	$00,$00,$00,$00
+	dc.l	View_item_MOBJC
+	dc.l	Transfer_item_MOBJC
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+Sage_CIL:
+	dc.b	$09,$38,$1e,$1d,$38,$38,$1f,$32,$12,$00
+	dc.l	Show_body_items
+	dc.b	$00,$00,$00,$00
+	dc.l	Exit_PLACES
+	dc.l	Show_backpack_items
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+Inn_CIL:
+	dc.b	$38,$38,$1e,$13,$38,$38,$1f,$32,$12,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00
+	dc.l	Exit_PLACES
+	dc.l	Guestroom
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
+	dc.l	Pool_gold_PLACES
+	dc.l	Divide_gold_PLACES
+	dc.l	Transfer_gold_PLACES
+XLay3_target_hbl:
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+	dc.b	$00,$00,$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42
+	dc.b	$06,$31,$02,$00,$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21
+	dc.b	$03,$10,$07,$65
+D_2633e:
+	dc.b	$08,$09,$09,$0a,$0a,$0b,$0b,$0c,$0c,$0d,$0d,$00,$0e,$00,$0f,$00
+	dc.b	$ff,$00,$01,$0f,$ff,$00,$ff,$00,$04,$12
+D_26358:
+	dc.b	$ff,$ff,$ff,$ff,$0e,$ff,$ff,$0f,$10,$11,$11,$11,$12,$ff,$ff,$ff
+	dc.b	$ff,$ff,$ff,$ff,$ff,$ff,$ff,$00
+
+	section	bss
+
+Place_nr:
+	ds.b	2
+Places_gold:
+	ds.b	2
+Placedat_ptr:
+	ds.b	4
+Placetext_ptr:
+	ds.b	3
+B_58273:
+	ds.b	1
+Make_level_offsets:
+	ds.b	9
+B_5827d:
+	ds.b	1
+Possible_level_offsets:
+	ds.b	10
+Exit_on:
+	ds.b	1
+Room_rented:
+	ds.b	1
+Trans_created:
+	ds.b	1
+Body_backpack:
+	ds.b	1
+Cursed_slots:
+	ds.b	10
+Remaining_offset:
+	ds.b	2
+Warecount_ptr:
+	ds.b	4
+Sold_data:
+	ds.b	479
+B_5847b:
+	ds.b	1
+Sold_slots:
+	ds.b	12
+Total_price:
+	ds.b	2
+Places_food:
+	ds.b	2
+Nr_cursed_objects:
+	ds.b	2
+Current_healer_victim:
+	ds.b	4
+Healer_victim_nr:
+	ds.b	2

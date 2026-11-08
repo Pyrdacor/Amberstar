@@ -1,5 +1,7 @@
 ; NUCLEUS/INTROUTS.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 Restore_computer:
 	movem.l	d0-d7/a0,-(a7)
 	move.w	sr,-(a7)
@@ -185,3 +187,30 @@ T_1ccb6:
 .l_1ccd0:
 	movem.l	(a7)+,d0-d3/a0-a3
 	rts
+
+	section	bss
+
+Old_nvbls:
+	ds.b	2
+Old_dump_vec:
+	ds.b	4
+Old_conterm:
+	ds.b	2
+Old_mouse_vec:
+	ds.b	4
+B_5d878:
+	ds.b	4
+Old_rez:
+	ds.b	2
+B_5d87e:
+	ds.b	32
+Old_screen:
+	ds.b	2
+Old_MFP:
+	ds.b	12
+KBD_vec:
+	ds.b	4
+B_5d8b0:
+	ds.b	2
+B_5d8b2:
+	ds.b	64

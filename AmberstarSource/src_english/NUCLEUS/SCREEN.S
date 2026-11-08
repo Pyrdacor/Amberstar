@@ -1,5 +1,7 @@
 ; NUCLEUS/SCREEN.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Init_screen (original source: NUCLEUS/SCREEN.ASM)
 Init_screen:
 	movem.l	d0/d1,-(sp)
@@ -74,3 +76,18 @@ My_vsync:
 	addq.l	#$2,a7
 	movem.l	(a7)+,d0-d2/a0-a2
 	rts
+
+	section	bss
+
+On_screen:
+	ds.b	4
+Off_screen:
+	ds.b	4
+Screen_base:
+	ds.b	4
+Screen:
+	ds.b	65280
+B_73702:
+	ds.b	2
+Print_Y:
+	ds.b	2

@@ -1,5 +1,7 @@
 ; MAIN/MAP/3DDUNGEO.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- D3_ModInit (original source: MAIN/MAP/3DDUNGEO.ASM)
 ; CHANGE: removed "Pop MA"
 D3_ModInit:

@@ -1,5 +1,7 @@
 ; MAIN/TIME.ASM (original module, merged with the disassembly of the shipped program)
 
+	section	text
+
 ; ---- Init_time (original source: MAIN/TIME.ASM)
 Init_time:
 	movem.l	d0/d1,-(sp)
@@ -267,3 +269,12 @@ T_067f8:
 T_067fa:
 	addq.w	#$1,B_57d64
 	rts
+
+	section	bss
+
+New_step:
+	ds.b	1
+Current_step:
+	ds.b	2
+Frame:
+	ds.b	2
