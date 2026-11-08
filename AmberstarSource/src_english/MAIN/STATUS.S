@@ -19,8 +19,8 @@ T_019d6:
 	beq.w	.l_01af8
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2ec30,a0
 	jsr	DI_Print
@@ -32,7 +32,7 @@ T_019d6:
 	beq.w	.l_01aca
 	movea.l	(a0),a1
 	lea.l	$22(a1),a2
-	lea.l	$132(a1),a3
+	lea.l	Inv_data(a1),a3
 	moveq	#0,d1
 	moveq	#20,d6
 .l_01a2a:
@@ -45,20 +45,20 @@ T_019d6:
 	lea.l	$28(a3),a3
 	dbra	d6,.l_01a2a
 	moveq	#0,d0
-	move.w	$90(a1),d0
+	move.w	Gold_coins(a1),d0
 	mulu.w	#$a,d0
 	add.l	d0,d1
 	moveq	#0,d0
-	move.w	$92(a1),d0
+	move.w	Food_rations(a1),d0
 	mulu.w	#$fa,d0
 	add.l	d0,d1
-	move.l	$ec(a1),d0
+	move.l	Weight_normal(a1),d0
 	cmp.l	d0,d1
 	beq.b	.l_01aca
 	move.l	a0,-(a7)
 	lea.l	D_2ec42,a0
 	jsr	DI_Print
-	lea.l	$f0(a1),a0
+	lea.l	Char_name(a1),a0
 	jsr	DI_Print
 	jsr	DI_Carriage_return
 	lea.l	D_2ec4d,a0
@@ -83,7 +83,7 @@ T_019d6:
 	lea.l	D_2ec91,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_01af8:
@@ -92,13 +92,13 @@ T_01afa:
 	tst.b	D_1dc92
 	beq.b	.l_01b24
 	movea.l	Current_active_char_data,a1
-	clr.w	$3a(a1)
-	move.w	$88(a1),d0
-	add.w	$98(a1),d0
-	move.w	d0,$86(a1)
-	move.w	$8c(a1),d0
-	add.w	$9a(a1),d0
-	move.w	d0,$8a(a1)
+	clr.w	Body_conditions(a1)
+	move.w	Life_points_max(a1),d0
+	add.w	Life_points_max_magic(a1),d0
+	move.w	d0,Life_points_normal(a1)
+	move.w	Power_points_max(a1),d0
+	add.w	Power_points_max_magic(a1),d0
+	move.w	d0,Power_points_normal(a1)
 .l_01b24:
 	rts
 T_01b26:
@@ -112,14 +112,14 @@ T_01b3c:
 	tst.b	D_1dc92
 	beq.b	.l_01b82
 	movea.l	Current_active_char_data,a0
-	move.b	#$8e,$1a(a0)
-	move.l	#$ffffffff,$d0(a0)
-	move.l	#$ffffffff,$d4(a0)
-	move.l	#$ffffffff,$d8(a0)
-	move.l	#$ffffffff,$e8(a0)
-	move.w	#$1f4,$8a(a0)
-	move.w	#$1f4,$8c(a0)
-	move.b	#$63,$f(a0)
+	move.b	#$8e,Spell_class_counter(a0)
+	move.l	#$ffffffff,Spells_class_1(a0)
+	move.l	#$ffffffff,Spells_class_2(a0)
+	move.l	#$ffffffff,Spells_class_3(a0)
+	move.l	#$ffffffff,Spells_class_7(a0)
+	move.w	#$1f4,Power_points_normal(a0)
+	move.w	#$1f4,Power_points_max(a0)
+	move.b	#$63,Skill_10(a0)
 .l_01b82:
 	rts
 T_01b84:
@@ -145,8 +145,8 @@ T_01bb2:
 	beq.w	.l_01c46
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2ecac,a0
 	jsr	DI_Print
@@ -154,7 +154,7 @@ T_01bb2:
 	movea.l	Current_active_char_data,a1
 	lea.l	D_2ecc5,a0
 	jsr	DI_Print
-	move.w	$90(a1),d0
+	move.w	Gold_coins(a1),d0
 	jsr	DI_Decw_print
 	jsr	DI_Carriage_return
 .l_01c0c:
@@ -164,15 +164,15 @@ T_01bb2:
 	bmi.b	.l_01c36
 	beq.b	.l_01c0c
 	moveq	#0,d1
-	move.w	$90(a1),d1
+	move.w	Gold_coins(a1),d1
 	add.w	d0,d1
 	bvs.b	.l_01c0c
 	move.w	d0,d1
 	mulu.w	#$a,d1
-	add.l	d1,$ec(a1)
-	add.w	d0,$90(a1)
+	add.l	d1,Weight_normal(a1)
+	add.w	d0,Gold_coins(a1)
 .l_01c36:
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_01c46:
@@ -182,8 +182,8 @@ T_01c48:
 	beq.w	.l_01d8c
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2ecf1,a0
 	jsr	DI_Print
@@ -233,7 +233,7 @@ T_01c48:
 	lea.l	D_2ed56,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_01d8c:
@@ -243,15 +243,15 @@ T_01d8e:
 	beq.b	.l_01de0
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2ed71,a0
 	jsr	DI_Print
 	move.w	Active_member,d0
 	jsr	DI_Decw_print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_01de0:
@@ -259,8 +259,8 @@ T_01d8e:
 T_01de2:
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	Memory_list,a1
 	movea.l	Memlist_end,a2
@@ -317,7 +317,7 @@ T_01de2:
 	jsr	DI_Print
 .l_01ec4:
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 	rts

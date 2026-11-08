@@ -2,57 +2,60 @@
 
 	section	text
 
+; ---- C3_ModInit (original source: MAIN/MAP/3DCITY.ASM)
+; CHANGE: removed "Pop MA"
 C3_ModInit:
 	move.l	a5,Mapd_ptr
 	bsr.w	Prepare_3D_map
 	movea.l	Colpall_ptrs,a0
 	lea.l	Skypal_buffer,a1
 	jsr	IFF_pal_convert
-	move.w	$16(a1),d0
-	move.w	d0,B_5aa90
-	move.w	d0,D_48040
-	move.w	d0,D_48190
-	move.w	d0,D_480e8
+	move.w	22(a1),d0
+	move.w	d0,Old_11
+	move.w	d0,Day_pal+166
+	move.w	d0,Dawndusk_pal+166
+	move.w	d0,Night_pal+166
 	movea.l	Ceiling_ptr,a0
-	lea.l	$6(a0),a0
+	lea.l	Bg_elements(a0),a0
 	movea.l	a0,a1
 	adda.l	(a1)+,a1
-	addq.l	#$4,a0
-	addq.l	#$4,a1
+	addq.l	#4,a0
+	addq.l	#4,a1
 	lea.l	Night_pal,a2
 	move.w	Hour,d0
-	cmpi.w	#$6,d0
-	bmi.b	.l_05534
-	cmpi.w	#$8,d0
-	bpl.b	.l_05516
+	cmpi.w	#6,d0
+	bmi.s	.End
+	cmpi.w	#8,d0
+	bpl.s	.Not_1
 	lea.l	Dawndusk_pal,a2
-	bra.b	.l_05534
-.l_05516:
-	cmpi.w	#$12,d0
-	bpl.b	.l_05526
+	bra.s	.End
+.Not_1:
+	cmpi.w	#18,d0
+	bpl.s	.Not_2
 	lea.l	Day_pal,a2
-	exg.l	a1,a0
-	bra.b	.l_05534
-.l_05526:
-	cmpi.w	#$14,d0
-	bpl.b	.l_05534
+	exg.l	a1,a0	; CHANGE: was "exg.l a0,a1"
+	bra.s	.End
+.Not_2:
+	cmpi.w	#20,d0
+	bpl.s	.End
 	lea.l	Dawndusk_pal,a2
-	exg.l	a1,a0
-.l_05534:
+	exg.l	a1,a0	; CHANGE: was "exg.l a0,a1"
+.End:
 	move.l	a0,Sky_ptr
-	lea.l	B_5a9ea,a0
-	lea.l	D_32ec0,a1
-	moveq	#82,d7
-.l_05548:
+	lea.l	Skypal_buffer+32,a0
+	lea.l	Sky_pal_C3+4,a1
+	moveq.l	#83-1,d7
+.Loop_2:
 	move.w	(a2),(a0)+
 	move.w	(a2)+,(a1)
-	addq.l	#$6,a1
-	dbra	d7,.l_05548
+	addq.l	#6,a1
+	dbra	d7,.Loop_2
 	bsr.w	Init_persons
-	bsr.w	T_00208
-	bsr.w	C3_DisInit
-	bsr.w	Event_handler
-	rts
+	bsr.w	T_00208	; CHANGE: was "jsr C3_DisInit"
+	bsr.w	C3_DisInit	; CHANGE: was "jsr Event_handler"
+	bsr.w	Event_handler	; CHANGE: added
+.Exit:
+	rts	
 C3_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
@@ -124,8 +127,9 @@ C3_DisExit:
 	lea.l	Hbl_C3_map,a0
 	jsr	Update_HBL
 	rts	
+; ---- C3_DisUpd (original source: MAIN/MAP/3DCITY.ASM)
 C3_DisUpd:
-	movem.l	d0-d3/d6-d7/a0/a6,-(a7)
+	movem.l	d0-d3/d6/d7/a0/a6,-(sp)
 	bsr.w	C3_time_evaluate
 	bsr.w	Cut_from_3D_map
 	move.w	Map_Xcoord,d2
@@ -134,51 +138,51 @@ C3_DisUpd:
 	andi.w	#$1,d2
 	movea.l	Off_screen,a6
 	movea.l	Sky_ptr,a0
-	moveq	#32,d0
-	moveq	#49,d1
+	moveq.l	#Topleft_X,d0
+	moveq.l	#Topleft_Y,d1
 	move.w	(a0)+,d6
-	addq.w	#$1,d6
-	lsr.w	#$4,d6
+	addq.w	#1,d6
+	lsr.w	#4,d6
 	move.w	(a0)+,d7
-	addq.w	#$1,d7
-	addq.l	#$2,a0
-	btst	#$0,B_5c357
-	bne.b	.l_05700
+	addq.w	#1,d7
+	addq.l	#2,a0
+	btst	#0,View_direction+1
+	bne.s	.Mirror
 	jsr	Blot_unmasked_block
-	bra.b	.l_05704
-.l_05700:
+	bra.s	.Cont
+.Mirror:
 	bsr.w	Blot_mirrored_unmasked_block
-.l_05704:
+.Cont:
 	movea.l	Floor_ptr,a0
-	lea.l	$a(a0),a0
-	move.w	#$c1,d1
+	lea.l	Bg_elements+4(a0),a0
+	move.w	#$c1,d1	; CHANGE: was "add.w d7,d1"
 	move.w	(a0)+,d6
-	addq.w	#$1,d6
-	lsr.w	#$4,d6
+	addq.w	#1,d6
+	lsr.w	#4,d6
 	move.w	(a0)+,d7
-	addq.w	#$1,d7
-	sub.w	d7,d1
-	addq.l	#$2,a0
+	addq.w	#1,d7
+	sub.w	d7,d1	; CHANGE: added
+	addq.l	#2,a0
 	tst.w	d2
-	beq.b	.l_0572c
+	beq.s	.Mirror_L1
 	jsr	Blot_unmasked_block
-	bra.b	.l_05730
-.l_0572c:
+	bra.s	.Cont_L1
+.Mirror_L1:
 	bsr.w	Blot_mirrored_unmasked_block
-.l_05730:
+.Cont_L1:
 	tst.b	Pause_Upd
-	bne.b	.l_0573c
+	bne.s	.Skip_L2
 	bsr.w	ThreeD_char_handler
-.l_0573c:
+.Skip_L2:
 	bsr.w	Build_3D_map
 	bsr.w	Update_map_CIL
 	tst.b	CombatReq
-	beq.b	.l_05758
+	beq.s	.Exit_L2
 	lea.l	CombatReq_Mod,a0
 	jsr	Push_Module
-.l_05758:
-	movem.l	(a7)+,d0-d3/d6-d7/a0/a6
-	rts
+.Exit_L2:
+	movem.l	(sp)+,d0-d3/d6/d7/a0/a6
+	rts	
 ; ---- C3_time_evaluate (original source: MAIN/MAP/3DCITY.ASM)
 C3_time_evaluate:
 	movem.l	d0/a0-a2,-(sp)
@@ -234,7 +238,7 @@ C3_time_evaluate:
 .Exit:
 	movem.l	(sp)+,d0/a0-a2
 	rts	
-T_05836:
+Shadow_handler:
 	movem.l	d0-d5/d7/a0-a6,-(a7)
 	tst.b	D_1e1fc
 	beq.w	.l_058c4
@@ -288,9 +292,9 @@ Skypal_buffer:
 	ds.b	32
 B_5a9ea:
 	ds.b	166
-B_5aa90:
+Old_11:
 	ds.b	2
-B_5aa92:
+Window_handle:
 	ds.b	2
 B_5aa94:
 	ds.b	2

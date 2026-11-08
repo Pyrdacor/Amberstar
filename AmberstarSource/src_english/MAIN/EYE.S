@@ -140,8 +140,8 @@ Handle_visible_events:
 	bmi.b	.l_0dedc
 	movea.l	Current_active_char_data,a0
 	moveq	#0,d0
-	move.b	$d(a0),d0
-	add.w	$be(a0),d0
+	move.b	Skill_8(a0),d0
+	add.w	Skill_8_normal_magic(a0),d0
 	bsr.w	Probe
 	bmi.b	.l_0dedc
 	move.w	d1,WText_nr
@@ -344,107 +344,108 @@ Dialogue_ModExit:
 	jsr	Free_memory
 .Skip:
 	bra.w	Dialogue_DisExit
+; ---- Dialogue_DisInit (original source: MAIN/EYE.ASM)
 Dialogue_DisInit:
-	move.w	#$10,Mesmin_X
-	move.w	#$3f,Mesmin_Y
-	move.w	#$b0,Mesmin_Wd
+	move.w	#16,Mesmin_X
+	move.w	#63,Mesmin_Y
+	move.w	#176,Mesmin_Wd
 	move.l	#Code0006Sys,Textfile_ptr
 	move.l	#Lay8_PlusMes,PlusMes_info
 	move.l	#Sold_data,Itemdata_ptr
 	move.l	#Sold_slots,Itemslots_ptr
 	movea.l	Off_screen,a6
-	moveq	#8,d0
+	moveq.l	#8,d0
 	bsr.w	Show_layout
-	move.w	#$10,d0
-	move.w	#$27,d1
-	move.w	#$b0,d2
-	lea.l	D_2db9d,a0
-	bsr.w	Print_centered_string
-	moveq	#2,d0
+	move.w	#$10,d0	; CHANGE: was "moveq.l #15,d0"
+	move.w	#$27,d1	; CHANGE: added
+	move.w	#$b0,d2	; CHANGE: added
+	lea.l	D_2db9d,a0	; CHANGE: added
+	bsr.w	Print_centered_string	; CHANGE: was "jsr IG_Set_ink"
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
-	moveq	#0,d0
+	moveq.l	#0,d0
 	movea.l	Dialogue_chard_ptr,a1
-	lea.l	$6b0(a1),a0
-	move.w	#$d0,d0
-	move.w	#$31,d1
-	moveq	#2,d6
-	moveq	#34,d7
+	lea.l	Portrait+6(a1),a0
+	move.w	#208,d0
+	move.w	#49,d1
+	moveq.l	#2,d6
+	moveq.l	#34,d7
 	jsr	Blot_unmasked_block
-	moveq	#1,d0
+	moveq.l	#1,d0
 	jsr	IG_Set_ink
-	move.w	#$d0,d0
-	move.w	#$54,d1
-	move.w	#$60,d2
-	lea.l	$f0(a1),a0
+	move.w	#208,d0
+	move.w	#84,d1
+	move.w	#96,d2
+	lea.l	Char_name(a1),a0
 	bsr.w	Print_centered_string
-	moveq	#15,d0
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	move.w	#$f2,d0
-	move.w	#$38,d1
+	move.w	#208+34,d0
+	move.w	#49+7,d1
 	jsr	IG_Set_cursor
-	move.b	$3(a1),d0
-	beq.b	.l_0e278
+	move.b	Character_sex(a1),d0
+	beq.s	.Male
 	lea.l	Female_name,a0
-	bra.b	.l_0e27e
-.l_0e278:
+	bra.s	.Cont
+.Male:
 	lea.l	Male_name,a0
-.l_0e27e:
+.Cont:
 	jsr	IG_Print
-	cmpi.b	#$9,$4(a1)
-	bpl.b	.l_0e302
-	move.w	#$f2,d0
-	move.w	#$31,d1
+	cmpi.b	#9,Character_race(a1)
+	bpl.s	.No_class
+	move.w	#208+34,d0
+	move.w	#49,d1
 	jsr	IG_Set_cursor
-	lea.l	D_47352,a2
-	moveq	#0,d0
-	move.b	$4(a1),d0
+	lea.l	Race_dat+Race_names,a2
+	moveq.l	#0,d0
+	move.b	Character_race(a1),d0
 	add.w	d0,d0
-	move.w	(a2,d0.w),d0
+	move.w	0(a2,d0.w),d0
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-	tst.b	$5(a1)
-	beq.b	.l_0e302
-	move.w	#$f2,d0
-	move.w	#$46,d1
+	tst.b	Character_class(a1)
+	beq.s	.No_class
+	move.w	#208+34,d0
+	move.w	#49+21,d1
 	jsr	IG_Set_cursor
-	lea.l	D_48472,a2
-	moveq	#0,d0
-	move.b	$5(a1),d0
+	lea.l	Class_dat+Class_names,a2
+	moveq.l	#0,d0
+	move.b	Character_class(a1),d0
 	add.w	d0,d0
-	move.w	(a2,d0.w),d0
+	move.w	0(a2,d0.w),d0
 	bsr.w	Get_word
-	move.b	#$20,(a3)+
-	moveq	#0,d0
-	move.b	$1b(a1),d0
-	moveq	#2,d7
+	move.b	#$20,(a3)+	; CHANGE: was "move.b #" ",(a3)+"
+	moveq.l	#0,d0
+	move.b	Level_nr(a1),d0
+	moveq.l	#2,d7
 	bsr.w	LConvert_number
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-.l_0e302:
-	move.w	#$f2,d0
-	move.w	#$3f,d1
+.No_class:
+	move.w	#208+34,d0
+	move.w	#49+14,d1
 	jsr	IG_Set_cursor
 	lea.l	Age_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	move.w	$58(a1),d0
-	add.w	$ac(a1),d0
-	add.w	Time_data_year,d0
-	moveq	#3,d7
+	move.w	Attr_9_normal(a1),d0
+	add.w	$ac(a1),d0	; CHANGE: added
+	add.w	Time_data_year,d0	; CHANGE: added
+	moveq.l	#3,d7
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	move.w	#$d0,d0
-	move.w	#$71,d1
-	lea.l	D_363e0,a0
+	move.w	#208,d0
+	move.w	#113,d1
+	lea.l	Layout_icn+9856,a0
 	jsr	Put_unmasked_block
-	lea.l	D_40d80,a0
+	lea.l	Objects_icn+12288,a0
 	jsr	Put_masked_block
-	addi.w	#$30,d0
-	lea.l	D_363e0,a0
+	addi.w	#48,d0
+	lea.l	Layout_icn+9856,a0
 	jsr	Put_unmasked_block
-	lea.l	D_41400,a0
+	lea.l	Objects_icn+13952,a0
 	jsr	Put_masked_block
 	movea.l	Off_screen,a6
 	bsr.w	Show_objects_LAY3
@@ -456,19 +457,19 @@ Dialogue_DisInit:
 	jsr	Copy_screen
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
-	lea.l	D_2639e,a1
+	lea.l	Lay8_target,a1
 	lea.l	Subfade1,a2
-.l_0e3bc:
+.Again_L1:
 	lea.l	Hbl_Lay8_list,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Lay8_below,a0
 	jsr	Hbl_fade
-	bne.b	.l_0e3bc
+	bne.s	.Again_L1
 	lea.l	Hbl_Lay8_list,a0
 	jsr	Update_HBL
-	rts
+	rts	
 ; ---- Dialogue_DisExit (original source: MAIN/EYE.ASM)
 Dialogue_DisExit:
 	lea.l	Void,a1
@@ -679,16 +680,18 @@ Really_drop_item:
 DIA_Exit:
 	bsr.w	Pop_Module
 	bra.w	Init_display
-T_0e6e4:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0e6e4
+; ---- DIA_Ask_word (original source: MAIN/EYE.ASM)
+DIA_Ask_word:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	lea.l	WSelW_Mod,a0
-	move.l	#.l_0e702,$28(a0)
+	move.l	#DIA_Check_answer,Return_ptr(a0)
 	bsr.w	Push_Module
-	rts
-.l_0e702:
+	rts	
+DIA_Check_answer:
 	btst	#$1,Mouse_button_state
-	bne.b	.l_0e702
+	bne.b	DIA_Check_answer
 	tst.b	No_word_entered
 	bne.b	.l_0e75a
 	movea.l	Action_ptr,a0
@@ -862,111 +865,126 @@ T_0e93c:
 	btst	#$1,Mouse_button_state
 	bne.b	.l_0e96c
 	rts
+; ---- Do_TIDIA (original source: MAIN/EYE.ASM)
 Do_TIDIA:
 	tst.b	d0
-	bne.b	T_0e980
-T_0e97c:
+	bne.s	.A_slot
+.Exit:
 	bra.w	Pop_Module
-T_0e980:
+.A_slot:
 	ext.w	d0
-	lea.l	B_5847b,a1
+	lea.l	Sold_slots-1,a1
 	adda.w	d0,a1
 	tst.b	(a1)
-	beq.b	T_0e97c
+	beq.s	.Exit
 	lea.l	Sold_data,a2
-	moveq	#40,d1
+	moveq.l	#40,d1
 	mulu.w	d0,d1
-	lea.l	-$28(a2,d1.w),a2
+	lea.l	-40(a2,d1.w),a2
 	move.b	d0,Object_slot_number
-	moveq	#0,d0
-	move.w	$22(a2),d0
-	btst	#$2,$18(a2)
-	beq.b	.l_0e9b6
-	move.w	$24(a2),d1
-	bra.b	.l_0e9b8
-.l_0e9b6:
-	moveq	#-1,d1
-.l_0e9b8:
+	moveq.l	#0,d0
+	move.w	Weight(a2),d0
+	btst	#2,Item_stat_bits(a2)
+	beq.s	.Single_L1
+	move.w	Item_ID(a2),d1
+	bra.s	.Continue_L1
+.Single_L1:
+	moveq.l	#-1,d1
+.Continue_L1:
 	suba.l	a0,a0
 	bsr.w	Scan_4_transfer_victims
-	bne.b	.l_0e9ce
-	move.w	#$5,d0
+	bne.s	.Go_L1
+	move.w	#5,d0
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
-	bra.b	.l_0e9f2
-.l_0e9ce:
+	bra.s	.Exit_L1
+.Go_L1:
 	bsr.w	Show_transfer_victims
 	move.b	(a2),TIVS_Icon_nr
-	move.l	#.l_0e9f4,TIVS_Ptr
+	move.l	#DIA_Do_TI,TIVS_Ptr
 	lea.l	TIVS2_Mod,a0
-	move.w	#$18,$2c(a0)
+	move.w	#24,Mouse_ptr(a0)
 	bsr.w	Push_Module
-.l_0e9f2:
-	rts
-.l_0e9f4:
+.Exit_L1:
+	rts	
+; ---- DIA_Do_TI (original source: MAIN/EYE.ASM)
+DIA_Do_TI:
 	lea.l	Sold_slots,a2
 	lea.l	Sold_data,a3
-	moveq	#0,d0
+	moveq.l	#0,d0
 	move.b	Object_slot_number,d0
-	subq.w	#$1,d0
+	subq.w	#1,d0
 	adda.w	d0,a2
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	adda.w	d0,a3
-	btst	#$2,$18(a3)
-	beq.b	.l_0ea42
-	lea.l	$2b(a0),a4
-	lea.l	$29a(a0),a5
-	move.w	$24(a3),d0
-	moveq	#11,d7
-.l_0ea28:
+	btst	#2,Item_stat_bits(a3)
+	beq.s	.Continue
+	lea.l	Inventory_1_place_counter(a0),a4
+	lea.l	Inv_data+360(a0),a5
+	move.w	Item_ID(a3),d0
+	moveq.l	#12-1,d7
+.Loop1:
 	tst.b	(a4)
-	beq.b	.l_0ea38
-	cmp.w	$24(a5),d0
-	bne.b	.l_0ea38
-	cmpi.b	#$63,(a4)
-	bmi.b	.l_0ea5c
-.l_0ea38:
-	addq.l	#$1,a4
-	lea.l	$28(a5),a5
-	dbra	d7,.l_0ea28
-.l_0ea42:
-	lea.l	$2b(a0),a4
-	lea.l	$29a(a0),a5
-	moveq	#11,d7
-.l_0ea4c:
+	beq.s	.Next1
+	cmp.w	Item_ID(a5),d0
+	bne.s	.Next1
+	cmpi.b	#99,(a4)
+	bmi.s	.Do_it
+.Next1:
+	addq.l	#1,a4
+	lea.l	40(a5),a5
+	dbra	d7,.Loop1
+.Continue:
+	lea.l	Inventory_1_place_counter(a0),a4
+	lea.l	Inv_data+360(a0),a5
+	moveq.l	#12-1,d7
+.Loop2:
 	tst.b	(a4)
-	beq.b	.l_0ea5c
-	addq.l	#$1,a4
-	lea.l	$28(a5),a5
-	dbra	d7,.l_0ea4c
-	bra.b	.l_0eacc
-.l_0ea5c:
-	dc.b	$74,$00,$34,$2b,$00,$22,$d5,$a8,$00,$ec,$52,$14,$7e,$13,$3a,$db
-	dc.b	$51,$cf,$ff,$fc,$47,$eb,$ff,$d8,$42,$12,$2c,$79
-	dc.l	Off_screen
-	dc.b	$41,$f9
-	dc.l	D_25fd2
-	dc.b	$70,$00,$10,$39
-	dc.l	Object_slot_number
-	dc.b	$d0,$40,$d0,$40,$d0,$c0,$30,$18,$32,$18,$41,$f9
-	dc.l	D_363e0
-	dc.b	$4e,$b9
-	dc.l	Put_unmasked_block
-	dc.b	$4e,$b9
-	dc.l	Switch_screen
-	dc.b	$4e,$b9
-	dc.l	Copy_screen
-	dc.b	$41,$f9
-	dc.l	Sold_slots
-	dc.b	$4a,$98,$66,$16,$4a,$98,$66,$12,$4a,$98,$66,$0e,$61,$00,$1f,$14
-	dc.b	$23,$fc
-	dc.l	Code0006Sys
-	dc.l	Textfile_ptr
-.l_0eacc:
-	rts
-T_0eace:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0eace
+	beq.s	.Do_it
+	addq.l	#1,a4
+	lea.l	40(a5),a5
+	dbra	d7,.Loop2
+	bra.s	.Exit
+.Do_it:
+	moveq.l	#0,d2
+	move.w	Weight(a3),d2
+	add.l	d2,Weight_normal(a0)
+	addq.b	#1,(a4)
+	moveq.l	#20-1,d7
+.Loop3:
+	move.w	(a3)+,(a5)+
+	dbra	d7,.Loop3
+	lea.l	-40(a3),a3
+	clr.b	(a2)
+	movea.l	Off_screen,a6
+	lea.l	Door_object_pos_list-4,a0
+	moveq.l	#0,d0
+	move.b	Object_slot_number,d0
+	add.w	d0,d0
+	add.w	d0,d0
+	adda.w	d0,a0
+	move.w	(a0)+,d0
+	move.w	(a0)+,d1
+	lea.l	Layout_icn+9856,a0
+	jsr	Put_unmasked_block
+	jsr	Switch_screen
+	jsr	Copy_screen
+	lea.l	Sold_slots,a0
+	tst.l	(a0)+
+	bne.s	.Exit
+	tst.l	(a0)+
+	bne.s	.Exit
+	tst.l	(a0)+
+	bne.s	.Exit
+	bsr.w	Pop_Module
+	move.l	#Code0006Sys,Textfile_ptr
+.Exit:
+	rts	
+; ---- DIA_Give_item (original source: MAIN/EYE.ASM)
+DIA_Give_item:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	lea.l	GiveItem_Mod,a0
 	bra.w	Push_Module
 T_0eae2:
@@ -1015,7 +1033,7 @@ T_0eb32:
 	subq.b	#$1,(a3)
 	move.w	$22(a4),d2
 	ext.l	d2
-	sub.l	d2,$ec(a0)
+	sub.l	d2,Weight_normal(a0)
 	movea.l	Off_screen,a6
 	bsr.w	Show_objects_LAY3
 	jsr	Switch_screen
@@ -1062,9 +1080,9 @@ T_0ec16:
 	cmp.w	(a1),d1
 	bmi.b	.l_0ec58
 	movea.l	Current_active_char_data,a0
-	sub.w	d1,$92(a0)
+	sub.w	d1,Food_rations(a0)
 	mulu.w	#$fa,d1
-	sub.l	d1,$ec(a0)
+	sub.l	d1,Weight_normal(a0)
 	bsr.w	Do_results
 	bra.b	.l_0ec6a
 .l_0ec50:
@@ -1088,7 +1106,7 @@ T_0ec80:
 	jsr	My_vsync
 	movea.l	Dialogue_chard_ptr,a0
 	moveq	#0,d0
-	move.b	$3c(a0),d0
+	move.b	Join_percentage_chance(a0),d0
 	beq.b	.l_0ecb2
 	cmpi.w	#$64,d0
 	beq.b	.l_0ecbc
@@ -1116,7 +1134,7 @@ T_0ec80:
 	mulu.w	#$18,d7
 	add.w	Dialogue_VChar_index,d7
 	addq.w	#$1,d7
-	move.w	d7,$c4(a0)
+	move.w	d7,Person_save_bit_pos(a0)
 	move.w	d0,-(a7)
 	lea.l	Member_1_nr,a0
 	add.w	d0,d0
@@ -1222,34 +1240,39 @@ Word_res:
 	lea.l	WD,a0
 	bset	d1,0(a0,d0.w)
 	rts	
+; ---- Item_res (original source: MAIN/EYE.ASM)
 Item_res:
 	movea.l	Dialogue_chard_ptr,a0
-	lea.l	$10a(a0),a0
+	lea.l	Inv_data-40(a0),a0
 	move.w	(a3),d0
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	adda.w	d0,a0
 	lea.l	Sold_slots,a1
-	moveq	#0,d1
-	moveq	#11,d7
-.l_0ee5c:
-	tst.b	(a1,d1.w)
-	beq.b	.l_0ee76
-	addq.l	#$1,d1
-	dbra	d7,.l_0ee5c
-	lea.l	D_2ef57,a1
+	moveq.l	#0,d1
+	moveq.l	#12-1,d7
+.Loop1:
+	tst.b	0(a1,d1.w)
+	beq.s	.Found
+	addq.l	#1,d1
+	dbra	d7,.Loop1
+	lea.l	ET_Item_res_1,a1	; ERROR "[ Item_res ] : Logical error ! Contact the game designer !"
 	jsr	DI_Error
-	bra.b	.l_0eea6
-.l_0ee76:
-	dc.b	$13,$bc,$00,$01,$10,$00,$43,$f9
-	dc.l	Sold_data
-	dc.b	$c2,$fc,$00,$28,$d2,$c1,$7e,$09,$22,$d8,$51,$cf,$ff,$fc,$2c,$79
-	dc.l	Off_screen
-	dc.b	$61,$00,$b7,$02,$4e,$b9
-	dc.l	Switch_screen
-	dc.b	$4e,$b9
-	dc.l	Copy_screen
-.l_0eea6:
-	rts
+	bra.s	.Exit
+.Found:
+	move.b	#1,0(a1,d1.w)
+	lea.l	Sold_data,a1
+	mulu.w	#40,d1
+	adda.w	d1,a1
+	moveq.l	#10-1,d7
+.Loop2:
+	move.l	(a0)+,(a1)+
+	dbra	d7,.Loop2
+	movea.l	Off_screen,a6
+	bsr.w	Show_objects_LAY3
+	jsr	Switch_screen
+	jsr	Copy_screen
+.Exit:
+	rts	
 ; ---- Gold_res (original source: MAIN/EYE.ASM)
 Gold_res:
 	move.w	(a3),d0
@@ -1626,58 +1649,59 @@ Automap_ModExit:
 	movea.l	Automapicon_ptr,a0
 	jsr	Free_memory
 	bra.w	Automap_DisExit
+; ---- Automap_DisInit (original source: MAIN/EYE.ASM)
 Automap_DisInit:
 	movea.l	Off_screen,a6
-	moveq	#11,d0
+	moveq.l	#11,d0
 	jsr	Show_layout
 	movea.l	Mapd_ptr,a5
 	jsr	Print_headline
-	move.w	#$d0,d0
-	move.w	#$31,d1
-	moveq	#7,d5
-	moveq	#1,d6
-	moveq	#8,d7
-	lea.l	D_44c50,a0
-.l_0f386:
+	move.w	#208,d0
+	move.w	#49,d1
+	moveq.l	#8-1,d5
+	moveq.l	#1,d6
+	moveq.l	#8,d7
+	lea.l	Automap_icn+64,a0
+.Loop:
 	jsr	Blot_unmasked_block
-	addi.w	#$9,d1
-	lea.l	$40(a0),a0
-	dbra	d5,.l_0f386
+	addi.w	#9,d1
+	lea.l	64(a0),a0
+	dbra	d5,.Loop
 	lea.l	Automap_icn,a0
 	move.w	Party_automap_icon,d2
-	lsl.w	#$6,d2
+	lsl.w	#6,d2
 	adda.w	d2,a0
 	jsr	Blot_unmasked_block
-	move.w	#$d8,d0
-	move.w	#$31,d1
-	move.w	#$df,d2
-	move.w	#$81,d3
-	moveq	#2,d6
+	move.w	#208+8,d0
+	move.w	#49,d1
+	move.w	#208+15,d2
+	move.w	#49+80,d3
+	moveq.l	#2,d6
 	jsr	Draw_box
-	move.w	#$de,d0
-	move.w	#$32,d1
-	move.w	#$c,d2
-	moveq	#8,d7
+	move.w	#208+14,d0
+	move.w	#49+1,d1
+	move.w	#12,d2
+	moveq.l	#9-1,d7
 	lea.l	Line_buffer,a0
 	lea.l	Code0006Sys,a1
-.l_0f3e0:
+.Loop_L1:
 	jsr	IG_Set_cursor
-	exg.l	d2,d0
+	exg.l	d2,d0	; CHANGE: was "exg.l d0,d2"
 	jsr	Convert_text_line
-	exg.l	d2,d0
+	exg.l	d2,d0	; CHANGE: was "exg.l d0,d2"
 	jsr	IG_Print
-	addi.w	#$9,d1
-	addq.w	#$1,d2
-	dbra	d7,.l_0f3e0
-	moveq	#15,d0
+	addi.w	#9,d1
+	addq.w	#1,d2
+	dbra	d7,.Loop_L1
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	moveq	#-1,d0
+	moveq.l	#-1,d0
 	jsr	IG_Set_paper
-	moveq	#11,d0
+	moveq.l	#11,d0
 	jsr	Convert_text_line
-	move.w	#$d0,d0
-	move.w	#$27,d1
-	move.w	#$60,d2
+	move.w	#208,d0
+	move.w	#39,d1
+	move.w	#96,d2
 	lea.l	Line_buffer,a0
 	jsr	Print_centered_string
 	move.l	#Automap_CIL,Control_list_ptr
@@ -1686,19 +1710,19 @@ Automap_DisInit:
 	jsr	Copy_screen
 	lea.l	Control_area,a0
 	jsr	Set_layout_data
-	lea.l	D_263e2,a1
+	lea.l	Lay11_target,a1
 	lea.l	Subfade1,a2
-.l_0f464:
+.Again_L2:
 	lea.l	Hbl_Lay11_list,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Lay11_below,a0
 	jsr	Fade_pal
-	bne.b	.l_0f464
+	bne.s	.Again_L2
 	lea.l	Hbl_Lay11_list,a0
 	jsr	Update_HBL
-	rts
+	rts	
 ; ---- Automap_DisExit (original source: MAIN/EYE.ASM)
 Automap_DisExit:
 	lea.l	Void,a1
@@ -2190,7 +2214,7 @@ T_0fafa:
 	movea.l	a0,a1
 	addq.l	#$4,d0
 	subq.l	#$4,a1
-	lea.l	D_2f26a,a0
+	lea.l	Partydata_filename,a0
 	jsr	Save_file
 	movea.l	a1,a0
 	jsr	Free_memory
@@ -2216,7 +2240,7 @@ T_0fb36:
 	tst.l	(a0,d1.w)
 	beq.w	.l_0fcbe
 	movea.l	(a0,d1.w),a2
-	move.w	$3a(a2),d1
+	move.w	Body_conditions(a2),d1
 	move.w	#$e000,d2
 	and.w	d1,d2
 	beq.b	.l_0fb94
@@ -2450,7 +2474,7 @@ T_0ff00:
 .l_0ff4a:
 	movea.l	Current_active_char_data,a2
 	move.b	$c(a1),d0
-	btst	d0,$1a(a2)
+	btst	d0,Spell_class_counter(a2)
 	bne.b	.l_0ff68
 	move.w	#$d,d0
 	jsr	Plus_message
@@ -2481,15 +2505,15 @@ T_0ff00:
 	adda.w	d0,a3
 	moveq	#0,d0
 	move.b	$2(a3),d0
-	cmp.w	$8e(a2),d0
+	cmp.w	Nr_spell_learn_points(a2),d0
 	bls.b	.l_0ffc2
 	move.w	#$18,d0
 	jsr	Plus_message
 	bra.w	.l_10062
 .l_0ffc2:
 	moveq	#0,d0
-	move.b	$e(a2),d0
-	add.w	$c0(a2),d0
+	move.b	Skill_9(a2),d0
+	add.w	Skill_9_normal_magic(a2),d0
 	jsr	Probe
 	bpl.b	.l_0ffe0
 	move.w	#$f,d0
@@ -2498,7 +2522,7 @@ T_0ff00:
 .l_0ffe0:
 	moveq	#0,d0
 	move.b	$2(a3),d0
-	sub.w	d0,$8e(a2)
+	sub.w	d0,Nr_spell_learn_points(a2)
 	lea.l	$d0(a2),a3
 	move.b	$c(a1),d0
 	ext.w	d0
@@ -2516,7 +2540,7 @@ T_0ff00:
 	subq.b	#$1,(a0)
 	moveq	#0,d0
 	move.w	$22(a1),d0
-	sub.l	d0,$ec(a2)
+	sub.l	d0,Weight_normal(a2)
 	lea.l	D_25fd2,a4
 	move.b	Object_slot_number,d0
 	ext.w	d0
@@ -2573,20 +2597,20 @@ T_10066:
 	beq.b	.l_10146
 	movea.l	(a0),a1
 	move.w	#$e400,d0
-	and.w	$3a(a1),d0
+	and.w	Body_conditions(a1),d0
 	bne.b	.l_10146
-	btst	#$4,$3a(a1)
+	btst	#$4,Body_conditions(a1)
 	beq.b	.l_10146
-	addq.w	#$1,$ca(a1)
-	move.w	$58(a1),d0
+	addq.w	#$1,Birth_year(a1)
+	move.w	Attr_9_normal(a1),d0
 	addq.w	#$1,d0
-	move.w	d0,$58(a1)
-	add.w	$ac(a1),d0
+	move.w	d0,Attr_9_normal(a1)
+	add.w	Attr_9_normal_magic(a1),d0
 	add.w	Time_data_year,d0
-	move.w	$6c(a1),d1
+	move.w	Attr_9_max(a1),d1
 	cmp.w	d0,d1
 	bpl.b	.l_10146
-	ori.w	#$2000,$3a(a1)
+	ori.w	#$2000,Body_conditions(a1)
 	cmp.w	Active_member,d7
 	bne.b	.l_10146
 	clr.w	Active_member
@@ -3184,13 +3208,13 @@ Automap_CIL:
 	dc.l	Automap_downleft
 	dc.l	Automap_down
 	dc.l	Automap_downright
-D_2639e:
+Lay8_target:
 	dc.b	$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31
 	dc.b	$02,$00,$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10
 	dc.b	$07,$65,$00,$00,$00,$00,$06,$51,$03,$33,$02,$22,$01,$11,$05,$31
 	dc.b	$04,$21,$01,$24,$02,$36,$06,$10,$03,$10,$05,$41,$03,$40,$04,$51
 	dc.b	$04,$44,$07,$65
-D_263e2:
+Lay11_target:
 	dc.b	$00,$00,$05,$00,$03,$33,$02,$22,$01,$11,$04,$44,$05,$55,$02,$10
 	dc.b	$03,$20,$04,$31,$05,$42,$00,$12,$01,$23,$03,$51,$02,$30,$06,$66
 Cut_table:
@@ -3202,9 +3226,9 @@ Dialogue_CIL:
 	dc.l	DIA_Drop_item
 	dc.l	DIA_Exit
 	dc.l	T_0e75c
-	dc.l	T_0e6e4
+	dc.l	DIA_Ask_word
 	dc.l	T_0ec80
-	dc.l	T_0eace
+	dc.l	DIA_Give_item
 	dc.l	DIA_Give_gold
 	dc.l	DIA_Give_food
 D_26442:

@@ -5,7 +5,7 @@
 M2_time_evaluate:
 	movem.l	d0-d1/a0,-(a7)
 	movea.l	Current_active_char_data,a0
-	btst	#$4,$3b(a0)
+	btst	#$4,Mind_conditions(a0)
 	sne.b	Stygian
 	bne.w	.l_02844
 	movea.l	Mapd_ptr,a0
@@ -48,42 +48,43 @@ M2_time_evaluate:
 .l_02844:
 	movem.l	(a7)+,d0-d1/a0
 	rts
+; ---- Build_2D_map (original source: MAIN/MAP/2DMAP.ASM)
 Build_2D_map:
-	movem.l	d0-d7/a0-a6,-(a7)
+	movem.l	d0-d7/a0-a6,-(sp)
 	bsr.w	M2_time_evaluate
 	move.w	Mapbuf_X,d0
 	move.w	Mapbuf_Y,d1
-	addq.w	#$1,d0
-	addq.w	#$1,d1
+	addq.w	#1,d0
+	addq.w	#1,d1
 	add.w	d0,d0
 	add.w	d1,d1
 	add.w	Half_X,d0
 	add.w	Half_Y,d1
 	tst.w	Scroll_X
-	bne.b	.l_02886
+	bne.s	.Not_zero1
 	sub.w	Half_X,d0
 	sub.w	Half_X,d0
-.l_02886:
+.Not_zero1:
 	tst.w	Scroll_Y
-	bne.b	.l_0289a
+	bne.s	.Not_zero2
 	sub.w	Half_Y,d1
 	sub.w	Half_Y,d1
-.l_0289a:
+.Not_zero2:
 	move.w	d0,Buffer_X
 	move.w	d1,Buffer_Y
 	tst.b	Stygian
-	beq.b	.l_028ce
+	beq.s	.I_can_see
 	lea.l	Graphics_buf,a0
-	moveq	#0,d0
-	move.w	#$11df,d7
-.l_028ba:
+	moveq.l	#0,d0
+	move.w	#4576-1,d7
+.Clear:
 	move.l	d0,(a0)+
-	dbra	d7,.l_028ba
+	dbra	d7,.Clear
 	movea.l	Icondata_ptr,a0
 	bsr.w	Display_party_icon
-	bra.w	.l_02990
-.l_028ce:
-	bsr.w	T_05836
+	bra.w	.Cont
+.I_can_see:
+	bsr.w	Shadow_handler
 	movea.l	Icondata_ptr,a0
 	lea.l	Underlay_buf,a1
 	lea.l	Overlay_buf,a2
@@ -91,87 +92,87 @@ Build_2D_map:
 	lea.l	Trans_buf,a4
 	movea.l	Iconstats_ptr,a5
 	bsr.w	Get_hashable_number
-	moveq	#0,d1
-	moveq	#0,d2
-	moveq	#10,d7
-.l_02900:
-	moveq	#0,d0
-	moveq	#12,d6
-.l_02904:
+	moveq.l	#0,d1
+	moveq.l	#0,d2
+	moveq.l	#10,d7
+.Loop_1:
+	moveq.l	#0,d0
+	moveq.l	#12,d6
+.Loop_2:
 	move.b	(a1)+,d2
-	subq.w	#$1,d2
+	subq.w	#1,d2
 	move.w	d2,d3
 	add.w	d3,d3
 	add.w	d3,d3
-	move.l	(a5,d3.w),d3
-	btst	#$f,d3
-	bne.b	.l_0293c
+	move.l	0(a5,d3.w),d3
+	btst	#15,d3
+	bne.s	.No_over
 	bsr.w	Display_underlay_icon
 	move.b	(a2),d2
-	beq.b	.l_0293c
-	subq.w	#$1,d2
+	beq.s	.No_over
+	subq.w	#1,d2
 	move.w	d2,d3
 	add.w	d3,d3
 	add.w	d3,d3
-	move.l	(a5,d3.w),d3
-	btst	#$6,d3
-	bne.b	.l_0293c
-	btst	#$f,d3
-	bne.b	.l_0293c
+	move.l	0(a5,d3.w),d3
+	btst	#6,d3
+	bne.s	.No_over
+	btst	#15,d3
+	bne.s	.No_over
 	bsr.w	Display_overlay_icon
-.l_0293c:
-	addq.l	#$1,a2
+.No_over:
+	addq.l	#1,a2
 	move.b	(a3)+,d2
-	beq.b	.l_02948
-	subq.w	#$1,d2
+	beq.s	.No_person
+	subq.w	#1,d2
 	bsr.w	Display_overlay_icon
-.l_02948:
+.No_person:
 	move.b	(a4)+,d2
-	beq.b	.l_02952
-	subq.w	#$1,d2
+	beq.s	.Next
+	subq.w	#1,d2
 	bsr.w	Display_overlay_icon
-.l_02952:
-	addq.w	#$1,d0
-	addq.w	#$1,d5
-	dbra	d6,.l_02904
-	addq.w	#$1,d1
-	subi.w	#$d,d5
+.Next:
+	addq.w	#1,d0
+	addq.w	#1,d5
+	dbra	d6,.Loop_2
+	addq.w	#1,d1
+	subi.w	#13,d5
 	add.w	Width_of_map,d5
-	dbra	d7,.l_02900
+	dbra	d7,.Loop_1
 	movea.l	Icondata_ptr,a0
-	cmpi.w	#$5,Travel_mode
-	bmi.b	.l_02984
+	cmpi.w	#5,Travel_mode
+	bmi.s	.Normal
 	bsr.w	Display_sky_icons
 	bsr.w	Display_party_icon
-	bra.b	.l_0298c
-.l_02984:
+	bra.s	.Skip
+.Normal:
 	bsr.w	Display_party_icon
 	bsr.w	Display_sky_icons
-.l_0298c:
+.Skip:
 	bsr.w	Display_night_circle
-.l_02990:
+.Cont:
 	movea.l	Off_screen,a6
 	bsr.w	Display_buffer
 	bsr.w	Update_animation
 	clr.l	Scroll_X
 	clr.l	Half_X
 	tst.b	Bumped
-	beq.b	.l_029dc
+	beq.s	.Exit
 	move.w	Buffer_X,d0
 	move.w	Buffer_Y,d1
-	lsl.w	#$3,d0
-	lsl.w	#$3,d1
-	addi.w	#$e,d0
-	addi.w	#$17,d1
-	lea.l	D_44f90,a0
+	lsl.w	#3,d0
+	lsl.w	#3,d1
+	addi.w	#16-2,d0
+	addi.w	#49-16-10,d1
+	lea.l	Ouch,a0
 	jsr	Blit_masked_block
-	sf.b	Bumped
-.l_029dc:
+	sf	Bumped
+.Exit:
 	bsr.w	Update_status_block
 	bsr.w	Show_special_items
 	bsr.w	Show_spells
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
 ; ---- Get_hashable_number (original source: MAIN/MAP/2DMAP.ASM)
 Get_hashable_number:
 	move.w	Map_Ycoord,d5

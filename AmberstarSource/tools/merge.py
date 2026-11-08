@@ -40,9 +40,54 @@ def convert_instr(mn, ops):
     if up.startswith('.'): return '; ' + mn + ' ' + ops
     return '\t%s\t%s' % (mn, ops)
 
+def macro_lines(mn, ops, routine, n):
+    # macros which the shipped program uses in the routines; n numbers the labels inside a routine
+    up = mn.upper()
+    a = split_ops(ops) if ops else []
+    text = ops.strip()
+    if up == 'ERROR':
+        # the text is in the data segment, its address is found by a marker value (a name for each text)
+        return ['\tlea.l\tET_%s_%d,a1\t; ERROR %s' % (routine, n, text), '\tbsr.w\tDI_Error' if near('DI_Error') else '\tjsr\tDI_Error']
+    if up == 'XERROR':
+        return ['\tlea.l\tET_%s_%d,a1\t; XERROR %s' % (routine, n, text), '\tlea.l\t%s,a2' % a[-1], '\tbsr.w\tXError' if near('XError') else '\tjsr\tXError']
+    if up == 'CHECK':
+        return ['\tmovem.l\td0/a0,-(sp)', '\tmove.l\tDangerZone,d0', '\tbeq.s\t.AllClear_%d' % n, '\tmovea.l\td0,a0',
+                '\ttst.l\t(a0)', '\tbeq.s\t.AllClear_%d' % n, '\tdc.w\t$4afc', '.AllClear_%d:' % n, '\tmovem.l\t(sp)+,d0/a0']
+    if up == 'DIAG_ON':
+        return ['\tst\tTime_lock', '\tmovem.l\td0-d7/a0-a6,-(sp)', call('ON_Diag_screen'), call('DI_Cursor_home'), '\tmovea.l\tScreen_base,a6']
+    if up == 'DIAG_OFF':
+        return [call('OFF_Diag_screen'), '\tmovem.l\t(sp)+,d0-d7/a0-a6', '\tsf\tTime_lock']
+    if up == 'RESTORE_COORDS':
+        return ['\tmove.w\tOld_Xcoord,Map_Xcoord', '\tmove.w\tOld_Ycoord,Map_Ycoord', '\tmove.w\tOld_mapbufX,Mapbuf_X', '\tmove.w\tOld_mapbufY,Mapbuf_Y']
+    if up == 'UPDATE_MAP_DISPLAY':
+        return ['\tmovea.l\tModule_sp,a0', '\tmove.l\t(a0),d0', '\tbeq.s\t.Zero_%d' % n, '\tmovea.l\td0,a0', '\tjsr\t(a0)', call('Switch_screen'), '.Zero_%d:' % n]
+    if up == 'PRINT':
+        if text.startswith(("'", '"')):
+            return ['	lea.l	PT_%s_%d,a0	; PRINT %s' % (routine, n, text), call('DI_Print')]
+        return ['	lea.l	%s,a0' % text, call('DI_Print')]
+    if up in ('START_TIMER_C', 'STOP_TIMER_C'):
+        return ['	move.w	sr,-(sp)', '	ori.w	#$700,sr',
+                '	ori.b	#$20,MFP_Ierb' if up == 'START_TIMER_C' else '	andi.b	#$df,MFP_Ierb', '	move.w	(sp)+,sr']
+    if up == '_RANDOM':
+        return ['	move.w	#$11,-(sp)', '	trap	#14', '	addq.l	#2,sp']
+    if up == 'VSYNC':
+        return ['\tmove.w\t#$25,-(sp)', '\ttrap\t#14', '\taddq.l\t#2,sp']
+    if up == 'C_RAWCIN':
+        return ['\tmove.w\t#7,-(sp)', '\ttrap\t#1', '\taddq.l\t#2,sp']
+    return None
+
+def near(target):
+    t = sym.get(target)
+    return t is not None and t < tlen and abs(t - current_addr) < 32768 - 1024
+
+def call(target):
+    return '\tbsr.w\t%s' % target if near(target) else '\tjsr\t%s' % target
+
 def convert_lines(lines):
     out = []
     wait_count = 0
+    macro_count = 0
+    routine = next((p[0] for p in map(parse_line, lines) if p and p[0] and not p[0].startswith('.')), 'X')
     for l in lines:
         p = parse_line(l)
         if not p:
@@ -51,6 +96,11 @@ def convert_lines(lines):
         if label:
             out.append(label + ':')
         if not mn: continue
+        ml = macro_lines(mn, ops, routine, macro_count + 1)
+        if ml is not None:
+            macro_count += 1
+            out.extend(ml)
+            continue
         ex = expand(mn, ops)
         if ex is not None:
             for emn, eops in ex:
@@ -86,6 +136,31 @@ for f, lines in raw.items():
         if cur and section == 'text':
             routine_lines[cur][1].append(l)
 
+# .LOCAL starts a new scope of the local labels in the original assembler (e.g. After_move has .Underlay twice).
+# vasm doesn't know it, so the local labels behind a .LOCAL get a suffix: .Underlay_L1
+DIRECTIVE_WORDS = {'DC', 'DS', 'LOCAL', 'EVEN', 'TEXT', 'DATA', 'BSS', 'XDEF', 'XREF', 'GLOBL', 'END', 'SECTION',
+                   'INCLUDE', 'ABS', 'IF', 'ELSE', 'ENDIF', 'MACRO', 'ENDM'}
+LOCAL_REF = re.compile(r'(?<![\w)\]\'"])\.([A-Za-z_]\w*)')
+def scope_locals(lines):
+    if not any(re.search(r'\.LOCAL\b', l.split(';')[0], re.I) for l in lines): return lines
+    out, scope = [], 0
+    for l in lines:
+        code_part, sep, comment = l.partition(';')
+        if scope:
+            rename = lambda m: m.group(0) if m.group(1).upper() in DIRECTIVE_WORDS else '.%s_L%d' % (m.group(1), scope)
+            if re.search(r'\.DC\.', code_part, re.I):
+                # only the label of a data line (the data may contain text)
+                code_part = re.sub(r'^\.([A-Za-z_]\w*)', rename, code_part)
+            else:
+                code_part = LOCAL_REF.sub(rename, code_part)
+        # a label in front of .LOCAL belongs to the old scope, the new scope starts behind it
+        if re.search(r'\.LOCAL\b', l.split(';')[0], re.I): scope += 1
+        out.append(code_part + sep + comment)
+    return out
+for nm in routine_lines:
+    rel, lines = routine_lines[nm]
+    routine_lines[nm] = (rel, scope_locals(lines))
+
 # ------------------------------------------------------------------ assemble each routine at its address
 tmp = tempfile.mkdtemp()
 SP = os.path.join(tmp, 'r.s'); BP = os.path.join(tmp, 'r.bin')
@@ -119,7 +194,7 @@ def assemble(addr, body, eq):
     used = set(WORD.findall('\n'.join(body)))
     eq = [e for e in eq if e.split('\t', 1)[0] in used]
     src = '\n'.join(eq) + '\n\torg\t$%x\n' % addr + '\n'.join(body) + '\n'
-    key = hashlib.sha1(src.encode('latin-1', 'replace')).digest()
+    key = hashlib.sha1(b'v2' + src.encode('latin-1', 'replace')).digest()   # v2: all errors are reported
     if key in asm_cache:
         cache_stats['hit'] += 1
         return asm_cache[key]
@@ -134,7 +209,7 @@ def assemble_vasm(src):
         open(SP, 'w', encoding='latin-1').write(src)
         if os.path.exists(BP): os.remove(BP)
         try:
-            r = subprocess.run([vasm, '-quiet', '-m68000', '-Fbin', '-no-opt', '-nowarn=62', '-o', BP, SP], capture_output=True, text=True, encoding='latin-1', timeout=20)
+            r = subprocess.run([vasm, '-quiet', '-m68000', '-Fbin', '-no-opt', '-nowarn=62', '-maxerrors=1000', '-o', BP, SP], capture_output=True, text=True, encoding='latin-1', timeout=20)
         except subprocess.TimeoutExpired:
             # (it happened once that vasm did not end)
             open(SP + '.hang', 'w', encoding='latin-1').write(src)
@@ -172,7 +247,7 @@ def check_all(sym, only=None):
         b, src, out = assemble(addr, body, eq)
         if b is None:
             undefined = sorted(set(UNDEF.findall(out)))
-            other = [x for x in out.splitlines() if 'error' in x and 'undefined symbol' not in x]
+            other = [x for x in out.splitlines() if 'error' in x and 'undefined symbol' not in x and 'maximum number of errors' not in x]
             results[nm] = {'file': rel, 'addr': addr, 'state': 'error', 'error': (other or [x for x in out.splitlines() if 'error' in x] or [''])[0][:200], 'undefined': undefined}
             counts['error'] += 1
             # unknown names get marker values; if everything else matches, the program gives their addresses
@@ -412,6 +487,29 @@ def assembled_size(nm, addr):
     b, _, _ = assemble(addr, convert_lines(routine_lines[nm][1]), equates_for(sym, nm))
     return len(b) if b is not None else None
 
+def align_names(nm, v):
+    # unknown names of the original routine from the program instructions which are aligned with it
+    rel, lines = routine_lines[nm]
+    addr = v['addr']
+    if addr not in prog_index: return {}
+    ins = [it for it in source_items(lines) if it[0] == 'ins']
+    if not ins: return {}
+    start = prog_index[addr]
+    window = prog[start:start + len(ins) * 2 + 40]
+    sm = difflib.SequenceMatcher(None, [i[2][1] for i in ins], [p[3] for p in window], autojunk=False)
+    votes = collections.defaultdict(collections.Counter)
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag != 'equal': continue
+        for d in range(i2 - i1):
+            o, p = ins[i1 + d], window[j1 + d]
+            for ro, rp in zip(o[2][2], p[4]):
+                if ro and rp and ro[0] == 'name' and rp[0] == 'addr' and not ro[1].startswith('.') \
+                        and ro[1] not in sym and ro[1] not in consts and re.fullmatch(r'[A-Za-z_]\w*', ro[1]):
+                    votes[ro[1]][rp[1] - ro[2]] += 1
+    # only names whose aligned instructions all agree
+    return {u: c.most_common(1)[0][0] for u, c in votes.items() if c.most_common(1)[0][1] == sum(c.values())}
+
+name_candidates, rejected_names = {}, set()
 last_tried = None
 for outer in range(100):
     results, votes, counts = check_all(sym, only)
@@ -432,6 +530,21 @@ for outer in range(100):
         a, n = c.most_common(1)[0]
         if u not in sym and n / sum(c.values()) >= 0.75:
             sym[u] = a; added[u] = (a, n); new += 1
+    # names from the alignment (routines which fail because of unknown names and also differ from the program): they
+    # are kept if their routine is taken in the next round and still uses them, otherwise they are rejected
+    for u in list(name_candidates):
+        origin = name_candidates.pop(u)
+        v = results.get(origin, {})
+        if v.get('state') == 'same' and re.search(r'\b%s\b' % re.escape(u), '\n'.join(v.get('source') or [])):
+            added[u] = (sym[u], 0); new += 1
+        else:
+            del sym[u]; rejected_names.add(u)
+    if prog and not only:
+        for nm, v in results.items():
+            if v['state'] != 'error' or not v.get('undefined'): continue
+            for u, a in align_names(nm, v).items():
+                if u not in sym and u not in rejected_names and u not in name_candidates:
+                    sym[u] = a; name_candidates[u] = nm
     # neighbours in the same file: the next routine starts behind a confirmed routine, the previous one ends at it
     for k, nm in enumerate(order):
         v = results.get(nm)
@@ -451,9 +564,11 @@ for outer in range(100):
     print('round', outer + 1, dict(counts), 'refined', dict(rcounts), 'new names', new, 'candidates', len(candidates), 'assembled', dict(cache_stats), flush=True)
     # ends when a round finds nothing new (the same candidates are tried again and again)
     tried = {u: sym[u] for u in candidates}
-    if (not new and (not candidates or tried == last_tried)) or only: break
+    if (not new and not name_candidates and (not candidates or tried == last_tried)) or only: break
     last_tried = tried
 
+# names from the alignment which were not confirmed
+for u in name_candidates: del sym[u]
 # open candidates: confirmed if a routine which assembles to the same bytes uses them
 used = set()
 for v in results.values():

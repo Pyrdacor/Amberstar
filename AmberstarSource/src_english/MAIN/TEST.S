@@ -30,12 +30,12 @@ T_00022:
 	addq.l	#$6,a7
 	move.l	d0,B_5beac
 	lea.l	B_5ceb0,a7
-	jsr	T_1c19e
+	jsr	Init_DI_print
 	jsr	T_1c9ae
 	jsr	Init_computer
 	movea.l	B_5bea4,a0
 	jsr	T_1d190
-	jsr	T_1cee8
+	jsr	Init_kbd
 	jsr	T_1b63c
 	jsr	HBL_on
 	jsr	Mouse_on
@@ -56,7 +56,7 @@ T_00022:
 T_000d6:
 	moveq	#0,d0
 	bsr.w	Play_song
-	lea.l	D_2fcfa,a0
+	lea.l	Main_root,a0
 	jsr	Push_Root
 	movea.l	Off_screen,a6
 	jsr	Clear_screen
@@ -192,37 +192,38 @@ Restore_game:
 	move.l	-4(a0,d0.w),Current_active_char_data
 	movem.l	(sp)+,d0/d7/a0-a2
 	rts	
+; ---- Load_party_data (original source: MAIN/TEST.ASM)
 Load_party_data:
-	movem.l	d0/d7/a0-a1,-(a7)
-	lea.l	D_2f26a,a0
-	jsr	T_1b786
-	move.l	a0,-(a7)
-	cmpi.l	#$59415921,(a0)
-	bne.b	.l_00342
-	addq.l	#$4,a0
-	move.w	(a0),d0
-	eori.w	#$4a48,d0
-	move.l	B_5d0f4,d7
-	subq.l	#$4,d7
-	bsr.w	T_00ef0
-	addq.l	#$2,a0
-.l_00342:
-	lea.l	Month,a1
-	moveq	#0,d0
-	moveq	#23,d7
-.l_0034c:
+	movem.l	d0/d7/a0/a1,-(sp)
+	lea.l	Partydata_filename,a0
+	jsr	Load_file
+	move.l	a0,-(sp)
+	cmpi.l	#$59415921,(a0)	; CHANGE: added
+	bne.b	.c_00342	; CHANGE: added
+	addq.l	#$4,a0	; CHANGE: added
+	move.w	(a0),d0	; CHANGE: added
+	eori.w	#$4a48,d0	; CHANGE: added
+	move.l	B_5d0f4,d7	; CHANGE: added
+	subq.l	#$4,d7	; CHANGE: added
+	bsr.w	T_00ef0	; CHANGE: added
+	addq.l	#$2,a0	; CHANGE: added
+.c_00342:
+	lea.l	Party_data,a1
+	moveq.l	#0,d0
+	moveq.l	#24-1,d7
+.Loop1:
 	move.b	(a0)+,d0
 	move.w	d0,(a1)+
-	dbra	d7,.l_0034c
-	move.w	#$15ad,d7
-.l_00358:
+	dbra	d7,.Loop1
+	move.w	#5550-1,d7
+.Loop2:
 	move.w	(a0)+,(a1)+
-	dbra	d7,.l_00358
+	dbra	d7,.Loop2
 	bsr.w	Init_modifications
-	movea.l	(a7)+,a0
+	movea.l	(sp)+,a0
 	jsr	Kill_memory
-	movem.l	(a7)+,d0/d7/a0-a1
-	rts
+	movem.l	(sp)+,d0/d7/a0/a1
+	rts	
 Init_modifications:
 	movem.l	d0/a0-a1,-(a7)
 	move.l	#$200,d0
@@ -268,27 +269,28 @@ Make_modifications:
 .Exit:
 	movem.l	(sp)+,d0-d2/a1
 	rts	
+; ---- Enter_modification (original source: MAIN/TEST.ASM)
 Enter_modification:
-	movem.l	d7/a0,-(a7)
+	movem.l	d7/a0,-(sp)
 	move.w	Nr_of_modifications,d7
-	cmpi.w	#$200,d7
-	bmi.b	.l_00402
-	lea.l	D_2e7d6,a1
+	cmpi.w	#Max_mods,d7
+	bmi.s	.Ok
+	lea.l	ET_Enter_modification_1,a1	; ERROR "[ Enter_modification ] : Too much modifications !!!"
 	jsr	DI_Error
-	bra.b	.l_00424
-.l_00402:
-	addq.w	#$1,d7
+	bra.s	.Exit
+.Ok:
+	addq.w	#1,d7
 	move.w	d7,Nr_of_modifications
 	movea.l	Modifications_ptr,a0
-	mulu.w	#$6,d7
-	lea.l	-$6(a0,d7.w),a0
+	mulu.w	#6,d7
+	lea.l	-6(a0,d7.w),a0
 	move.w	Map_nr,(a0)+
 	move.b	d0,(a0)+
 	move.b	d1,(a0)+
 	move.w	d2,(a0)
-.l_00424:
-	movem.l	(a7)+,d7/a0
-	rts
+.Exit:
+	movem.l	(sp)+,d7/a0
+	rts	
 Set_new_travel_mode:
 	move.l	d0,-(a7)
 	cmpi.w	#$7,d0
@@ -410,7 +412,7 @@ T_00546:
 	lea.l	Inv1_Mod,a0
 	jsr	Push_Module
 	movea.l	Current_inventory_chardat_ptr,a0
-	move.w	$3a(a0),d0
+	move.w	Body_conditions(a0),d0
 	andi.w	#$482,d0
 	beq.b	.l_00594
 	sf.b	B_587f8
@@ -424,105 +426,115 @@ T_00546:
 T_005a2:
 	moveq	#1,d0
 	bra.w	Do_control_icons
-T_005a8:
-	moveq	#2,d0
+; ---- Icon_2 (original source: MAIN/TEST.ASM)
+Icon_2:
+	moveq.l	#2,d0
 	bra.w	Do_control_icons
-T_005ae:
-	moveq	#3,d0
+; ---- Icon_3 (original source: MAIN/TEST.ASM)
+Icon_3:
+	moveq.l	#3,d0
 	bra.w	Do_control_icons
-T_005b4:
-	moveq	#4,d0
+; ---- Icon_4 (original source: MAIN/TEST.ASM)
+Icon_4:
+	moveq.l	#4,d0
 	bra.w	Do_control_icons
-T_005ba:
-	moveq	#5,d0
+; ---- Icon_5 (original source: MAIN/TEST.ASM)
+Icon_5:
+	moveq.l	#5,d0
 	bra.w	Do_control_icons
-T_005c0:
-	moveq	#6,d0
+; ---- Icon_6 (original source: MAIN/TEST.ASM)
+Icon_6:
+	moveq.l	#6,d0
 	bra.w	Do_control_icons
-T_005c6:
-	moveq	#7,d0
+; ---- Icon_7 (original source: MAIN/TEST.ASM)
+Icon_7:
+	moveq.l	#7,d0
 	bra.w	Do_control_icons
-T_005cc:
-	moveq	#8,d0
+; ---- Icon_8 (original source: MAIN/TEST.ASM)
+Icon_8:
+	moveq.l	#8,d0
 	bra.w	Do_control_icons
-T_005d2:
-	moveq	#9,d0
+; ---- Icon_9 (original source: MAIN/TEST.ASM)
+Icon_9:
+	moveq.l	#9,d0
 	bra.w	Do_control_icons
+; ---- Update_damage_magic (original source: MAIN/TEST.ASM)
 Update_damage_magic:
-	movem.l	d0/d7/a0-a1/a6,-(a7)
-	lea.l	B_58ec0,a0
+	movem.l	d0/d7/a0/a1/a6,-(sp)
+	lea.l	Damage_timers,a0
 	lea.l	Char_damage,a1
 	movea.l	Off_screen,a6
-	moveq	#1,d7
-.l_005f0:
+	moveq.l	#1,d7
+.Loop:
 	tst.b	(a0)
-	beq.b	.l_00604
+	beq.s	.Next
 	move.w	(a1),d0
 	bsr.w	Display_damage
-	subq.b	#$1,(a0)
-	bne.b	.l_00604
+	subq.b	#1,(a0)
+	bne.s	.Next
 	move.w	d7,d0
 	bsr.w	Force_char_update
-.l_00604:
-	addq.l	#$1,a0
-	addq.l	#$2,a1
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	.l_005f0
+.Next:
+	addq.l	#1,a0
+	addq.l	#2,a1
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop
 	move.w	Magic_anim_counter,d0
-	addq.w	#$1,d0
-	cmpi.w	#$c,d0
-	bmi.b	.l_00620
-	moveq	#0,d0
-.l_00620:
+	addq.w	#1,d0
+	cmpi.w	#12,d0
+	bmi.s	.Ok_L1
+	moveq.l	#0,d0
+.Ok_L1:
 	move.w	d0,Magic_anim_counter
 	lea.l	Magic_timers,a0
 	movea.l	Off_screen,a6
-	moveq	#1,d7
-.l_00634:
+	moveq.l	#1,d7
+.Loop_L1:
 	tst.b	(a0)
-	beq.b	.l_00646
+	beq.s	.Next_L1
 	bsr.w	Display_magic
-	subq.b	#$1,(a0)
-	bne.b	.l_00646
+	subq.b	#1,(a0)
+	bne.s	.Next_L1
 	move.w	d7,d0
 	bsr.w	Force_char_update
-.l_00646:
-	addq.l	#$1,a0
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	.l_00634
-	movem.l	(a7)+,d0/d7/a0-a1/a6
-	rts
+.Next_L1:
+	addq.l	#1,a0
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop_L1
+	movem.l	(sp)+,d0/d7/a0/a1/a6
+	rts	
+; ---- Display_damage (original source: MAIN/TEST.ASM)
 Display_damage:
-	movem.l	d0-d2/d6-d7/a0,-(a7)
+	movem.l	d0-d2/d6/d7/a0,-(sp)
 	lea.l	Status_PA,a0
 	bsr.w	Push_PA
 	move.w	d0,d2
 	move.w	d7,d0
-	mulu.w	#$30,d0
-	subi.w	#$20,d0
-	moveq	#1,d1
-	moveq	#2,d6
-	moveq	#32,d7
-	lea.l	D_3cf60,a0
+	mulu.w	#48,d0
+	subi.w	#32,d0
+	moveq.l	#1,d1
+	moveq.l	#2,d6
+	moveq.l	#32,d7
+	lea.l	Status_icn+2560,a0
 	jsr	Blot_masked_block
-	addi.w	#$a,d0
-	exg.l	d0,d2
+	addi.w	#10,d0
+	exg.l	d0,d2	; CHANGE: was "exg.l d2,d0"
 	tst.w	d0
-	beq.b	.l_006a8
-	moveq	#2,d7
-	lea.l	D_2e7ce,a0
-	lea.l	$4(a0),a3
+	beq.s	.Skip
+	moveq.l	#2,d7
+	lea.l	Temp_number,a0
+	lea.l	4(a0),a3
 	jsr	LConvert_number
-	moveq	#12,d0
-	exg.l	d2,d0
-	moveq	#11,d1
+	moveq.l	#12,d0
+	exg.l	d2,d0	; CHANGE: was "exg.l d0,d2"
+	moveq.l	#11,d1
 	bsr.w	Print_centered_string
-.l_006a8:
+.Skip:
 	bsr.w	Pop_PA
-	movem.l	(a7)+,d0-d2/d6-d7/a0
-	rts
+	movem.l	(sp)+,d0-d2/d6/d7/a0
+	rts	
 ; ---- Display_magic (original source: MAIN/TEST.ASM)
 Display_magic:
 	movem.l	d0/d1/d6/d7/a0,-(sp)
@@ -556,7 +568,7 @@ Check_party_alive:
 	tst.l	(a0)
 	beq.b	.l_00762
 	movea.l	(a0),a1
-	move.w	$3a(a1),d0
+	move.w	Body_conditions(a1),d0
 	andi.w	#$e586,d0
 	bne.b	.l_00762
 	clr.w	Active_member
@@ -579,7 +591,7 @@ Check_party_alive:
 	tst.b	Battling
 	beq.b	.l_007a2
 	movea.l	Current_active_char_data,a0
-	btst	#$7,$3b(a0)
+	btst	#$7,Mind_conditions(a0)
 	beq.b	.l_0078c
 	tst.w	B_58ab0
 	beq.b	.l_007a2
@@ -603,8 +615,8 @@ Check_party_alive:
 	tst.l	(a0)
 	beq.b	.l_007d2
 	movea.l	(a0),a1
-	add.w	$54(a1),d0
-	add.w	$a8(a1),d0
+	add.w	Attr_7_normal(a1),d0
+	add.w	Attr_7_normal_magic(a1),d0
 .l_007d2:
 	addq.l	#$4,a0
 	dbra	d7,.l_007c4
@@ -637,70 +649,71 @@ ActSel_ModInit:
 	move.w	Nr_of_chars,d2
 	lea.l	Code0006Sys,a1
 	bsr.w	Prepare_text_block
+; ---- HearTxtW_ModInit (original source: MAIN/EYE.ASM)
 HearTxtW_ModInit:
 	move.w	Lines_in_text,d0
-	mulu.w	#$7,d0
-	moveq	#15,d3
+	mulu.w	#7,d0
+	moveq.l	#15,d3
 	add.w	d0,d3
 	andi.w	#$fff0,d3
-	lsr.w	#$4,d3
-	cmpi.w	#$2,d3
-	bpl.b	.l_0086a
-	moveq	#2,d3
-.l_0086a:
+	lsr.w	#4,d3
+	cmpi.w	#2,d3
+	bpl.s	.Not2small
+	moveq.l	#2,d3
+.Not2small:
 	move.w	d3,d4
-	lsl.w	#$4,d4
+	lsl.w	#4,d4
 	sub.w	d0,d4
-	moveq	#16,d0
-	moveq	#52,d1
-	moveq	#18,d2
-	addq.w	#$2,d3
-	moveq	#0,d6
+	moveq.l	#16,d0
+	moveq.l	#52,d1
+	moveq.l	#18,d2
+	addq.w	#2,d3
+	moveq.l	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_592e0
-	lsr.w	#$1,d4
+	move.w	d0,B_592e0	; CHANGE: was "move.w d0,Window_handle"
+	lsr.w	#1,d4
 	add.w	d4,d1
-	addi.w	#$10,d1
-	move.w	d1,D_25f80
-	subq.w	#$2,d3
-	lsl.w	#$4,d3
-	move.w	d3,D_25f84
-	bsr.w	Pop_PA
+	addi.w	#16,d1
+	move.w	d1,TxtW_PA+2
+	subq.w	#2,d3
+	lsl.w	#4,d3
+	move.w	d3,TxtW_PA+6
+	bsr.w	Pop_PA	; CHANGE: added
 	lea.l	TxtW_PA,a0
 	bsr.w	Push_PA
-	movea.l	Text_buffer,a0
-	movea.l	Off_screen,a6
+	movea.l	Text_buffer,a0	; CHANGE: was "movea.l Off_screen,a6"
+	movea.l	Off_screen,a6	; CHANGE: was "movea.l RText_ptr,a0"
 	move.w	Nr_of_chars,d0
 	move.w	Lines_in_text,d7
-	bra.b	T_008d8
-T_008c8:
+	bra.b	.c_008d8	; CHANGE: was "subq.w #1,d7"
+.Loop:
 	jsr	IG_Print
 	jsr	IG_Carriage_return
-	lea.l	$1(a0,d0.w),a0
-T_008d8:
-	dbra	d7,T_008c8
+	lea.l	1(a0,d0.w),a0
+.c_008d8:
+	dbra	d7,.Loop
 	jsr	Switch_screen
 	jsr	Copy_screen
-	movea.l	Text_buffer,a0
-	jsr	Free_memory
-	lea.l	D_2e7a6,a0
-	jsr	Push_MA
-	lea.l	D_2fce8,a0
-	jsr	Push_Root
-	lea.l	Lay6_target,a1
-	lea.l	Subfade1,a2
-.l_00918:
-	lea.l	Hbl_Lay6_list,a0
-	jsr	Update_HBL
-	jsr	My_vsync
-	jsr	My_vsync
-	lea.l	Lay6_below,a0
-	jsr	Fade_pal
-	bne.b	.l_00918
-	lea.l	Hbl_Lay6_list,a0
-	jsr	Update_HBL
-	rts
+	movea.l	Text_buffer,a0	; CHANGE: added
+	jsr	Free_memory	; CHANGE: added
+	lea.l	D_2e7a6,a0	; CHANGE: added
+	jsr	Push_MA	; CHANGE: added
+	lea.l	D_2fce8,a0	; CHANGE: added
+	jsr	Push_Root	; CHANGE: added
+	lea.l	Lay6_target,a1	; CHANGE: added
+	lea.l	Subfade1,a2	; CHANGE: added
+.c_00918:
+	lea.l	Hbl_Lay6_list,a0	; CHANGE: added
+	jsr	Update_HBL	; CHANGE: added
+	jsr	My_vsync	; CHANGE: added
+	jsr	My_vsync	; CHANGE: added
+	lea.l	Lay6_below,a0	; CHANGE: added
+	jsr	Fade_pal	; CHANGE: added
+	bne.b	.c_00918	; CHANGE: added
+	lea.l	Hbl_Lay6_list,a0	; CHANGE: added
+	jsr	Update_HBL	; CHANGE: was "jsr Exit_RText"
+	rts	
 ActSel_ModExit:
 	jsr	Pop_Root
 	bsr.w	Pop_PA
@@ -762,10 +775,10 @@ Resurrection_sequence:
 	tst.l	(a0)
 	beq.b	.l_00a64
 	movea.l	(a0),a1
-	clr.w	$3a(a1)
-	move.w	$88(a1),d0
-	add.w	$98(a1),d0
-	move.w	d0,$86(a1)
+	clr.w	Body_conditions(a1)
+	move.w	Life_points_max(a1),d0
+	add.w	Life_points_max_magic(a1),d0
+	move.w	d0,Life_points_normal(a1)
 .l_00a64:
 	addq.l	#$4,a0
 	dbra	d7,.l_00a4e
@@ -938,41 +951,44 @@ T_00d26:
 .l_00d58:
 	jsr	Pop_Module
 	bra.w	T_00e04
+; ---- Req_ModInit (original source: MAIN/TEST.ASM)
 Req_ModInit:
-	move.w	#$30,d0
-	move.w	#$3c,d1
-	moveq	#12,d2
-	moveq	#5,d3
-	moveq	#1,d6
-	lea.l	D_2fe3e,a0
+	move.w	#48,d0
+	move.w	#$3c,d1	; CHANGE: was "move.w #80,d1"
+	moveq.l	#12,d2
+	moveq.l	#5,d3
+	moveq.l	#1,d6
+	lea.l	PlacesExit_L1,a0
 	jsr	Open_window
-	move.w	d0,B_592e8
+	move.w	d0,B_592e8	; CHANGE: was "move.w d0,Window_handle"
 	movea.l	Off_screen,a6
 	movea.l	PlusMes_info,a0
-	move.l	#D_2e7ba,PlusMes_info
+	move.l	#PlacesExit_MA,PlusMes_info
 	move.w	ReqText_nr,d0
 	bsr.w	Hash_message
 	move.l	a0,PlusMes_info
-	moveq	#2,d6
-	moveq	#16,d7
-	move.w	#$50,d0
-	move.w	#$6c,d1
-	lea.l	D_39a60,a0
+	moveq.l	#2,d6
+	moveq.l	#16,d7
+	move.w	#48+32,d0
+	move.w	#$6c,d1	; CHANGE: was "move.w #80+48,d1"
+	lea.l	Control_icn+6912,a0
 	jsr	Blot_unmasked_block
-	addi.w	#$20,d0
-	lea.l	D_39b60,a0
+	addi.w	#32,d0
+	lea.l	Control_icn+7168,a0
 	jsr	Blot_unmasked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	rts
+	rts	
+; ---- Req_ModExit (original source: MAIN/TEST.ASM)
 Req_ModExit:
-	move.w	B_592e8,d0
+	move.w	B_592e8,d0	; CHANGE: was "Req_ModExit: move.w Window_handle,d0"
 	jsr	Close_window
-.l_00dea:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_00dea
-	rts
-T_00df6:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
+; ---- Req_Yes (original source: MAIN/TEST.ASM)
+Req_Yes:
 	jsr	Pop_Module
 	movea.l	ReqDo_ptr,a0
 	jmp	(a0)
@@ -998,7 +1014,7 @@ T_00e04:
 	sf.b	Party_invisible
 	sf.b	Stygian
 	move.l	#PA_Stack,PA_sp
-	move.l	#B_5d8b2,MA_sp
+	move.l	#MA_Stack,MA_sp
 	move.l	#B_5d0c4,Object_sp
 	move.l	#D_51c84,Mptr_sp
 	lea.l	B_5ceb0,a7
@@ -1012,9 +1028,9 @@ T_00e80:
 	tst.l	(a0)
 	beq.b	.l_00eaa
 	movea.l	(a0),a1
-	move.l	$ec(a1),d0
-	move.w	$48(a1),d1
-	add.w	$9c(a1),d1
+	move.l	Weight_normal(a1),d0
+	move.w	Attr_1_normal(a1),d1
+	add.w	Attr_1_normal_magic(a1),d1
 	mulu.w	#$3e8,d1
 	cmp.l	d0,d1
 	bpl.b	.l_00eaa
@@ -1031,7 +1047,7 @@ T_00e80:
 	tst.l	(a0)
 	beq.b	.l_00ede
 	movea.l	(a0),a1
-	move.w	$3a(a1),d0
+	move.w	Body_conditions(a1),d0
 	move.w	d0,d1
 	andi.w	#$e000,d1
 	bne.b	.l_00ede
@@ -1043,7 +1059,7 @@ T_00e80:
 	addq.l	#$4,a0
 	dbra	d7,.l_00ec0
 .l_00ee4:
-	move.b	d6,B_592dd
+	move.b	d6,Overweight
 	movem.l	(a7)+,d0-d1/d6-d7/a0-a1
 	rts
 T_00ef0:
@@ -1124,15 +1140,15 @@ T_00fa0:
 	movea.l	(a1,d0.w),a1
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	(a1),a0
 	jsr	DI_Print
 	lea.l	D_2e54c,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 	addq.w	#$1,B_5930a
@@ -1151,13 +1167,13 @@ T_01038:
 T_01046:
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_1df4e,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 	rts
@@ -1225,13 +1241,13 @@ T_01142:
 	beq.b	.l_01188
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_1dcaf,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_01188:
@@ -1241,8 +1257,8 @@ T_0118a:
 	beq.w	.l_013aa
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2e867,a0
 	jsr	DI_Print
@@ -1327,7 +1343,7 @@ T_0118a:
 	lea.l	D_2e948,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_013aa:
@@ -1343,8 +1359,8 @@ T_013ba:
 	beq.w	.l_01514
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2e963,a0
 	jsr	DI_Print
@@ -1400,7 +1416,7 @@ T_013ba:
 	lea.l	D_2ea52,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_01514:
@@ -1410,8 +1426,8 @@ T_01516:
 	beq.w	T_015fe
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2ea6d,a0
 	jsr	DI_Print
@@ -1449,7 +1465,7 @@ T_015d2:
 	lea.l	D_2eaad,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 T_015fe:
@@ -1459,8 +1475,8 @@ T_01600:
 	beq.w	T_016a8
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2eac8,a0
 	jsr	DI_Print
@@ -1486,7 +1502,7 @@ T_0165a:
 	lea.l	D_2eadf,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 T_016a8:
@@ -1500,8 +1516,8 @@ T_016bc:
 	beq.b	.l_0173a
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2eafa,a0
 	jsr	DI_Print
@@ -1509,7 +1525,7 @@ T_016bc:
 	movea.l	Current_active_char_data,a1
 	lea.l	D_2eb1a,a0
 	jsr	DI_Print
-	move.l	$cc(a1),d0
+	move.l	Experience_points(a1),d0
 	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 .l_01714:
@@ -1518,9 +1534,9 @@ T_016bc:
 	tst.l	d0
 	bmi.b	.l_0172a
 	beq.b	.l_01714
-	add.l	d0,$cc(a1)
+	add.l	d0,Experience_points(a1)
 .l_0172a:
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_0173a:
@@ -1539,8 +1555,8 @@ T_0175e:
 	beq.w	.l_017fa
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2eb4d,a0
 	jsr	DI_Print
@@ -1552,7 +1568,7 @@ T_0175e:
 	bmi.b	.l_017ea
 	beq.b	.l_01796
 	move.w	d0,New_map
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 	bsr.w	Exit_map
@@ -1563,7 +1579,7 @@ T_0175e:
 	bsr.w	Init_map
 	rts
 .l_017ea:
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 .l_017fa:
@@ -1573,8 +1589,8 @@ T_017fc:
 	beq.w	T_019b0
 	st.b	Time_lock
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2eb6e,a0
 	jsr	DI_Print
@@ -1675,7 +1691,7 @@ T_01960:
 	jsr	DI_Print
 	jsr	Wait_4_key
 T_019a0:
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	Time_lock
 T_019b0:

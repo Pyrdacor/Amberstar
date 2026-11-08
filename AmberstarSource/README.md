@@ -18,8 +18,8 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 593 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
-| 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 95 names with comments (`SYMBOLS_RECONSTRUCTED.txt`), among them the COSO music player, the code is still the disassembly |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 695 routines of the original source, 191 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
+| 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 95 names with comments (`SYMBOLS_RECONSTRUCTED.txt`), among them the COSO music player; the accesses to the character data use the field names of `OFFSETS.ASM`, the code is still the disassembly |
 
 ## The program file
 
@@ -123,6 +123,10 @@ assemble to the same bytes. Each of them starts with a comment `; ---- <name> (o
 code of a module is still the disassembly. `MAIN/COMBAT.S` is the combat, which is only a stub in the original source,
 so it is completely disassembly for now (step 4).
 
+In the disassembled code, the accesses to the character data use the field names of `OFFSETS.ASM` wherever the
+register is known to point to character data (`move.b Skill_1(a0),d0` instead of `move.b $6(a0),d0`), e.g. in the
+attacks of the combat (`Attack_once`). The monsters use the same structure.
+
 `CONSTANTS.I` contains the constants of the original source (`CONST5X.ASM`, the structure offsets of `OFFSETS.ASM`
 and the constants of the other modules).
 
@@ -136,7 +140,8 @@ python symmatch.py <original src folder> plain.s.code.tsv SYMBOLS.txt <inner pro
 python overrides.py SYMBOLS.txt SYMBOLS_RECONSTRUCTED.txt <German inner program> <inner program>
 python ambrdis.py <inner program> named.s SYMBOLS.txt              (also writes named.s.code.tsv)
 python merge.py <original src folder> <inner program> SYMBOLS.txt <vasm> merge.json plain.s.code.tsv named.s.code.tsv
-python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i --split=src
+python structs.py plain.s.code.tsv SYMBOLS.txt <original src folder>/MAIN/OFFSETS.ASM merge.json.constants.i structs.tsv <inner program>
+python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i --split=src --locals --structs=structs.tsv
 python changes.py merged.s CHANGES.md
 ```
 
@@ -144,6 +149,13 @@ python changes.py merged.s CHANGES.md
   assembled at its address with all known names as constants. If the bytes are the same as in the program, the
   routine is taken. Names which are still unknown get marker values: if all other bytes match, the program gives
   their addresses.
+* The macros of the original are expanded like the original assembler did. `ERROR` and `XERROR` put their text into
+  the data segment: each of these texts gets a name (`ET_<routine>_<n>`) whose address is found by its marker value.
+  `.LOCAL` starts a new scope of the local labels in the original assembler, so the local labels behind it get a
+  suffix (`.Underlay_L1`).
+* Names which are still unknown in a routine which also differs from the program are taken from the program
+  instructions which are aligned with the original ones. Such a name is only kept if the routine is taken in the next
+  round and still uses it.
 * Routines whose address is unknown are tried behind the routine which is in front of them in their file, and in
   front of the routine which follows them. Checking, merging and these neighbours are repeated in rounds until a
   round finds nothing new.
@@ -160,11 +172,18 @@ python changes.py merged.s CHANGES.md
   assemble to the same bytes as well.
 * Labels inside a taken routine which are used from outside are defined behind the modules, relative to the start
   of the routine (`T_004e6 equ Member_left+24`).
+* `tools/structs.py` finds the registers which point to character data: a data flow analysis follows the type of
+  each address register through branches, calls (with the registers which the called routine changes), copies and
+  the stack (`movem`). Pointers to character data come from `Current_active_char_data`,
+  `Current_inventory_chardat_ptr`, `Dialogue_chard_ptr`, the table `Chard_ptrs` and, in the combat module, the data
+  pointer of an action (`$c(a4)`). Only accesses whose register has this type on every path get the name of the field.
+  `lea` gets a name only at the start of an array, because the original often computes the base of an array in front
+  of a field for an index which starts at 1 (`Inventory_1_place_counter-1(a0)`).
 * The boundaries of the modules are chosen so that as few known routines as possible are in another module than
   their file (a few names of the original are used in several modules).
 
-So far 593 routines of the original source are in the merged source (German version), 131 of them with changes.
-`CHANGES.md` lists these changes. About 120 routines of the original could not be found in the program yet, the
+So far 695 routines of the original source are in the merged source (German version), 191 of them with changes.
+`CHANGES.md` lists these changes. About 90 routines of the original could not be found in the program yet, the
 others could not be aligned or assembled.
 ## Known differences between the original source and the shipped program
 

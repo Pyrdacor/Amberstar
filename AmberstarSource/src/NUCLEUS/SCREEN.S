@@ -48,6 +48,7 @@ Set_screen:
 	movem.l	(a7)+,d0/a0
 	rts
 ; ---- Switch_screen (original source: NUCLEUS/SCREEN.ASM)
+IG_Cursor_home:
 Switch_screen:
 	move.l	d0,-(sp)
 	move.l	Off_screen,d0
@@ -69,13 +70,14 @@ Clear_screen:
 	dbra	d7,.Loop
 	movem.l	(sp)+,d0-d7/a0/a1
 	rts	
+; ---- My_vsync (original source: NUCLEUS/SCREEN.ASM)
 My_vsync:
-	movem.l	d0-d2/a0-a2,-(a7)
-	move.w	#$25,-(a7)
-	trap	#$e
-	addq.l	#$2,a7
-	movem.l	(a7)+,d0-d2/a0-a2
-	rts
+	movem.l	d0-d2/a0-a2,-(sp)
+	move.w	#$25,-(sp)
+	trap	#14
+	addq.l	#2,sp
+	movem.l	(sp)+,d0-d2/a0-a2
+	rts	
 
 	section	bss
 

@@ -90,7 +90,7 @@ T_07bf0:
 	rts
 	dc.l	Map_exit
 	dc.l	Door
-	dc.l	T_085aa
+	dc.l	Show_pictxt
 	dc.l	T_08a34
 	dc.l	T_092d4
 	dc.l	T_0935a
@@ -190,8 +190,8 @@ Execute_trap:
 	bra.b	.l_07d7e
 .l_07d38:
 	movea.l	Current_active_char_data,a0
-	move.w	$54(a0),d0
-	add.w	$a8(a0),d0
+	move.w	Attr_7_normal(a0),d0
+	add.w	Attr_7_normal_magic(a0),d0
 	bsr.w	Probe
 	bpl.b	.l_07d7e
 	move.w	Active_member,d0
@@ -209,7 +209,7 @@ Execute_trap:
 	bne.b	.l_07d9e
 	move.l	a0,-(a7)
 	movea.l	Current_active_char_data,a0
-	btst	#$2,$3a(a0)
+	btst	#$2,Body_conditions(a0)
 	beq.b	.l_07d9c
 	bsr.w	Check_party_alive
 .l_07d9c:
@@ -264,40 +264,44 @@ Stone_gaze:
 Disease:
 	bset	#3,Body_conditions(a0)
 	rts	
+; ---- Do_damage (original source: MAIN/EVENTS.ASM)
 Do_damage:
-	movem.l	d2/a0,-(a7)
-	lea.l	Codetxt_ptr,a0
+	movem.l	d2/a0,-(sp)
+	lea.l	Chard_ptrs-4,a0
 	move.w	d0,d2
 	add.w	d2,d2
 	add.w	d2,d2
 	adda.w	d2,a0
 	tst.l	(a0)
-	beq.b	.l_07e82
+	beq.s	.Exit
 	movea.l	(a0),a0
-	move.w	$86(a0),d2
+	move.w	Life_points_normal(a0),d2
 	sub.w	d1,d2
-	bgt.b	.l_07e64
-	ori.w	#$2000,$3a(a0)
+	bgt.s	.Ok
+	ori.w	#$2000,Body_conditions(a0)
 	cmp.w	Active_member,d0
-	bne.b	.l_07e62
-	clr.w	$86(a0)
-	tst.b	Battling
-	bne.b	.l_07e62
-	bsr.w	Check_party_alive
-	bra.b	.l_07e82
-.l_07e62:
-	moveq	#0,d2
-.l_07e64:
-	move.w	d2,$86(a0)
+	bne.s	.No
+	clr.w	$86(a0)	; CHANGE: was "clr.w Active_member"
+	tst.b	Battling	; CHANGE: added
+	bne.b	.No	; CHANGE: added
+	bsr.w	Check_party_alive	; CHANGE: was "jsr Exit_display"
+	bra.b	.Exit	; CHANGE: was "move.l a0,-(sp)"
+; CHANGE: removed "Push Module,ActSel_Mod"
+; CHANGE: removed "Push Module,ActSel_Mod"
+; CHANGE: removed "movea.l (sp)+,a0"
+.No:
+	moveq.l	#0,d2
+.Ok:
+	move.w	d2,Life_points_normal(a0)
 	move.w	d0,d2
 	add.w	d2,d2
 	lea.l	Char_damage,a0
-	move.w	d1,-$2(a0,d2.w)
-	lea.l	B_58ec0,a0
-	move.b	#$a,-$1(a0,d0.w)
-.l_07e82:
-	movem.l	(a7)+,d2/a0
-	rts
+	move.w	d1,-2(a0,d2.w)
+	lea.l	Damage_timers,a0
+	move.b	#10,-1(a0,d0.w)
+.Exit:
+	movem.l	(sp)+,d2/a0
+	rts	
 ; ---- Event_text (original source: MAIN/EVENTS.ASM)
 Event_text:
 	cmpi.b	#26,d0
@@ -448,8 +452,8 @@ T_0809a:
 	cmpi.b	#$64,$1(a5)
 	beq.b	T_080f6
 	moveq	#0,d0
-	move.b	$c(a0),d0
-	add.w	$bc(a0),d0
+	move.b	Skill_7(a0),d0
+	add.w	Skill_7_normal_magic(a0),d0
 	move.b	$1(a5),d1
 	ext.w	d1
 	sub.w	d1,d0
@@ -470,8 +474,8 @@ T_080f6:
 T_08100:
 	move.b	$2(a5),d0
 	beq.b	T_080f6
-	move.w	$4c(a0),d0
-	add.w	$a0(a0),d0
+	move.w	Attr_3_normal(a0),d0
+	add.w	Attr_3_normal_magic(a0),d0
 	bsr.w	Probe
 	bpl.b	.l_0811e
 	move.b	$2(a5),d0
@@ -837,57 +841,59 @@ Display2_quantities:
 	addq.l	#4,a4
 	dbra	d7,.Loop2
 	rts	
-T_085aa:
+; ---- Show_pictxt (original source: MAIN/EVENTS.ASM)
+Show_pictxt:
 	tst.b	Stygian
-	beq.b	.l_085b8
+	beq.s	.I_can_see
 	bsr.w	Save_event
-	bra.b	.l_085c8
-.l_085b8:
-	dc.b	$4a,$39
-	dc.l	Eye_flag
-	dc.b	$67,$0a,$0c,$2d,$00,$01,$00,$03,$66,$1c
-.l_085c8:
-	rts
-	tst.b	$3(a5)
-	beq.b	.l_085c8
+	bra.s	.Exit
+.I_can_see:
+	tst.b	Eye_flag
+	beq.s	.Walk
+	cmpi.b	#1,3(a5)
+	bne.s	.Skip2
+.Exit:
+	rts	
+.Walk:
+	tst.b	3(a5)
+	beq.s	.Exit
+.Skip:
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
-	beq.b	.l_085e4
+	beq.s	.Zero_1
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
-.l_085e4:
-	moveq	#0,d1
-	move.b	$1(a5),d1
-	beq.b	.l_0860c
+.Zero_1:
+.Skip2:
+	moveq.l	#0,d1
+	move.b	1(a5),d1
+	beq.s	.No_pict_L1
 	jsr	Exit_display
-	moveq	#0,d0
-	move.b	$2(a5),d0
+	moveq.l	#0,d0
+	move.b	2(a5),d0
 	move.w	d0,WText_nr
 	lea.l	Pic80_Mod,a0
 	jsr	Push_Module
-	bra.b	.l_0862e
-.l_0860c:
-	dc.b	$70,$00,$10,$2d,$00,$02,$33,$c0
-	dc.l	WText_nr
-	dc.b	$23,$f9
-	dc.l	Maptext_ptr
-	dc.l	Textfile_ptr
-	dc.b	$41,$f9
-	dc.l	TxtW_Mod
-	dc.b	$4e,$b9
-	dc.l	Push_Module
-.l_0862e:
-	move.w	$6(a5),d0
-	beq.b	.l_08644
-	moveq	#7,d1
+	bra.s	.Exit_L1
+.No_pict_L1:
+	moveq.l	#0,d0
+	move.b	2(a5),d0
+	move.w	d0,WText_nr
+	move.l	Maptext_ptr,Textfile_ptr
+	lea.l	TxtW_Mod,a0
+	jsr	Push_Module
+.Exit_L1:
+	move.w	6(a5),d0
+	beq.s	.Leave_it_L1
+	moveq.l	#$7,d1
 	and.w	d0,d1
-	lsr.w	#$3,d0
+	lsr.w	#3,d0
 	lea.l	WD,a0
-	bset	d1,(a0,d0.w)
-.l_08644:
+	bset	d1,0(a0,d0.w)
+.Leave_it_L1:
 	bsr.w	Save_event
-	rts
+	rts	
 T_0864a:
 	jsr	T_0025a
 ; ---- P80_ModInit (original source: MAIN/EVENTS.ASM)
@@ -963,9 +969,10 @@ P80_DisExit:
 	bsr.w	Pop_PA
 	jsr	Pop_MA
 	rts	
+; ---- TxtW_ModInit (original source: MAIN/EVENTS.ASM)
 TxtW_ModInit:
-	movem.l	d0-d7/a0-a6,-(a7)
-	sf.b	B_592de
+	movem.l	d0-d7/a0-a6,-(sp)
+	sf.b	B_592de	; CHANGE: added
 	lea.l	TxtW_PA,a0
 	bsr.w	Push_PA
 	move.w	WText_nr,d0
@@ -973,35 +980,35 @@ TxtW_ModInit:
 	movea.l	Textfile_ptr,a1
 	bsr.w	Prepare_text_block
 	move.w	Lines_in_text,d0
-	mulu.w	#$7,d0
-	cmpi.w	#$70,d0
-	bhi.w	T_0886c
-	moveq	#15,d3
+	mulu.w	#7,d0
+	cmpi.w	#7*16,d0
+	bhi.w	.Scroll
+	moveq.l	#15,d3
 	add.w	d0,d3
 	andi.w	#$fff0,d3
-	lsr.w	#$4,d3
-	cmpi.w	#$2,d3
-	bpl.b	.l_087e0
-	moveq	#2,d3
-.l_087e0:
+	lsr.w	#4,d3
+	cmpi.w	#2,d3
+	bpl.s	.Not2small
+	moveq.l	#2,d3
+.Not2small:
 	move.w	d3,d4
-	lsl.w	#$4,d4
+	lsl.w	#4,d4
 	sub.w	d0,d4
-	moveq	#16,d0
-	moveq	#52,d1
-	moveq	#18,d2
-	addq.w	#$2,d3
-	moveq	#0,d6
+	moveq.l	#16,d0
+	moveq.l	#52,d1
+	moveq.l	#18,d2
+	addq.w	#2,d3
+	moveq.l	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256
-	lsr.w	#$1,d4
+	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	lsr.w	#1,d4
 	add.w	d4,d1
-	addi.w	#$10,d1
-	move.w	d1,D_25f80
-	subq.w	#$2,d3
-	lsl.w	#$4,d3
-	move.w	d3,D_25f84
+	addi.w	#16,d1
+	move.w	d1,TxtW_PA+2
+	subq.w	#2,d3
+	lsl.w	#4,d3
+	move.w	d3,TxtW_PA+6
 	bsr.w	Pop_PA
 	lea.l	TxtW_PA,a0
 	bsr.w	Push_PA
@@ -1009,50 +1016,51 @@ TxtW_ModInit:
 	movea.l	Off_screen,a6
 	move.w	Nr_of_chars,d0
 	move.w	Lines_in_text,d7
-	bra.b	T_0884e
-T_0883e:
+	bra.s	.Entry
+.Loop:
 	jsr	IG_Print
 	jsr	IG_Carriage_return
-	lea.l	$1(a0,d0.w),a0
-T_0884e:
-	dbra	d7,T_0883e
+	lea.l	1(a0,d0.w),a0
+.Entry:
+	dbra	d7,.Loop
 	jsr	Switch_screen
 	jsr	Copy_screen
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
-	bra.b	T_088b4
-T_0886c:
-	moveq	#16,d0
-	moveq	#52,d1
-	moveq	#18,d2
-	moveq	#9,d3
-	moveq	#0,d6
+	bra.s	.Exit
+.Scroll:
+	moveq.l	#16,d0
+	moveq.l	#52,d1
+	moveq.l	#18,d2
+	moveq.l	#9,d3
+	moveq.l	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256
+	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	bsr.w	Pop_PA
-	lea.l	D_25f8a,a0
+	lea.l	MaxTxtW_PA,a0
 	bsr.w	Push_PA
 	movea.l	Textfile_ptr,a1
 	move.w	WText_nr,d0
 	bsr.w	Mr_Blue_Sky
 	jsr	Pop_Module
-T_088b4:
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
+.Exit:
+	movem.l	(sp)+,d0-d7/a0-a6
+	rts	
+; ---- TxtW_ModExit (original source: MAIN/EVENTS.ASM)
 TxtW_ModExit:
-	movem.l	d0/a0,-(a7)
-	st.b	B_592de
-	move.w	B_58256,d0
+	movem.l	d0/a0,-(sp)
+	st.b	B_592de	; CHANGE: added
+	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
 	jsr	Close_window
 	bsr.w	Pop_PA
-.l_088d4:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_088d4
-	movem.l	(a7)+,d0/a0
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	movem.l	(sp)+,d0/a0
+	rts	
 T_088e4:
 	movem.l	d0-d7/a0-a6,-(a7)
 	sf.b	B_592de
@@ -1123,7 +1131,7 @@ T_089be:
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	bsr.w	Pop_PA
-	lea.l	D_25f8a,a0
+	lea.l	MaxTxtW_PA,a0
 	bsr.w	Push_PA
 	movea.l	Textfile_ptr,a1
 	move.w	WText_nr,d0
@@ -1150,8 +1158,8 @@ T_08a34:
 	bne.b	.l_08a58
 	movea.l	Current_active_char_data,a0
 	moveq	#0,d0
-	move.b	$d(a0),d0
-	add.w	$be(a0),d0
+	move.b	Skill_8(a0),d0
+	add.w	Skill_8_normal_magic(a0),d0
 	bsr.w	Probe
 	bmi.b	.l_08ab8
 .l_08a58:
@@ -1343,36 +1351,37 @@ T_08cd2:
 	tst.b	Fade_block
 	bne.b	OpenedChest_ModInit
 	jsr	T_0025a
+; ---- OpenedChest_ModInit (original source: MAIN/EVENTS.ASM)
 OpenedChest_ModInit:
-	moveq	#21,d0
-	lea.l	D_260c0,a0
+	moveq.l	#21,d0
+	lea.l	Lay3_target_hbl+2,a0
 	bsr.w	Load_80x80_picture
 	movea.l	Event_data_ptr,a0
-	move.w	$6(a0),d0
-	lea.l	D_2f219,a0
+	move.w	6(a0),d0
+	lea.l	Chestdata_filename,a0
 	jsr	Load_subfile
 	move.l	a0,Chestdata_ptr
-	lea.l	Divide_gold_workspace,a1
+	lea.l	Chest_slot_list+12,a1
 	move.w	Current_chest_slots,d0
-	moveq	#11,d7
-.l_08d16:
+	moveq.l	#12-1,d7
+.Loop:
 	btst	d7,d0
-	sne.b	-(a1)
-	dbra	d7,.l_08d16
-	tst.b	Fade_block
-	bne.b	.l_08d2c
-	jsr	T_00208
-.l_08d2c:
-	bsr.w	OpenedChest_DisInit
+	sne	-(a1)
+	dbra	d7,.Loop
+	tst.b	Fade_block	; CHANGE: added
+	bne.b	.c_08d2c	; CHANGE: added
+	jsr	T_00208	; CHANGE: added
+.c_08d2c:
+	bsr.w	OpenedChest_DisInit	; CHANGE: was "jsr Init_display"
 	movea.l	Event_data_ptr,a0
-	move.w	$8(a0),d0
-	cmpi.b	#$1a,d0
-	bpl.b	.l_08d50
+	move.w	8(a0),d0
+	cmpi.b	#26,d0
+	bpl.s	.Exit
 	ext.w	d0
 	move.l	Maptext_ptr,Textfile_ptr
 	bsr.w	Plus_message
-.l_08d50:
-	rts
+.Exit:
+	rts	
 ; ---- OpenedChest_ModExit (original source: MAIN/EVENTS.ASM)
 OpenedChest_ModExit:
 	lea.l	Chest_slot_list+12,a0
@@ -1537,129 +1546,146 @@ T_08f9e:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
+; ---- Do_TIChest (original source: MAIN/EVENTS.ASM)
 Do_TIChest:
 	tst.b	d0
-	bne.b	T_08ff0
-T_08fec:
+	bne.s	.A_slot
+.Exit:
 	bra.w	Pop_Module
-T_08ff0:
+.A_slot:
 	ext.w	d0
-	lea.l	B_58227,a1
+	lea.l	Chest_slot_list-1,a1
 	adda.w	d0,a1
 	tst.b	(a1)
-	beq.b	T_08fec
+	beq.s	.Exit
 	movea.l	Chestdata_ptr,a2
-	moveq	#40,d1
+	moveq.l	#40,d1
 	mulu.w	d0,d1
-	lea.l	-$28(a2,d1.w),a2
+	lea.l	-40(a2,d1.w),a2
 	move.b	d0,Object_slot_number
-	moveq	#0,d0
-	move.w	$22(a2),d0
-	btst	#$2,$18(a2)
-	beq.b	.l_09026
-	move.w	$24(a2),d1
-	bra.b	.l_09028
-.l_09026:
-	moveq	#-1,d1
-.l_09028:
+	moveq.l	#0,d0
+	move.w	Weight(a2),d0
+	btst	#2,Item_stat_bits(a2)
+	beq.s	.Single_L1
+	move.w	Item_ID(a2),d1
+	bra.s	.Continue_L1
+.Single_L1:
+	moveq.l	#-1,d1
+.Continue_L1:
 	suba.l	a0,a0
 	jsr	Scan_4_transfer_victims
-	bne.b	.l_09040
-	move.w	#$5,d0
+	bne.s	.Go_L1
+	move.w	#5,d0
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
-	bra.b	.l_09066
-.l_09040:
+	bra.s	.Exit_L1
+.Go_L1:
 	jsr	Show_transfer_victims
 	move.b	(a2),TIVS_Icon_nr
-	move.l	#.l_09068,TIVS_Ptr
+	move.l	#Chest_Do_TI,TIVS_Ptr
 	lea.l	TIVS2_Mod,a0
-	move.w	#$18,$2c(a0)
+	move.w	#24,Mouse_ptr(a0)
 	bsr.w	Push_Module
-.l_09066:
-	rts
-.l_09068:
+.Exit_L1:
+	rts	
+; ---- Chest_Do_TI (original source: MAIN/EVENTS.ASM)
+Chest_Do_TI:
 	lea.l	Chest_slot_list,a2
 	movea.l	Chestdata_ptr,a3
-	moveq	#0,d0
+	moveq.l	#0,d0
 	move.b	Object_slot_number,d0
-	subq.w	#$1,d0
+	subq.w	#1,d0
 	adda.w	d0,a2
-	mulu.w	#$28,d0
+	mulu.w	#40,d0
 	adda.w	d0,a3
-	btst	#$2,$18(a3)
-	beq.b	.l_090b6
-	lea.l	$2b(a0),a4
-	lea.l	$29a(a0),a5
-	move.w	$24(a3),d0
-	moveq	#11,d7
-.l_0909c:
+	btst	#2,Item_stat_bits(a3)
+	beq.s	.Continue
+	lea.l	Inventory_1_place_counter(a0),a4
+	lea.l	Inv_data+360(a0),a5
+	move.w	Item_ID(a3),d0
+	moveq.l	#12-1,d7
+.Loop1:
 	tst.b	(a4)
-	beq.b	.l_090ac
-	cmp.w	$24(a5),d0
-	bne.b	.l_090ac
-	cmpi.b	#$63,(a4)
-	bmi.b	.l_090d0
-.l_090ac:
-	addq.l	#$1,a4
-	lea.l	$28(a5),a5
-	dbra	d7,.l_0909c
-.l_090b6:
-	lea.l	$2b(a0),a4
-	lea.l	$29a(a0),a5
-	moveq	#11,d7
-.l_090c0:
+	beq.s	.Next1
+	cmp.w	Item_ID(a5),d0
+	bne.s	.Next1
+	cmpi.b	#99,(a4)
+	bmi.s	.Do_it
+.Next1:
+	addq.l	#1,a4
+	lea.l	40(a5),a5
+	dbra	d7,.Loop1
+.Continue:
+	lea.l	Inventory_1_place_counter(a0),a4
+	lea.l	Inv_data+360(a0),a5
+	moveq.l	#12-1,d7
+.Loop2:
 	tst.b	(a4)
-	beq.b	.l_090d0
-	addq.l	#$1,a4
-	lea.l	$28(a5),a5
-	dbra	d7,.l_090c0
-	bra.b	.l_09136
-.l_090d0:
-	dc.b	$74,$00,$34,$2b,$00,$22,$d5,$a8,$00,$ec,$52,$14,$7e,$13,$3a,$db
-	dc.b	$51,$cf,$ff,$fc,$47,$eb,$ff,$d8,$42,$12,$2c,$79
-	dc.l	Off_screen
-	dc.b	$41,$f9
-	dc.l	D_25fd2
-	dc.b	$70,$00,$10,$39
-	dc.l	Object_slot_number
-	dc.b	$d0,$40,$d0,$40,$d0,$c0,$30,$18,$32,$18,$41,$f9
-	dc.l	D_363e0
-	dc.b	$4e,$b9
-	dc.l	Put_unmasked_block
-	dc.b	$4e,$b9
-	dc.l	Switch_screen
-	dc.b	$4e,$b9
-	dc.l	Copy_screen
-	dc.b	$41,$f9
-	dc.l	Chest_slot_list
-	dc.b	$4a,$98,$66,$0c,$4a,$98,$66,$08,$4a,$98,$66,$04,$61,$00,$78,$a0
-.l_09136:
-	rts
-T_09138:
-	btst	#$1,Mouse_button_state
-	bne.b	T_09138
-	movem.l	d0/a6,-(a7)
-	move.w	#$70,Mesmin_X
-	move.w	#$42,Mesmin_Y
-	move.w	#$c0,Mesmin_Wd
+	beq.s	.Do_it
+	addq.l	#1,a4
+	lea.l	40(a5),a5
+	dbra	d7,.Loop2
+	bra.s	.Exit
+.Do_it:
+	moveq.l	#0,d2
+	move.w	Weight(a3),d2
+	add.l	d2,Weight_normal(a0)
+	addq.b	#1,(a4)
+	moveq.l	#20-1,d7
+.Loop3:
+	move.w	(a3)+,(a5)+
+	dbra	d7,.Loop3
+	lea.l	-40(a3),a3
+	clr.b	(a2)
+	movea.l	Off_screen,a6
+	lea.l	Door_object_pos_list-4,a0
+	moveq.l	#0,d0
+	move.b	Object_slot_number,d0
+	add.w	d0,d0
+	add.w	d0,d0
+	adda.w	d0,a0
+	move.w	(a0)+,d0
+	move.w	(a0)+,d1
+	lea.l	Layout_icn+9856,a0
+	jsr	Put_unmasked_block
+	jsr	Switch_screen
+	jsr	Copy_screen
+	lea.l	Chest_slot_list,a0
+	tst.l	(a0)+
+	bne.s	.Exit
+	tst.l	(a0)+
+	bne.s	.Exit
+	tst.l	(a0)+
+	bne.s	.Exit
+	bsr.w	Pop_Module
+.Exit:
+	rts	
+; ---- Transfer_gold_CHEST (original source: MAIN/EVENTS.ASM)
+Transfer_gold_CHEST:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	movem.l	d0/a6,-(sp)
+	move.w	#112,Mesmin_X
+	move.w	#66,Mesmin_Y
+	move.w	#192,Mesmin_Wd
 	move.l	#Code0001Sys,Textfile_ptr
 	movea.l	Off_screen,a6
-	move.w	#$6,d0
+	move.w	#6,d0
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_09182:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_09182
-	moveq	#0,d0
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	moveq.l	#0,d0
 	move.w	Current_chest_gold,d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
 	lea.l	TransGoldCHEST_Mod,a0
 	bsr.w	Push_Module
-	movem.l	(a7)+,d0/a6
-	rts
+	movem.l	(sp)+,d0/a6
+	rts	
 TransGold_DisInit:
 TGCHEST_DisInit:
 	movem.l	d0-d7/a0-a6,-(a7)
@@ -1759,7 +1785,7 @@ Trap_door:
 	beq.b	.l_09324
 	movea.l	(a0),a1
 	move.w	#$e400,d2
-	and.w	$3a(a1),d2
+	and.w	Body_conditions(a1),d2
 	bne.b	.l_09324
 	jsr	Random
 	move.w	d0,d1
@@ -2023,15 +2049,16 @@ RiddleM_DisUpd:
 	rts	
 T_09606:
 	jsr	T_0025a
+; ---- RiddleM_ModInit (original source: MAIN/EVENTS.ASM)
 RiddleM_ModInit:
-	moveq	#17,d0
+	moveq.l	#17,d0
 	lea.l	Palette_buffer,a0
 	bsr.w	Load_80x80_picture
-	lea.l	D_25fbe,a0
+	lea.l	Lay9_PA,a0
 	bsr.w	Push_PA
-	sf.b	Door_opened
-	jsr	T_00208
-	rts
+	sf	Door_opened
+	jsr	T_00208	; CHANGE: added
+	rts	
 ; ---- RiddleM_ModExit (original source: MAIN/EVENTS.ASM)
 RiddleM_ModExit:
 	bsr.w	Pop_PA
@@ -2336,22 +2363,23 @@ T_09a46:
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
+; ---- Change_icon (original source: MAIN/EVENTS.ASM)
 Change_icon:
-	move.b	$4(a5),d0
+	move.b	4(a5),d0
 	bsr.w	Event_text
-	moveq	#0,d0
-	move.b	$1(a5),d0
-	moveq	#0,d1
-	move.b	$2(a5),d1
-	move.w	$6(a5),d2
+	moveq.l	#0,d0
+	move.b	1(a5),d0
+	moveq.l	#0,d1
+	move.b	2(a5),d1
+	move.w	6(a5),d2
 	movea.l	Mapd_ptr,a0
 	bsr.w	Do_change_icon
-	tst.b	$5(a5)
-	beq.b	.l_09a8c
+	tst.b	5(a5)
+	beq.s	.No_save
 	jsr	Enter_modification
 	bsr.w	Save_event
-.l_09a8c:
-	rts
+.No_save:
+	rts	
 T_09a8e:
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
@@ -2458,7 +2486,7 @@ T_09b2c:
 	moveq	#16,d1
 .l_09bce:
 	subi.w	#$f,d1
-	move.w	d1,B_58910
+	move.w	d1,comback_nr
 	move.w	Active_member,B_57a62
 	st.b	Battling
 	st.b	B_58e74
@@ -2530,10 +2558,10 @@ T_09cb4:
 	moveq	#13,d0
 	jsr	Play_song
 	lea.l	D_2f227,a0
-	jsr	T_1b786
+	jsr	Load_file
 	move.l	a0,B_5d0a0
 	lea.l	D_2f233,a0
-	jsr	T_1b786
+	jsr	Load_file
 	move.l	a0,B_5d0a4
 	jsr	T_00208
 	clr.w	B_5821c
@@ -2757,8 +2785,8 @@ T_0a00a:
 	moveq	#1,d0
 	bsr.w	T_0a220
 	movea.l	Current_active_char_data,a0
-	clr.w	$86(a0)
-	bset	#$6,$3a(a0)
+	clr.w	Life_points_normal(a0)
+	bset	#$6,Body_conditions(a0)
 	jsr	Check_party_alive
 	bra.w	.l_0a18e
 .l_0a05c:
@@ -2817,7 +2845,7 @@ T_0a00a:
 	move.b	(a2),d1
 	ext.w	d1
 	mulu.w	$22(a3),d1
-	sub.l	d1,$ec(a1)
+	sub.l	d1,Weight_normal(a1)
 	clr.b	(a2)
 .l_0a12a:
 	addq.l	#$1,a2
@@ -3241,7 +3269,7 @@ D_25f80:
 	dc.b	$00,$00,$01,$00
 D_25f84:
 	dc.b	$00,$00,$00,$0f,$00,$03
-D_25f8a:
+MaxTxtW_PA:
 	dc.b	$00,$20,$00,$44,$01,$00,$00,$70,$00,$0f,$00,$03
 P80_PA:
 	dc.b	$00,$70,$00,$31,$00,$c0,$00,$8c,$00,$0f,$00,$02
@@ -3251,7 +3279,7 @@ Lay3_PA:
 	dc.b	$00,$70,$00,$31,$00,$c0,$00,$30,$00,$0f,$00,$02
 Lay9_PlusMes:
 	dc.b	$00,$10,$00,$bf,$00,$31,$00,$c0
-D_25fbe:
+Lay9_PA:
 	dc.b	$00,$10,$00,$31,$00,$b0,$00,$90,$00,$0f,$00,$02
 D_25fca:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$07
@@ -3287,7 +3315,7 @@ OpenedChest_CIL:
 	dc.l	T_08f2c
 	dc.l	T_08f8a
 	dc.b	$00,$00,$00,$00
-	dc.l	T_09138
+	dc.l	Transfer_gold_CHEST
 	dc.l	Divide_gold_CHEST
 RiddleM_CIL:
 	dc.b	$38,$38,$1e,$38,$38,$38,$11,$38,$0a,$00,$00,$00,$00,$00,$00,$00

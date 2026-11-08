@@ -18,6 +18,13 @@ for x in sys.argv[3:]:
     if x.endswith('.i'):
         constants_include = x
 split_dir = next((x[8:] for x in sys.argv[3:] if x.startswith('--split=')), None)
+# optional --structs=FILE (structs.py): accesses to the fields of the character data, written with the names of OFFSETS.ASM
+struct_fields = collections.defaultdict(list)
+for x in sys.argv[3:]:
+    if x.startswith('--structs='):
+        for l in open(x[10:]):
+            c = l.rstrip('\n').split('\t')
+            if len(c) == 3: struct_fields[int(c[0], 16)].append((c[1], c[2]))
 # order of the modules (TEST.ASM includes them in this order, the other parts are linked behind it)
 MODULE_ORDER = ['MAIN/TEST.ASM', 'MAIN/STATUS.ASM', 'MAIN/MAP/MAP.ASM', 'MAIN/MAP/2DMAP.ASM', 'MAIN/MAP/3DMAP.ASM',
     'MAIN/MAP/2DWILD.ASM', 'MAIN/MAP/2DCITY.ASM', 'MAIN/MAP/3DDUNGEO.ASM', 'MAIN/MAP/3DCITY.ASM', 'MAIN/MAP/SHADOW.ASM',
@@ -433,8 +440,10 @@ while pos < tlen:
             if parts: lines.append('\tdc.w\t' + ','.join(parts))
             lines[-1] += '\t; ' + i.mnemonic + ' ' + i.op_str
         else:
-            lines.append('\t' + text)
             code_list.append('%x\t%s' % (pos, text))
+            for old, new in struct_fields.get(pos, []):
+                text = re.sub(r'(?<![\w$-])' + re.escape(old) + r'(?=[,)])', new, text)
+            lines.append('\t' + text)
         pos += i.size
     else:
         nxt = pos + 1

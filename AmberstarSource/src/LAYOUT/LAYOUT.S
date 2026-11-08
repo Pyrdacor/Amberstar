@@ -435,74 +435,75 @@ Show_special_items:
 .Y_string:
 	dc.b	"Y:   ",0
 	even	
+; ---- Show_layout (original source: LAYOUT/LAYOUT.ASM)
 Show_layout:
-	movem.l	d0-d7/a0-a2,-(a7)
-	subq.w	#$1,d0
-	cmpi.w	#$c,d0
-	bmi.b	.l_06d9a
-	lea.l	D_31d69,a1
+	movem.l	d0-d7/a0-a2,-(sp)
+	subq.w	#1,d0
+	cmpi.w	#Max_layouts+1,d0
+	bmi.s	.No_error
+	lea.l	ET_Show_layout_1,a1	; ERROR "[ Show_layout ] : Illegal input !!!"
 	jsr	DI_Error
-	bra.w	.l_06ea2
-.l_06d9a:
-	lea.l	D_34956,a2
-	mulu.w	#$dc,d0
+	bra.w	.Exit
+.No_error:
+	lea.l	Layouts,a2
+	mulu.w	#220,d0
 	adda.w	d0,a2
 	lea.l	Layout_icn,a1
-	moveq	#0,d0
-	move.w	#$25,d1
-	moveq	#19,d5
-	moveq	#1,d6
-	moveq	#12,d7
-.l_06db8:
-	moveq	#0,d2
+	moveq.l	#0,d0
+	move.w	#Layout_1st_line,d1
+	moveq.l	#20-1,d5
+	moveq.l	#1,d6
+	moveq.l	#12,d7
+.Loop_1:
+	moveq.l	#0,d2
 	move.b	(a2)+,d2
-	subq.w	#$1,d2
-	lea.l	$20(a1),a0
-	lsl.w	#$7,d2
+	subq.w	#1,d2
+	lea.l	32(a1),a0
+	lsl.w	#7,d2
 	adda.w	d2,a0
 	jsr	Blot_unmasked_block
-	addi.w	#$10,d0
-	dbra	d5,.l_06db8
-	move.w	#$31,d1
-	moveq	#8,d7
-.l_06dda:
-	moveq	#0,d0
-	moveq	#19,d6
-.l_06dde:
-	moveq	#0,d2
+	addi.w	#16,d0
+	dbra	d5,.Loop_1
+	move.w	#Layout_1st_line+12,d1
+	moveq.l	#9-1,d7
+.Loop_2:
+	moveq.l	#0,d0
+	moveq.l	#20-1,d6
+.Loop_3:
+	moveq.l	#0,d2
 	move.b	(a2)+,d2
-	subq.w	#$1,d2
+	subq.w	#1,d2
 	movea.l	a1,a0
-	lsl.w	#$7,d2
+	lsl.w	#7,d2
 	adda.w	d2,a0
 	jsr	Put_unmasked_block
-	addi.w	#$10,d0
-	dbra	d6,.l_06dde
-	addi.w	#$10,d1
-	dbra	d7,.l_06dda
-	moveq	#0,d0
-	move.w	#$c1,d1
-	moveq	#19,d5
-	moveq	#1,d6
-	moveq	#7,d7
-.l_06e0c:
-	moveq	#0,d2
+	addi.w	#16,d0
+	dbra	d6,.Loop_3
+	addi.w	#16,d1
+	dbra	d7,.Loop_2
+	moveq.l	#0,d0
+	move.w	#193,d1
+	moveq.l	#20-1,d5
+	moveq.l	#1,d6
+	moveq.l	#7,d7
+.Loop_4:
+	moveq.l	#0,d2
 	move.b	(a2)+,d2
-	subq.w	#$1,d2
+	subq.w	#1,d2
 	movea.l	a1,a0
-	lsl.w	#$7,d2
+	lsl.w	#7,d2
 	adda.w	d2,a0
 	jsr	Blot_unmasked_block
-	addi.w	#$10,d0
-	dbra	d5,.l_06e0c
-	lea.l	D_34496,a0
-	lea.l	D_34596,a1
-	move.w	#$0,d0
-	move.w	#$b8,d1
-	jsr	Coord_convert
-	lea.l	(a6,d2.w),a2
-	moveq	#15,d7
-.l_06e46:
+	addi.w	#16,d0
+	dbra	d5,.Loop_4
+	lea.l	Bot_corners,a0
+	lea.l	Bot_masks,a1
+	move.w	#0,d0
+	move.w	#184,d1
+	jsr	Coord_conv
+	lea.l	0(a6,d2.w),a2
+	moveq.l	#15,d7
+.Loop_5:
 	movem.w	(a2),d0-d3
 	move.w	(a1)+,d4
 	not.w	d4
@@ -515,14 +516,14 @@ Show_layout:
 	or.w	(a0)+,d2
 	or.w	(a0)+,d3
 	movem.w	d0-d3,(a2)
-	lea.l	$a0(a2),a2
-	dbra	d7,.l_06e46
-	move.w	#$130,d0
-	move.w	#$b8,d1
-	jsr	Coord_convert
-	lea.l	(a6,d2.w),a2
-	moveq	#15,d7
-.l_06e7e:
+	lea.l	160(a2),a2
+	dbra	d7,.Loop_5
+	move.w	#304,d0
+	move.w	#184,d1
+	jsr	Coord_conv
+	lea.l	0(a6,d2.w),a2
+	moveq.l	#15,d7
+.Loop_6:
 	movem.w	(a2),d0-d3
 	move.w	(a1)+,d4
 	not.w	d4
@@ -535,58 +536,59 @@ Show_layout:
 	or.w	(a0)+,d2
 	or.w	(a0)+,d3
 	movem.w	d0-d3,(a2)
-	lea.l	$a0(a2),a2
-	dbra	d7,.l_06e7e
-.l_06ea2:
-	movem.l	(a7)+,d0-d7/a0-a2
-	rts
+	lea.l	160(a2),a2
+	dbra	d7,.Loop_6
+.Exit:
+	movem.l	(sp)+,d0-d7/a0-a2
+	rts	
+; ---- Show_status_block (original source: LAYOUT/LAYOUT.ASM)
 Show_status_block:
-	movem.l	d0-d1/d5-d7/a0/a6,-(a7)
+	movem.l	d0/d1/d5-d7/a0/a6,-(sp)
 	movea.l	Off_screen,a6
-	moveq	#0,d0
-	moveq	#0,d1
-	moveq	#1,d6
-	moveq	#36,d7
-	lea.l	D_346f6,a0
+	moveq.l	#0,d0
+	moveq.l	#0,d1
+	moveq.l	#1,d6
+	moveq.l	#36,d7
+	lea.l	Topblk_left,a0
 	jsr	Blot_unmasked_block
-	moveq	#5,d5
+	moveq.l	#5,d5
 	lea.l	Topblk_mid,a0
-.l_06ece:
-	addi.w	#$30,d0
+.Loop_1:
+	addi.w	#48,d0
 	jsr	Blot_unmasked_block
-	dbra	d5,.l_06ece
-	addi.w	#$10,d0
-	lea.l	D_34816,a0
+	dbra	d5,.Loop_1
+	addi.w	#16,d0
+	lea.l	Topblk_right,a0
 	jsr	Blot_unmasked_block
-	moveq	#16,d0
-	moveq	#5,d5
-	moveq	#2,d6
-	moveq	#1,d7
-	lea.l	D_34936,a0
-.l_06efa:
+	moveq.l	#16,d0
+	moveq.l	#5,d5
+	moveq.l	#2,d6
+	moveq.l	#1,d7
+	lea.l	Topblk_top,a0
+.Loop_2:
 	jsr	Blot_unmasked_block
-	addi.w	#$30,d0
-	dbra	d5,.l_06efa
-	moveq	#16,d0
-	moveq	#35,d1
-	moveq	#5,d5
+	addi.w	#48,d0
+	dbra	d5,.Loop_2
+	moveq.l	#16,d0
+	moveq.l	#35,d1
+	moveq.l	#5,d5
 	lea.l	Topblk_bot,a0
-.l_06f14:
+.Loop_3:
 	jsr	Blot_unmasked_block
-	addi.w	#$30,d0
-	dbra	d5,.l_06f14
-	moveq	#16,d0
-	moveq	#1,d1
-	moveq	#5,d5
-	moveq	#2,d6
-	moveq	#34,d7
-	lea.l	D_40aea,a0
-.l_06f32:
-	jsr	Blot_unmasked_block
-	addi.w	#$30,d0
-	dbra	d5,.l_06f32
-	movem.l	(a7)+,d0-d1/d5-d7/a0/a6
-	rts
+	addi.w	#48,d0
+	dbra	d5,.Loop_3
+	moveq	#16,d0	; CHANGE: added
+	moveq	#1,d1	; CHANGE: added
+	moveq	#5,d5	; CHANGE: added
+	moveq	#2,d6	; CHANGE: added
+	moveq	#34,d7	; CHANGE: added
+	lea.l	D_40aea,a0	; CHANGE: added
+.c_06f32:
+	jsr	Blot_unmasked_block	; CHANGE: added
+	addi.w	#$30,d0	; CHANGE: added
+	dbra	d5,.c_06f32	; CHANGE: added
+	movem.l	(sp)+,d0/d1/d5-d7/a0/a6
+	rts	
 ; ---- Show_control_icons (original source: LAYOUT/LAYOUT.ASM)
 Show_control_icons:
 	movem.l	d0-d7/a0-a2,-(sp)

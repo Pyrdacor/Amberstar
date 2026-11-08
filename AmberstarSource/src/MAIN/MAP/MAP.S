@@ -165,52 +165,53 @@ Reset_mouse:
 	jsr	Change_Mptr
 .Exit:
 	rts	
+; ---- Update_animation (original source: MAIN/MAP/MAP.ASM)
 Update_animation:
-	subq.b	#$1,Anim_count
-	bne.b	No_animation
-	movem.l	d0-d2/d6-d7/a0-a1,-(a7)
-	moveq	#15,d1
-	lea.l	B_5acda,a0
-	moveq	#2,d7
-.l_0214a:
+	subq.b	#1,Anim_count
+	bne.s	No_animation
+	movem.l	d0-d2/d6/d7/a0/a1,-(sp)
+	moveq.l	#$f,d1
+	lea.l	Circle_anim+4,a0
+	moveq.l	#2,d7
+.Loop1:
 	move.b	(a0),d0
-	addq.b	#$1,d0
+	addq.b	#1,d0
 	cmp.b	d0,d7
-	bne.b	.l_02158
+	bne.s	.Skip
 	bsr.w	Recalc_random
-	moveq	#0,d0
-.l_02158:
+	moveq.l	#0,d0
+.Skip:
 	move.b	d0,(a0)
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$9,d7
-	bmi.b	.l_0214a
-	lea.l	B_5acfe,a0
-	lea.l	B_5ad16,a1
-	moveq	#3,d7
-.l_02172:
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#8+1,d7
+	bmi.s	.Loop1
+	lea.l	Wave_anim+8,a0
+	lea.l	Wave_anim+32,a1
+	moveq.l	#3,d7
+.Loop_L1:
 	move.b	(a0),d0
 	tst.b	(a1)+
-	bne.b	.l_02186
-	addq.b	#$1,d0
+	bne.s	.Down_L1
+	addq.b	#1,d0
 	cmp.b	d0,d7
-	bne.b	.l_02192
-	subq.b	#$2,d0
-	not.b	-$1(a1)
-	bra.b	.l_02192
-.l_02186:
-	subq.b	#$1,d0
-	bne.b	.l_02192
-	not.b	-$1(a1)
+	bne.s	.Skip_L1
+	subq.b	#2,d0
+	not.b	-1(a1)
+	bra.s	.Skip_L1
+.Down_L1:
+	subq.b	#1,d0
+	bne.s	.Skip_L1
+	not.b	-1(a1)
 	bsr.w	Recalc_random
-.l_02192:
+.Skip_L1:
 	move.b	d0,(a0)
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$9,d7
-	bmi.b	.l_02172
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#8+1,d7
+	bmi.s	.Loop_L1
 	move.b	Anim_speed,Anim_count
-	movem.l	(a7)+,d0-d2/d6-d7/a0-a1
+	movem.l	(sp)+,d0-d2/d6/d7/a0/a1
 ; ---- No_animation (original source: MAIN/MAP/MAP.ASM)
 No_animation:
 	rts	
@@ -234,7 +235,7 @@ Recalc_random:
 	rts	
 Before_move:
 	movem.l	d0/a0,-(a7)
-	tst.b	B_5c30f
+	tst.b	Overweight
 	beq.b	.l_021f2
 	movem.l	(a7)+,d0/a0
 	addq.l	#$4,a7
@@ -301,13 +302,13 @@ T_0223e:
 	beq.b	.l_022ca
 	movea.l	(a0),a1
 	move.w	#$e400,d0
-	and.w	$3a(a1),d0
+	and.w	Body_conditions(a1),d0
 	bne.b	.l_022ca
-	move.w	$54(a1),d0
-	add.w	$a8(a1),d0
+	move.w	Attr_7_normal(a1),d0
+	add.w	Attr_7_normal_magic(a1),d0
 	bsr.w	Probe
 	bpl.b	.l_022ca
-	bset	#$1,$3a(a1)
+	bset	#$1,Body_conditions(a1)
 	move.w	d7,d0
 	bsr.w	Do_damage
 .l_022ca:
@@ -349,11 +350,11 @@ T_0223e:
 	beq.b	.l_02364
 	movea.l	(a0),a1
 	move.w	#$e400,d0
-	and.w	$3a(a1),d0
+	and.w	Body_conditions(a1),d0
 	bne.b	.l_02364
 	moveq	#0,d0
-	move.b	$8(a1),d0
-	add.w	$b4(a1),d0
+	move.b	Skill_3(a1),d0
+	add.w	Skill_3_normal_magic(a1),d0
 	bsr.w	Probe
 	bpl.b	.l_02364
 	jsr	Random
@@ -491,35 +492,36 @@ Switch_control_icons:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
+; ---- Map_CIL_evaluate (original source: MAIN/MAP/MAP.ASM)
 Map_CIL_evaluate:
-	bclr	#$7,(a0)
-	bclr	#$7,$1(a0)
-	bclr	#$7,$2(a0)
-	bclr	#$7,$3(a0)
-	bclr	#$7,$5(a0)
-	bclr	#$7,$6(a0)
-	bclr	#$7,$7(a0)
-	bclr	#$7,$8(a0)
-	tst.b	B_5c30f
-	beq.b	.l_0259c
-	cmpi.b	#$2,Current_map_type
-	bpl.b	.l_02584
-	bset	#$7,(a0)
-	bset	#$7,$1(a0)
-	bset	#$7,$2(a0)
-	bset	#$7,$3(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$6(a0)
-	bset	#$7,$7(a0)
-	bset	#$7,$8(a0)
-	bra.b	.l_0259c
-.l_02584:
-	bset	#$7,$1(a0)
-	bset	#$7,$3(a0)
-	bset	#$7,$5(a0)
-	bset	#$7,$7(a0)
-.l_0259c:
-	rts
+	bclr	#7,(a0)
+	bclr	#7,1(a0)
+	bclr	#7,2(a0)
+	bclr	#7,3(a0)
+	bclr	#7,5(a0)
+	bclr	#7,6(a0)
+	bclr	#7,7(a0)
+	bclr	#7,8(a0)
+	tst.b	Overweight
+	beq.s	.Exit
+	cmpi.b	#$2,Current_map_type	; CHANGE: added
+	bpl.b	.c_02584	; CHANGE: added
+	bset	#7,(a0)
+	bset	#7,1(a0)
+	bset	#7,2(a0)
+	bset	#7,3(a0)
+	bset	#7,5(a0)
+	bset	#7,6(a0)
+	bset	#7,7(a0)
+	bset	#7,8(a0)
+	bra.b	.Exit	; CHANGE: added
+.c_02584:
+	bset	#$7,$1(a0)	; CHANGE: added
+	bset	#$7,$3(a0)	; CHANGE: added
+	bset	#$7,$5(a0)	; CHANGE: added
+	bset	#$7,$7(a0)	; CHANGE: added
+.Exit:
+	rts	
 ; ---- Second_CIL_evaluate (original source: MAIN/MAP/MAP.ASM)
 Second_CIL_evaluate:
 	movem.l	d0/d1/a1,-(sp)

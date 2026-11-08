@@ -185,80 +185,84 @@ TwoD_char_handler:
 	sf	New_move
 	movem.l	(sp)+,d0-d7/a0-a2
 	rts	
+; ---- ThreeD_char_handler (original source: MAIN/PERSONS.ASM)
 ThreeD_char_handler:
-	movem.l	d0-d7/a0-a2,-(a7)
+	movem.l	d0-d7/a0-a2,-(sp)
 	bsr.w	Clear_persons_buffer
 	lea.l	VChar_data,a1
 	move.l	CD_value,d6
-	moveq	#0,d7
-.l_05d26:
+	moveq.l	#0,d7
+.Loop:
 	tst.w	(a1)
-	beq.w	.l_05dc2
+	beq.w	.Next
 	btst	d7,d6
-	bne.w	.l_05dc2
-	bclr	#$2,$7(a1)
-	move.b	$4(a1),d0
-	btst	#$0,d0
-	beq.b	.l_05d60
-	btst	#$2,d0
-	beq.b	.l_05d56
-	move.w	$8(a1),d0
-	move.w	$a(a1),d1
+	bne.w	.Next
+	bclr	#2,VChar_flag(a1)
+	move.b	VChar_stats(a1),d0
+	btst	#0,d0
+	beq.s	.Person
+	btst	#2,d0
+	beq.s	.Hunt
+	move.w	VChar_X(a1),d0
+	move.w	VChar_Y(a1),d1
 	bsr.w	Battle_check
-	bra.b	.l_05dbc
-.l_05d56:
+	bra.s	.Show
+.Hunt:
 	bsr.w	Hunting_monster
+; CHANGE: removed "move.w VChar_X(a1),d0"
+; CHANGE: removed "move.w VChar_Y(a1),d1"
 	bsr.w	Battle_check
-	bra.b	.l_05dbc
-.l_05d60:
-	btst	#$3,d0
-	beq.b	.l_05d80
-	moveq	#0,d1
-	move.b	$5(a1),d1
+	bra.s	.Show
+.Person:
+	btst	#3,d0
+	beq.s	.There
+	moveq.l	#0,d1
+	move.b	VChar_day(a1),d1
 	cmp.w	Day,d1
-	bne.b	.l_05dc2
-	move.b	$6(a1),d1
+	bne.s	.Next
+	move.b	VChar_month(a1),d1
 	cmp.w	Month,d1
-	bne.b	.l_05dc2
-.l_05d80:
-	btst	#$1,d0
-	beq.b	.l_05d8c
+	bne.s	.Next
+.There:
+	btst	#1,d0
+	beq.s	.Path
+.Random:
 	bsr.w	Random_person
-	bra.b	.l_05dbc
-.l_05d8c:
-	movea.l	$c(a1),a2
+	bra.s	.Show
+.Path:
+	movea.l	VPath_ptr(a1),a2
 	move.w	Current_step,d2
-	moveq	#0,d0
-	move.b	(a2,d2.w),d0
+	moveq.l	#0,d0
+	move.b	0(a2,d2.w),d0
 	add.w	Length_of_day,d2
-	moveq	#0,d1
-	move.b	(a2,d2.w),d1
-	cmpi.w	#$6,d0
-	bne.b	.l_05db4
-	cmpi.w	#$6,d1
-	beq.b	.l_05dc2
-.l_05db4:
-	move.w	d0,$8(a1)
-	move.w	d1,$a(a1)
-.l_05dbc:
-	bset	#$2,$7(a1)
-.l_05dc2:
-	lea.l	$14(a1),a1
-	addq.w	#$1,d7
-	cmpi.w	#$18,d7
-	bmi.w	.l_05d26
-	sf.b	New_step
-	sf.b	New_move
+	moveq.l	#0,d1
+	move.b	0(a2,d2.w),d1
+	cmpi.w	#6,d0
+	bne.s	.Ok
+	cmpi.w	#6,d1
+	beq.s	.Next
+.Ok:
+	move.w	d0,VChar_X(a1)
+	move.w	d1,VChar_Y(a1)
+.Show:
+	bset	#2,VChar_flag(a1)
+.Next:
+	lea.l	VData_length(a1),a1
+	addq.w	#1,d7
+	cmpi.w	#Max_chars,d7
+	bmi.w	.Loop
+	sf	New_step
+	sf	New_move
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	lea.l	Cut_table_3D,a1
 	move.w	View_direction,d2
-	mulu.w	#$18,d2
+	mulu.w	#24,d2
 	adda.w	d2,a1
 	lea.l	VChar_data,a0
 	lea.l	Persons_buf_3D,a2
-	moveq	#11,d7
-.l_05e08:
+	moveq.l	#12-1,d7
+.Loop_1_L1:
 	move.b	(a1)+,d2
 	ext.w	d2
 	move.b	(a1)+,d3
@@ -266,30 +270,30 @@ ThreeD_char_handler:
 	add.w	d0,d2
 	add.w	d1,d3
 	movea.l	a0,a3
-	moveq	#0,d5
-.l_05e18:
+	moveq.l	#0,d5
+.Loop_2_L1:
 	tst.w	(a3)
-	beq.b	.l_05e3a
+	beq.s	.Next_L1
 	btst	d5,d6
-	bne.b	.l_05e3a
-	btst	#$2,$7(a3)
-	beq.b	.l_05e3a
-	cmp.w	$8(a3),d2
-	bne.b	.l_05e3a
-	cmp.w	$a(a3),d3
-	bne.b	.l_05e3a
-	move.b	$2(a3),(a2)
-	bra.b	.l_05e46
-.l_05e3a:
-	lea.l	$14(a3),a3
-	addq.w	#$1,d5
-	cmpi.w	#$18,d5
-	bmi.b	.l_05e18
-.l_05e46:
-	addq.l	#$1,a2
-	dbra	d7,.l_05e08
-	movem.l	(a7)+,d0-d7/a0-a2
-	rts
+	bne.s	.Next_L1
+	btst	#2,VChar_flag(a3)
+	beq.s	.Next_L1
+	cmp.w	VChar_X(a3),d2
+	bne.s	.Next_L1
+	cmp.w	VChar_Y(a3),d3
+	bne.s	.Next_L1
+	move.b	VChar_icon(a3),(a2)
+	bra.s	.Next_2_L1
+.Next_L1:
+	lea.l	VData_length(a3),a3
+	addq.w	#1,d5
+	cmpi.w	#Max_chars,d5
+	bmi.s	.Loop_2_L1
+.Next_2_L1:
+	addq.l	#1,a2
+	dbra	d7,.Loop_1_L1
+	movem.l	(sp)+,d0-d7/a0-a2
+	rts	
 ; ---- Hunting_monster (original source: MAIN/PERSONS.ASM)
 Hunting_monster:
 	movem.l	d2-d6,-(sp)
@@ -728,7 +732,7 @@ CombatReq_ModInit:
 	moveq	#1,d6
 	lea.l	D_2f2aa,a0
 	jsr	Open_window
-	move.w	d0,B_57a60
+	move.w	d0,Window_handle
 	lea.l	D_1e3b4,a0
 	bsr.w	Push_PA
 	moveq	#15,d0
@@ -760,11 +764,12 @@ CombatReq_ModInit:
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	rts
+; ---- CombatReq_ModExit (original source: MAIN/PERSONS.ASM)
 CombatReq_ModExit:
-	move.w	B_57a60,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	bsr.w	Pop_PA
-	rts
+	rts	
 T_063fc:
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
@@ -772,41 +777,42 @@ T_063fc:
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
+; ---- CombatYes (original source: MAIN/PERSONS.ASM)
 CombatYes:
 	tst.w	Spell_6_duration
-	beq.b	.l_0641e
-	st.b	Party_advantage
-.l_0641e:
+	beq.s	.Visible
+	st	Party_advantage
+.Visible:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
-	cmpi.b	#$2,Current_map_type
-	bpl.b	.l_06446
+	cmpi.b	#2,Current_map_type
+	bpl.s	.3D_map
 	bsr.w	Get_2D_icon_status
 	tst.l	d1
-	beq.b	.l_0644a
-	btst	#$5,d1
-	bne.b	.l_0644a
+	beq.s	.Go_on
+	btst.l	#5,d1
+	bne.s	.Go_on
 	move.l	d1,d0
-	bra.b	.l_0644a
-.l_06446:
+	bra.s	.Go_on
+.3D_map:
 	bsr.w	Get_3D_icon_status
-.l_0644a:
-	moveq	#16,d1
-	moveq	#13,d7
-.l_0644e:
+.Go_on:
+	moveq.l	#16,d1
+	moveq.l	#14-1,d7
+.Loop:
 	btst	d1,d0
-	bne.b	.l_0645a
-	addq.w	#$1,d1
-	dbra	d7,.l_0644e
-	moveq	#16,d1
-.l_0645a:
-	subi.w	#$f,d1
-	move.w	d1,B_58910
-	move.w	Active_member,B_57a62
-	st.b	Battling
-	move.w	#$4,Spell_area_type
-	jsr	Pop_Module
-	jsr	Exit_display
+	bne.s	.Found
+	addq.w	#1,d1
+	dbra	d7,.Loop
+	moveq.l	#16,d1
+.Found:
+	subi.w	#16-1,d1
+	move.w	d1,comback_nr
+	move.w	Active_member,B_57a62	; CHANGE: added
+	st	Battling
+	move.w	#4,Spell_area_type
+	jsr	Pop_Module	; CHANGE: was "jsr Exit_display"
+	jsr	Exit_display	; CHANGE: added
 	lea.l	Combat_Mod,a0
 	jmp	Push_Module
 T_06494:
@@ -815,10 +821,10 @@ T_06494:
 	cmpi.w	#$6,Travel_mode
 	bpl.b	.l_064da
 	movea.l	Current_active_char_data,a0
-	move.w	$4c(a0),d0
-	add.w	$a0(a0),d0
-	add.w	$54(a0),d0
-	add.w	$a8(a0),d0
+	move.w	Attr_3_normal(a0),d0
+	add.w	Attr_3_normal_magic(a0),d0
+	add.w	Attr_7_normal(a0),d0
+	add.w	Attr_7_normal_magic(a0),d0
 	tst.w	d0
 	bmi.b	.l_064da
 	cmpi.w	#$96,d0

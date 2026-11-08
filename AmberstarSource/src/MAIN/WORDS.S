@@ -104,7 +104,7 @@ T_07200:
 	lea.l	D_1e54e,a0
 	move.l	a0,Dictionary_ptr
 	move.w	(a0)+,B_5adfe
-	lea.l	B_5ae00,a1
+	lea.l	Tween_word_indices,a1
 	move.l	a0,(a1)+
 	moveq	#0,d0
 .l_07220:
@@ -119,34 +119,35 @@ T_07200:
 .l_07230:
 	movem.l	(a7)+,d0/d7/a0-a1
 	rts
+; ---- Find_word (original source: MAIN/WORDS.ASM)
 Find_word:
-	movem.l	d0-d1,-(a7)
-	cmp.w	B_5adfe,d0
-	bmi.b	.l_07250
-	lea.l	D_31d8e,a1
-	jsr	DI_Error
-	bra.b	T_07282
-.l_07250:
+	movem.l	d0/d1,-(sp)
+	cmp.w	B_5adfe,d0	; CHANGE: added
+	bmi.b	.c_07250	; CHANGE: added
+	lea.l	D_31d8e,a1	; CHANGE: added
+	jsr	DI_Error	; CHANGE: added
+	bra.b	.c_07282	; CHANGE: added
+.c_07250:
 	move.w	d0,d1
-	lsr.w	#$3,d1
+	lsr.w	#3,d1
 	andi.w	#$fffc,d1
-	lea.l	B_5ae00,a0
-	movea.l	(a0,d1.w),a0
+	lea.l	Tween_word_indices,a0
+	movea.l	0(a0,d1.w),a0
 	andi.w	#$1f,d0
-	moveq	#0,d1
-	bra.b	T_0726e
-T_0726a:
+	moveq.l	#0,d1
+	bra.s	.Entry
+.Loop:
 	move.b	(a0),d1
 	adda.w	d1,a0
-T_0726e:
-	dbra	d0,T_0726a
-	tst.b	(a0)
-	bne.b	T_07282
-	lea.l	D_31db8,a1
-	jsr	DI_Error
-T_07282:
-	movem.l	(a7)+,d0-d1
-	rts
+.Entry:
+	dbra	d0,.Loop
+	tst.b	(a0)	; CHANGE: added
+	bne.b	.c_07282	; CHANGE: added
+	lea.l	D_31db8,a1	; CHANGE: added
+	jsr	DI_Error	; CHANGE: added
+.c_07282:
+	movem.l	(sp)+,d0/d1
+	rts	
 ; ---- Convert_text_line (original source: MAIN/WORDS.ASM)
 Convert_text_line:
 	movem.l	d0-d2/d6/d7/a0-a3,-(sp)
@@ -181,26 +182,27 @@ Convert_text_line:
 	move.b	#0,-(a2)
 	movem.l	(sp)+,d0-d2/d6/d7/a0-a3
 	rts	
+; ---- Calc_textblock_address (original source: MAIN/WORDS.ASM)
 Calc_textblock_address:
-	moveq	#0,d1
+	moveq.l	#0,d1
 	move.b	(a1),d1
 	cmp.w	d1,d0
-	bmi.b	.l_072e8
-	lea.l	D_31de1,a1
+	bmi.s	.Ok
+	lea.l	ET_Calc_textblock_address_1,a1	; ERROR "[ Calc_textblock_address ] : Illegal textblock number !!!"
 	jsr	DI_Error
-	bra.b	.l_072fe
-.l_072e8:
-	addq.l	#$2,a1
+	bra.s	.Exit
+.Ok:
+	addq.l	#2,a1
 	add.w	d0,d0
-	move.w	(a1,d0.w),d6
-	move.w	$2(a1,d0.w),d7
+	move.w	0(a1,d0.w),d6
+	move.w	2(a1,d0.w),d7
 	sub.w	d6,d7
 	add.w	d6,d1
 	add.w	d1,d1
 	adda.w	d1,a1
-	addq.l	#$2,a1
-.l_072fe:
-	rts
+	addq.l	#2,a1
+.Exit:
+	rts	
 ; ---- Prepare_scrolling (original source: MAIN/WORDS.ASM)
 Prepare_scrolling:
 	movem.l	d0-d7/a0-a3/a5/a6,-(sp)
@@ -354,38 +356,40 @@ Erase_text_window:
 	jsr	Draw_box
 	movem.l	(sp)+,d0-d3/d6/a5
 	rts	
+; ---- Push_PA (original source: MAIN/WORDS.ASM)
 Push_PA:
-	movem.l	d0/a1,-(a7)
+	movem.l	d0/a1,-(sp)
 	movea.l	PA_sp,a1
-	addq.l	#$4,a1
-	cmpa.l	#Textfile_ptr,a1
-	bmi.b	.l_0751a
-	lea.l	D_31e1c,a1
+	addq.l	#4,a1
+	cmpa.l	#End_of_PA_stack,a1
+	bmi.s	.Not_full
+	lea.l	ET_Push_PA_1,a1	; ERROR "[ Push_PA ] : PA Stack overflow !!!"
 	jsr	DI_Error
-	bra.b	.l_07526
-.l_0751a:
+	bra.s	.Exit
+.Not_full:
 	move.l	a0,(a1)
 	move.l	a1,PA_sp
 	bsr.w	Init_PA
-.l_07526:
-	movem.l	(a7)+,d0/a1
-	rts
+.Exit:
+	movem.l	(sp)+,d0/a1
+	rts	
+; ---- Pop_PA (original source: MAIN/WORDS.ASM)
 Pop_PA:
-	movem.l	a0-a1,-(a7)
+	movem.l	a0/a1,-(sp)
 	movea.l	PA_sp,a1
 	cmpa.l	#PA_Stack,a1
-	bpl.b	.l_0754c
-	lea.l	D_31e41,a1
+	bpl.s	.Not_empty
+	lea.l	ET_Pop_PA_1,a1	; ERROR "[ Pop_PA ] : PA Stack underflow !!!"
 	jsr	DI_Error
-	bra.b	.l_0755a
-.l_0754c:
-	subq.l	#$4,a1
+	bra.s	.Exit
+.Not_empty:
+	subq.l	#4,a1
 	move.l	a1,PA_sp
 	movea.l	(a1),a0
 	bsr.w	Init_PA
-.l_0755a:
-	movem.l	(a7)+,a0-a1
-	rts
+.Exit:
+	movem.l	(sp)+,a0/a1
+	rts	
 ; ---- Init_PA (original source: MAIN/WORDS.ASM)
 Init_PA:
 	moveq.l	#0,d0
@@ -541,8 +545,9 @@ Prepare_text_block:
 	addq.w	#1,d4
 	lea.l	1(a3,d2.w),a3
 	rts	
+; ---- Mr_Blue_Sky (original source: MAIN/WORDS.ASM)
 Mr_Blue_Sky:
-	movem.l	d0-d7/a0-a6,-(a7)
+	movem.l	d0-d7/a0-a6,-(sp)
 	move.w	Nr_of_chars,d2
 	bsr.w	Prepare_text_block
 	movea.l	PA_sp,a5
@@ -552,74 +557,75 @@ Mr_Blue_Sky:
 	bsr.w	Erase_text_window
 	jsr	Switch_screen
 	jsr	Copy_screen
-	move.w	$6(a5),d0
+	move.w	PA_Ht(a5),d0
 	cmp.w	Height_of_buffer,d0
-	bmi.b	.l_0776a
-	moveq	#0,d0
+	bmi.s	.Scroll
+	moveq.l	#0,d0
 	movea.l	Off_screen,a6
 	bsr.w	Refresh_text_window
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bsr.w	Wait_4_user
 	bra.w	Exit_Blue_Sky
-.l_0776a:
+.Scroll:
 	lea.l	Paragraph_list,a0
-	move.w	$6(a5),d0
+	move.w	PA_Ht(a5),d0
 	neg.w	d0
+; CHANGE: removed "addq.w #1,d0"
 	move.w	Nr_of_lines,d6
 	move.w	Paras_in_text,d7
-	subq.w	#$1,d7
-.l_07784:
+	subq.w	#1,d7
+.Loop:
 	move.w	(a0)+,d2
-.l_07786:
+.Again:
 	cmp.w	d6,d2
-	bhi.b	.l_07796
+	bhi.s	.Too_large
 	move.w	d2,d1
 	bsr.w	Scroll_up
 	bsr.w	Wait_4_user
-	bra.b	.l_077a4
-.l_07796:
+	bra.s	.Next
+.Too_large:
 	move.w	d6,d1
 	bsr.w	Scroll_up
 	bsr.w	Wait_4_user
 	sub.w	d6,d2
-	bra.b	.l_07786
-.l_077a4:
-	dbra	d7,.l_07784
+	bra.s	.Again
+.Next:
+	dbra	d7,.Loop
 	jsr	Mouse_off
-	lea.l	D_1e462,a0
+	lea.l	Scroll_MA,a0
 	move.w	Height_of_buffer,d1
-	subq.w	#$1,d1
-	move.w	d1,$6(a0)
+	subq.w	#1,d1
+	move.w	d1,6(a0)
 	jsr	Push_MA
 	move.w	Height_of_buffer,d2
-	sub.w	$6(a5),d2
+	sub.w	PA_Ht(a5),d2
 	move.w	Mouse_Y,d1
-.l_077d6:
+.Again_L1:
 	movea.l	Off_screen,a6
 	bsr.w	Refresh_text_window
 	jsr	Switch_screen
-.l_077e6:
+.Wait_L1:
 	tst.b	Mouse_button_state
-	bne.b	.l_07812
+	bne.s	.Exit_L1
 	move.w	Mouse_Y,d3
 	move.w	d3,d4
 	sub.w	d1,d4
-	beq.b	.l_077e6
+	beq.s	.Wait_L1
 	move.w	d3,d1
 	tst.w	d4
-	bmi.b	.l_0780a
+	bmi.s	.Up_L1
 	add.w	d4,d0
 	cmp.w	d2,d0
-	bmi.b	.l_077d6
+	bmi.s	.Again_L1
 	move.w	d2,d0
-	bra.b	.l_077d6
-.l_0780a:
+	bra.s	.Again_L1
+.Up_L1:
 	add.w	d4,d0
-	bpl.b	.l_077d6
-	moveq	#0,d0
-	bra.b	.l_077d6
-.l_07812:
+	bpl.s	.Again_L1
+	moveq.l	#0,d0
+	bra.s	.Again_L1
+.Exit_L1:
 	jsr	Pop_MA
 ; ---- Exit_Blue_Sky (original source: MAIN/WORDS.ASM)
 Exit_Blue_Sky:
@@ -755,59 +761,59 @@ Add_ASCII_2_RText:
 .Entry:
 	dbra	d0,.Loop
 	movea.l	(sp)+,a1
-.Again:
+.Again_L1:
 	move.b	(a0)+,d0
 	beq.s	.End
 	cmpi.b	#13,d0
-	bne.s	.No_CR
-	bsr.w	.Carriage_return
+	bne.s	.No_CR_L1
+	bsr.w	.Carriage_return_L1
 	lea.l	Line_buffer,a2
-	bra.s	.Again
-.No_CR:
+	bra.s	.Again_L1
+.No_CR_L1:
 	move.b	d0,(a2)+
 	addq.w	#1,d2
 	cmp.w	d1,d2
-	bls.s	.Again
+	bls.s	.Again_L1
 	clr.b	(a2)
 	subq.l	#1,a2
-.Seek:
+.Seek_L1:
 	cmpi.b	#" ",-(a2)
-	bne.s	.Seek
-	bsr.w	.Carriage_return
+	bne.s	.Seek_L1
+	bsr.w	.Carriage_return_L1
 	lea.l	1(a2),a3
 	lea.l	Line_buffer,a2
-.Loop1:
+.Loop1_L1:
 	tst.b	(a3)
-	beq.s	.Again
+	beq.s	.Again_L1
 	move.b	(a3)+,(a2)+
 	addq.w	#1,d2
-	bra.s	.Loop1
+	bra.s	.Loop1_L1
 .End:
 	move.w	d2,RText_X
 	move.w	d3,RText_Y
 	tst.w	d2
-	beq.s	.Skip
+	beq.s	.Skip_L1
 	lea.l	Line_buffer,a0
 	move.w	d2,d0
 	subq.w	#1,d0
-.Loop2:
+.Loop2_L1:
 	move.b	(a0)+,(a1)+
-	dbra	d0,.Loop2
+	dbra	d0,.Loop2_L1
 	addq.w	#1,d3
-.Skip:
+.Skip_L1:
 	clr.b	(a1)
 	move.w	d3,Lines_in_text
 	movem.l	(sp)+,d0-d3/a0-a3
 	rts	
-.Carriage_return:
+.Carriage_return_L1:
 	move.l	a2,-(sp)
 	move.b	#0,(a2)
 	lea.l	Line_buffer,a2
 	movea.l	a1,a3
-.Loop3:
+.Loop3_L1:
 	move.b	(a2)+,(a3)+
 	tst.b	-1(a2)
-	bne.s	.Loop3
+	bne.s	.Loop3_L1
 	moveq.l	#0,d2
 	addq.w	#1,d3
 	lea.l	1(a1,d1.w),a1
@@ -875,7 +881,7 @@ EndPuncts:
 	dc.b	$02,$77,$06,$2d,$05,$14,$00,$a6,$00,$9b,$05,$16,$00,$aa,$02,$e7
 PA_sp:
 	dc.l	PA_Stack
-D_1e462:
+Scroll_MA:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 Space:
 	dc.b	$20,$00
@@ -3668,7 +3674,7 @@ Paragraph_list:
 	ds.b	40
 B_5adfe:
 	ds.b	2
-B_5ae00:
+Tween_word_indices:
 	ds.b	640
 Line_buffer:
 	ds.b	256

@@ -53,7 +53,7 @@ Pop_MA:
 	movem.l	d0-d2/a0-a1,-(a7)
 	bsr.w	Mouse_off
 	movea.l	MA_sp,a1
-	cmpa.l	#B_5d8b2,a1
+	cmpa.l	#MA_Stack,a1
 	bhi.b	.l_1cd96
 	lea.l	D_5241f,a1
 	jsr	DI_Error
@@ -166,17 +166,19 @@ T_1ce6e:
 .l_1ced0:
 	movem.l	(a7)+,d1-d3/a0-a2
 	rts
+; ---- Wait_4_key (original source: NUCLEUS/KBDROUTS.ASM)
 Wait_4_key:
-	movem.l	d1-d2/a0-a2,-(a7)
-	move.w	#$7,-(a7)
-	trap	#$1
-	addq.l	#$2,a7
-	movem.l	(a7)+,d1-d2/a0-a2
-	rts
-T_1cee8:
-	move.l	#D_51c78,B_5d8b2
+	movem.l	d1/d2/a0-a2,-(sp)
+	move.w	#7,-(sp)
+	trap	#1
+	addq.l	#2,sp
+	movem.l	(sp)+,d1/d2/a0-a2
+	rts	
+; ---- Init_kbd (original source: NUCLEUS/KBDROUTS.ASM)
+Init_kbd:
+	move.l	#MArea_0,MA_Stack
 	bsr.w	Draw_mouse
-	rts
+	rts	
 My_mouse:
 	movea.l	MA_sp,a1
 	movea.l	(a1),a1
@@ -303,125 +305,134 @@ DrawM_entry:
 ; ---- Exit_DrawM (original source: NUCLEUS/KBDROUTS.ASM)
 Exit_DrawM:
 	rts	
+; ---- Mouse_draw_normal (original source: NUCLEUS/KBDROUTS.ASM)
 Mouse_draw_normal:
-	move.l	#T_1d162,Erase_rout
+	move.l	#Mouse_erase_normal,Erase_rout
 	jsr	Coord_convert
 	move.w	d3,d0
-	lea.l	(a6,d2.w),a1
+	lea.l	0(a6,d2.w),a1
 	move.l	a1,Erase_adr
-.l_1d076:
-	moveq	#0,d2
-	moveq	#-1,d3
+.Loop:
+	moveq.l	#0,d2
+	moveq.l	#-1,d3
 	move.w	(a0)+,d2
-	move.w	$1e(a0),d3
+	move.w	32-2(a0),d3
 	ror.l	d0,d2
 	ror.l	d0,d3
 	move.w	(a1),(a2)+
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	swap.w	d2
+	swap.w	d3
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
 	move.w	(a1),(a2)+
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	swap	d2
-	swap	d3
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	lea.l	$90(a1),a1
-	dbra	d7,.l_1d076
-	rts
+	lea.l	160-16(a1),a1
+	dbra	d7,.Loop
+	rts	
+; ---- Mouse_draw_left (original source: NUCLEUS/KBDROUTS.ASM)
 Mouse_draw_left:
-	move.l	#T_1d174,Erase_rout
-	addi.w	#$10,d0
+	move.l	#Mouse_erase_left,Erase_rout
+	addi.w	#16,d0
 	jsr	Coord_convert
 	move.w	d3,d0
-	lea.l	(a6,d2.w),a1
+	lea.l	0(a6,d2.w),a1
 	move.l	a1,Erase_adr
-.l_1d0e2:
-	moveq	#0,d2
-	moveq	#-1,d3
+.Loop:
+	moveq.l	#0,d2
+	moveq.l	#-1,d3
 	move.w	(a0)+,d2
-	move.w	$1e(a0),d3
+	move.w	32-2(a0),d3
 	ror.l	d0,d2
 	ror.l	d0,d3
-	swap	d2
-	swap	d3
+	swap.w	d2
+	swap.w	d3
 	move.w	(a1),(a2)+
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	lea.l	$98(a1),a1
-	dbra	d7,.l_1d0e2
-	rts
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	lea.l	160-8(a1),a1
+	dbra	d7,.Loop
+	rts	
+; ---- Mouse_draw_right (original source: NUCLEUS/KBDROUTS.ASM)
 Mouse_draw_right:
-	move.l	#T_1d182,Erase_rout
+	move.l	#Mouse_erase_right,Erase_rout
 	jsr	Coord_convert
 	move.w	d3,d0
-	lea.l	(a6,d2.w),a1
+	lea.l	0(a6,d2.w),a1
 	move.l	a1,Erase_adr
-.l_1d132:
-	moveq	#0,d2
-	moveq	#-1,d3
+.Loop:
+	moveq.l	#0,d2
+	moveq.l	#-1,d3
 	move.w	(a0)+,d2
-	move.w	$1e(a0),d3
+	move.w	32-2(a0),d3
 	ror.l	d0,d2
 	ror.l	d0,d3
 	move.w	(a1),(a2)+
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	move.w	(a1),(a2)+
-	and.w	d3,(a1)
-	or.w	d2,(a1)+
-	lea.l	$98(a1),a1
-	dbra	d7,.l_1d132
-	rts
-T_1d162:
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	move.w	(a1),(a2)+	; CHANGE: added
+	and.w	d3,(a1)	; CHANGE: added
+	or.w	d2,(a1)+	; CHANGE: added
+	lea.l	160-8(a1),a1
+	dbra	d7,.Loop
+	rts	
+; ---- Mouse_erase_normal (original source: NUCLEUS/KBDROUTS.ASM)
+Mouse_erase_normal:
+.Loop:
 	movem.l	(a2)+,d0-d3
 	movem.l	d0-d3,(a3)
-	lea.l	$a0(a3),a3
-	dbra	d7,T_1d162
-	rts
-T_1d174:
+	lea.l	160(a3),a3
+	dbra	d7,.Loop
+	rts	
+; ---- Mouse_erase_left (original source: NUCLEUS/KBDROUTS.ASM)
+Mouse_erase_left:
+.Loop:
 	move.l	(a2)+,(a3)+
 	move.l	(a2)+,(a3)+
-	lea.l	$98(a3),a3
-	dbra	d7,T_1d174
-	rts
-T_1d182:
+	lea.l	160-8(a3),a3
+	dbra	d7,.Loop
+	rts	
+; ---- Mouse_erase_right (original source: NUCLEUS/KBDROUTS.ASM)
+Mouse_erase_right:
+.Loop:
 	move.l	(a2)+,(a3)+
 	move.l	(a2)+,(a3)+
-	lea.l	$98(a3),a3
-	dbra	d7,T_1d182
-	rts
+	lea.l	160-8(a3),a3
+	dbra	d7,.Loop
+	rts	
 T_1d190:
 	movem.l	d0-d1/a0,-(a7)
 	move.l	$18(a0),d0
@@ -432,8 +443,8 @@ T_1d190:
 	cmpi.l	#$4b000,d1
 	bpl.b	.l_1d210
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_524d2,a0
 	jsr	DI_Print
@@ -444,7 +455,7 @@ T_1d190:
 	lea.l	D_52547,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	movea.l	$4f2.w,a0
 	movea.l	$4(a0),a0
@@ -463,8 +474,8 @@ T_1d190:
 	section	data
 
 MA_sp:
-	dc.l	B_5d8b2
-D_51c78:
+	dc.l	MA_Stack
+MArea_0:
 	dc.b	$00,$00,$01,$3f,$00,$00,$00,$c7
 Mptr_sp:
 	dc.l	D_51c84

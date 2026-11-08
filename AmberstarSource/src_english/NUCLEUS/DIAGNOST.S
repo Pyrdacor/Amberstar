@@ -2,30 +2,31 @@
 
 	section	text
 
+; ---- DI_Error (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Error:
-	movem.l	d0-d2/a0-a2/a6,-(a7)
-	bsr.w	T_1c0e8
+	movem.l	d0-d2/a0-a2/a6,-(sp)
+	bsr.w	ON_Diag_screen
 	movea.l	Screen_base,a6
-	bsr.w	T_1c1aa
-	lea.l	D_51ad7,a0
+	bsr.w	DI_Cursor_home
+	lea.l	Error_msg1,a0
 	bsr.w	DI_Print
 	movea.l	a1,a0
 	bsr.w	DI_Print
-	lea.l	D_51aff,a0
+	lea.l	Error_msg2,a0
 	bsr.w	DI_Print
-	move.w	#$7,-(a7)
-	trap	#$1
-	addq.l	#$2,a7
-	cmpi.b	#$78,d0
-	beq.b	.l_1c0de
-	movea.l	$4f2.w,a0
-	movea.l	$4(a0),a0
-	jmp	(a0)
-.l_1c0de:
-	bsr.w	T_1c15e
-	movem.l	(a7)+,d0-d2/a0-a2/a6
-	rts
-T_1c0e8:
+	move.w	#$7,-(a7)	; CHANGE: was "cmpi.b #"x",d0"
+	trap	#$1	; CHANGE: was "bne.s .Exit"
+	addq.l	#$2,a7	; CHANGE: was "illegal"
+	cmpi.b	#$78,d0	; CHANGE: added
+	beq.b	.Exit	; CHANGE: added
+	movea.l	$4f2.w,a0	; CHANGE: added
+	movea.l	$4(a0),a0	; CHANGE: added
+	jmp	(a0)	; CHANGE: added
+.Exit:
+	bsr.w	OFF_Diag_screen
+	movem.l	(sp)+,d0-d2/a0-a2/a6
+	rts	
+ON_Diag_screen:
 	movem.l	d0/a0/a6,-(a7)
 	tst.b	B_5d43a
 	bne.b	.l_1c158
@@ -48,7 +49,7 @@ T_1c0e8:
 .l_1c158:
 	movem.l	(a7)+,d0/a0/a6
 	rts
-T_1c15e:
+OFF_Diag_screen:
 	move.l	a0,-(a7)
 	sf.b	B_5d43a
 	jsr	My_vsync
@@ -61,101 +62,106 @@ T_1c15e:
 	jsr	Mouse_on
 	movea.l	(a7)+,a0
 	rts
-T_1c19e:
+; ---- Init_DI_print (original source: NUCLEUS/DIAGNOST.ASM)
+Init_DI_print:
 	dc.w	$a000
-	move.l	-$16(a0),DI_Font_ptr
-	rts
-T_1c1aa:
-	clr.w	B_5d44c
-	clr.w	B_5d44e
-	rts
+	move.l	-22(a0),DI_Font_ptr
+	rts	
+; ---- DI_Cursor_home (original source: NUCLEUS/DIAGNOST.ASM)
+DI_Cursor_home:
+	clr.w	Print_X
+	clr.w	B_5d44e	; CHANGE: was "clr.w Print_Y"
+	rts	
+; ---- DI_Carriage_return (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Carriage_return:
-	move.l	d0,-(a7)
-	clr.w	B_5d44c
-	move.w	B_5d44e,d0
-	addi.w	#$500,d0
-	cmpi.w	#$7d00,d0
-	bmi.b	.l_1c1e4
-	jsr	Wait_4_key
-	movea.l	Screen_base,a6
-	jsr	Clear_screen
-	moveq	#0,d0
-.l_1c1e4:
-	move.w	d0,B_5d44e
-	move.l	(a7)+,d0
-	rts
+	move.l	d0,-(sp)
+	clr.w	Print_X
+	move.w	B_5d44e,d0	; CHANGE: was "move.w Print_Y,d0"
+	addi.w	#8*160,d0
+	cmpi.w	#32000,d0
+	bmi.s	.Exit
+	jsr	Wait_4_key	; CHANGE: added
+	movea.l	Screen_base,a6	; CHANGE: added
+	jsr	Clear_screen	; CHANGE: added
+	moveq.l	#0,d0
+.Exit:
+	move.w	d0,B_5d44e	; CHANGE: was ".Exit: move.w d0,Print_Y"
+	move.l	(sp)+,d0
+	rts	
+; ---- DI_Backspace (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Backspace:
-	move.l	d0,-(a7)
-	move.w	B_5d44c,d0
-	btst	#$0,d0
-	bne.b	.l_1c200
-	subq.w	#$3,d0
-	bra.b	.l_1c202
-.l_1c200:
-	subq.w	#$1,d0
-.l_1c202:
+	move.l	d0,-(sp)
+	move.w	Print_X,d0
+	btst	#0,d0
+	bne.s	.Odd_address
+	subq.w	#3,d0
+	bra.s	.Skip
+.Odd_address:
+	subq.w	#1,d0
+.Skip:
 	tst.w	d0
-	bmi.b	.l_1c20c
-	move.w	d0,B_5d44c
-.l_1c20c:
-	move.l	(a7)+,d0
-	rts
+	bmi.s	.Exit
+	move.w	d0,Print_X
+.Exit:
+	move.l	(sp)+,d0
+	rts	
+; ---- DI_Input (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Input:
-	movem.l	d2-d4/d7/a0-a1,-(a7)
+	movem.l	d2-d4/d7/a0/a1,-(sp)
 	bsr.w	DI_Print
-	lea.l	D_51b30,a0
-	lea.l	B_5d43b,a1
-	moveq	#0,d7
-	move.b	#$20,$1(a0)
+	lea.l	D_51b30,a0	; CHANGE: was "lea.l Output_string,a0"
+	lea.l	B_5d43b,a1	; CHANGE: was "lea.l Input_buffer,a1"
+	moveq.l	#0,d7
+	move.b	#$20,$1(a0)	; CHANGE: was "move.b #" ",1(a0)"
 	bsr.w	DI_Print
-.l_1c230:
+.Again:
 	jsr	Wait_4_key
 	cmpi.b	#$d,d0
-	beq.b	.l_1c284
-	swap	d0
+	beq.s	.Return
+	swap.w	d0
 	cmpi.b	#$e,d0
-	beq.b	.l_1c26c
-	swap	d0
-	cmpi.b	#$30,d0
-	bmi.b	.l_1c230
-	cmpi.b	#$39,d0
-	bhi.b	.l_1c230
-	move.b	d0,$1(a0)
+	beq.s	.Backspace
+	swap.w	d0
+	cmpi.b	#$30,d0	; CHANGE: was "cmpi.b #"0",d0"
+	bmi.s	.Again
+	cmpi.b	#$39,d0	; CHANGE: was "cmpi.b #"9",d0"
+	bhi.s	.Again
+	move.b	d0,1(a0)
 	bsr.w	DI_Print
-	subi.b	#$30,d0
-	addq.l	#$1,d7
-	move.b	d0,-$1(a1,d7.w)
-	cmpi.b	#$4,d7
-	bmi.b	.l_1c230
-	bra.b	.l_1c284
-.l_1c26c:
+	subi.b	#$30,d0	; CHANGE: was "subi.b #"0",d0"
+	addq.l	#1,d7
+	move.b	d0,-1(a1,d7.w)
+	cmpi.b	#Max_digits,d7
+	bmi.s	.Again
+	bra.s	.Return
+.Backspace:
 	tst.w	d7
-	beq.b	.l_1c230
-	lea.l	D_51b26,a0
+	beq.s	.Again
+	lea.l	Backspace_string,a0
 	bsr.w	DI_Print
-	lea.l	D_51b30,a0
-	subq.l	#$1,d7
-	bra.b	.l_1c230
-.l_1c284:
-	lea.l	D_51b2c,a0
+	lea.l	D_51b30,a0	; CHANGE: was "lea.l Output_string,a0"
+	subq.l	#1,d7
+	bra.s	.Again
+.Return:
+	lea.l	End_string,a0
 	bsr.w	DI_Print
-	moveq	#0,d0
-	moveq	#1,d2
-	moveq	#10,d3
-	subq.l	#$1,d7
-	bpl.b	.l_1c29c
-	moveq	#-1,d0
-	bra.b	.l_1c2ac
-.l_1c29c:
-	moveq	#0,d4
-	move.b	(a1,d7.w),d4
+	moveq.l	#0,d0
+	moveq.l	#1,d2
+	moveq.l	#10,d3
+	subq.l	#1,d7
+	bpl.s	.Loop
+	moveq.l	#-1,d0
+	bra.s	.Exit
+.Loop:
+	moveq.l	#0,d4
+	move.b	0(a1,d7.w),d4
 	mulu.w	d2,d4
 	add.l	d4,d0
 	mulu.w	d3,d2
-	dbra	d7,.l_1c29c
-.l_1c2ac:
-	movem.l	(a7)+,d2-d4/d7/a0-a1
-	rts
+	dbra	d7,.Loop
+.Exit:
+	movem.l	(sp)+,d2-d4/d7/a0/a1
+	rts	
 ; ---- DI_Hexw_print (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Hexl_print:
 DI_Hexb_print:
@@ -246,45 +252,46 @@ DI_Print:
 .Exit:
 	movem.l	(sp)+,d0/a0/a1
 	rts	
+; ---- DI_Pchar (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Pchar:
-	movem.l	d0-d2/d7/a1/a6,-(a7)
-	adda.w	B_5d44c,a6
-	adda.w	B_5d44e,a6
+	movem.l	d0-d2/d7/a1/a6,-(sp)
+	adda.w	Print_X,a6
+	adda.w	B_5d44e,a6	; CHANGE: was "adda.w Print_Y,a6"
 	adda.w	d0,a1
 	move.b	Ink,d0
 	move.w	Inverse,d2
-	btst	#$0,d0
-	sne.b	d1
-	lsl.w	#$8,d1
-	btst	#$1,d0
-	sne.b	d1
-	moveq	#7,d7
-.l_1c3d2:
+	btst	#0,d0
+	sne	d1
+	lsl.w	#8,d1
+	btst	#1,d0
+	sne	d1
+	moveq.l	#7,d7
+.Loop:
 	move.b	(a1),d0
-	lsl.w	#$8,d0
+	lsl.w	#8,d0
 	move.b	(a1),d0
 	eor.w	d2,d0
 	and.w	d1,d0
-	movep.w	d0,$0(a6)
-	lea.l	$100(a1),a1
-	lea.l	$a0(a6),a6
-	dbra	d7,.l_1c3d2
-	move.w	B_5d44c,d0
-	btst	#$0,d0
-	bne.b	.l_1c3fc
-	addq.w	#$1,d0
-	bra.b	.l_1c40a
-.l_1c3fc:
-	addq.w	#$3,d0
-	cmpi.w	#$a0,d0
-	bmi.b	.l_1c40a
+	movep.w	d0,0(a6)
+	lea.l	256(a1),a1
+	lea.l	160(a6),a6
+	dbra	d7,.Loop
+	move.w	Print_X,d0
+	btst	#0,d0
+	bne.s	.Odd_address
+	addq.w	#1,d0
+	bra.s	.Skip
+.Odd_address:
+	addq.w	#3,d0
+	cmpi.w	#160,d0
+	bmi.s	.Skip
 	bsr.w	DI_Carriage_return
-	bra.b	.l_1c410
-.l_1c40a:
-	move.w	d0,B_5d44c
-.l_1c410:
-	movem.l	(a7)+,d0-d2/d7/a1/a6
-	rts
+	bra.s	.Exit
+.Skip:
+	move.w	d0,Print_X
+.Exit:
+	movem.l	(sp)+,d0-d2/d7/a1/a6
+	rts	
 
 	section	data
 
@@ -294,17 +301,17 @@ D_51ad2:
 	dc.b	$00,$57,$05,$55
 Ink:
 	dc.b	$01
-D_51ad7:
+Error_msg1:
 	dc.b	$03,$02,$01,$20,$21,$21,$21,$20,$41,$6e,$20,$45,$52,$52,$4f,$52
 	dc.b	$20,$68,$61,$73,$20,$6f,$63,$63,$75,$72,$72,$65,$64,$20,$21,$21
 	dc.b	$21,$20,$0d,$0d,$02,$03,$01,$00
-D_51aff:
+Error_msg2:
 	dc.b	$0d,$03,$02,$01,$20,$50,$72,$65,$73,$73,$20,$61,$6e,$79,$20,$6b
 	dc.b	$65,$79,$20,$74,$6f,$20,$63,$6f,$6e,$74,$69,$6e,$75,$65,$2e,$2e
 	dc.b	$2e,$20,$20,$0d,$0d,$02,$00
-D_51b26:
+Backspace_string:
 	dc.b	$0e,$0e,$5f,$20,$0e,$00
-D_51b2c:
+End_string:
 	dc.b	$0e,$20,$0d,$00
 D_51b30:
 	dc.b	$0e,$20,$5f,$00
@@ -313,7 +320,7 @@ D_51b30:
 
 Prev_screen:
 	ds.b	4
-B_5d44c:
+Print_X:
 	ds.b	2
 B_5d44e:
 	ds.b	2

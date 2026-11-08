@@ -3,6 +3,7 @@
 	section	text
 
 Coord_convert:
+Coord_conv:
 	move.l	d0,-(a7)
 	move.w	d1,d2
 	mulu.w	#$a0,d2

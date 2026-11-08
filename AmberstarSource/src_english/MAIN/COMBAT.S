@@ -28,13 +28,13 @@ Combat_ModInit:
 	sf.b	B_58aad
 	bsr.w	Choose_particle_path
 	lea.l	T_15bab,a0
-	jsr	T_1b786
+	jsr	Load_file
 	move.l	a0,B_58908
 	lea.l	T_15bb7,a0
-	jsr	T_1b786
+	jsr	Load_file
 	move.l	a0,B_5890c
 	lea.l	.l_15b82,a0
-	move.w	B_58910,d0
+	move.w	comback_nr,d0
 	jsr	Load_subfile
 	move.l	a0,B_58912
 	lea.l	.l_15b90,a0
@@ -447,7 +447,7 @@ Combat_DisInit:
 	jsr	Copy_screen
 	lea.l	D_2e070,a0
 	jsr	Set_layout_data
-	move.w	B_58910,d0
+	move.w	comback_nr,d0
 	lea.l	D_2e014,a0
 	lea.l	D_2e016,a1
 	mulu.w	#$6,d0
@@ -2166,8 +2166,8 @@ Execute_round:
 	bra.b	Set_success_factor
 .l_1732e:
 	movea.l	$c(a4),a0
-	move.b	$3a(a0),d0
-	move.b	$3b(a0),d1
+	move.b	Body_conditions(a0),d0
+	move.b	Mind_conditions(a0),d1
 ; Diseases, irritation and blindness lower the chance to hit.
 Set_success_factor:
 	moveq	#100,d2
@@ -2241,7 +2241,7 @@ Remove_dead_participants:
 .l_17416:
 	dbra	d7,.l_173dc
 	movea.l	Current_active_char_data,a0
-	move.w	$3a(a0),d0
+	move.w	Body_conditions(a0),d0
 	andi.w	#$e480,d0
 	beq.b	Check_party_left
 	jsr	Check_party_alive
@@ -2441,10 +2441,10 @@ Flee:
 	btst	#$2,d1
 	bne.b	T_17620
 	movea.l	$c(a4),a0
-	move.w	$4c(a0),d0
-	add.w	$a0(a0),d0
-	add.w	$54(a0),d0
-	add.w	$a8(a0),d0
+	move.w	Attr_3_normal(a0),d0
+	add.w	Attr_3_normal_magic(a0),d0
+	add.w	Attr_7_normal(a0),d0
+	add.w	Attr_7_normal_magic(a0),d0
 	mulu.w	B_589d8,d2
 	divu.w	#$64,d2
 	tst.w	d0
@@ -2472,7 +2472,7 @@ Flee:
 	movea.l	(a1),a2
 	tst.b	(a4)
 	beq.b	.l_17706
-	move.w	$c6(a0),d0
+	move.w	Battle_experience(a0),d0
 	add.w	d0,B_589d6
 	bset	#$7,$2f(a2)
 	bra.b	.l_17712
@@ -2515,7 +2515,7 @@ Execute_attacks:
 	movea.l	$c(a4),a0
 	movea.l	$c(a5),a1
 	moveq	#0,d0
-	move.b	$43(a0),d0
+	move.b	Attacks_per_round(a0),d0
 	bne.b	.l_1779c
 	movem.l	a0-a1,-(a7)
 	lea.l	D_2f0d7,a1
@@ -2531,8 +2531,8 @@ Execute_attacks:
 	add.w	d0,d0
 .l_177ae:
 	move.w	d0,B_58960
-	move.b	$20(a0),d0
-	cmp.b	$40(a1),d0
+	move.b	Magic_bonus_weapon(a0),d0
+	cmp.b	Magic_bonus_to_hit(a1),d0
 	blt.w	T_179ac
 	bra.b	Attack_once
 T_177c2:
@@ -2551,8 +2551,8 @@ Attack_once:
 	bsr.w	Start_attack_animation
 .l_177e6:
 	moveq	#0,d0
-	move.b	$6(a0),d0
-	add.w	$b0(a0),d0
+	move.b	Skill_1(a0),d0
+	add.w	Skill_1_normal_magic(a0),d0
 	tst.b	(a4)
 	bne.b	.l_177fc
 	add.w	Spell_3_data,d0
@@ -2564,8 +2564,8 @@ Attack_once:
 	tst.w	$4(a5)
 	bne.b	.l_1782c
 	moveq	#0,d0
-	move.b	$7(a1),d0
-	add.w	$b2(a1),d0
+	move.b	Skill_2(a1),d0
+	add.w	Skill_2_normal_magic(a1),d0
 	tst.b	(a5)
 	bne.b	.l_17822
 	add.w	Spell_2_data,d0
@@ -2574,10 +2574,10 @@ Attack_once:
 	bpl.w	T_179d8
 .l_1782c:
 	moveq	#0,d0
-	move.b	$1f(a0),d0
-	add.w	$96(a0),d0
-	move.w	$48(a0),d2
-	add.w	$9c(a0),d2
+	move.b	Damage(a0),d0
+	add.w	Damage_magic(a0),d0
+	move.w	Attr_1_normal(a0),d2
+	add.w	Attr_1_normal_magic(a0),d2
 	ext.l	d2
 	divs.w	#$19,d2
 	add.w	d0,d2
@@ -2588,13 +2588,13 @@ Attack_once:
 	swap	d0
 	move.w	d0,d4
 	moveq	#0,d0
-	move.b	$1e(a1),d0
-	add.w	$94(a1),d0
+	move.b	Protection(a1),d0
+	add.w	Protection_magic(a1),d0
 	moveq	#0,d2
-	move.b	$21(a1),d2
+	move.b	Magic_bonus_armour(a1),d2
 	add.w	d2,d0
-	move.w	$50(a1),d2
-	add.w	$a4(a1),d2
+	move.w	Attr_5_normal(a1),d2
+	add.w	Attr_5_normal_magic(a1),d2
 	ext.l	d2
 	divs.w	#$19,d2
 	add.w	d0,d2
@@ -2607,7 +2607,7 @@ Attack_once:
 	ble.w	T_179f2
 	movem.l	a0-a1,-(a7)
 	jsr	Init_RText
-	lea.l	$f0(a0),a0
+	lea.l	Char_name(a0),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	D_2e432,a0
 	jsr	Add_ASCII_2_RText
@@ -2615,7 +2615,7 @@ Attack_once:
 	moveq	#2,d0
 	jsr	Add_encoded_2_RText
 	movem.l	(a7),a0-a1
-	lea.l	$f0(a1),a0
+	lea.l	Char_name(a1),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	D_2e432,a0
 	jsr	Add_ASCII_2_RText
@@ -2640,13 +2640,13 @@ Attack_once:
 	movem.l	(a7)+,a0-a1
 	tst.b	(a5)
 	bne.b	.l_1796e
-	bclr	#$2,$3b(a1)
+	bclr	#$2,Mind_conditions(a1)
 	moveq	#0,d0
 	move.b	$1(a5),d0
 	move.w	d4,d1
 	bsr.w	T_160ce
 	jsr	Do_damage
-	tst.w	$86(a1)
+	tst.w	Life_points_normal(a1)
 	bgt.w	T_17a22
 	moveq	#0,d0
 	moveq	#0,d1
@@ -2750,12 +2750,12 @@ T_17a22:
 	lea.l	$1aa(a0),a3
 	tst.b	$2(a3)
 	beq.b	.l_17afa
-	clr.b	$27(a0)
+	clr.b	Left_hand_place_counter(a0)
 	lea.l	$1fa(a0),a3
 	moveq	#0,d0
 	move.w	$22(a3),d0
-	sub.l	d0,$ec(a0)
-	subq.b	#$1,$1c(a0)
+	sub.l	d0,Weight_normal(a0)
+	subq.b	#$1,Hands_occupied(a0)
 	lea.l	$1aa(a0),a3
 	move.b	$2(a3),d0
 	lea.l	$2b(a0),a2
@@ -2767,8 +2767,8 @@ T_17a22:
 	cmp.b	$f(a3),d0
 	bne.b	.l_17ad4
 	subq.b	#$1,(a2)
-	move.b	#$1,$27(a0)
-	addq.b	#$1,$1c(a0)
+	move.b	#$1,Left_hand_place_counter(a0)
+	addq.b	#$1,Hands_occupied(a0)
 	bra.b	.l_17afa
 .l_17ad4:
 	dc.b	$52,$8a,$47,$eb,$00,$28,$52,$41,$51,$cf,$ff,$de,$45,$f9
@@ -2828,7 +2828,7 @@ Execute_spell_action:
 Show_spell_result:
 	jsr	Init_RText
 	movea.l	$c(a4),a0
-	lea.l	$f0(a0),a0
+	lea.l	Char_name(a0),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
@@ -2871,7 +2871,7 @@ T_17c08:
 	bmi.b	.l_17c96
 	jsr	Init_RText
 	movea.l	$c(a4),a0
-	lea.l	$f0(a0),a0
+	lea.l	Char_name(a0),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
@@ -3233,7 +3233,7 @@ T_18176:
 	movem.l	a0-a1,-(a7)
 	jsr	Init_RText
 	movea.l	$c(a4),a0
-	lea.l	$f0(a0),a0
+	lea.l	Char_name(a0),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	D_2e432,a0
 	jsr	Add_ASCII_2_RText
@@ -3247,7 +3247,7 @@ T_181b8:
 	movem.l	d0/a0,-(a7)
 	jsr	Init_RText
 	movea.l	$c(a4),a0
-	lea.l	$f0(a0),a0
+	lea.l	Char_name(a0),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	D_2e432,a0
 	jsr	Add_ASCII_2_RText
@@ -4022,7 +4022,7 @@ T_18ca0:
 	beq.b	.l_18cd6
 	movea.l	(a1),a0
 	move.w	#$e080,d1
-	and.w	$3a(a0),d1
+	and.w	Body_conditions(a0),d1
 	bne.b	.l_18cd6
 	jsr	Random
 	mulu.w	#$10,d0
@@ -4779,7 +4779,7 @@ End_of_combat:
 	bra.b	.l_196c2
 .l_196ac:
 	movea.l	Current_active_char_data,a0
-	move.w	$3a(a0),d0
+	move.w	Body_conditions(a0),d0
 	andi.w	#$e406,d0
 	beq.b	.l_196c2
 	jsr	Check_party_alive
@@ -4831,9 +4831,9 @@ T_19752:
 	tst.l	(a0)
 	beq.b	.l_19770
 	movea.l	(a0),a1
-	move.w	$3a(a1),d0
+	move.w	Body_conditions(a1),d0
 	andi.w	#$ff72,d0
-	move.w	d0,$3a(a1)
+	move.w	d0,Body_conditions(a1)
 .l_19770:
 	addq.l	#$4,a0
 	dbra	d7,.l_1975e
@@ -4929,7 +4929,7 @@ T_197d0:
 	tst.l	(a0)
 	beq.b	.l_19890
 	movea.l	(a0),a1
-	move.w	$3a(a1),d0
+	move.w	Body_conditions(a1),d0
 	andi.w	#$e080,d0
 	bne.b	.l_19890
 	addq.w	#$1,d2
@@ -4948,10 +4948,10 @@ T_197d0:
 	tst.l	(a0)
 	beq.b	.l_198c4
 	movea.l	(a0),a1
-	move.w	$3a(a1),d0
+	move.w	Body_conditions(a1),d0
 	andi.w	#$e080,d0
 	bne.b	.l_198c4
-	add.l	d6,$cc(a1)
+	add.l	d6,Experience_points(a1)
 .l_198c4:
 	addq.l	#$4,a0
 	dbra	d7,.l_198b0
@@ -5356,17 +5356,17 @@ T_19f36:
 	tst.l	(a1)
 	beq.b	.l_19f82
 	movea.l	(a1),a2
-	move.w	$48(a2),d1
-	add.w	$9c(a2),d1
+	move.w	Attr_1_normal(a2),d1
+	add.w	Attr_1_normal_magic(a2),d1
 	mulu.w	#$3e8,d1
-	sub.l	$ec(a2),d1
+	sub.l	Weight_normal(a2),d1
 	cmp.l	d0,d1
 	bmi.b	.l_19f82
-	move.w	$92(a2),d1
+	move.w	Food_rations(a2),d1
 	add.w	d0,d1
 	bvs.b	.l_19f82
 	move.w	#$e402,d1
-	and.w	$3a(a2),d1
+	and.w	Body_conditions(a2),d1
 	bne.b	.l_19f82
 	bset	d7,d6
 .l_19f82:
@@ -5531,8 +5531,8 @@ T_1a212:
 	jsr	T_0f614
 	jsr	T_00208
 .l_1a234:
-	jsr	T_1c0e8
-	jsr	T_1c1aa
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_2f122,a0
 	jsr	DI_Print
@@ -5586,7 +5586,7 @@ T_1a2ba:
 	sf.b	Party_invisible
 	sf.b	Stygian
 	move.l	#PA_Stack,PA_sp
-	move.l	#B_5d8b2,MA_sp
+	move.l	#MA_Stack,MA_sp
 	move.l	#B_5d0c4,Object_sp
 	move.l	#D_51c84,Mptr_sp
 	move.l	#B_584f8,Module_sp
@@ -5601,7 +5601,7 @@ T_1a2ba:
 	clr.l	D_28188
 	moveq	#0,d0
 	jsr	Play_song
-	lea.l	D_2fcfa,a0
+	lea.l	Main_root,a0
 	jsr	Push_Root
 	jsr	T_1d278
 	lea.l	D_2e7ae,a0
@@ -5650,7 +5650,7 @@ T_1a3dc:
 	lea.l	D_2f18f,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c15e
+	jsr	OFF_Diag_screen
 	move.b	#$0,Mouse_flag
 	movea.l	Off_screen,a6
 	jsr	Clear_screen
@@ -7110,7 +7110,7 @@ T_1b73c:
 T_1b780:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-T_1b786:
+Load_file:
 	movem.l	d0-d7/a1-a6,-(a7)
 	moveq	#0,d6
 	movea.l	a0,a5
@@ -7206,4 +7206,4 @@ T_1b786:
 	andi.b	#$df,$fffffa09.w
 	move.w	(a7)+,sr
 	movem.l	(a7)+,d0-d7/a1-a6
-	bra.w	T_1b786
+	bra.w	Load_file

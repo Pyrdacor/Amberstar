@@ -172,15 +172,15 @@ Handle_spell:
 	movea.l	Current_active_char_data,a1
 	move.b	$1(a0),d0
 	ext.w	d0
-	move.w	$8a(a1),d1
+	move.w	Power_points_normal(a1),d1
 	sub.w	d0,d1
 	bpl.b	.l_13a8e
 	moveq	#0,d1
 .l_13a8e:
-	move.w	d1,$8a(a1)
+	move.w	d1,Power_points_normal(a1)
 	moveq	#0,d0
-	move.b	$f(a1),d0
-	add.w	$c2(a1),d0
+	move.b	Skill_10(a1),d0
+	add.w	Skill_10_normal_magic(a1),d0
 	jsr	Probe
 	smi.b	B_5882f
 	bpl.b	.l_13aca
@@ -277,7 +277,7 @@ T_13bd0:
 	beq.b	.l_13c06
 	movea.l	(a1),a0
 	move.w	#$e000,d1
-	and.w	$3a(a0),d1
+	and.w	Body_conditions(a0),d1
 	bne.b	.l_13c06
 	jsr	Random
 	mulu.w	#$10,d0
@@ -515,7 +515,7 @@ T_13f1c:
 	adda.w	d0,a1
 	tst.b	(a1)
 	beq.w	.l_13fc6
-	lea.l	$132(a0),a2
+	lea.l	Inv_data(a0),a2
 	mulu.w	#$28,d0
 	adda.w	d0,a2
 	btst	#$0,$18(a2)
@@ -528,7 +528,7 @@ T_13f1c:
 	clr.b	(a1)
 	moveq	#0,d2
 	move.w	$22(a2),d2
-	sub.l	d2,$ec(a0)
+	sub.l	d2,Weight_normal(a0)
 	moveq	#0,d2
 	moveq	#0,d3
 	move.b	(a2),d2
@@ -754,35 +754,38 @@ Magic_compass:
 	bsr.w	Push_Module
 .Exit:
 	rts	
+; ---- MagicComp_DisInit (original source: MAIN/MAGIC.ASM)
 MagicComp_DisInit:
-	moveq	#48,d0
-	moveq	#64,d1
-	moveq	#4,d2
-	moveq	#4,d3
-	moveq	#1,d6
+	moveq.l	#48,d0
+	moveq.l	#64,d1
+	moveq.l	#4,d2
+	moveq.l	#4,d3
+	moveq.l	#1,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256
-	lea.l	D_32f60,a0
+	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	lea.l	Daynight_icn+2048,a0
 	move.w	View_direction,d0
-	lsl.w	#$8,d0
+	lsl.w	#8,d0
 	add.w	d0,d0
 	adda.w	d0,a0
-	move.w	#$40,d0
-	move.w	#$50,d1
-	moveq	#2,d6
-	moveq	#32,d7
+	move.w	#48+16,d0
+	move.w	#64+16,d1
+	moveq.l	#2,d6
+	moveq.l	#32,d7
 	movea.l	Off_screen,a6
 	jsr	Blot_unmasked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	rts
+	rts	
+; ---- MagicComp_DisExit (original source: MAIN/MAGIC.ASM)
 MagicComp_DisExit:
-	btst	#$1,Mouse_button_state
-	bne.b	MagicComp_DisExit
-	move.w	B_58256,d0
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
 	jsr	Close_window
-	rts
+	rts	
 ; ---- Identify (original source: MAIN/MAGIC.ASM)
 Identify:
 	movea.l	Textfile_ptr,a0
@@ -852,7 +855,7 @@ T_14396:
 	adda.w	d0,a1
 	tst.b	(a1)
 	beq.b	T_14430
-	lea.l	$132(a0),a2
+	lea.l	Inv_data(a0),a2
 	mulu.w	#$28,d0
 	adda.w	d0,a2
 	btst	#$7,$18(a2)
@@ -1673,7 +1676,7 @@ T_14e74:
 	adda.w	d0,a1
 	tst.b	(a1)
 	beq.b	T_14efe
-	lea.l	$132(a0),a2
+	lea.l	Inv_data(a0),a2
 	mulu.w	#$28,d0
 	adda.w	d0,a2
 	cmpi.b	#$4,$1(a2)
@@ -1695,13 +1698,13 @@ T_14e74:
 .l_14ed2:
 	move.b	d1,$11(a2)
 	moveq	#0,d1
-	move.b	$1f(a0),d1
+	move.b	Damage(a0),d1
 	add.w	d0,d1
 	cmpi.w	#$80,d1
 	bmi.b	.l_14ee6
 	moveq	#127,d1
 .l_14ee6:
-	move.b	d1,$1f(a0)
+	move.b	d1,Damage(a0)
 	moveq	#0,d0
 	move.b	B_58832,d0
 	moveq	#0,d2
@@ -2074,15 +2077,15 @@ SCSelW_DisInit:
 	move.w	#$a,d2
 	move.w	#$5,d3
 	moveq	#1,d6
-	lea.l	D_2fade,a0
+	lea.l	SCSelW_L1,a0
 	jsr	Open_window
-	move.w	d0,B_58818
-	lea.l	D_2dd9e,a0
+	move.w	d0,SCSelW_handle
+	lea.l	SCSelW_PA,a0
 	jsr	Push_PA
 	movea.l	Off_screen,a6
 	moveq	#1,d1
 	movea.l	Current_active_char_data,a0
-	move.b	$1a(a0),d2
+	move.b	Spell_class_counter(a0),d2
 	lea.l	D_48868,a1
 	moveq	#6,d7
 .l_1544c:
@@ -2100,34 +2103,38 @@ SCSelW_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
+; ---- SCSelW_DisExit (original source: MAIN/MAGIC.ASM)
 SCSelW_DisExit:
-	move.w	B_58818,d0
+	move.w	SCSelW_handle,d0
 	jsr	Close_window
 	jsr	Pop_PA
-	rts
-T_15492:
-	btst	#$1,Mouse_button_state
-	bne.b	T_15492
-	lsr.w	#$8,d0
+	rts	
+; ---- ClassSelected (original source: MAIN/MAGIC.ASM)
+ClassSelected:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	lsr.w	#8,d0
 	movea.l	Current_active_char_data,a0
-	btst	d0,$1a(a0)
-	beq.b	.l_154d4
+	btst	d0,Spell_class_counter(a0)
+	beq.s	.Exit
 	move.w	d0,Selected_class
 	bsr.w	Pop_Module
-	lea.l	$d0(a0),a0
+	lea.l	Spells_class_1(a0),a0
 	add.w	d0,d0
 	add.w	d0,d0
-	tst.l	-$4(a0,d0.w)
-	bne.b	.l_154ca
-	st.b	No_spell_selected
-	bra.b	.l_154d4
-.l_154ca:
+	tst.l	-4(a0,d0.w)
+	bne.s	.Select
+	st	No_spell_selected
+	bra.s	.Exit
+.Select:
 	lea.l	SpSelW_Mod,a0
 	bsr.w	Push_Module
-.l_154d4:
-	rts
-T_154d6:
-	st.b	No_spell_selected
+.Exit:
+	rts	
+; ---- Exit_SCSelW (original source: MAIN/MAGIC.ASM)
+Exit_SCSelW:
+	st	No_spell_selected
 	bra.w	Pop_Module
 SpSelW_ModInit:
 	sf.b	No_spell_selected
@@ -2136,7 +2143,7 @@ SpSelW_ModInit:
 	moveq	#0,d1
 	moveq	#1,d2
 	move.w	Spell_area_type,d4
-	move.w	$8a(a0),d6
+	move.w	Power_points_normal(a0),d6
 	lea.l	D_48520,a1
 	move.w	Selected_class,d0
 	subq.w	#$1,d0
@@ -2556,7 +2563,7 @@ B_58908:
 	ds.b	4
 B_5890c:
 	ds.b	4
-B_58910:
+comback_nr:
 	ds.b	2
 B_58912:
 	ds.b	4
@@ -2707,7 +2714,7 @@ Magic_anim_counter:
 	ds.b	2
 Char_damage:
 	ds.b	12
-B_58ec0:
+Damage_timers:
 	ds.b	1
 B_58ec1:
 	ds.b	5
@@ -2723,7 +2730,7 @@ Modifications_ptr:
 	ds.b	1028
 First:
 	ds.b	1
-B_592dd:
+Overweight:
 	ds.b	1
 B_592de:
 	ds.b	2
@@ -2744,6 +2751,7 @@ B_5930c:
 B_59312:
 	ds.b	6
 Month:
+Party_data:
 	ds.b	2
 Day:
 	ds.b	2

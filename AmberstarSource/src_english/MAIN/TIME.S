@@ -215,7 +215,7 @@ DoAutoIcon:
 	lea.l	Chard_ptrs,a0
 	lea.l	Char_status_icons,a1
 	lea.l	B_57d58,a3
-	move.b	B_592dd,d5
+	move.b	Overweight,d5
 	moveq	#1,d7
 .l_0678c:
 	tst.l	(a0)
@@ -226,7 +226,7 @@ DoAutoIcon:
 	bra.b	.l_067e6
 .l_0679a:
 	movea.l	(a0),a2
-	move.w	$3a(a2),d1
+	move.w	Body_conditions(a2),d1
 	move.w	#$e000,d2
 	and.w	d1,d2
 	bne.b	.l_067e6

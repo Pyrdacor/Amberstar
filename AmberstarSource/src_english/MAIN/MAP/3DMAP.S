@@ -951,32 +951,34 @@ Blot_mirrored_unmasked_block:
 	dc.b	91,219,59,187,123,251,7,135,71,199,39,167,103,231,23,151,87,215,55,183,119,247,15,143,79,207,47
 	dc.b	175,111,239,31,159,95,223,63,191,127,255
 	even	
+; ---- Prepare_3D_map (original source: MAIN/MAP/3DMAP.ASM)
 Prepare_3D_map:
-	movem.l	d0-d1/d7/a0-a3,-(a7)
-	lea.l	D_2f1ba,a0
-	move.w	$2(a5),d0
+	movem.l	d0/d1/d7/a0-a3,-(sp)
+	lea.l	Labdata_filename,a0
+	move.w	Labdatafile_nr(a5),d0
 	jsr	Load_subfile
 	movea.l	a0,a3
-	lea.l	$2(a0),a2
+	lea.l	2(a0),a2
 	lea.l	Labblock_ptrs,a1
-	moveq	#0,d7
+	moveq.l	#0,d7
 	move.b	(a2)+,d7
-	bne.b	.l_03b6c
-	lea.l	D_2edb3,a1
+	bne.s	.Ok
+.Error:
+	lea.l	ET_Prepare_3D_map_1,a1	; ERROR "[ Prepare_3D_map ] : Error in LAB_DATA !!!"
 	jsr	DI_Error
-	bra.w	.l_03c5e
-.l_03b6c:
-	subq.w	#$1,d7
+	bra.w	.Exit
+.Ok:
+	subq.w	#1,d7
 	move.w	d7,Nr_labblocks
-.l_03b74:
-	lea.l	D_2f1c8,a0
-	moveq	#0,d0
+.Loop:
+	lea.l	Labblock_filename,a0
+	moveq.l	#0,d0
 	move.b	(a2)+,d0
 	jsr	Load_subfile
 	move.l	a0,(a1)+
-	dbra	d7,.l_03b74
-	addq.l	#$3,a2
-	lea.l	D_2f1d6,a1
+	dbra	d7,.Loop
+	addq.l	#3,a2
+	lea.l	Backgrnd_filename,a1
 	movea.l	a1,a0
 	move.b	(a2)+,d0
 	jsr	Load_subfile
@@ -985,17 +987,17 @@ Prepare_3D_map:
 	move.b	(a2)+,d0
 	jsr	Load_subfile
 	move.l	a0,Floor_ptr
-	addq.l	#$1,a2
-	lea.l	D_2f1e4,a0
-	moveq	#0,d0
+	addq.l	#1,a2
+	lea.l	Colpall_filename,a0
+	moveq.l	#0,d0
 	move.b	(a2)+,d0
 	jsr	Load_subfile
 	move.l	a0,Colpall_ptrs
 	movea.l	a3,a0
 	jsr	Free_memory
 	bsr.w	Init_maptexts
-	lea.l	$ac5(a5),a0
-	moveq	#0,d7
+	lea.l	Max_block_num(a5),a0
+	moveq.l	#0,d7
 	move.b	(a0)+,d7
 	move.l	a0,Iconstats_ptr
 	adda.w	d7,a0
@@ -1009,25 +1011,25 @@ Prepare_3D_map:
 	move.l	a0,Lab_IC_ptr
 	adda.w	d7,a0
 	move.l	a0,Map_pointer
-	moveq	#0,d0
-	move.b	$7(a5),d0
+	moveq.l	#0,d0
+	move.b	Map_width(a5),d0
 	move.w	d0,Width_of_map
-	moveq	#0,d1
-	move.b	$8(a5),d1
+	moveq.l	#0,d1
+	move.b	Map_height(a5),d1
 	move.w	d1,Height_of_map
 	mulu.w	d0,d1
 	move.w	d1,Size_of_map
-	move.b	#$1,Anim_speed
-	move.b	#$1,Anim_count
-	move.w	#$c,Anim_bias
+	move.b	#M3_animspeed,Anim_speed
+	move.b	#M3_animspeed,Anim_count
+	move.w	#12,Anim_bias
 	move.w	Map_nr,d7
 	movea.l	Mapd_ptr,a0
 	bsr.w	Make_modifications
 	jsr	Init_automap
 	jsr	Update_automap
-.l_03c5e:
-	movem.l	(a7)+,d0-d1/d7/a0-a3
-	rts
+.Exit:
+	movem.l	(sp)+,d0/d1/d7/a0-a3
+	rts	
 
 	section	data
 

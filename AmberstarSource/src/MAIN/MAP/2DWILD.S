@@ -167,25 +167,26 @@ W2_DisInit:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts
+; ---- W2_ModExit (original source: MAIN/MAP/2DWILD.ASM)
 W2_ModExit:
 	lea.l	Trans_buf,a0
-	moveq	#0,d0
+	moveq.l	#0,d0
 	move.b	d0,(a0)+
 	move.w	d0,(a0)+
-	moveq	#34,d7
-.l_03f1a:
+	moveq.l	#35-1,d7
+.Loop:
 	move.l	d0,(a0)+
-	dbra	d7,.l_03f1a
+	dbra	d7,.Loop
 	lea.l	Quad_map,a1
-	moveq	#7,d7
-.l_03f28:
+	moveq.l	#8-1,d7
+.Loop_L1:
 	movea.l	(a1)+,a0
 	jsr	Free_memory
-	dbra	d7,.l_03f28
+	dbra	d7,.Loop_L1
 	movea.l	Icondata_ptr,a0
 	jsr	Free_memory
 	jsr	Next_generation
-	rts
+	rts	
 T_03f48:
 	st.b	Time_lock
 ; ---- W2_DisExit (original source: MAIN/MAP/2DWILD.ASM)
@@ -204,111 +205,106 @@ W2_DisExit:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts	
+; ---- Quad_evaluate (original source: MAIN/MAP/2DWILD.ASM)
 Quad_evaluate:
-	movem.l	d0-d4/a0-a1,-(a7)
+	movem.l	d0-d4/a0/a1,-(sp)
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	move.w	World_X,d2
 	move.w	World_Y,d3
 	move.w	Quad_index,d4
-	cmpi.w	#$1,d0
-	bpl.b	.l_03fc8
-	addi.w	#$32,d0
-	bclr	#$0,d4
-	subq.w	#$1,d2
-	bpl.b	.l_03fe0
-	move.w	#$7,d2
-	bra.b	.l_03fe0
-.l_03fc8:
-	cmpi.w	#$33,d0
-	bmi.b	.l_03fe0
-	subi.w	#$32,d0
-	bset	#$0,d4
-	addq.w	#$1,d2
-	cmpi.w	#$8,d2
-	bmi.b	.l_03fe0
-	moveq	#0,d2
-.l_03fe0:
-	cmpi.w	#$1,d1
-	bpl.b	.l_03ff8
-	addi.w	#$32,d1
-	bclr	#$1,d4
-	subq.w	#$1,d3
-	bpl.b	.l_04010
-	move.w	#$7,d3
-	bra.b	.l_04010
-.l_03ff8:
-	cmpi.w	#$33,d1
-	bmi.b	.l_04010
-	subi.w	#$32,d1
-	bset	#$1,d4
-	addq.w	#$1,d3
-	cmpi.w	#$8,d3
-	bmi.b	.l_04010
-	moveq	#0,d3
-.l_04010:
+	cmpi.w	#1,d0
+	bpl.s	.Skip_1
+	addi.w	#Submap_width,d0
+	bclr	#0,d4
+	subq.w	#1,d2
+	bpl.s	.Check_Y
+	move.w	#World_width-1,d2
+	bra.s	.Check_Y
+.Skip_1:
+	cmpi.w	#Submap_width+1,d0
+	bmi.s	.Check_Y
+	subi.w	#Submap_width,d0
+	bset	#0,d4
+	addq.w	#1,d2
+	cmpi.w	#World_width,d2
+	bmi.s	.Check_Y
+	moveq.l	#0,d2
+.Check_Y:
+	cmpi.w	#1,d1
+	bpl.s	.Skip_2
+	addi.w	#Submap_height,d1
+	bclr	#1,d4
+	subq.w	#1,d3
+	bpl.s	.Cont
+	move.w	#World_height-1,d3
+	bra.s	.Cont
+.Skip_2:
+	cmpi.w	#Submap_height+1,d1
+	bmi.s	.Cont
+	subi.w	#Submap_height,d1
+	bset	#1,d4
+	addq.w	#1,d3
+	cmpi.w	#World_height,d3
+	bmi.s	.Cont
+	moveq.l	#0,d3
+.Cont:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	move.w	d2,World_X
 	move.w	d3,World_Y
 	move.w	d4,Quad_index
-	mulu.w	#$8,d3
+	mulu.w	#World_width,d3
 	add.w	d2,d3
-	addq.w	#$1,d3
+	addq.w	#1,d3
 	move.w	d3,Map_nr
 	move.w	Quad_X,d0
 	move.w	Quad_Y,d1
-	moveq	#0,d3
-	cmpi.w	#$8,d0
-	bmi.b	.l_0405c
-	cmpi.w	#$5e,d0
-	bmi.b	.l_0405a
-	addq.w	#$8,d3
-	bra.b	.l_0405c
-.l_0405a:
-	addq.w	#$4,d3
-.l_0405c:
-	cmpi.w	#$8,d1
-	bmi.b	.l_04072
-	cmpi.w	#$5e,d1
-	bmi.b	.l_0406e
-	addi.w	#$18,d3
-	bra.b	.l_04072
-.l_0406e:
-	addi.w	#$c,d3
-.l_04072:
+	moveq.l	#0,d3
+	cmpi.w	#Trigger+1,d0
+	bmi.s	.Check_Y_L1
+	cmpi.w	#101-Trigger,d0
+	bmi.s	.Mid_X_L1
+	addq.w	#8,d3
+	bra.s	.Check_Y_L1
+.Mid_X_L1:
+	addq.w	#4,d3
+.Check_Y_L1:
+	cmpi.w	#Trigger+1,d1
+	bmi.s	.Cont_L1
+	cmpi.w	#101-Trigger,d1
+	bmi.s	.Mid_Y_L1
+	addi.w	#24,d3
+	bra.s	.Cont_L1
+.Mid_Y_L1:
+	addi.w	#12,d3
+.Cont_L1:
 	move.w	World_X,d0
 	move.w	World_Y,d1
 	move.w	Quad_index,d2
 	lea.l	Quad_map,a1
-	lea.l	.l_040d2,a0
-	move.l	(a0,d3.w),d3
-	beq.b	.l_040a0
+	lea.l	Shift_tab,a0
+	move.l	0(a0,d3.w),d3
+	beq.s	.Skip_L2
 	movea.l	d3,a0
 	jsr	(a0)
 	move.w	d2,Quad_index
-.l_040a0:
+.Skip_L2:
 	lea.l	Quad_map,a1
 	move.w	Quad_index,d2
 	add.w	d2,d2
 	add.w	d2,d2
-	movea.l	(a1,d2.w),a0
+	movea.l	0(a1,d2.w),a0
 	move.l	a0,Mapd_ptr
-	lea.l	$ac5(a0),a0
+	lea.l	Map_data(a0),a0
 	move.l	a0,Map_pointer
-	move.l	$10(a1,d2.w),Maptext_ptr
-	movem.l	(a7)+,d0-d4/a0-a1
-	rts
-.l_040d2:
-	dc.l	Shift_UL	; ori.b #$f6, d0
-	dc.l	Shift_U	; ori.b #$8c, d0
-	dc.l	Shift_UR	; ori.b #$16, d0
-	dc.l	Shift_L	; ori.b #$ac, d0
-	ori.b	#$0,d0
-	dc.l	Shift_R	; ori.b #$36, d0
-	dc.l	Shift_DL	; ori.b #$c0, d0
-	dc.l	Shift_D	; ori.b #$5a, d0
-	dc.l	Shift_DR	; ori.b #$e4, d0
+	move.l	16(a1,d2.w),Maptext_ptr
+	movem.l	(sp)+,d0-d4/a0/a1
+	rts	
+Shift_tab:
+	dc.l	Shift_UL,Shift_U,Shift_UR
+	dc.l	Shift_L,0,Shift_R
+	dc.l	Shift_DL,Shift_D,Shift_DR
 ; ---- Shift_UL (original source: MAIN/MAP/2DWILD.ASM)
 Shift_UL:
 	movea.l	4(a1),a0

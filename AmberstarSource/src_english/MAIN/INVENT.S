@@ -18,7 +18,7 @@ Inv1_ModInit:
 	jsr	Push_MA
 	movea.l	Current_inventory_chardat_ptr,a0
 	lea.l	$22(a0),a1
-	lea.l	$132(a0),a0
+	lea.l	Inv_data(a0),a0
 	move.l	a0,Itemdata_ptr
 	move.l	a1,Itemslots_ptr
 	tst.b	B_587f8
@@ -326,7 +326,7 @@ Inv2_DisInit:
 	jsr	Show_layout
 	movea.l	Current_inventory_chardat_ptr,a0
 	lea.l	$22(a0),a1
-	lea.l	$132(a0),a0
+	lea.l	Inv_data(a0),a0
 	move.l	a0,Itemdata_ptr
 	move.l	a1,Itemslots_ptr
 	movea.l	Current_inventory_chardat_ptr,a1
@@ -499,12 +499,12 @@ Display_quantities:
 	rts	
 T_11244:
 	movea.l	Current_inventory_chardat_ptr,a0
-	move.l	$ec(a0),d2
+	move.l	Weight_normal(a0),d2
 	divu.w	#$3e8,d2
 	ext.l	d2
 	moveq	#0,d3
-	move.w	$48(a0),d3
-	add.w	$9c(a0),d3
+	move.w	Attr_1_normal(a0),d3
+	add.w	Attr_1_normal_magic(a0),d3
 	lea.l	D_2dbef,a0
 	cmp.l	d2,d3
 	bpl.b	.l_1128c
@@ -615,102 +615,103 @@ Update_CIL:
 	subq.b	#1,CIL_update
 .Exit:
 	rts	
+; ---- Display_character (original source: MAIN/INVENT.ASM)
 Display_character:
-	movem.l	d0-d1/d6-d7/a0/a2-a3,-(a7)
-	moveq	#2,d0
+	movem.l	d0/d1/d6/d7/a0/a2/a3,-(sp)
+	moveq.l	#2,d0
 	jsr	IG_Set_paper
-	moveq	#0,d0
-	lea.l	$6b0(a1),a0
-	move.w	#$d0,d0
-	move.w	#$31,d1
-	moveq	#2,d6
+	moveq.l	#0,d0
+	lea.l	Portrait+6(a1),a0
+	move.w	#208,d0
+	move.w	#49,d1
+	moveq.l	#2,d6
 	jsr	Blot_unmasked_block
-	moveq	#1,d0
+	moveq.l	#1,d0
 	jsr	IG_Set_ink
-	move.w	#$d0,d0
-	move.w	#$54,d1
-	move.w	#$60,d2
-	lea.l	$f0(a1),a0
+	move.w	#208,d0
+	move.w	#84,d1
+	move.w	#96,d2
+	lea.l	Char_name(a1),a0
 	jsr	Print_centered_string
-	moveq	#15,d0
+	moveq.l	#15,d0
 	jsr	IG_Set_ink
-	move.w	#$f2,d0
-	move.w	#$38,d1
+	move.w	#208+34,d0
+	move.w	#49+7,d1
 	jsr	IG_Set_cursor
-	move.b	$3(a1),d0
-	beq.b	.l_1142c
+	move.b	Character_sex(a1),d0
+	beq.s	.Male
 	lea.l	Female_name,a0
-	bra.b	.l_11432
-.l_1142c:
+	bra.s	.Cont
+.Male:
 	lea.l	Male_name,a0
-.l_11432:
+.Cont:
 	jsr	IG_Print
-	cmpi.b	#$9,$4(a1)
-	bpl.b	.l_114b6
-	move.w	#$f2,d0
-	move.w	#$31,d1
+	cmpi.b	#9,Character_race(a1)
+	bpl.s	.No_class
+	move.w	#208+34,d0
+	move.w	#49,d1
 	jsr	IG_Set_cursor
-	lea.l	D_47352,a2
-	moveq	#0,d0
-	move.b	$4(a1),d0
+	lea.l	Race_dat+Race_names,a2
+	moveq.l	#0,d0
+	move.b	Character_race(a1),d0
 	add.w	d0,d0
-	move.w	(a2,d0.w),d0
+	move.w	0(a2,d0.w),d0
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-	tst.b	$5(a1)
-	beq.b	.l_114b6
-	move.w	#$f2,d0
-	move.w	#$46,d1
+	tst.b	Character_class(a1)
+	beq.s	.No_class
+	move.w	#208+34,d0
+	move.w	#49+21,d1
 	jsr	IG_Set_cursor
-	lea.l	D_48472,a2
-	moveq	#0,d0
-	move.b	$5(a1),d0
+	lea.l	Class_dat+Class_names,a2
+	moveq.l	#0,d0
+	move.b	Character_class(a1),d0
 	add.w	d0,d0
-	move.w	(a2,d0.w),d0
+	move.w	0(a2,d0.w),d0
 	bsr.w	Get_word
-	move.b	#$20,(a3)+
-	moveq	#0,d0
-	move.b	$1b(a1),d0
-	moveq	#2,d7
+	move.b	#$20,(a3)+	; CHANGE: was "move.b #" ",(a3)+"
+	moveq.l	#0,d0
+	move.b	Level_nr(a1),d0
+	moveq.l	#2,d7
 	bsr.w	LConvert_number
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-.l_114b6:
-	move.w	#$f2,d0
-	move.w	#$3f,d1
+.No_class:
+	move.w	#208+34,d0
+	move.w	#49+14,d1
 	jsr	IG_Set_cursor
 	lea.l	Age_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	move.w	$58(a1),d0
-	add.w	$ac(a1),d0
-	add.w	Time_data_year,d0
-	moveq	#3,d7
+	move.w	Attr_9_normal(a1),d0
+	add.w	Attr_9_normal_magic(a1),d0
+	add.w	Time_data_year,d0	; CHANGE: added
+	moveq.l	#3,d7
 	lea.l	(a0),a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	move.w	#$f2,d0
-	move.w	#$4d,d1
+	move.w	#208+34,d0
+	move.w	#49+28,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dbaa,a0
-	move.l	$cc(a1),d0
-	moveq	#6,d7
-	lea.l	$3(a0),a3
+	lea.l	XP_txt,a0
+	move.l	Experience_points(a1),d0
+	moveq.l	#6,d7
+	lea.l	3(a0),a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	move.w	#$d6,d0
-	move.w	#$78,d1
-	moveq	#1,d6
-	moveq	#10,d7
-	lea.l	D_41e90,a0
+	move.w	#208+6,d0
+	move.w	#85+35,d1
+	moveq.l	#1,d6
+	moveq.l	#10,d7
+	lea.l	Swordshield,a0
 	jsr	Blot_unmasked_block
-	addi.w	#$30,d0
-	lea.l	$50(a0),a0
+	addi.w	#48,d0
+	lea.l	80(a0),a0
 	jsr	Blot_unmasked_block
 	bsr.w	Update_character_info
-	movem.l	(a7)+,d0-d1/d6-d7/a0/a2-a3
-	rts
+	movem.l	(sp)+,d0/d1/d6/d7/a0/a2/a3
+	rts	
 ; ---- Update_character_info (original source: MAIN/INVENT.ASM)
 Update_character_info:
 	movem.l	d0/d1/d7/a0/a1/a3/a6,-(sp)
@@ -1111,17 +1112,19 @@ TransMItem_DisInit:
 	jsr	Copy_screen
 	movem.l	(sp)+,d0-d7/a0-a6
 	rts	
+; ---- DropMItem_Return (original source: MAIN/INVENT.ASM)
 DropMItem_Return:
-	btst	#$1,Mouse_button_state
-	bne.b	DropMItem_Return
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	move.l	#Code0001Sys,Textfile_ptr
-	move.w	#$16,ReqText_nr
-	move.l	#.l_11b02,ReqDo_ptr
+	move.w	#22,ReqText_nr
+	move.l	#Do_DropMItem,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bra.w	Push_Module
-.l_11b02:
+Do_DropMItem:
 	btst	#$1,Mouse_button_state
-	bne.b	.l_11b02
+	bne.b	Do_DropMItem
 	movea.l	Current_inventory_chardat_ptr,a0
 	lea.l	$21(a0),a1
 	lea.l	$10a(a0),a2
@@ -1161,7 +1164,7 @@ DropMItem_Return:
 .l_11baa:
 	move.l	ItemW_nr,d0
 	mulu.w	$22(a2),d0
-	sub.l	d0,$ec(a0)
+	sub.l	d0,Weight_normal(a0)
 	bra.w	Pop_Module
 ; ---- ItemW_DisUpd (original source: MAIN/INVENT.ASM)
 ItemW_DisUpd:
@@ -1188,46 +1191,48 @@ ItemW_DisUpd:
 	jsr	IG_Print
 	movem.l	(sp)+,d0-d7/a0-a6
 	rts	
+; ---- ItemW_DisInit (original source: MAIN/INVENT.ASM)
 ItemW_DisInit:
-	movem.l	d0-d3/d6-d7/a0/a6,-(a7)
-	moveq	#32,d0
-	moveq	#112,d1
-	moveq	#10,d2
-	moveq	#6,d3
-	moveq	#1,d6
+	movem.l	d0-d3/d6/d7/a0/a6,-(sp)
+	moveq.l	#32,d0
+	moveq.l	#80+32,d1
+	moveq.l	#10,d2
+	moveq.l	#6,d3
+	moveq.l	#1,d6
 	lea.l	ItemW_L1,a0
 	jsr	Open_window
-	move.w	d0,B_58256
+	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
 	movea.l	Off_screen,a6
-	moveq	#2,d6
-	moveq	#16,d7
-	move.w	#$30,d0
-	move.w	#$a0,d1
-	lea.l	D_38060,a0
+	moveq.l	#2,d6
+	moveq.l	#16,d7
+	move.w	#48,d0
+	move.w	#128+32,d1
+	lea.l	Control_icn+256,a0
 	jsr	Blot_unmasked_block
-	move.w	#$30,d0
-	move.w	#$b0,d1
-	lea.l	D_38160,a0
+	move.w	#48,d0
+	move.w	#96+48+32,d1
+	lea.l	Control_icn+512,a0
 	jsr	Blot_unmasked_block
-	move.w	#$80,d0
-	move.w	#$b0,d1
-	lea.l	D_39d60,a0
+	move.w	#128,d0
+	move.w	#144+32,d1
+	lea.l	Control_icn+7680,a0
 	jsr	Blot_unmasked_block
 	bsr.w	ItemW_DisUpd
-	movem.l	(a7)+,d0-d3/d6-d7/a0/a6
-	rts
+	movem.l	(sp)+,d0-d3/d6/d7/a0/a6
+	rts	
+; ---- ItemW_DisExit (original source: MAIN/INVENT.ASM)
 ItemW_DisExit:
-	move.w	B_58256,d0
+	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
 	jsr	Close_window
 	jsr	Copy_screen
 	movea.l	Off_screen,a6
 	jsr	Erase_message_minus
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_11cb2:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_11cb2
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Clear_adding (original source: MAIN/INVENT.ASM)
 Clear_adding:
 	move.w	#First_add,Adding
@@ -1297,19 +1302,20 @@ T_11d6c:
 	lea.l	UseItem_Mod,a0
 	bsr.w	Push_Module
 	rts
+; ---- UseItem_DisInit (original source: MAIN/INVENT.ASM)
 UseItem_DisInit:
-	lea.l	D_2dd3e,a0
+	lea.l	D_2dd3e,a0	; CHANGE: was "Push MA,UseItem_area"
 	jsr	Push_MA
-	moveq	#2,d0
+	moveq.l	#2,d0
 	movea.l	Off_screen,a6
-	move.w	#$2,d0
+	move.w	#2,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_11dac:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_11dac
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Use_backpack_item (original source: MAIN/INVENT.ASM)
 Use_backpack_item:
 	tst.b	d0
@@ -1354,7 +1360,7 @@ UseItem_entry:
 	subq.b	#$1,(a1)
 	moveq	#0,d0
 	move.w	$22(a2),d0
-	sub.l	d0,$ec(a0)
+	sub.l	d0,Weight_normal(a0)
 	move.b	Object_slot_number,d0
 	cmpi.b	#$a,d0
 	bpl.b	.l_11e4e
@@ -1368,7 +1374,7 @@ UseItem_entry:
 .l_11e5c:
 	tst.b	$e(a2)
 	beq.w	T_11f0e
-	move.b	$5(a0),d1
+	move.b	Character_class(a0),d1
 	move.w	$1e(a2),d2
 	btst	d1,d2
 	bne.b	.l_11e7e
@@ -1430,7 +1436,7 @@ T_11f0e:
 	clr.b	(a1)
 	moveq	#0,d0
 	move.w	$22(a2),d0
-	sub.l	d0,$ec(a0)
+	sub.l	d0,Weight_normal(a0)
 	bsr.w	Destroy_used_item
 	move.w	#$12,d0
 	jsr	Plus_message
@@ -1628,231 +1634,243 @@ View_item:
 ; CHANGE: removed "Wait_4_unclick"
 	lea.l	ViewItem_Mod,a0
 	bra.w	Push_Module
+; ---- ViewItem_DisInit (original source: MAIN/INVENT.ASM)
 ViewItem_DisInit:
-	move.w	#$10,Mesmin_X
-	move.w	#$32,Mesmin_Y
-	move.w	#$b0,Mesmin_Wd
+	move.w	#16,Mesmin_X
+	move.w	#49+1,Mesmin_Y
+	move.w	#176,Mesmin_Wd
 	move.l	#Code0001Sys,Textfile_ptr
-	lea.l	D_2dd3e,a0
+	lea.l	D_2dd3e,a0	; CHANGE: was "Push MA,UseItem_area"
 	jsr	Push_MA
-	moveq	#3,d0
+	moveq.l	#3,d0
 	movea.l	Off_screen,a6
-	move.w	#$3,d0
+	move.w	#3,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_12262:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_12262
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Exit_view_item (original source: MAIN/INVENT.ASM)
 Exit_view_item:
 	bra.w	Pop_Module
-T_12272:
+; ---- Do_view_backpack_item (original source: MAIN/INVENT.ASM)
+Do_view_backpack_item:
 	tst.b	d0
-	beq.b	Exit_view_item
+	beq.s	Exit_view_item
 	ext.w	d0
-	addi.w	#$9,d0
-	bra.b	T_12284
-T_1227e:
+	addi.w	#9,d0
+	bra.s	View_item_entry
+; ---- Do_view_body_item (original source: MAIN/INVENT.ASM)
+Do_view_body_item:
 	tst.b	d0
-	beq.b	Exit_view_item
+	beq.s	Exit_view_item
 	ext.w	d0
-T_12284:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12284
+; ---- View_item_entry (original source: MAIN/INVENT.ASM)
+View_item_entry:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	movea.l	Current_inventory_chardat_ptr,a0
-	lea.l	$21(a0),a0
+	lea.l	Neck_place_counter-1(a0),a0
 	adda.w	d0,a0
 	tst.b	(a0)
-	beq.b	Exit_view_item
+	beq.s	Exit_view_item
 	move.b	d0,Object_slot_number
-	lea.l	D_28160,a0
+	lea.l	ItemView1_Mod,a0
 	bsr.w	Push_Module
-	rts
-T_122b0:
-	moveq	#16,d0
-	moveq	#112,d1
-	moveq	#18,d2
-	moveq	#6,d3
-	moveq	#2,d4
-	moveq	#1,d6
-	lea.l	D_2f964,a0
+	rts	
+; ---- ItemViewW1_DisInit (original source: MAIN/INVENT.ASM)
+; CHANGE: removed "moveq.l #15,d0"
+; CHANGE: removed "jsr IG_Set_ink"
+; CHANGE: removed "moveq.l #2,d0"
+; CHANGE: removed "jsr IG_Set_paper"
+ItemViewW1_DisInit:
+	moveq.l	#16,d0
+	moveq.l	#112,d1
+	moveq.l	#18,d2
+	moveq.l	#6,d3
+	moveq.l	#2,d4
+	moveq.l	#1,d6
+	lea.l	ItemView1_L1,a0
 	jsr	Open_window
-	move.w	d0,B_58256
+	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
 	movea.l	Itemdata_ptr,a1
 	move.b	Object_slot_number,d0
 	ext.w	d0
-	subq.w	#$1,d0
-	mulu.w	#$28,d0
+	subq.w	#1,d0
+	mulu.w	#40,d0
 	adda.w	d0,a1
 	movea.l	Off_screen,a6
-	btst	#$0,$18(a1)
-	sne.b	Cursed
-	move.w	#$20,d0
-	move.w	#$80,d1
-	lea.l	D_363e0,a0
+	btst	#0,Item_stat_bits(a1)
+	sne	Cursed
+	move.w	#32,d0
+	move.w	#128,d1
+	lea.l	Layout_icn+9856,a0
 	jsr	Put_unmasked_block
 	lea.l	Objects_icn,a0
 	move.b	(a1),d2
 	ext.w	d2
-	lsl.w	#$7,d2
+	lsl.w	#7,d2
 	adda.w	d2,a0
-	jsr	Put_masked_block
-	moveq	#15,d0
-	jsr	IG_Set_ink
-	moveq	#2,d0
-	jsr	IG_Set_paper
-	move.w	#$33,d0
-	move.w	#$81,d1
+	jsr	Put_masked_block	; CHANGE: added
+	moveq	#15,d0	; CHANGE: added
+	jsr	IG_Set_ink	; CHANGE: added
+	moveq	#2,d0	; CHANGE: added
+	jsr	IG_Set_paper	; CHANGE: was "jsr Put_masked_block"
+	move.w	#32+19,d0
+	move.w	#129,d1
 	jsr	IG_Set_cursor
-	move.w	$26(a1),d0
+	move.w	Name_word_nr(a1),d0
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-	move.w	#$33,d0
-	move.w	#$89,d1
+	move.w	#32+19,d0
+	move.w	#129+8,d1
 	jsr	IG_Set_cursor
-	lea.l	D_484e2,a0
-	moveq	#0,d0
-	move.b	$1(a1),d0
+	lea.l	Misc_dat+Item_type_names,a0
+	moveq.l	#0,d0
+	move.b	Item_type(a1),d0
 	add.w	d0,d0
-	move.w	(a0,d0.w),d0
+	move.w	0(a0,d0.w),d0
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-	move.w	#$b1,d0
-	move.w	#$81,d1
+	move.w	#32+145,d0
+	move.w	#129,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db36,a0
+	lea.l	Classes_txt,a0
 	jsr	IG_Print
-	lea.l	D_48472,a2
-	lea.l	D_2dc32,a4
-	moveq	#1,d2
-	move.w	$1e(a1),d3
-	moveq	#7,d7
-.l_123ae:
+	lea.l	Class_dat+Class_names,a2
+	lea.l	Classname_pos_list,a4
+	moveq.l	#1,d2
+	move.w	Class_use(a1),d3
+	moveq.l	#8-1,d7
+.Loop:
 	btst	d2,d3
-	beq.b	.l_123d4
+	beq.s	.Next
 	move.w	(a4)+,d0
 	move.w	(a4)+,d1
 	jsr	IG_Set_cursor
 	move.w	d2,d0
 	add.w	d0,d0
-	move.w	(a2,d0.w),d0
+	move.w	0(a2,d0.w),d0
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-.l_123d4:
-	addq.w	#$1,d2
-	dbra	d7,.l_123ae
-	move.w	#$b1,d0
-	move.w	#$a7,d1
+.Next:
+	addq.w	#1,d2
+	dbra	d7,.Loop
+	move.w	#32+145,d0
+	move.w	#129+38,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db14,a0
+	lea.l	Sex_use_txt,a0
 	jsr	IG_Print
-	lea.l	D_2dd46,a0
-	moveq	#0,d0
-	move.b	$3(a1),d0
-	lsl.w	#$2,d0
-	movea.l	(a0,d0.w),a0
+	lea.l	Sex_use_strings,a0
+	moveq.l	#0,d0
+	move.b	Sex_use(a1),d0
+	lsl.w	#2,d0
+	movea.l	0(a0,d0.w),a0
 	jsr	IG_Print
-	lea.l	D_38a60,a0
-	move.w	#$100,d0
-	move.w	#$b0,d1
-	moveq	#2,d6
-	moveq	#16,d7
+	lea.l	Control_icn+2816,a0
+	move.w	#32+224,d0
+	move.w	#128+48,d1
+	moveq.l	#2,d6
+	moveq.l	#16,d7
 	jsr	Blot_unmasked_block
-	btst	#$7,$18(a1)
-	sne.b	Xtra_window
-	bne.b	.l_1244e
-	cmpi.w	#$6,Travel_mode
-	seq.b	Xtra_window
-	beq.b	.l_1244e
+	btst	#7,Item_stat_bits(a1)
+	sne	Xtra_window
+	bne.s	.Yes
+	cmpi.w	#6,Travel_mode
+	seq	Xtra_window
+	beq.s	.Yes
 	lea.l	Chequered,a0
 	jsr	Blot_masked_block
-.l_1244e:
-	move.w	#$20,d0
-	move.w	#$93,d1
+.Yes:
+	move.w	#32,d0
+	move.w	#128+19,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db62,a0
+	lea.l	Weight2_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	moveq	#0,d0
-	move.w	$22(a1),d0
-	moveq	#5,d7
+	moveq.l	#0,d0
+	move.w	Weight(a1),d0
+	moveq.l	#5,d7
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	lea.l	D_2dc01,a0
+	lea.l	Gram_txt,a0
 	jsr	IG_Print
-	move.w	#$20,d0
-	move.w	#$9e,d1
+	move.w	#32,d0
+	move.w	#128+30,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db20,a0
+	lea.l	Hands_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	moveq	#0,d0
-	move.b	$4(a1),d0
-	moveq	#1,d7
+	moveq.l	#0,d0
+	move.b	Hand_use(a1),d0
+	moveq.l	#1,d7
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	move.w	#$20,d0
-	move.w	#$a6,d1
+	move.w	#32,d0
+	move.w	#128+38,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db2b,a0
+	lea.l	Fingers_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	moveq	#0,d0
-	move.b	$5(a1),d0
+	moveq.l	#0,d0
+	move.b	Ring_use(a1),d0
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	move.w	#$20,d0
-	move.w	#$ae,d1
+	move.w	#32,d0
+	move.w	#128+46,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db4c,a0
+	lea.l	Damage_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	moveq	#0,d0
-	move.b	$11(a1),d0
+	moveq.l	#0,d0
+	move.b	Damage_pts(a1),d0
 	tst.b	Cursed
-	beq.b	.l_12524
+	beq.s	.NoC1
 	neg.w	d0
-.l_12524:
-	moveq	#3,d7
+.NoC1:
+	moveq.l	#3,d7
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
-	move.w	#$20,d0
-	move.w	#$b6,d1
+	move.w	#32,d0
+	move.w	#128+54,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db57,a0
+	lea.l	Protection_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
-	moveq	#0,d0
-	move.b	$10(a1),d0
+	moveq.l	#0,d0
+	move.b	Protection_pts(a1),d0
 	tst.b	Cursed
-	beq.b	.l_12562
+	beq.s	.NoC2
 	neg.w	d0
-.l_12562:
-	moveq	#3,d7
+.NoC2:
+	moveq.l	#3,d7
 	movea.l	a0,a3
 	bsr.w	LConvert_number
 	jsr	IG_Print
 	jsr	Switch_screen
 	jsr	Copy_screen
-	rts
-T_1257e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_1257e
+	rts	
+; ---- Open_ExtraW (original source: MAIN/INVENT.ASM)
+Open_ExtraW:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	tst.b	Xtra_window
-	beq.b	.l_1259a
+	beq.s	.Exit
 	lea.l	ItemView2_Mod,a0
 	bsr.w	Push_Module
-.l_1259a:
-	rts
+.Exit:
+	rts	
 ItemViewW2_DisInit:
 	moveq	#15,d0
 	jsr	IG_Set_ink
@@ -1877,7 +1895,7 @@ ItemViewW2_DisInit:
 	move.w	#$30,d0
 	move.w	#$40,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dc05,a0
+	lea.l	LPMax_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
 	moveq	#0,d0
@@ -1893,7 +1911,7 @@ ItemViewW2_DisInit:
 	move.w	#$80,d0
 	move.w	#$40,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dc0d,a0
+	lea.l	PPMax_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
 	moveq	#0,d0
@@ -1909,7 +1927,7 @@ ItemViewW2_DisInit:
 	move.w	#$30,d0
 	move.w	#$47,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dc15,a0
+	lea.l	MBW_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
 	moveq	#0,d0
@@ -1921,7 +1939,7 @@ ItemViewW2_DisInit:
 	move.w	#$80,d0
 	move.w	#$47,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2dc1d,a0
+	lea.l	MBA_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
 	moveq	#0,d0
@@ -1933,7 +1951,7 @@ ItemViewW2_DisInit:
 	move.w	#$30,d0
 	move.w	#$4e,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db70,a0
+	lea.l	Attr2_txt,a0
 	jsr	IG_Print
 	tst.b	$8(a1)
 	beq.b	.l_12746
@@ -1965,7 +1983,7 @@ ItemViewW2_DisInit:
 	move.w	#$30,d0
 	move.w	#$5c,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db7e,a0
+	lea.l	Skill2_txt,a0
 	jsr	IG_Print
 	tst.b	$a(a1)
 	beq.b	.l_127c6
@@ -1999,7 +2017,7 @@ ItemViewW2_DisInit:
 	move.w	#$30,d0
 	move.w	#$6a,d1
 	jsr	IG_Set_cursor
-	lea.l	D_2db88,a0
+	lea.l	Magic_txt,a0
 	jsr	IG_Print
 	bra.w	.l_128ac
 .l_127ea:
@@ -2033,14 +2051,14 @@ ItemViewW2_DisInit:
 	bsr.w	Get_word
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-	lea.l	D_2dc29,a0
+	lea.l	Tween2_txt,a0
 	jsr	IG_Print
 	lea.l	Line_buffer,a0
 	moveq	#0,d0
 	move.b	$e(a1),d0
 	cmpi.b	#$ff,d0
 	bne.b	.l_12892
-	lea.l	D_2dc2c,a0
+	lea.l	Infinite_charges_txt,a0
 	jsr	IG_Print
 	bra.b	.l_128a0
 .l_12892:
@@ -2049,7 +2067,7 @@ ItemViewW2_DisInit:
 	bsr.w	LConvert_number
 	jsr	IG_Print
 .l_128a0:
-	lea.l	D_2dc30,a0
+	lea.l	Tween3_txt,a0
 	jsr	IG_Print
 .l_128ac:
 	jsr	Switch_screen
@@ -2458,9 +2476,9 @@ Equip_item:
 .l_12e5c:
 	movea.l	Current_inventory_chardat_ptr,a1
 	move.l	ItemW_nr,d0
-	sub.w	d0,$90(a1)
+	sub.w	d0,Gold_coins(a1)
 	mulu.w	#$a,d0
-	sub.l	d0,$ec(a1)
+	sub.l	d0,Weight_normal(a1)
 	bra.w	Pop_Module
 T_12e78:
 	btst	#$1,Mouse_button_state
@@ -2521,17 +2539,17 @@ T_12f1c:
 	bra.b	.l_12f84
 .l_12f5a:
 	movea.l	(a1),a2
-	move.w	$48(a2),d1
-	add.w	$9c(a2),d1
+	move.w	Attr_1_normal(a2),d1
+	add.w	Attr_1_normal_magic(a2),d1
 	mulu.w	#$3e8,d1
-	sub.l	$ec(a2),d1
+	sub.l	Weight_normal(a2),d1
 	cmp.l	d0,d1
 	bmi.b	.l_12f84
-	move.w	$92(a2),d1
+	move.w	Food_rations(a2),d1
 	add.w	d0,d1
 	bvs.b	.l_12f84
 	move.w	#$e402,d1
-	and.w	$3a(a2),d1
+	and.w	Body_conditions(a2),d1
 	bne.b	.l_12f84
 	bset	d7,d6
 .l_12f84:
@@ -2561,10 +2579,10 @@ T_12f1c:
 	movea.l	Current_inventory_chardat_ptr,a1
 	move.l	ItemW_nr,d0
 	add.w	d0,$92(a0)
-	sub.w	d0,$92(a1)
+	sub.w	d0,Food_rations(a1)
 	mulu.w	#$fa,d0
 	add.l	d0,$ec(a0)
-	sub.l	d0,$ec(a1)
+	sub.l	d0,Weight_normal(a1)
 	rts
 T_12ff8:
 	btst	#$1,Mouse_button_state
@@ -2581,9 +2599,9 @@ T_12ff8:
 .l_13032:
 	movea.l	Current_inventory_chardat_ptr,a1
 	move.l	ItemW_nr,d0
-	sub.w	d0,$92(a1)
+	sub.w	d0,Food_rations(a1)
 	mulu.w	#$fa,d0
-	sub.l	d0,$ec(a1)
+	sub.l	d0,Weight_normal(a1)
 	bra.w	Pop_Module
 T_1304e:
 	btst	#$1,Mouse_button_state
@@ -2620,7 +2638,7 @@ T_1304e:
 	jsr	Plus_message
 	bra.w	.l_13216
 .l_130be:
-	move.b	$5(a0),d1
+	move.b	Character_class(a0),d1
 	move.w	$1e(a2),d2
 	btst	d1,d2
 	bne.b	.l_130d8
@@ -2631,7 +2649,7 @@ T_1304e:
 	move.b	$3(a2),d1
 	beq.b	.l_130f4
 	subq.b	#$1,d1
-	cmp.b	$3(a0),d1
+	cmp.b	Character_sex(a0),d1
 	beq.b	.l_130f4
 	move.w	#$a,d0
 	jsr	Plus_message
@@ -2640,7 +2658,7 @@ T_1304e:
 	move.b	$4(a2),d1
 	beq.b	.l_13112
 	moveq	#2,d2
-	sub.b	$1c(a0),d2
+	sub.b	Hands_occupied(a0),d2
 	cmp.b	d1,d2
 	bpl.b	.l_13112
 	move.w	#$b,d0
@@ -2650,7 +2668,7 @@ T_1304e:
 	move.b	$5(a2),d1
 	beq.b	.l_13130
 	moveq	#2,d2
-	sub.b	$1d(a0),d2
+	sub.b	Ringfingers_occupied(a0),d2
 	cmp.b	d1,d2
 	bpl.b	.l_13130
 	move.w	#$c,d0
@@ -2672,13 +2690,13 @@ T_1304e:
 	mulu.w	d1,d2
 	adda.w	d2,a4
 	move.b	$4(a2),d2
-	add.b	d2,$1c(a0)
+	add.b	d2,Hands_occupied(a0)
 	move.b	$5(a2),d2
-	add.b	d2,$1d(a0)
+	add.b	d2,Ringfingers_occupied(a0)
 	move.b	$13(a2),d2
-	add.b	d2,$20(a0)
+	add.b	d2,Magic_bonus_weapon(a0)
 	move.b	$14(a2),d2
-	add.b	d2,$21(a0)
+	add.b	d2,Magic_bonus_armour(a0)
 	lea.l	$ae(a0),a5
 	move.b	$19(a2),d2
 	ext.w	d2
@@ -2941,24 +2959,25 @@ Update_quantity_colours:
 	move.b	d1,Quant_init_string+1
 .Exit:
 	rts	
+; ---- TIVS_ModInit (original source: MAIN/INVENT.ASM)
 TIVS_ModInit:
-	lea.l	D_2fcfa,a0
+	lea.l	Main_root,a0
 	jsr	Push_MA
 	movea.l	Module_sp,a0
-	cmpi.w	#$18,$2c(a0)
-	bne.b	.l_13484
+	cmpi.w	#24,Mouse_ptr(a0)
+	bne.s	.Skip
 	move.b	TIVS_Icon_nr,d0
 	bsr.w	Build_object_mptr
-.l_13484:
+.Skip:
 	movea.l	Off_screen,a6
-	move.w	#$13,d0
+	move.w	#19,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_134a0:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_134a0
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- TIVS_DisUpd (original source: MAIN/INVENT.ASM)
 TIVS_DisUpd:
 	jsr	Update_status_block
@@ -3230,7 +3249,7 @@ T_13772:
 	bne.b	T_13772
 	sf.b	Magic_object_flag
 	movea.l	Current_active_char_data,a0
-	move.b	$1a(a0),d0
+	move.b	Spell_class_counter(a0),d0
 	moveq	#0,d1
 	moveq	#1,d2
 	moveq	#6,d7
@@ -3292,32 +3311,32 @@ D_2db08:
 	dc.b	$46,$45,$4d,$41,$4c,$45,$00
 D_2db0f:
 	dc.b	$42,$4f,$54,$48,$00
-D_2db14:
+Sex_use_txt:
 	dc.b	$01,$01,$47,$45,$4e,$44,$45,$52,$3a,$01,$0f,$00
-D_2db20:
+Hands_txt:
 	dc.b	$48,$41,$4e,$44,$53,$20,$20,$20,$3a,$20,$00
-D_2db2b:
+Fingers_txt:
 	dc.b	$46,$49,$4e,$47,$45,$52,$53,$20,$3a,$20,$00
-D_2db36:
+Classes_txt:
 	dc.b	$01,$01,$2d,$2d,$2d,$2d,$20,$43,$4c,$41,$53,$53,$45,$53,$20,$2d
 	dc.b	$2d,$2d,$2d,$01,$0f,$00
-D_2db4c:
+Damage_txt:
 	dc.b	$44,$41,$4d,$41,$47,$45,$20,$20,$3a,$20,$00
-D_2db57:
+Protection_txt:
 	dc.b	$53,$48,$49,$45,$4c,$44,$20,$20,$3a,$20,$00
-D_2db62:
+Weight2_txt:
 	dc.b	$01,$01,$57,$45,$49,$47,$48,$54,$20,$3a,$20,$01,$0f,$00
-D_2db70:
+Attr2_txt:
 	dc.b	$01,$01,$41,$54,$54,$52,$49,$42,$55,$54,$45,$01,$0f,$00
-D_2db7e:
+Skill2_txt:
 	dc.b	$01,$01,$53,$4b,$49,$4c,$4c,$01,$0f,$00
-D_2db88:
+Magic_txt:
 	dc.b	$01,$01,$4d,$41,$47,$49,$43,$01,$0f,$00
 D_2db92:
 	dc.b	$01,$09,$43,$55,$52,$53,$45,$44,$01,$0f,$00
 D_2db9d:
 	dc.b	$01,$0f,$02,$ff,$44,$49,$41,$4c,$4f,$47,$55,$45,$00
-D_2dbaa:
+XP_txt:
 	dc.b	$45,$50,$3a,$20,$20,$20,$20,$20,$20,$20,$20,$20,$00
 LP_txt:
 	dc.b	$4c,$50,$20,$3a,$20
@@ -3344,25 +3363,25 @@ Attr_txt:
 D_2dbef:
 	dc.b	$01,$00,$02,$02,$20,$20,$20,$20,$4b,$47,$2f,$20,$20,$20,$20,$4b
 	dc.b	$47,$00
-D_2dc01:
+Gram_txt:
 	dc.b	$20,$47,$52,$00
-D_2dc05:
+LPMax_txt:
 	dc.b	$4c,$50,$2d,$4d,$41,$58,$3a,$00
-D_2dc0d:
+PPMax_txt:
 	dc.b	$50,$50,$2d,$4d,$41,$58,$3a,$00
-D_2dc15:
+MBW_txt:
 	dc.b	$20,$4d,$2d,$42,$2d,$57,$3a,$00
-D_2dc1d:
+MBA_txt:
 	dc.b	$20,$4d,$2d,$42,$2d,$41,$3a,$00
 Tween_txt:
 	dc.b	$20,$3a,$20,$00
-D_2dc29:
+Tween2_txt:
 	dc.b	$20,$28,$00
-D_2dc2c:
+Infinite_charges_txt:
 	dc.b	$2a,$2a,$2a,$00
-D_2dc30:
+Tween3_txt:
 	dc.b	$29,$00
-D_2dc32:
+Classname_pos_list:
 	dc.b	$00,$b1,$00,$88,$00,$b1,$00,$8f,$00,$b1,$00,$96,$00,$b1,$00,$9d
 	dc.b	$00,$e7,$00,$88,$00,$e7,$00,$8f,$00,$e7,$00,$96,$00,$e7,$00,$9d
 D_2dc52:
@@ -3388,7 +3407,7 @@ D_2dc8e:
 	dc.b	$ff,$ff,$ff,$ff,$00,$00,$00,$00,$ff,$ff,$ff,$ff,$00,$00,$00,$00
 D_2dd3e:
 	dc.b	$00,$10,$00,$bf,$00,$51,$00,$c0
-D_2dd46:
+Sex_use_strings:
 	dc.l	D_2db0f
 	dc.l	D_2db03
 	dc.l	D_2db08
@@ -3414,7 +3433,7 @@ D_2dd84:
 	dc.b	$00,$1c,$00,$1a,$00,$16,$00,$00,$00,$00,$00,$00,$00,$14
 D_2dd92:
 	dc.b	$00,$20,$00,$50,$00,$c0,$00,$46,$00,$0f,$00,$02
-D_2dd9e:
+SCSelW_PA:
 	dc.b	$00,$20,$00,$50,$00,$80,$00,$31,$00,$0f,$00,$02
 D_2ddaa:
 	dc.b	$00,$30,$00,$38,$00,$a0,$00,$70,$00,$0f,$00,$03,$00,$30,$00,$34
@@ -3429,6 +3448,7 @@ D_2ddaa:
 Load_area:
 	dc.b	$00,$00,$01,$3f,$00,$01,$00,$23
 RemCurse_MA:
+UseItem_area:
 	dc.b	$00,$10,$00,$5f,$00,$51,$00,$a0
 Minimap_CIL:
 	dc.b	$2e,$01,$2d,$04,$1e,$03,$30,$02,$2f,$00
@@ -3725,13 +3745,13 @@ D_2e7a6:
 	dc.b	$00,$00,$01,$3f,$00,$00,$00,$c7
 D_2e7ae:
 	dc.b	$00,$00,$00,$00,$01,$3f,$00,$c7,$00,$0f,$00,$00
-D_2e7ba:
+PlacesExit_MA:
 	dc.b	$00,$40,$00,$df,$00,$4c,$00,$7b
 D_2e7c2:
 	dc.b	$00,$40,$00,$4c,$00,$a0,$00,$30,$00,$0f,$00,$02
-D_2e7ce:
+Temp_number:
 	dc.b	$01,$09,$02,$ff,$20,$20,$00,$00
-D_2e7d6:
+ET_Enter_modification_1:
 	dc.b	$5b,$20,$45,$6e,$74,$65,$72,$5f,$6d,$6f,$64,$69,$66,$69,$63,$61
 	dc.b	$74,$69,$6f,$6e,$20,$5d,$20,$3a,$20,$54,$6f,$6f,$20,$6d,$75,$63
 	dc.b	$68,$20,$6d,$6f,$64,$69,$66,$69,$63,$61,$74,$69,$6f,$6e,$73,$20
@@ -3926,11 +3946,11 @@ D_2ed96:
 	dc.b	$44,$69,$66,$66,$65,$72,$65,$6e,$63,$65,$20,$3a,$20,$00
 D_2eda4:
 	dc.b	$4d,$65,$6d,$6f,$72,$79,$20,$69,$73,$20,$4f,$4b,$2e,$0d,$00
-D_2edb3:
+ET_Prepare_3D_map_1:
 	dc.b	$5b,$20,$50,$72,$65,$70,$61,$72,$65,$5f,$33,$44,$5f,$6d,$61,$70
 	dc.b	$20,$5d,$20,$3a,$20,$45,$72,$72,$6f,$72,$20,$69,$6e,$20,$4c,$41
 	dc.b	$42,$5f,$44,$41,$54,$41,$20,$21,$21,$21,$0d,$00
-D_2eddf:
+ET_Show_layout_1:
 	dc.b	$5b,$20,$53,$68,$6f,$77,$5f,$6c,$61,$79,$6f,$75,$74,$20,$5d,$20
 	dc.b	$3a,$20,$49,$6c,$6c,$65,$67,$61,$6c,$20,$69,$6e,$70,$75,$74,$20
 	dc.b	$21,$21,$21,$0d,$00
@@ -3942,16 +3962,16 @@ D_2ee2e:
 	dc.b	$5b,$20,$46,$69,$6e,$64,$5f,$77,$6f,$72,$64,$20,$5d,$20,$3a,$20
 	dc.b	$49,$6c,$6c,$65,$67,$61,$6c,$20,$77,$6f,$72,$64,$20,$6c,$65,$6e
 	dc.b	$67,$74,$68,$20,$21,$21,$21,$0d,$00
-D_2ee57:
+ET_Calc_textblock_address_1:
 	dc.b	$5b,$20,$43,$61,$6c,$63,$5f,$74,$65,$78,$74,$62,$6c,$6f,$63,$6b
 	dc.b	$5f,$61,$64,$64,$72,$65,$73,$73,$20,$5d,$20,$3a,$20,$49,$6c,$6c
 	dc.b	$65,$67,$61,$6c,$20,$74,$65,$78,$74,$62,$6c,$6f,$63,$6b,$20,$6e
 	dc.b	$75,$6d,$62,$65,$72,$20,$21,$21,$21,$0d,$00
-D_2ee92:
+ET_Push_PA_1:
 	dc.b	$5b,$20,$50,$75,$73,$68,$5f,$50,$41,$20,$5d,$20,$3a,$20,$50,$41
 	dc.b	$20,$53,$74,$61,$63,$6b,$20,$6f,$76,$65,$72,$66,$6c,$6f,$77,$20
 	dc.b	$21,$21,$21,$0d,$00
-D_2eeb7:
+ET_Pop_PA_1:
 	dc.b	$5b,$20,$50,$6f,$70,$5f,$50,$41,$20,$5d,$20,$3a,$20,$50,$41,$20
 	dc.b	$53,$74,$61,$63,$6b,$20,$75,$6e,$64,$65,$72,$66,$6c,$6f,$77,$20
 	dc.b	$21,$21,$21,$0d,$00
@@ -3963,11 +3983,11 @@ D_2ef09:
 	dc.b	$5b,$20,$50,$6c,$61,$63,$65,$73,$20,$5d,$20,$3a,$20,$49,$6c,$6c
 	dc.b	$65,$67,$61,$6c,$20,$70,$6c,$61,$63,$65,$20,$74,$79,$70,$65,$20
 	dc.b	$21,$21,$21,$0d,$00
-D_2ef2e:
+ET_Create_transport_1:
 	dc.b	$5b,$20,$43,$72,$65,$61,$74,$65,$5f,$74,$72,$61,$6e,$73,$70,$6f
 	dc.b	$72,$74,$20,$5d,$20,$3a,$20,$4e,$6f,$20,$73,$6c,$6f,$74,$20,$66
 	dc.b	$72,$65,$65,$20,$21,$21,$21,$0d,$00
-D_2ef57:
+ET_Item_res_1:
 	dc.b	$5b,$20,$49,$74,$65,$6d,$5f,$72,$65,$73,$20,$5d,$20,$3a,$20,$4c
 	dc.b	$6f,$67,$69,$63,$61,$6c,$20,$65,$72,$72,$6f,$72,$20,$21,$20,$43
 	dc.b	$6f,$6e,$74,$61,$63,$74,$20,$74,$68,$65,$20,$67,$61,$6d,$65,$20
@@ -4027,13 +4047,13 @@ D_2f18f:
 	dc.b	$20,$63,$6f,$6e,$74,$69,$6e,$75,$65,$2e,$0d,$00,$00
 Icondata_filename:
 	dc.b	$02,$49,$43,$4f,$4e,$5f,$44,$41,$54,$2e,$41,$4d,$42,$00
-D_2f1ba:
+Labdata_filename:
 	dc.b	$05,$4c,$41,$42,$5f,$44,$41,$54,$41,$2e,$41,$4d,$42,$00
-D_2f1c8:
+Labblock_filename:
 	dc.b	$06,$4c,$41,$42,$42,$4c,$4f,$43,$4b,$2e,$41,$4d,$42,$00
-D_2f1d6:
+Backgrnd_filename:
 	dc.b	$07,$42,$41,$43,$4b,$47,$52,$4e,$44,$2e,$41,$4d,$42,$00
-D_2f1e4:
+Colpall_filename:
 	dc.b	$08,$43,$4f,$4c,$5f,$50,$41,$4c,$4c,$2e,$41,$4d,$42,$00
 D_2f1f2:
 	dc.b	$04,$4d,$41,$50,$5f,$44,$41,$54,$41,$2e,$41,$4d,$42,$00
@@ -4041,7 +4061,7 @@ Maptext_filename:
 	dc.b	$0a,$4d,$41,$50,$54,$45,$58,$54,$2e,$41,$4d,$42,$00
 Pics80_filename:
 	dc.b	$09,$50,$49,$43,$53,$38,$30,$2e,$41,$4d,$42,$00
-D_2f219:
+Chestdata_filename:
 	dc.b	$0b,$43,$48,$45,$53,$54,$44,$41,$54,$2e,$41,$4d,$42,$00
 D_2f227:
 	dc.b	$15,$50,$55,$5a,$5a,$4c,$45,$2e,$49,$43,$4e,$00
@@ -4053,7 +4073,7 @@ Automap_filename:
 	dc.b	$11,$41,$55,$54,$4f,$4d,$41,$50,$2e,$41,$4d,$42,$00,$00
 D_2f25c:
 	dc.b	$12,$43,$4f,$44,$45,$54,$58,$54,$2e,$41,$4d,$42,$00,$00
-D_2f26a:
+Partydata_filename:
 	dc.b	$01,$50,$41,$52,$54,$59,$44,$41,$54,$2e,$53,$41,$56,$00
 Chard_filename:
 	dc.b	$03,$43,$48,$41,$52,$44,$41,$54,$41,$2e,$41,$4d,$42,$00
@@ -4193,7 +4213,7 @@ D_2f4de:
 D_2f4f0:
 	dc.b	$00,$00,$00,$7f,$00,$69,$00,$6f,$10,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
-D_2f502:
+SkillW_L1:
 	dc.b	$00,$00,$00,$7f,$00,$08,$00,$4d,$01,$00
 	dc.l	D_2f514
 	dc.l	D_2f526
@@ -4428,7 +4448,7 @@ D_2f940:
 D_2f952:
 	dc.b	$00,$50,$00,$6f,$00,$20,$00,$2f,$04,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
-D_2f964:
+ItemView1_L1:
 	dc.b	$00,$e0,$00,$ff,$00,$30,$00,$3f,$01,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
 D_2f976:
@@ -4509,7 +4529,7 @@ D_2faba:
 D_2facc:
 	dc.b	$00,$60,$00,$bf,$00,$3d,$00,$43,$13,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
-D_2fade:
+SCSelW_L1:
 	dc.b	$00,$00,$00,$7f,$00,$00,$00,$30,$01,$00,$00,$00,$00,$00
 	dc.l	D_2faf0
 D_2faf0:
@@ -4623,7 +4643,7 @@ D_2fcd6:
 D_2fce8:
 	dc.b	$00,$00,$01,$3f,$00,$00,$00,$23,$01,$00,$00,$00,$00,$00
 	dc.l	D_2fd1e
-D_2fcfa:
+Main_root:
 	dc.b	$00,$00,$01,$3f,$00,$00,$00,$23,$01,$00
 	dc.l	D_2fd0c
 	dc.l	D_2fd1e
@@ -4690,7 +4710,7 @@ D_2fe1a:
 D_2fe2c:
 	dc.b	$01,$10,$01,$2f,$00,$b0,$00,$bf,$02,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
-D_2fe3e:
+PlacesExit_L1:
 	dc.b	$00,$10,$00,$2f,$00,$20,$00,$2f,$01,$00
 	dc.l	D_2fe50
 	dc.b	$00,$00,$00,$00
@@ -4899,5 +4919,5 @@ B_58812:
 	ds.b	4
 B_58816:
 	ds.b	2
-B_58818:
+SCSelW_handle:
 	ds.b	2
