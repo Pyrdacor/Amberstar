@@ -18,7 +18,7 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 492 routines of the original source, 79 of them with the changes of the shipped program (`merged/`, `CHANGES.md`) |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 576 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | open |
 
 ## The program file
@@ -90,19 +90,28 @@ python ambrdis.py <inner program> <named.s> SYMBOLS.txt
 
 Names which are not in the original source (e.g. the music) will be added in step 4.
 
-## The merged source (`merged/`)
+## The merged source (`src/`, `src_english/`)
 
-`merged/AMBRSTAR_GERMAN.S` and `merged/AMBRSTAR_ENGLISH.S` are the disassemblies in which the routines of the original
-source replace the disassembled code wherever they assemble to the same bytes. Each of them starts with a comment
-`; ---- <name> (original source: <file>)`. They assemble to byte-identical programs as well:
+`src/` (German version) and `src_english/` contain the source in the structure of the original: one file per module of
+the original source (`MAIN/EVENTS.S`, `MAIN/MAP/2DMAP.S`, `NUCLEUS/MEMORY.S`, …). `AMBRSTAR.S` includes them in the
+order of the program, which is the order in which `TEST.ASM` includes the modules (followed by the layout and nucleus
+modules which are linked behind it). The data and the variables of all modules are in `DATA.S` and `BSS.S` for now.
+Both versions assemble to byte-identical programs:
 
 ```
-cd merged
-vasmm68k_mot -m68000 -Ftos -tos-flags=1 -nosym -no-opt -o AMBRSTAR.PRG AMBRSTAR_GERMAN.S
+cd src
+vasmm68k_mot -m68000 -Ftos -tos-flags=1 -nosym -no-opt -o AMBRSTAR.PRG AMBRSTAR.S
 ```
+
+In the module files the routines of the original source replace the disassembled code wherever they could be made to
+assemble to the same bytes. Each of them starts with a comment `; ---- <name> (original source: <file>)`. The other
+code of a module is still the disassembly. `MAIN/COMBAT.S` is the combat, which is only a stub in the original source,
+so it is completely disassembly for now (step 4).
 
 `CONSTANTS.I` contains the constants of the original source (`CONST5X.ASM`, the structure offsets of `OFFSETS.ASM`
 and the constants of the other modules).
+
+### How it is made
 
 `tools/merge.py` checks the routines (`origsrc.py` reads the original source for it and for `symmatch.py`):
 
@@ -111,27 +120,32 @@ python ambrdis.py <inner program> plain.s                          (also writes 
 python symmatch.py <original src folder> plain.s.code.tsv SYMBOLS.txt <inner program>
 python ambrdis.py <inner program> named.s SYMBOLS.txt              (also writes named.s.code.tsv)
 python merge.py <original src folder> <inner program> SYMBOLS.txt <vasm> merge.json plain.s.code.tsv named.s.code.tsv
-python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i
+python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i --split=src
 python changes.py merged.s CHANGES.md
 ```
 
 * Each routine of the original is converted to vasm syntax (GFA directives, the macros of the original) and
   assembled at its address with all known names as constants. If the bytes are the same as in the program, the
   routine is taken. Names which are still unknown get marker values: if all other bytes match, the program gives
-  their addresses. The routine which follows a confirmed routine in its file is tried at its end.
+  their addresses.
+* Routines whose address is unknown are tried behind the routine which is in front of them in their file, and in
+  front of the routine which follows them. Checking, merging and these neighbours are repeated in rounds.
 * The assembler which built the shipped program optimized the code: `jsr`/`jmp` to a routine in reach became
   `bsr.w`/`bra.w`, and branches without a size became short branches where possible. The conversion does the same.
 * Routines which differ are aligned instruction by instruction with the program. Equal instructions keep the line of
   the original source, the others are taken from the program with a comment: `; CHANGE: was "…"`,
   `; CHANGE: added` or `; CHANGE: removed "…"`. The local labels of the original stay at their addresses, new
-  branch targets get local labels `.c_<address>`. The result must assemble to the same bytes as well.
-* Labels inside a taken routine which are used from outside are defined behind it, relative to its start
-  (`T_004e6 equ Member_left+24`).
+  branch targets get local labels `.c_<address>`. The first instructions may differ, but a routine must not start
+  with additional instructions of the program (they belong to the routine in front of it). The result must
+  assemble to the same bytes as well.
+* Labels inside a taken routine which are used from outside are defined behind the modules, relative to the start
+  of the routine (`T_004e6 equ Member_left+24`).
+* The boundaries of the modules are chosen so that as few known routines as possible are in another module than
+  their file (a few names of the original are used in several modules).
 
-So far 525 routines assemble to the same bytes (372 unchanged, 153 with changes), 492 of them are taken (the others
-overlap with other routines). `CHANGES.md` lists the changes of the 79 routines which have changes. The other
-routines of the original source could not be found in the program yet or differ too much to be aligned.
-
+So far 576 routines of the original source are in the merged source (German version), 131 of them with changes.
+`CHANGES.md` lists these changes. About 140 routines of the original could not be found in the program yet, the
+others could not be aligned or assembled.
 ## Known differences between the original source and the shipped program
 
 Found so far by the Amberstar.net project (addresses of the German version):

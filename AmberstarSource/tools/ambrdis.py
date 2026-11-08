@@ -5,7 +5,7 @@ from capstone import Cs, CS_ARCH_M68K, CS_MODE_BIG_ENDIAN, CS_MODE_M68K_000
 
 src = open(sys.argv[1], 'rb').read()
 out_path = sys.argv[2]
-extra_seeds = [int(x, 16) for x in sys.argv[3:] if not x.endswith(('.txt', '.json', '.i'))]
+extra_seeds = [int(x, 16) for x in sys.argv[3:] if not x.endswith(('.txt', '.json', '.i')) and not x.startswith('--')]
 # optional merge.json: routines of the original source which assemble to the same bytes
 import json
 merge = {}
@@ -17,14 +17,25 @@ for x in sys.argv[3:]:
                 merge[v['addr']] = (nm, v['size'], v['source'], v['file'])
     if x.endswith('.i'):
         constants_include = x
+split_dir = next((x[8:] for x in sys.argv[3:] if x.startswith('--split=')), None)
+# order of the modules (TEST.ASM includes them in this order, the other parts are linked behind it)
+MODULE_ORDER = ['MAIN/TEST.ASM', 'MAIN/STATUS.ASM', 'MAIN/MAP/MAP.ASM', 'MAIN/MAP/2DMAP.ASM', 'MAIN/MAP/3DMAP.ASM',
+    'MAIN/MAP/2DWILD.ASM', 'MAIN/MAP/2DCITY.ASM', 'MAIN/MAP/3DDUNGEO.ASM', 'MAIN/MAP/3DCITY.ASM', 'MAIN/MAP/SHADOW.ASM',
+    'MAIN/PERSONS.ASM', 'MAIN/TIME.ASM', 'LAYOUT/LAYOUT.ASM', 'MAIN/WORDS.ASM', 'MAIN/EVENTS.ASM', 'MAIN/WSELW.ASM',
+    'MAIN/PLACES.ASM', 'MAIN/EYE.ASM', 'MAIN/MODCON.ASM', 'MAIN/MODULES.ASM', 'MAIN/INVENT.ASM', 'MAIN/MAGIC.ASM',
+    'MAIN/COMBAT.ASM', 'LAYOUT/OBJFIND.ASM', 'LAYOUT/WINDOWS.ASM', 'LAYOUT/GRAPHICS.ASM', 'NUCLEUS/AMBRFILE.ASM',
+    'NUCLEUS/COLOFADE.ASM', 'NUCLEUS/DIAGNOST.ASM', 'NUCLEUS/GFXROUTS.ASM', 'NUCLEUS/HBI.ASM', 'NUCLEUS/INTROUTS.ASM',
+    'NUCLEUS/KBDROUTS.ASM', 'NUCLEUS/MEMORY.ASM', 'NUCLEUS/NUMERIC.ASM', 'NUCLEUS/SCREEN.ASM', 'NUCLEUS/TEXTPUT.ASM']
 # optional SYMBOLS.txt with the names of the original source
 symbol_names = {}
+file_of_addr = {}
 for x in sys.argv[3:]:
     if x.endswith('.txt'):
         for l in open(x):
             if l.startswith('#') or not l.strip(): continue
             c = l.rstrip('\n').split('\t')
             symbol_names.setdefault(int(c[0], 16), []).append(c[2].replace('.', '_'))
+            if len(c) > 3 and c[3] and '.' not in c[2]: file_of_addr.setdefault(int(c[0], 16), c[3])
 for x in sys.argv[3:]:
     if x.endswith('.json') and os.path.exists(x + '.names.txt'):
         for l in open(x + '.names.txt'):
@@ -304,7 +315,43 @@ code_list = []
 if constants_include:
     lines[2:2] = ['\tinclude\t"%s"' % constants_include, '']
 merged_count = 0
+# files of the merged routines
+for a, v in merge.items(): file_of_addr[a] = v[3]
+segments = [(len(lines), MODULE_ORDER[0])]
+# The modules follow each other in MODULE_ORDER. The boundaries are chosen so that as few known routines as
+# possible are in another module than their file (single misplaced names don't move a boundary).
+known = sorted((a, MODULE_ORDER.index(fl)) for a, fl in file_of_addr.items() if a < tlen and fl in MODULE_ORDER)
+M = len(MODULE_ORDER)
+INF = 10 ** 9
+cost = [0] * M
+back = []
+for a, m in known:
+    best_prev, best_idx = INF, 0
+    new_cost, choice = [0] * M, [0] * M
+    run_min, run_arg = INF, 0
+    for k in range(M):
+        if cost[k] < run_min: run_min, run_arg = cost[k], k
+        new_cost[k] = run_min + (0 if k == m else 1)
+        choice[k] = run_arg
+    back.append(choice)
+    cost = new_cost
+k = min(range(M), key=lambda x: cost[x])
+assign = [0] * len(known)
+for i in range(len(known) - 1, -1, -1):
+    assign[i] = k
+    k = back[i][k]
+boundaries = {}
+prev = 0
+for (a, _), m in zip(known, assign):
+    if m != prev:
+        boundaries[a] = MODULE_ORDER[m]
+        prev = m
+def module_boundary(p):
+    if p in boundaries:
+        segments.append((len(lines), boundaries[p]))
+text_start = len(lines)
 while pos < tlen:
+    if split_dir: module_boundary(pos)
     if pos in merge:
         nm, size, src, f = merge[pos]
         own = nm
@@ -352,6 +399,7 @@ for t in sorted(inside):
     for n in symbol_names.get(t, []):
         lines.append('%s\tequ\t%s' % (n, ref(t)))
 
+text_end = len(lines)
 lines += ['', '\tsection\tdata', '']
 emit_bytes(lines, tlen, tlen + dlen)
 
@@ -364,5 +412,30 @@ for t in bss_labels:
 if end > pos: lines.append('\tds.b\t%d' % (end - pos))
 
 open(out_path, 'w', encoding='latin-1').write('\n'.join(lines) + '\n')
+if split_dir:
+    # one file per module, the data and the BSS in their own files, AMBRSTAR.S includes them
+    def write(rel, content):
+        p = os.path.join(split_dir, rel)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        open(p, 'w', encoding='latin-1').write('\n'.join(content) + '\n')
+    build = ['; Amberstar (Atari ST) - main program AMBRSTAR.68K', '; Build file: includes the modules in the order of',
+             '; the program (TEST.ASM includes them in this order, the other parts are linked behind it).', '']
+    if constants_include: build += ['\tinclude\t"CONSTANTS.I"', '']
+    build += ['\tsection\ttext', '']
+    bounds = segments + [(text_end, None)]
+    # the equates of names inside instructions are behind the text
+    EQU_LINE = re.compile(r'^\S+\tequ\t')
+    inner_equ = [l for l in lines[text_start:text_end] if EQU_LINE.match(l)]
+    for (start, fl), (stop, _) in zip(bounds, bounds[1:]):
+        rel = fl.replace('.ASM', '.S')
+        part = [l for l in lines[max(start, text_start):stop] if not EQU_LINE.match(l)]
+        write(rel, ['; ' + fl + ' (original module, merged with the disassembly of the shipped program)', ''] + part)
+        build.append('\tinclude\t"%s"' % rel)
+    build += [''] + inner_equ + ['', '\tsection\tdata', '\tinclude\t"DATA.S"', '', '\tsection\tbss', '\tinclude\t"BSS.S"']
+    data_start = text_end + 3
+    bss_start = lines.index('\tsection\tbss', data_start)
+    write('DATA.S', ['; Data of all modules (disassembly)', ''] + lines[data_start:bss_start - 1])
+    write('BSS.S', ['; Variables of all modules (disassembly)', ''] + lines[bss_start + 2:])
+    write('AMBRSTAR.S', build)
 open(out_path + '.code.tsv', 'w', encoding='latin-1').write('\n'.join(code_list) + '\n')
 print('merged routines', merged_count, 'code instructions', len(code), 'code bytes', len(code_bytes), 'of', tlen, 'labels', len(labels), 'inside', len(inside), 'unconverted', failed)
