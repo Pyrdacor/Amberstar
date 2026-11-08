@@ -87,27 +87,27 @@ Push_Root:
 	movea.l	Object_sp,a1
 	addq.l	#$4,a1
 	cmpa.l	#Window_list,a1
-	bmi.b	T_1a58c
+	bmi.b	.l_1a58c
 	lea.l	D_333dc,a1
 	jsr	DI_Error
-	bra.b	T_1a594
-T_1a58c:
+	bra.b	.l_1a594
+.l_1a58c:
 	move.l	a0,(a1)
 	move.l	a1,Object_sp
-T_1a594:
+.l_1a594:
 	movea.l	(a7)+,a1
 	rts
 Pop_Root:
 	move.l	a1,-(a7)
 	movea.l	Object_sp,a1
 	cmpa.l	#B_600fa,a1
-	bpl.b	T_1a5b6
+	bpl.b	.l_1a5b6
 	lea.l	D_33407,a1
 	jsr	DI_Error
-	bra.b	T_1a5be
-T_1a5b6:
+	bra.b	.l_1a5be
+.l_1a5b6:
 	subq.l	#$4,a1
 	move.l	a1,Object_sp
-T_1a5be:
+.l_1a5be:
 	movea.l	(a7)+,a1
 	rts

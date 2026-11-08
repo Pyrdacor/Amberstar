@@ -92,14 +92,14 @@ C2_DisInit:
 	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
-T_04d9e:
+.l_04d9e:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Below_pal_2D,a0
 	jsr	Fade_pal
-	bne.b	T_04d9e
+	bne.b	.l_04d9e
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts
@@ -118,14 +118,14 @@ T_04e02:
 	st.b	Time_lock
 	lea.l	Void,a1
 	lea.l	Subfade1,a2
-T_04e14:
+.l_04e14:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Below_pal_2D,a0
 	jsr	Fade_pal
-	bne.b	T_04e14
+	bne.b	.l_04e14
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts
@@ -352,38 +352,38 @@ C2_DisUpd:
 	lea.l	Underlay_buf,a3
 	lea.l	Overlay_buf,a4
 	moveq	#10,d7
-T_0514c:
+.l_0514c:
 	moveq	#12,d6
-T_0514e:
+.l_0514e:
 	move.b	(a1)+,(a3)+
 	move.b	(a2)+,(a4)+
-	dbra	d6,T_0514e
+	dbra	d6,.l_0514e
 	adda.w	d1,a1
 	adda.w	d1,a2
-	dbra	d7,T_0514c
+	dbra	d7,.l_0514c
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	bsr.w	Get_2D_icon_status
 	btst	#$3,d1
 	sne.b	Party_invisible
-	beq.b	T_05194
+	beq.b	.l_05194
 	lea.l	B_56027,a0
 	move.w	Mapbuf_Y,d0
 	mulu.w	#$d,d0
 	add.w	Mapbuf_X,d0
 	addq.b	#$1,(a0,d0.w)
-T_05194:
+.l_05194:
 	tst.b	Pause_Upd
-	bne.b	T_051a0
+	bne.b	.l_051a0
 	bsr.w	TwoD_char_handler
-T_051a0:
+.l_051a0:
 	bsr.w	Build_2D_map
 	bsr.w	Update_map_CIL
 	tst.b	CombatReq
-	beq.b	T_051bc
+	beq.b	.l_051bc
 	lea.l	CombatReq_Mod,a0
 	jsr	Push_Module
-T_051bc:
+.l_051bc:
 	movem.l	(a7)+,d0-d1/d6-d7/a0-a4
 	rts
 ; ---- Move_left_2D (original source: MAIN/MAP/2DCITY.ASM)

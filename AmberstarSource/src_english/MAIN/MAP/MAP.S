@@ -9,39 +9,39 @@ Init_map:
 	movea.l	a0,a5
 	move.b	$4(a5),d0
 	tst.b	d0
-	beq.b	T_01f12
+	beq.b	.l_01f12
 	move.b	$5(a5),d0
 	btst	#$6,d0
-	bne.b	T_01f0e
+	bne.b	.l_01f0e
 	moveq	#2,d0
-	bra.b	T_01f22
-T_01f0e:
+	bra.b	.l_01f22
+.l_01f0e:
 	moveq	#3,d0
-	bra.b	T_01f22
-T_01f12:
+	bra.b	.l_01f22
+.l_01f12:
 	move.b	$5(a5),d0
 	btst	#$5,d0
-	bne.b	T_01f20
+	bne.b	.l_01f20
 	moveq	#0,d0
-	bra.b	T_01f22
-T_01f20:
+	bra.b	.l_01f22
+.l_01f20:
 	moveq	#1,d0
-T_01f22:
+.l_01f22:
 	move.b	d0,Current_map_type
 	tst.b	First
-	bne.b	T_01f3a
+	bne.b	.l_01f3a
 	bsr.w	Init_time
 	st.b	First
-T_01f3a:
+.l_01f3a:
 	bsr.w	T_01ff6
-	lea.l	T_01f56(pc),a0
+	lea.l	.l_01f56(pc),a0
 	add.w	d0,d0
 	add.w	d0,d0
 	movea.l	(a0,d0.w),a0
 	jsr	Push_Module
 	movem.l	(a7)+,d0/a0/a5
 	rts
-T_01f56:
+.l_01f56:
 	dc.l	C2map_Mod
 	dc.l	W2map_Mod
 	dc.l	D3map_Mod
@@ -63,33 +63,33 @@ T_01f98:
 	move.w	B_57c4e,Map_Xcoord
 	move.w	B_57c50,Map_Ycoord
 	cmpi.b	#$0,Current_map_type
-	bne.b	T_01fcc
+	bne.b	.l_01fcc
 	move.w	B_57c52,Mapbuf_X
 	move.w	B_57c54,Mapbuf_Y
-	bra.b	T_01ff4
-T_01fcc:
+	bra.b	.l_01ff4
+.l_01fcc:
 	cmpi.b	#$1,Current_map_type
-	bne.b	T_01ff4
+	bne.b	.l_01ff4
 	move.w	B_57c56,Quad_X
 	move.w	B_57c58,Quad_Y
 	move.w	B_57c5a,Quad_index
-T_01ff4:
+.l_01ff4:
 	rts
 T_01ff6:
 	move.w	Map_Xcoord,B_57c4e
 	move.w	Map_Ycoord,B_57c50
 	cmpi.b	#$0,Current_map_type
-	bne.b	T_0202a
+	bne.b	.l_0202a
 	move.w	Mapbuf_X,B_57c52
 	move.w	Mapbuf_Y,B_57c54
-	bra.b	T_02052
-T_0202a:
+	bra.b	.l_02052
+.l_0202a:
 	cmpi.b	#$1,Current_map_type
-	bne.b	T_02052
+	bne.b	.l_02052
 	move.w	Quad_X,B_57c56
 	move.w	Quad_Y,B_57c58
 	move.w	Quad_index,B_57c5a
-T_02052:
+.l_02052:
 	rts
 T_02054:
 	movem.l	d0-d2/a0,-(a7)
@@ -98,10 +98,10 @@ T_02054:
 	jsr	Find_object
 	andi.l	#$ffff00,d2
 	cmpi.l	#$20200,d2
-	bne.b	T_020f2
+	bne.b	.l_020f2
 	cmpi.b	#$2,Current_map_type
-	bpl.b	T_020be
-	lea.l	T_020f8,a0
+	bpl.b	.l_020be
+	lea.l	.l_020f8,a0
 	subi.w	#$10,d0
 	subi.w	#$31,d1
 	lsr.w	#$4,d0
@@ -109,26 +109,26 @@ T_02054:
 	sub.w	Mapbuf_X,d0
 	sub.w	Mapbuf_Y,d1
 	tst.w	d0
-	beq.b	T_020aa
-	bmi.b	T_020ae
+	beq.b	.l_020aa
+	bmi.b	.l_020ae
 	moveq	#2,d2
-	bra.b	T_020b0
-T_020aa:
+	bra.b	.l_020b0
+.l_020aa:
 	moveq	#1,d2
-	bra.b	T_020b0
-T_020ae:
+	bra.b	.l_020b0
+.l_020ae:
 	moveq	#0,d2
-T_020b0:
+.l_020b0:
 	tst.w	d1
-	beq.b	T_020ba
-	bmi.b	T_020e0
+	beq.b	.l_020ba
+	bmi.b	.l_020e0
 	addq.w	#$6,d2
-	bra.b	T_020e0
-T_020ba:
+	bra.b	.l_020e0
+.l_020ba:
 	addq.w	#$3,d2
-	bra.b	T_020e0
-T_020be:
-	lea.l	T_02101,a0
+	bra.b	.l_020e0
+.l_020be:
+	lea.l	.l_02101,a0
 	subi.w	#$20,d0
 	subi.w	#$31,d1
 	ext.l	d0
@@ -139,17 +139,17 @@ T_020be:
 	add.w	d1,d1
 	add.w	d0,d1
 	move.w	d1,d2
-T_020e0:
+.l_020e0:
 	move.w	d2,Mouse_direction
 	moveq	#0,d0
 	move.b	(a0,d2.w),d0
 	jsr	Change_Mptr
-T_020f2:
+.l_020f2:
 	movem.l	(a7)+,d0-d2/a0
 	rts
-T_020f8:
+.l_020f8:
 	dc.b	$05,$01,$06,$04,$10,$03,$08,$02,$07
-T_02101:
+.l_02101:
 	dc.b	$0e,$09,$0d,$0c,$10,$0b,$17,$0a,$14
 ; ---- Reset_mouse (original source: MAIN/MAP/MAP.ASM)
 Reset_mouse:
@@ -170,43 +170,43 @@ Update_animation:
 	moveq	#15,d1
 	lea.l	B_57ca8,a0
 	moveq	#2,d7
-T_0214a:
+.l_0214a:
 	move.b	(a0),d0
 	addq.b	#$1,d0
 	cmp.b	d0,d7
-	bne.b	T_02158
+	bne.b	.l_02158
 	bsr.w	Recalc_random
 	moveq	#0,d0
-T_02158:
+.l_02158:
 	move.b	d0,(a0)
 	addq.l	#$4,a0
 	addq.w	#$1,d7
 	cmpi.w	#$9,d7
-	bmi.b	T_0214a
+	bmi.b	.l_0214a
 	lea.l	B_57ccc,a0
 	lea.l	B_57ce4,a1
 	moveq	#3,d7
-T_02172:
+.l_02172:
 	move.b	(a0),d0
 	tst.b	(a1)+
-	bne.b	T_02186
+	bne.b	.l_02186
 	addq.b	#$1,d0
 	cmp.b	d0,d7
-	bne.b	T_02192
+	bne.b	.l_02192
 	subq.b	#$2,d0
 	not.b	-$1(a1)
-	bra.b	T_02192
-T_02186:
+	bra.b	.l_02192
+.l_02186:
 	subq.b	#$1,d0
-	bne.b	T_02192
+	bne.b	.l_02192
 	not.b	-$1(a1)
 	bsr.w	Recalc_random
-T_02192:
+.l_02192:
 	move.b	d0,(a0)
 	addq.l	#$4,a0
 	addq.w	#$1,d7
 	cmpi.w	#$9,d7
-	bmi.b	T_02172
+	bmi.b	.l_02172
 	move.b	Anim_speed,Anim_count
 	movem.l	(a7)+,d0-d2/d6-d7/a0-a1
 ; ---- No_animation (original source: MAIN/MAP/MAP.ASM)
@@ -233,11 +233,11 @@ Recalc_random:
 Before_move:
 	movem.l	d0/a0,-(a7)
 	tst.b	B_592dd
-	beq.b	T_021f2
+	beq.b	.l_021f2
 	movem.l	(a7)+,d0/a0
 	addq.l	#$4,a7
 	rts
-T_021f2:
+.l_021f2:
 	bsr.w	T_01ff6
 	movem.l	(a7)+,d0/a0
 	rts
@@ -246,10 +246,10 @@ After_move:
 	st.b	New_move
 	move.w	#$0,Frame
 	move.w	B_57c66,d0
-	beq.b	T_0221a
+	beq.b	.l_0221a
 	subq.w	#$1,d0
 	bra.b	T_0223e
-T_0221a:
+.l_0221a:
 	cmpi.b	#$1,Current_map_type
 	bne.b	T_02238
 	move.w	B_57c68,d7
@@ -266,94 +266,94 @@ T_02238:
 T_0223e:
 	move.w	d0,B_57c66
 	cmpi.w	#$4,Travel_mode
-	beq.b	T_02258
+	beq.b	.l_02258
 	cmpi.w	#$2,Travel_mode
-	bpl.b	T_022d4
-T_02258:
+	bpl.b	.l_022d4
+.l_02258:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	cmpi.b	#$2,Current_map_type
-	bpl.b	T_0228c
+	bpl.b	.l_0228c
 	bsr.w	Get_2D_icon_status
 	tst.l	d1
-	beq.b	T_02284
+	beq.b	.l_02284
 	btst	#$5,d1
-	bne.b	T_02284
+	bne.b	.l_02284
 	btst	#$1f,d1
-	beq.b	T_022d4
-	bra.b	T_02296
-T_02284:
+	beq.b	.l_022d4
+	bra.b	.l_02296
+.l_02284:
 	btst	#$1f,d0
-	beq.b	T_022d4
-	bra.b	T_02296
-T_0228c:
+	beq.b	.l_022d4
+	bra.b	.l_02296
+.l_0228c:
 	bsr.w	Get_3D_icon_status
 	btst	#$1f,d0
-	beq.b	T_022d4
-T_02296:
+	beq.b	.l_022d4
+.l_02296:
 	lea.l	Chard_ptrs,a0
 	moveq	#0,d1
 	moveq	#1,d7
-T_022a0:
+.l_022a0:
 	tst.l	(a0)
-	beq.b	T_022ca
+	beq.b	.l_022ca
 	movea.l	(a0),a1
 	move.w	#$e400,d0
 	and.w	$3a(a1),d0
-	bne.b	T_022ca
+	bne.b	.l_022ca
 	move.w	$54(a1),d0
 	add.w	$a8(a1),d0
 	bsr.w	Probe
-	bpl.b	T_022ca
+	bpl.b	.l_022ca
 	bset	#$1,$3a(a1)
 	move.w	d7,d0
 	bsr.w	Do_damage
-T_022ca:
+.l_022ca:
 	addq.l	#$4,a0
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
-	bmi.b	T_022a0
-T_022d4:
+	bmi.b	.l_022a0
+.l_022d4:
 	tst.w	Travel_mode
-	bne.w	T_0236e
+	bne.w	.l_0236e
 	cmpi.b	#$2,Current_map_type
-	bpl.w	T_0236e
+	bpl.w	.l_0236e
 	bsr.w	Seek_transport
 	tst.w	d0
-	beq.b	T_022fe
+	beq.b	.l_022fe
 	cmpi.w	#$2,d0
-	beq.b	T_0236e
+	beq.b	.l_0236e
 	cmpi.w	#$3,d0
-	beq.b	T_0236e
-T_022fe:
+	beq.b	.l_0236e
+.l_022fe:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	bsr.w	Get_2D_icon_status
 	tst.l	d1
-	beq.b	T_02320
+	beq.b	.l_02320
 	btst	#$5,d1
-	bne.b	T_02320
+	bne.b	.l_02320
 	btst	#$e,d1
-	beq.b	T_0236e
-	bra.b	T_02326
-T_02320:
+	beq.b	.l_0236e
+	bra.b	.l_02326
+.l_02320:
 	btst	#$e,d0
-	beq.b	T_0236e
-T_02326:
+	beq.b	.l_0236e
+.l_02326:
 	lea.l	Chard_ptrs,a0
 	moveq	#1,d7
-T_0232e:
+.l_0232e:
 	tst.l	(a0)
-	beq.b	T_02364
+	beq.b	.l_02364
 	movea.l	(a0),a1
 	move.w	#$e400,d0
 	and.w	$3a(a1),d0
-	bne.b	T_02364
+	bne.b	.l_02364
 	moveq	#0,d0
 	move.b	$8(a1),d0
 	add.w	$b4(a1),d0
 	bsr.w	Probe
-	bpl.b	T_02364
+	bpl.b	.l_02364
 	jsr	Random
 	move.w	d0,d1
 	mulu.w	#$5,d1
@@ -361,17 +361,17 @@ T_0232e:
 	addq.w	#$1,d1
 	move.w	d7,d0
 	bsr.w	Do_damage
-T_02364:
+.l_02364:
 	addq.l	#$4,a0
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
-	bmi.b	T_0232e
-T_0236e:
+	bmi.b	.l_0232e
+.l_0236e:
 	bsr.w	Event_handler
 	tst.w	Spell_5_duration
-	beq.w	T_02424
+	beq.w	.l_02424
 	cmpi.w	#$5,Travel_mode
-	bpl.w	T_02424
+	bpl.w	.l_02424
 	lea.l	Dir_offset,a0
 	move.w	View_direction,d0
 	add.w	d0,d0
@@ -383,52 +383,52 @@ T_0236e:
 	ext.w	d1
 	add.w	Map_Ycoord,d1
 	bsr.w	Find_event
-	beq.b	T_02424
+	beq.b	.l_02424
 	moveq	#0,d0
 	move.b	(a5),d0
 	cmpi.w	#$4,d0
-	bne.b	T_023e6
+	bne.b	.l_023e6
 	tst.b	$4(a5)
-	beq.b	T_02424
+	beq.b	.l_02424
 	bsr.w	T_01ff6
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
-	beq.b	T_023da
+	beq.b	.l_023da
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
-T_023da:
+.l_023da:
 	st.b	B_57c61
 	bsr.w	Handle_event
-	bra.b	T_02440
-T_023e6:
+	bra.b	.l_02440
+.l_023e6:
 	lea.l	D_26358,a0
 	move.b	-$1(a0,d0.w),d1
-	bmi.b	T_02424
+	bmi.b	.l_02424
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
-	beq.b	T_02406
+	beq.b	.l_02406
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
-T_02406:
+.l_02406:
 	move.w	d1,WText_nr
 	move.l	#Code0003Sys,Textfile_ptr
 	lea.l	D_274a2,a0
 	jsr	Push_Module
-	bra.b	T_02440
-T_02424:
+	bra.b	.l_02440
+.l_02424:
 	cmpi.b	#$1,Current_map_type
-	bne.b	T_02440
+	bne.b	.l_02440
 	move.w	Travel_mode,d0
 	add.w	d0,d0
-	move.w	T_02446(pc,d0.w),d0
-	beq.b	T_02440
+	move.w	.l_02446(pc,d0.w),d0
+	beq.b	.l_02440
 	bsr.w	Delay
-T_02440:
+.l_02440:
 	movem.l	(a7)+,d0-d1/d7/a0-a1
 	rts
-T_02446:
+.l_02446:
 	dc.b	$00,$05,$00,$02,$00,$03,$00,$02,$00,$04,$00,$00,$00,$00
 T_02454:
 	move.w	Mouse_direction,d0
@@ -499,9 +499,9 @@ Map_CIL_evaluate:
 	bclr	#$7,$7(a0)
 	bclr	#$7,$8(a0)
 	tst.b	B_592dd
-	beq.b	T_0259c
+	beq.b	.l_0259c
 	cmpi.b	#$2,Current_map_type
-	bpl.b	T_02584
+	bpl.b	.l_02584
 	bset	#$7,(a0)
 	bset	#$7,$1(a0)
 	bset	#$7,$2(a0)
@@ -510,13 +510,13 @@ Map_CIL_evaluate:
 	bset	#$7,$6(a0)
 	bset	#$7,$7(a0)
 	bset	#$7,$8(a0)
-	bra.b	T_0259c
-T_02584:
+	bra.b	.l_0259c
+.l_02584:
 	bset	#$7,$1(a0)
 	bset	#$7,$3(a0)
 	bset	#$7,$5(a0)
 	bset	#$7,$7(a0)
-T_0259c:
+.l_0259c:
 	rts
 ; ---- Second_CIL_evaluate (original source: MAIN/MAP/MAP.ASM)
 Second_CIL_evaluate:
@@ -670,16 +670,16 @@ Set_map_music:
 	movem.l	d0/a0,-(a7)
 	movea.l	Mapd_ptr,a0
 	cmpi.w	#$41,Map_nr
-	bpl.b	T_0277c
+	bpl.b	.l_0277c
 	move.w	Travel_mode,d0
-	move.b	T_02774(pc,d0.w),d0
-	bra.b	T_02782
-T_02774:
+	move.b	.l_02774(pc,d0.w),d0
+	bra.b	.l_02782
+.l_02774:
 	dc.b	$05,$03,$02,$02,$04,$04,$04,$00
-T_0277c:
+.l_0277c:
 	moveq	#0,d0
 	move.b	$6(a0),d0
-T_02782:
+.l_02782:
 	bsr.w	Play_song
 	movem.l	(a7)+,d0/a0
 	rts

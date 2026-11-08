@@ -36,14 +36,14 @@ Open_window:
 	subq.w	#$1,d4
 	move.w	d4,$e(a2)
 	tst.w	d6
-	bne.b	T_1a634
+	bne.b	.l_1a634
 	moveq	#3,d6
 	lea.l	D_33432,a1
-	bra.b	T_1a63c
-T_1a634:
+	bra.b	.l_1a63c
+.l_1a634:
 	moveq	#2,d6
 	lea.l	D_33c32,a1
-T_1a63c:
+.l_1a63c:
 	move.w	d6,-(a7)
 	move.w	d2,d6
 	move.w	d3,d7
@@ -125,7 +125,7 @@ T_1a63c:
 	lea.l	$8(a2),a0
 	jsr	Push_MA
 	move.l	$10(a2),d0
-	beq.b	T_1a78a
+	beq.b	.l_1a78a
 	movea.l	d0,a0
 	moveq	#16,d0
 	moveq	#16,d1
@@ -133,23 +133,23 @@ T_1a63c:
 	add.w	$2(a2),d1
 	jsr	Translate_object_branch
 	jsr	Push_Root
-T_1a78a:
+.l_1a78a:
 	lea.l	Window_list,a0
 	moveq	#1,d7
-T_1a792:
+.l_1a792:
 	tst.l	(a0)+
-	dbeq	d7,T_1a792
+	dbeq	d7,.l_1a792
 	tst.w	d7
-	bpl.b	T_1a7aa
+	bpl.b	.l_1a7aa
 	lea.l	D_34432,a1
 	jsr	DI_Error
-	bra.b	T_1a7b6
-T_1a7aa:
+	bra.b	.l_1a7b6
+.l_1a7aa:
 	move.l	a2,-(a0)
 	suba.l	#Window_list,a0
 	move.l	a0,d0
 	lsr.w	#$2,d0
-T_1a7b6:
+.l_1a7b6:
 	jsr	Mouse_on
 	movem.l	(a7)+,d1-d7/a0-a2/a6
 	rts
@@ -184,11 +184,11 @@ Close_window:
 	lsl.w	#$2,d0
 	adda.w	d0,a0
 	tst.l	(a0)
-	bne.b	T_1a81c
+	bne.b	.l_1a81c
 	lea.l	D_34467,a1
 	jsr	DI_Error
-	bra.b	T_1a882
-T_1a81c:
+	bra.b	.l_1a882
+.l_1a81c:
 	movea.l	(a0),a1
 	clr.l	(a0)
 	move.w	$0(a1),d0
@@ -204,7 +204,7 @@ T_1a81c:
 	jsr	Copy_screen
 	jsr	Pop_MA
 	move.l	$10(a1),d0
-	beq.b	T_1a87a
+	beq.b	.l_1a87a
 	jsr	Pop_Root
 	movea.l	d0,a0
 	moveq	#16,d0
@@ -214,10 +214,10 @@ T_1a81c:
 	neg.w	d0
 	neg.w	d1
 	jsr	Translate_object_branch
-T_1a87a:
+.l_1a87a:
 	lea.l	(a1),a0
 	jsr	Free_memory
-T_1a882:
+.l_1a882:
 	jsr	Mouse_on
 	movem.l	(a7)+,d0-d1/d6-d7/a0-a1/a6
 	rts
@@ -227,15 +227,15 @@ Coso_player:
 	bra.w	T_1a8c8
 T_1a896:
 	bra.w	T_1aaac
-	bra.w	T_1a8ae
-	bra.w	T_1a8a2
-T_1a8a2:
+	bra.w	.l_1a8ae
+	bra.w	.l_1a8a2
+.l_1a8a2:
 	pea.l	(a0)
 	lea.l	T_1b536(pc),a0
 	move.b	d0,(a0)
 	movea.l	(a7)+,a0
 	rts
-T_1a8ae:
+.l_1a8ae:
 	pea.l	(a0)
 	lea.l	T_1b42c(pc),a0
 	move.w	d0,(a0)+
@@ -265,7 +265,7 @@ T_1a8c8:
 T_1a8f0:
 	bsr.b	T_1a920
 	tst.w	d0
-	beq.b	T_1a910
+	beq.b	.l_1a910
 	subq.w	#$1,d0
 	movea.l	T_1b522(pc),a1
 	mulu.w	#$6,d0
@@ -275,7 +275,7 @@ T_1a8f0:
 	lea.l	T_1b438(pc),a5
 	move.w	(a1),(a5)
 	bra.w	T_1ad8a
-T_1a910:
+.l_1a910:
 	andi.b	#$f0,$fffffa1d.w
 	lea.l	T_1b43a(pc),a0
 	st.b	(a0)
@@ -284,9 +284,9 @@ T_1a920:
 	lea.l	T_1b537(pc),a1
 	sf.b	(a1)
 	cmpi.l	#$4d4d4d45,$20(a0)
-	bne.b	T_1a934
+	bne.b	.l_1a934
 	move.b	#$1,(a1)
-T_1a934:
+.l_1a934:
 	lea.l	T_1b52e(pc),a5
 	move.l	a0,(a5)
 	movea.l	$4(a0),a1
@@ -333,10 +333,10 @@ T_1a99c:
 	beq.b	T_1a99a
 	move.l	#$48492020,$f4(a0)
 	tst.b	d0
-	beq.b	T_1aa0c
+	beq.b	.l_1aa0c
 	lea.l	T_1aa9a(pc),a1
 	tst.l	(a1)
-	bne.b	T_1aa0c
+	bne.b	.l_1aa0c
 	move.w	sr,-(a7)
 	move.w	#$2700,sr
 	move.l	$110.w,(a1)+
@@ -351,15 +351,15 @@ T_1a99c:
 	bset	#$4,$fffffa15.w
 	bclr	#$3,$fffffa17.w
 	move.w	(a7)+,sr
-T_1aa0c:
+.l_1aa0c:
 	lea.l	$100(a0),a1
 	movea.l	$fc(a0),a2
 	adda.l	a0,a2
 	tst.b	d0
-	bne.b	T_1aa32
+	bne.b	.l_1aa32
 	moveq	#0,d7
 	move.w	#$30,d7
-T_1aa20:
+.l_1aa20:
 	cmpa.l	a1,a2
 	beq.b	T_1aa6e
 	move.b	(a1),d2
@@ -367,14 +367,14 @@ T_1aa20:
 	muls.w	d7,d2
 	divs.w	#$3f,d2
 	move.b	d2,(a1)+
-	bra.b	T_1aa20
-T_1aa32:
+	bra.b	.l_1aa20
+.l_1aa32:
 	cmp.b	#$1,d0
 	beq.b	T_1aa70
-T_1aa38:
+.l_1aa38:
 	eori.b	#$80,(a1)+
 	cmpa.l	a2,a1
-	blt.b	T_1aa38
+	blt.b	.l_1aa38
 	movea.w	#$8800,a0
 	move.b	#$7,(a0)
 	move.b	(a0),d0
@@ -395,12 +395,12 @@ T_1aa70:
 	eori.b	#$80,d0
 	lsr.w	#$4,d0
 	andi.w	#$f,d0
-	move.b	T_1aa8a(pc,d0.w),(a1)+
+	move.b	.l_1aa8a(pc,d0.w),(a1)+
 	cmpa.l	a2,a1
 	blt.b	T_1aa70
 	lea.l	T_1aaa6(pc),a0
 	bra.b	T_1aa64
-T_1aa8a:
+.l_1aa8a:
 	dc.b	$00,$07,$09,$0a,$0b,$0c,$0c,$0d,$0d,$0d,$0e,$0e,$0e,$0f,$0f,$0f
 T_1aa9a:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -410,9 +410,9 @@ T_1aaac:
 	lea.l	T_1b3ee(pc),a5
 	lea.l	T_1b436(pc),a4
 	tst.b	$4(a4)
-	beq.b	T_1aafa
+	beq.b	.l_1aafa
 	tst.b	$5(a4)
-	bne.b	T_1aaf8
+	bne.b	.l_1aaf8
 	st.b	$5(a4)
 	moveq	#0,d0
 	move.b	d0,$12(a5)
@@ -421,16 +421,16 @@ T_1aaac:
 	move.b	d0,$26(a5)
 	move.b	d0,$2a(a5)
 	move.b	T_1b536(pc),d4
-	bne.b	T_1aaf8
+	bne.b	.l_1aaf8
 	move.w	sr,-(a7)
 	move.w	#$2700,sr
 	movem.l	$10(a5),d0-d6
 	movem.l	d0-d6,$ffff8830.w
 	bsr.w	T_1b3c6
 	move.w	(a7)+,sr
-T_1aaf8:
+.l_1aaf8:
 	rts
-T_1aafa:
+.l_1aafa:
 	lea.l	T_1b42e(pc),a4
 	lea.l	T_1b43c(pc),a0
 	bsr.w	T_1af2e
@@ -451,16 +451,16 @@ T_1aafa:
 	move.b	d0,$12(a5)
 	move.b	d1,$2a(a5)
 	move.w	$4(a4),d0
-	beq.b	T_1ab84
+	beq.b	.l_1ab84
 	move.w	d0,-(a7)
 	lea.l	T_1b4d8(pc),a0
 	bsr.w	T_1af2e
 	movea.l	$4(a0),a1
 	adda.w	$16(a0),a1
 	cmpi.b	#$e1,(a1)
-	bne.b	T_1ab62
+	bne.b	.l_1ab62
 	clr.w	$4(a4)
-T_1ab62:
+.l_1ab62:
 	move.w	(a7)+,d7
 	lea.l	T_1b41a(pc),a1
 	add.w	d7,d7
@@ -474,7 +474,7 @@ T_1ab62:
 	move.b	(a7)+,(a5,d6.w)
 	move.b	(a1)+,d6
 	move.b	d1,(a5,d6.w)
-T_1ab84:
+.l_1ab84:
 	move.w	sr,-(a7)
 	move.w	#$2700,sr
 	move.b	#$7,$ffff8830.w
@@ -487,17 +487,17 @@ T_1ab84:
 	move.b	d7,$1e(a5)
 	move.b	(a4)+,$1a(a5)
 	move.b	T_1b536(pc),d0
-	bne.b	T_1ac10
+	bne.b	.l_1ac10
 	move.b	T_1b538(pc),d0
-	bne.b	T_1abc2
+	bne.b	.l_1abc2
 	btst	#$0,$ffff8901.w
-	bne.b	T_1abcc
-	bra.w	T_1ac06
-T_1abc2:
+	bne.b	.l_1abcc
+	bra.w	.l_1ac06
+.l_1abc2:
 	move.b	$fffffa1d.w,d0
 	andi.w	#$f,d0
-	beq.b	T_1ac06
-T_1abcc:
+	beq.b	.l_1ac06
+.l_1abcc:
 	movem.l	(a5)+,d0-d7/a0-a1
 	clr.w	d4
 	clr.w	d5
@@ -509,18 +509,18 @@ T_1abcc:
 	moveq	#10,d0
 	move.b	T_1b538(pc),d1
 	cmp.b	#$2,d1
-	bne.b	T_1abfe
+	bne.b	.l_1abfe
 	clr.w	$2(a5)
 	move.l	(a5)+,$ffff8840.w
 	addq.w	#$5,d0
-T_1abfe:
+.l_1abfe:
 	move.b	d0,$ffff8840.w
 	move.w	(a7)+,sr
-	bra.b	T_1ac10
-T_1ac06:
+	bra.b	.l_1ac10
+.l_1ac06:
 	movem.l	(a5),d0-d7/a0-a2
 	movem.l	d0-d7/a0-a2,$ffff8840.w
-T_1ac10:
+.l_1ac10:
 	lea.l	T_1b436(pc),a5
 	subq.w	#$1,(a5)+
 	bne.b	T_1ac38
@@ -540,24 +540,24 @@ T_1ac3a:
 	subq.b	#$1,$1a(a0)
 	bpl.b	T_1ac38
 	move.b	$1b(a0),$1a(a0)
-T_1ac46:
+.l_1ac46:
 	movea.l	$c(a0),a1
-T_1ac4a:
+.l_1ac4a:
 	move.b	(a1)+,d0
 	cmp.b	#$ff,d0
-	bne.w	T_1acd4
+	bne.w	.l_1acd4
 	movea.l	$0(a0),a2
 	adda.w	$14(a0),a2
 	tst.b	d4
-	bne.b	T_1ac7c
+	bne.b	.l_1ac7c
 	subq.w	#$1,$1c(a0)
-	bpl.b	T_1ac7c
+	bpl.b	.l_1ac7c
 	move.w	T_1b50e(pc),$1c(a0)
 	move.w	d5,$14(a0)
 	move.w	d5,$48(a0)
 	move.w	d5,$7c(a0)
 	movea.l	$0(a0),a2
-T_1ac7c:
+.l_1ac7c:
 	moveq	#0,d1
 	move.b	(a2),d1
 	move.b	$1(a2),$21(a0)
@@ -566,50 +566,50 @@ T_1ac7c:
 	move.b	d0,d2
 	andi.w	#$f0,d2
 	cmp.w	#$f0,d2
-	bne.b	T_1aca8
+	bne.b	.l_1aca8
 	move.b	d0,d2
 	andi.b	#$f,d2
 	move.b	d2,$30(a0)
-	bra.b	T_1acb8
-T_1aca8:
+	bra.b	.l_1acb8
+.l_1aca8:
 	cmp.b	#$e0,d2
-	bne.b	T_1acb8
+	bne.b	.l_1acb8
 	move.b	d0,d2
 	andi.w	#$f,d2
 	move.w	d2,$2(a5)
-T_1acb8:
+.l_1acb8:
 	add.w	d1,d1
 	movea.l	T_1b510(pc),a3
 	movea.w	(a3,d1.w),a3
 	adda.l	T_1b52e(pc),a3
 	move.l	a3,$c(a0)
 	addi.w	#$c,$14(a0)
-	bra.w	T_1ac46
-T_1acd4:
+	bra.w	.l_1ac46
+.l_1acd4:
 	cmp.b	#$fe,d0
-	bne.b	T_1ace6
+	bne.b	.l_1ace6
 	move.b	(a1),$1b(a0)
 	move.b	(a1)+,$1a(a0)
-	bra.w	T_1ac4a
-T_1ace6:
+	bra.w	.l_1ac4a
+.l_1ace6:
 	cmp.b	#$fd,d0
-	bne.b	T_1acfa
+	bne.b	.l_1acfa
 	move.b	(a1),$1b(a0)
 	move.b	(a1)+,$1a(a0)
 	move.l	a1,$c(a0)
 	rts
-T_1acfa:
+.l_1acfa:
 	move.b	d0,$1e(a0)
 	move.b	(a1)+,d1
 	move.b	d1,$1f(a0)
 	andi.w	#$e0,d1
-	beq.b	T_1ad0e
+	beq.b	.l_1ad0e
 	move.b	(a1)+,$2c(a0)
-T_1ad0e:
+.l_1ad0e:
 	move.l	a1,$c(a0)
 	move.l	d5,$10(a0)
 	tst.b	d0
-	bmi.b	T_1ad88
+	bmi.b	.l_1ad88
 	move.b	$1f(a0),d1
 	move.b	d1,d0
 	andi.w	#$1f,d1
@@ -630,9 +630,9 @@ T_1ad0e:
 	move.b	(a2)+,$2a(a0)
 	move.l	a2,$4(a0)
 	andi.b	#$40,d0
-	beq.b	T_1ad6a
+	beq.b	.l_1ad6a
 	move.b	$2c(a0),d1
-T_1ad6a:
+.l_1ad6a:
 	movea.l	T_1b514(pc),a2
 	add.w	d1,d1
 	movea.w	(a2,d1.w),a2
@@ -641,7 +641,7 @@ T_1ad6a:
 	move.w	d5,$18(a0)
 	move.b	d5,$25(a0)
 	move.b	d5,$24(a0)
-T_1ad88:
+.l_1ad88:
 	rts
 T_1ad8a:
 	movem.l	d0-d1,-(a7)
@@ -661,7 +661,7 @@ T_1ad8a:
 	lea.l	T_1b43c(pc),a0
 	lea.l	T_1b3e2(pc),a1
 	lea.l	T_1b3ea(pc),a2
-T_1adc2:
+.l_1adc2:
 	move.l	a1,$8(a0)
 	clr.w	$18(a0)
 	move.l	a1,$4(a0)
@@ -709,13 +709,13 @@ T_1adc2:
 	move.b	d1,d2
 	andi.w	#$f0,d1
 	cmp.w	#$f0,d1
-	bne.b	T_1ae7c
+	bne.b	.l_1ae7c
 	sub.b	d1,d2
 	move.b	d2,$30(a0)
-T_1ae7c:
+.l_1ae7c:
 	clr.l	$10(a0)
 	lea.l	$34(a0),a0
-	dbra	d0,T_1adc2
+	dbra	d0,.l_1adc2
 	lea.l	T_1b436(pc),a0
 	move.w	#$1,(a0)
 	clr.w	$4(a0)
@@ -724,7 +724,7 @@ T_1ae96:
 	move.w	T_1b52c(pc),d2
 	move.w	T_1b52a(pc),d1
 	tst.w	d2
-	beq.w	T_1af2c
+	beq.w	.l_1af2c
 	lea.l	T_1b4d8(pc),a0
 	lea.l	T_1b42e(pc),a5
 	move.b	d2,$1e(a0)
@@ -761,27 +761,27 @@ T_1ae96:
 	sf.b	$2c(a0)
 	addq.w	#$1,d1
 	move.w	d1,$4(a5)
-T_1af2c:
+.l_1af2c:
 	rts
 T_1af2e:
 	moveq	#0,d7
 	move.b	d7,$2d(a0)
 	tst.b	$25(a0)
-	beq.b	T_1af42
+	beq.b	.l_1af42
 	subq.b	#$1,$25(a0)
 	bra.w	T_1b13a
-T_1af42:
+.l_1af42:
 	movea.l	$8(a0),a1
 	adda.w	$18(a0),a1
 	move.b	(a1)+,d0
 	moveq	#0,d1
 	move.b	d0,d1
 	subi.w	#$e0,d1
-	bmi.w	T_1b132
+	bmi.w	.l_1b132
 	add.w	d1,d1
-	move.w	T_1af62(pc,d1.w),d1
-	jmp	T_1af62(pc,d1.w)
-T_1af62:
+	move.w	.l_1af62(pc,d1.w),d1
+	jmp	.l_1af62(pc,d1.w)
+.l_1af62:
 	dc.b	$00,$fe,$01,$10,$01,$1a,$01,$2c,$01,$3c,$01,$4c,$01,$5a,$01,$68
 	dc.b	$01,$88,$01,$94,$01,$be,$00,$f2,$00,$1c,$00,$c0,$70,$00,$10,$19
 	dc.b	$12,$19,$14,$19,$24,$7a,$05,$aa,$0c,$aa,$4d,$41,$52,$43,$00,$f8
@@ -811,15 +811,15 @@ T_1af62:
 	dc.b	$00,$0b,$17,$59,$00,$02,$20,$3c,$0c,$00,$0d,$0a,$01,$cb,$00,$08
 	dc.b	$61,$00,$02,$b2,$46,$df,$54,$68,$00,$18,$60,$00,$fe,$2c,$11,$7c
 	dc.b	$00,$20,$00,$1f,$11,$59,$00,$2c,$54,$68,$00,$18,$60,$00,$fe,$1a
-T_1b132:
+.l_1b132:
 	move.b	d0,$26(a0)
 	addq.w	#$1,$18(a0)
 T_1b13a:
 	tst.b	$24(a0)
-	beq.b	T_1b146
+	beq.b	.l_1b146
 	subq.b	#$1,$24(a0)
 	bra.b	T_1b1ae
-T_1b146:
+.l_1b146:
 	subq.b	#$1,$22(a0)
 	bne.b	T_1b1ae
 	move.b	$23(a0),$22(a0)
@@ -832,9 +832,9 @@ T_1b15a:
 	subi.w	#$e0,d1
 	bmi.b	T_1b1a6
 	add.w	d1,d1
-	move.w	T_1b170(pc,d1.w),d1
+	move.w	.l_1b170(pc,d1.w),d1
 	jmp	T_1b180+2(pc,d1.w)
-T_1b170:
+.l_1b170:
 	ori.b	#$12,d0
 	ori.b	#$0,d0
 	ori.b	#$0,d0
@@ -857,10 +857,10 @@ T_1b1a6:
 	addq.w	#$1,$16(a0)
 T_1b1ae:
 	move.b	$26(a0),d0
-	bmi.b	T_1b1bc
+	bmi.b	.l_1b1bc
 	add.b	$1e(a0),d0
 	add.b	$21(a0),d0
-T_1b1bc:
+.l_1b1bc:
 	andi.w	#$7f,d0
 	lea.l	T_1b53a(pc),a1
 	add.w	d0,d0
@@ -868,45 +868,45 @@ T_1b1bc:
 	move.w	(a1,d0.w),d0
 	move.b	$2e(a0),d3
 	move.b	$32(a0),d2
-	bne.b	T_1b1de
+	bne.b	.l_1b1de
 	bclr	d3,(a4)
 	addq.w	#$3,d3
 	bclr	d3,(a4)
-	bra.b	T_1b20c
-T_1b1de:
+	bra.b	.l_1b20c
+.l_1b1de:
 	cmp.b	#$1,d2
-	bne.b	T_1b206
+	bne.b	.l_1b206
 	bset	d3,(a4)
 	addq.w	#$3,d3
 	bclr	d3,(a4)
 	move.b	$1e(a0),$2d(a0)
 	move.b	$26(a0),d4
-	bpl.b	T_1b200
+	bpl.b	.l_1b200
 	andi.b	#$7f,d4
 	move.b	d4,$2d(a0)
-	bra.b	T_1b20c
-T_1b200:
+	bra.b	.l_1b20c
+.l_1b200:
 	add.b	d4,$2d(a0)
-	bra.b	T_1b20c
-T_1b206:
+	bra.b	.l_1b20c
+.l_1b206:
 	bclr	d3,(a4)
 	addq.w	#$3,d3
 	bset	d3,(a4)
-T_1b20c:
+.l_1b20c:
 	tst.b	$2d(a0)
-	beq.b	T_1b220
+	beq.b	.l_1b220
 	move.b	$2d(a0),d3
 	not.b	d3
 	andi.b	#$1f,d3
 	move.b	d3,$1(a4)
-T_1b220:
+.l_1b220:
 	move.b	T_1b537(pc),d2
-	beq.w	T_1b31c
+	beq.w	.l_1b31c
 	tst.b	$2a(a0)
-	beq.b	T_1b234
+	beq.b	.l_1b234
 	subq.b	#$1,$2a(a0)
-	bra.b	T_1b280
-T_1b234:
+	bra.b	.l_1b280
+.l_1b234:
 	moveq	#0,d1
 	moveq	#0,d2
 	moveq	#0,d3
@@ -917,19 +917,19 @@ T_1b234:
 	move.b	$27(a0),d3
 	move.b	$2b(a0),d4
 	btst	#$5,d4
-	beq.b	T_1b260
+	beq.b	.l_1b260
 	sub.w	d3,d1
-	bpl.b	T_1b26c
+	bpl.b	.l_1b26c
 	moveq	#0,d1
 	bchg	#$5,d4
-	bra.b	T_1b26c
-T_1b260:
+	bra.b	.l_1b26c
+.l_1b260:
 	add.w	d3,d1
 	cmp.w	d5,d1
-	ble.b	T_1b26c
+	ble.b	.l_1b26c
 	move.w	d5,d1
 	bchg	#$5,d4
-T_1b26c:
+.l_1b26c:
 	move.b	d1,$29(a0)
 	move.b	d4,$2b(a0)
 	sub.w	d2,d1
@@ -938,9 +938,9 @@ T_1b26c:
 	asr.l	#$8,d1
 	asr.l	#$2,d1
 	add.w	d1,d0
-T_1b280:
+.l_1b280:
 	btst	#$5,$1f(a0)
-	beq.b	T_1b2a4
+	beq.b	.l_1b2a4
 	moveq	#0,d1
 	move.b	$2c(a0),d1
 	ext.w	d1
@@ -952,110 +952,110 @@ T_1b280:
 	asr.l	#$8,d2
 	asr.w	#$2,d2
 	sub.w	d2,d0
-T_1b2a4:
+.l_1b2a4:
 	move.b	$2f(a0),d1
 	sub.b	$30(a0),d1
 	sub.w	T_1b42c(pc),d1
 	sub.b	$31(a0),d1
-	bpl.b	T_1b2b8
+	bpl.b	.l_1b2b8
 	moveq	#0,d1
-T_1b2b8:
+.l_1b2b8:
 	move.b	$33(a0),d7
-	beq.b	T_1b31a
+	beq.b	.l_1b31a
 	movea.w	#$8830,a3
 	move.w	d0,d2
 	btst	#$7,d7
-	beq.b	T_1b2e0
+	beq.b	.l_1b2e0
 	move.w	sr,-(a7)
 	move.w	#$2700,sr
 	move.l	#$c000d0a,d4
 	movep.l	d4,$8(a3)
 	bsr.w	T_1b3c6
 	move.w	(a7)+,sr
-T_1b2e0:
+.l_1b2e0:
 	btst	#$1,d7
-	beq.b	T_1b2e8
+	beq.b	.l_1b2e8
 	sub.w	d0,d0
-T_1b2e8:
+.l_1b2e8:
 	btst	#$3,d7
-	beq.b	T_1b2f4
+	beq.b	.l_1b2f4
 	move.w	d2,d7
 	lsr.w	#$3,d7
-	bra.b	T_1b300
-T_1b2f4:
+	bra.b	.l_1b300
+.l_1b2f4:
 	btst	#$2,d7
-	bne.b	T_1b2fc
+	bne.b	.l_1b2fc
 	lsr.w	#$1,d7
-T_1b2fc:
+.l_1b2fc:
 	move.w	d2,d7
 	lsr.w	#$4,d7
-T_1b300:
+.l_1b300:
 	move.w	sr,-(a7)
 	move.w	#$2700,sr
 	move.b	#$b,(a3)
 	move.b	d7,$a(a3)
 	move.b	T_1b538(pc),d3
-	beq.b	T_1b318
+	beq.b	.l_1b318
 	bsr.w	T_1b3c6
-T_1b318:
+.l_1b318:
 	move.w	(a7)+,sr
-T_1b31a:
+.l_1b31a:
 	rts
-T_1b31c:
+.l_1b31c:
 	tst.b	$2a(a0)
-	beq.b	T_1b328
+	beq.b	.l_1b328
 	subq.b	#$1,$2a(a0)
-	bra.b	T_1b38e
-T_1b328:
+	bra.b	.l_1b38e
+.l_1b328:
 	move.b	d1,d5
 	move.b	$2b(a0),d6
 	move.b	$28(a0),d4
-	bmi.b	T_1b338
+	bmi.b	.l_1b338
 	add.b	d4,d4
-	bra.b	T_1b33c
-T_1b338:
+	bra.b	.l_1b33c
+.l_1b338:
 	andi.b	#$7f,d4
-T_1b33c:
+.l_1b33c:
 	move.b	$29(a0),d1
 	tst.b	d6
-	bpl.b	T_1b348
+	bpl.b	.l_1b348
 	btst	d7,d6
-	bne.b	T_1b36e
-T_1b348:
+	bne.b	.l_1b36e
+.l_1b348:
 	btst	#$5,d6
-	bne.b	T_1b35c
+	bne.b	.l_1b35c
 	sub.b	$27(a0),d1
-	bcc.b	T_1b36a
+	bcc.b	.l_1b36a
 	bset	#$5,d6
 	moveq	#0,d1
-	bra.b	T_1b36a
-T_1b35c:
+	bra.b	.l_1b36a
+.l_1b35c:
 	add.b	$27(a0),d1
 	cmp.b	d4,d1
-	bcs.b	T_1b36a
+	bcs.b	.l_1b36a
 	bclr	#$5,d6
 	move.b	d4,d1
-T_1b36a:
+.l_1b36a:
 	move.b	d1,$29(a0)
-T_1b36e:
+.l_1b36e:
 	lsr.b	#$1,d4
 	sub.b	d4,d1
-	bcc.b	T_1b378
+	bcc.b	.l_1b378
 	subi.w	#$100,d1
-T_1b378:
+.l_1b378:
 	addi.b	#$a0,d5
-	bcs.b	T_1b386
-T_1b37e:
+	bcs.b	.l_1b386
+.l_1b37e:
 	add.w	d1,d1
 	addi.b	#$18,d5
-	bcc.b	T_1b37e
-T_1b386:
+	bcc.b	.l_1b37e
+.l_1b386:
 	add.w	d1,d0
 	bchg	d7,d6
 	move.b	d6,$2b(a0)
-T_1b38e:
+.l_1b38e:
 	btst	#$5,$1f(a0)
-	beq.b	T_1b3b0
+	beq.b	.l_1b3b0
 	moveq	#0,d1
 	move.b	$2c(a0),d1
 	ext.w	d1
@@ -1066,14 +1066,14 @@ T_1b38e:
 	move.l	d2,$10(a0)
 	swap	d2
 	sub.w	d2,d0
-T_1b3b0:
+.l_1b3b0:
 	move.b	$2f(a0),d1
 	sub.b	$30(a0),d1
 	sub.w	T_1b42c(pc),d1
 	sub.b	$31(a0),d1
-	bpl.b	T_1b3c4
+	bpl.b	.l_1b3c4
 	moveq	#0,d1
-T_1b3c4:
+.l_1b3c4:
 	rts
 T_1b3c6:
 	move.w	d0,-(a7)
@@ -1081,9 +1081,9 @@ T_1b3c6:
 	moveq	#10,d1
 	move.b	T_1b538(pc),d0
 	cmp.b	#$2,d0
-	bne.b	T_1b3d8
+	bne.b	.l_1b3d8
 	addq.w	#$5,d1
-T_1b3d8:
+.l_1b3d8:
 	move.b	d1,$ffff8800.w
 	move.l	(a7)+,d1
 	move.w	(a7)+,d0
@@ -1190,25 +1190,25 @@ T_1b63e:
 	addq.l	#$2,a7
 	cmpi.w	#$2,d0
 	spl.b	B_60123
-	bpl.b	T_1b688
+	bpl.b	.l_1b688
 	cmpi.w	#$2,$4a6.w
 	seq.b	B_60124
 	move.w	#$0,-(a7)
 	move.w	#$e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
-	bra.b	T_1b6a8
-T_1b688:
+	bra.b	.l_1b6a8
+.l_1b688:
 	move.l	#D_5496d,-(a7)
 	move.w	#$3b,-(a7)
 	trap	#$1
 	addq.l	#$6,a7
 	tst.l	d0
-	bpl.b	T_1b6a8
+	bpl.b	.l_1b6a8
 	lea.l	D_54982,a1
 	jsr	DI_Error
-	bra.b	T_1b6ca
-T_1b6a8:
+	bra.b	.l_1b6ca
+.l_1b6a8:
 	move.w	#$2f,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
@@ -1218,17 +1218,17 @@ T_1b6a8:
 	andi.b	#$df,$fffffa09.w
 	move.w	(a7)+,sr
 	jsr	Pop_Mptr
-T_1b6ca:
+.l_1b6ca:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 T_1b6d0:
 	cmpi.w	#$fff3,d0
-	bne.b	T_1b6de
+	bne.b	.l_1b6de
 	jsr	T_1a170
-	bra.b	T_1b6e4
-T_1b6de:
+	bra.b	.l_1b6e4
+.l_1b6de:
 	jsr	T_1a10e
-T_1b6e4:
+.l_1b6e4:
 	rts
 T_1b6e6:
 	movem.l	d0-d7/a0-a6,-(a7)
@@ -1246,13 +1246,13 @@ T_1b704:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	bmi.b	T_1b72c
+	bmi.b	.l_1b72c
 	movea.l	B_6012a,a0
 	move.b	$24(a0),d0
 	subi.b	#$41,d0
 	cmp.b	d0,d7
 	beq.b	T_1b782
-T_1b72c:
+.l_1b72c:
 	tst.b	B_60124
 	bne.b	T_1b73e
 T_1b734:
@@ -1288,12 +1288,12 @@ T_1b788:
 	moveq	#0,d6
 	movea.l	a0,a5
 	move.b	(a0)+,d0
-	beq.b	T_1b7a6
+	beq.b	.l_1b7a6
 	moveq	#0,d1
 	jsr	Reallocate_memory
 	cmpa.l	#$0,a0
-	bne.w	T_1b864
-T_1b7a6:
+	bne.w	.l_1b864
+.l_1b7a6:
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	ori.b	#$20,$fffffa09.w
@@ -1310,10 +1310,10 @@ T_1b7a6:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	bpl.b	T_1b7e2
+	bpl.b	.l_1b7e2
 	bsr.w	T_1b6d0
-	bra.w	T_1b86a
-T_1b7e2:
+	bra.w	.l_1b86a
+.l_1b7e2:
 	movea.l	B_6012a,a0
 	move.l	$1a(a0),d7
 	move.b	(a5),d0
@@ -1329,10 +1329,10 @@ T_1b7e2:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	bpl.b	T_1b816
+	bpl.b	.l_1b816
 	bsr.w	T_1b6d0
-	bra.b	T_1b86a
-T_1b816:
+	bra.b	.l_1b86a
+.l_1b816:
 	move.w	d0,d6
 	movea.l	a4,a0
 	move.l	a0,-(a7)
@@ -1342,37 +1342,37 @@ T_1b816:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1b834
+	bpl.b	.l_1b834
 	bsr.w	T_1b6d0
-	bra.b	T_1b86a
-T_1b834:
+	bra.b	.l_1b86a
+.l_1b834:
 	move.l	d0,B_60126
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
 	tst.l	d0
-	bpl.b	T_1b84e
+	bpl.b	.l_1b84e
 	bsr.w	T_1b6d0
-	bra.b	T_1b86a
-T_1b84e:
+	bra.b	.l_1b86a
+.l_1b84e:
 	jsr	Pop_Mptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	andi.b	#$df,$fffffa09.w
 	move.w	(a7)+,sr
 	movea.l	a4,a0
-T_1b864:
+.l_1b864:
 	movem.l	(a7)+,d0-d7/a1-a6
 	rts
-T_1b86a:
+.l_1b86a:
 	tst.w	d6
-	beq.b	T_1b878
+	beq.b	.l_1b878
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
-T_1b878:
+.l_1b878:
 	jsr	Pop_Mptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr

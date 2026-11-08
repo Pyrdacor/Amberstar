@@ -12,20 +12,20 @@ WSelW_ModInit:
 	moveq	#1,d2
 	moveq	#0,d3
 	move.w	#$1387,d7
-T_0a652:
+.l_0a652:
 	btst	d1,(a0,d0.w)
-	beq.b	T_0a65c
+	beq.b	.l_0a65c
 	move.w	d2,(a1)+
 	addq.w	#$1,d3
-T_0a65c:
+.l_0a65c:
 	addq.w	#$1,d1
 	cmpi.w	#$8,d1
-	bmi.b	T_0a668
+	bmi.b	.l_0a668
 	moveq	#0,d1
 	addq.w	#$1,d0
-T_0a668:
+.l_0a668:
 	addq.w	#$1,d2
-	dbra	d7,T_0a652
+	dbra	d7,.l_0a652
 	tst.w	d3
 	beq.w	No_words_known
 	moveq	#0,d0
@@ -58,9 +58,9 @@ T_0a6b8:
 	movea.l	Word_list_ptr,a0
 	jsr	Free_memory
 	cmpi.w	#$1,Nr_of_known_words
-	beq.b	T_0a6e0
+	beq.b	.l_0a6e0
 	bsr.w	Sort_word_list
-T_0a6e0:
+.l_0a6e0:
 	moveq	#15,d0
 	jsr	IG_Set_ink
 	moveq	#-1,d0
@@ -84,7 +84,7 @@ T_0a6e0:
 	movea.l	Text_buffer,a0
 	movea.l	Text_graphics_buffer,a1
 	lea.l	$3.w,a2
-T_0a73c:
+.l_0a73c:
 	exg.l	d6,d4
 	jsr	Draw_box
 	exg.l	d6,d4
@@ -97,7 +97,7 @@ T_0a73c:
 	exg.l	a1,a0
 	lea.l	$15(a0),a0
 	lea.l	$1c0(a1),a1
-	dbra	d5,T_0a73c
+	dbra	d5,.l_0a73c
 	move.w	Nr_of_known_words,d0
 	mulu.w	#$7,d0
 	move.w	d0,Height_of_buffer

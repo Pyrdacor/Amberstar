@@ -5,45 +5,45 @@ M2_time_evaluate:
 	movea.l	Current_active_char_data,a0
 	btst	#$4,$3b(a0)
 	sne.b	Stygian
-	bne.w	T_02844
+	bne.w	.l_02844
 	movea.l	Mapd_ptr,a0
 	move.b	$5(a0),d0
 	btst	#$0,d0
-	beq.b	T_027c8
+	beq.b	.l_027c8
 	move.w	#$0,Current_radius
 	move.w	#$0,New_radius
-	bra.b	T_02844
-T_027c8:
+	bra.b	.l_02844
+.l_027c8:
 	btst	#$1,d0
-	beq.b	T_0280e
+	beq.b	.l_0280e
 	move.w	Hour,d0
 	moveq	#0,d1
-	move.b	T_027f4(pc,d0.w),d1
+	move.b	.l_027f4(pc,d0.w),d1
 	tst.w	Spell_1_duration
-	beq.b	T_027ec
+	beq.b	.l_027ec
 	move.w	Spell_1_data,d0
 	lsl.w	#$3,d0
 	add.w	d0,d1
-T_027ec:
+.l_027ec:
 	move.w	d1,New_radius
-	bra.b	T_02844
-T_027f4:
+	bra.b	.l_02844
+.l_027f4:
 	dc.b	$10,$10,$10,$10,$10,$10,$28,$40,$c8,$c8,$c8,$c8,$c8,$c8,$c8,$c8
 	dc.b	$c8,$40,$40,$28,$10,$10,$10,$10,$10,$00
-T_0280e:
+.l_0280e:
 	btst	#$2,d0
-	beq.b	T_02844
+	beq.b	.l_02844
 	cmpi.w	#$6,Travel_mode
-	beq.b	T_02844
+	beq.b	.l_02844
 	tst.w	Spell_1_duration
 	seq.b	Stygian
-	beq.b	T_02844
+	beq.b	.l_02844
 	move.w	Spell_1_data,d1
 	lsl.w	#$3,d1
 	addi.w	#$10,d1
 	move.w	d1,New_radius
 	move.w	d1,Current_radius
-T_02844:
+.l_02844:
 	movem.l	(a7)+,d0-d1/a0
 	rts
 Build_2D_map:
@@ -58,29 +58,29 @@ Build_2D_map:
 	add.w	Half_X,d0
 	add.w	Half_Y,d1
 	tst.w	Scroll_X
-	bne.b	T_02886
+	bne.b	.l_02886
 	sub.w	Half_X,d0
 	sub.w	Half_X,d0
-T_02886:
+.l_02886:
 	tst.w	Scroll_Y
-	bne.b	T_0289a
+	bne.b	.l_0289a
 	sub.w	Half_Y,d1
 	sub.w	Half_Y,d1
-T_0289a:
+.l_0289a:
 	move.w	d0,Buffer_X
 	move.w	d1,Buffer_Y
 	tst.b	Stygian
-	beq.b	T_028ce
+	beq.b	.l_028ce
 	lea.l	Graphics_buf,a0
 	moveq	#0,d0
 	move.w	#$11df,d7
-T_028ba:
+.l_028ba:
 	move.l	d0,(a0)+
-	dbra	d7,T_028ba
+	dbra	d7,.l_028ba
 	movea.l	Icondata_ptr,a0
 	bsr.w	Display_party_icon
-	bra.w	T_02990
-T_028ce:
+	bra.w	.l_02990
+.l_028ce:
 	bsr.w	T_05836
 	movea.l	Icondata_ptr,a0
 	lea.l	Underlay_buf,a1
@@ -92,10 +92,10 @@ T_028ce:
 	moveq	#0,d1
 	moveq	#0,d2
 	moveq	#10,d7
-T_02900:
+.l_02900:
 	moveq	#0,d0
 	moveq	#12,d6
-T_02904:
+.l_02904:
 	move.b	(a1)+,d2
 	subq.w	#$1,d2
 	move.w	d2,d3
@@ -103,58 +103,58 @@ T_02904:
 	add.w	d3,d3
 	move.l	(a5,d3.w),d3
 	btst	#$f,d3
-	bne.b	T_0293c
+	bne.b	.l_0293c
 	bsr.w	Display_underlay_icon
 	move.b	(a2),d2
-	beq.b	T_0293c
+	beq.b	.l_0293c
 	subq.w	#$1,d2
 	move.w	d2,d3
 	add.w	d3,d3
 	add.w	d3,d3
 	move.l	(a5,d3.w),d3
 	btst	#$6,d3
-	bne.b	T_0293c
+	bne.b	.l_0293c
 	btst	#$f,d3
-	bne.b	T_0293c
+	bne.b	.l_0293c
 	bsr.w	Display_overlay_icon
-T_0293c:
+.l_0293c:
 	addq.l	#$1,a2
 	move.b	(a3)+,d2
-	beq.b	T_02948
+	beq.b	.l_02948
 	subq.w	#$1,d2
 	bsr.w	Display_overlay_icon
-T_02948:
+.l_02948:
 	move.b	(a4)+,d2
-	beq.b	T_02952
+	beq.b	.l_02952
 	subq.w	#$1,d2
 	bsr.w	Display_overlay_icon
-T_02952:
+.l_02952:
 	addq.w	#$1,d0
 	addq.w	#$1,d5
-	dbra	d6,T_02904
+	dbra	d6,.l_02904
 	addq.w	#$1,d1
 	subi.w	#$d,d5
 	add.w	Width_of_map,d5
-	dbra	d7,T_02900
+	dbra	d7,.l_02900
 	movea.l	Icondata_ptr,a0
 	cmpi.w	#$5,Travel_mode
-	bmi.b	T_02984
+	bmi.b	.l_02984
 	bsr.w	Display_sky_icons
 	bsr.w	Display_party_icon
-	bra.b	T_0298c
-T_02984:
+	bra.b	.l_0298c
+.l_02984:
 	bsr.w	Display_party_icon
 	bsr.w	Display_sky_icons
-T_0298c:
+.l_0298c:
 	bsr.w	Display_night_circle
-T_02990:
+.l_02990:
 	movea.l	Off_screen,a6
 	bsr.w	Display_buffer
 	bsr.w	Update_animation
 	clr.l	Scroll_X
 	clr.l	Half_X
 	tst.b	Bumped
-	beq.b	T_029dc
+	beq.b	.l_029dc
 	move.w	Buffer_X,d0
 	move.w	Buffer_Y,d1
 	lsl.w	#$3,d0
@@ -164,7 +164,7 @@ T_02990:
 	lea.l	D_47f1a,a0
 	jsr	Blit_masked_block
 	sf.b	Bumped
-T_029dc:
+.l_029dc:
 	bsr.w	Update_status_block
 	bsr.w	Show_special_items
 	bsr.w	Show_spells

@@ -15,18 +15,18 @@ DI_Error:
 	trap	#$1
 	addq.l	#$2,a7
 	cmpi.b	#$78,d0
-	beq.b	T_1c0de
+	beq.b	.l_1c0de
 	movea.l	$4f2.w,a0
 	movea.l	$4(a0),a0
 	jmp	(a0)
-T_1c0de:
+.l_1c0de:
 	bsr.w	T_1c15e
 	movem.l	(a7)+,d0-d2/a0-a2/a6
 	rts
 T_1c0e8:
 	movem.l	d0/a0/a6,-(a7)
 	tst.b	B_5d43a
-	bne.b	T_1c158
+	bne.b	.l_1c158
 	st.b	B_5d43a
 	jsr	Mouse_off
 	move.l	$ffff8240.w,B_5d440
@@ -43,7 +43,7 @@ T_1c0e8:
 	jsr	Clear_screen
 	move.l	Diag_pal,$ffff8240.w
 	move.l	D_51ad2,$ffff8244.w
-T_1c158:
+.l_1c158:
 	movem.l	(a7)+,d0/a0/a6
 	rts
 T_1c15e:
@@ -73,12 +73,12 @@ DI_Carriage_return:
 	move.w	B_5d44e,d0
 	addi.w	#$500,d0
 	cmpi.w	#$7d00,d0
-	bmi.b	T_1c1e4
+	bmi.b	.l_1c1e4
 	jsr	Wait_4_key
 	movea.l	Screen_base,a6
 	jsr	Clear_screen
 	moveq	#0,d0
-T_1c1e4:
+.l_1c1e4:
 	move.w	d0,B_5d44e
 	move.l	(a7)+,d0
 	rts
@@ -86,16 +86,16 @@ DI_Backspace:
 	move.l	d0,-(a7)
 	move.w	B_5d44c,d0
 	btst	#$0,d0
-	bne.b	T_1c200
+	bne.b	.l_1c200
 	subq.w	#$3,d0
-	bra.b	T_1c202
-T_1c200:
+	bra.b	.l_1c202
+.l_1c200:
 	subq.w	#$1,d0
-T_1c202:
+.l_1c202:
 	tst.w	d0
-	bmi.b	T_1c20c
+	bmi.b	.l_1c20c
 	move.w	d0,B_5d44c
-T_1c20c:
+.l_1c20c:
 	move.l	(a7)+,d0
 	rts
 DI_Input:
@@ -106,52 +106,52 @@ DI_Input:
 	moveq	#0,d7
 	move.b	#$20,$1(a0)
 	bsr.w	DI_Print
-T_1c230:
+.l_1c230:
 	jsr	Wait_4_key
 	cmpi.b	#$d,d0
-	beq.b	T_1c284
+	beq.b	.l_1c284
 	swap	d0
 	cmpi.b	#$e,d0
-	beq.b	T_1c26c
+	beq.b	.l_1c26c
 	swap	d0
 	cmpi.b	#$30,d0
-	bmi.b	T_1c230
+	bmi.b	.l_1c230
 	cmpi.b	#$39,d0
-	bhi.b	T_1c230
+	bhi.b	.l_1c230
 	move.b	d0,$1(a0)
 	bsr.w	DI_Print
 	subi.b	#$30,d0
 	addq.l	#$1,d7
 	move.b	d0,-$1(a1,d7.w)
 	cmpi.b	#$4,d7
-	bmi.b	T_1c230
-	bra.b	T_1c284
-T_1c26c:
+	bmi.b	.l_1c230
+	bra.b	.l_1c284
+.l_1c26c:
 	tst.w	d7
-	beq.b	T_1c230
+	beq.b	.l_1c230
 	lea.l	D_51b26,a0
 	bsr.w	DI_Print
 	lea.l	D_51b30,a0
 	subq.l	#$1,d7
-	bra.b	T_1c230
-T_1c284:
+	bra.b	.l_1c230
+.l_1c284:
 	lea.l	D_51b2c,a0
 	bsr.w	DI_Print
 	moveq	#0,d0
 	moveq	#1,d2
 	moveq	#10,d3
 	subq.l	#$1,d7
-	bpl.b	T_1c29c
+	bpl.b	.l_1c29c
 	moveq	#-1,d0
-	bra.b	T_1c2ac
-T_1c29c:
+	bra.b	.l_1c2ac
+.l_1c29c:
 	moveq	#0,d4
 	move.b	(a1,d7.w),d4
 	mulu.w	d2,d4
 	add.l	d4,d0
 	mulu.w	d3,d2
-	dbra	d7,T_1c29c
-T_1c2ac:
+	dbra	d7,.l_1c29c
+.l_1c2ac:
 	movem.l	(a7)+,d2-d4/d7/a0-a1
 	rts
 ; ---- DI_Hexw_print (original source: NUCLEUS/DIAGNOST.ASM)
@@ -257,7 +257,7 @@ DI_Pchar:
 	btst	#$1,d0
 	sne.b	d1
 	moveq	#7,d7
-T_1c3d2:
+.l_1c3d2:
 	move.b	(a1),d0
 	lsl.w	#$8,d0
 	move.b	(a1),d0
@@ -266,20 +266,20 @@ T_1c3d2:
 	movep.w	d0,$0(a6)
 	lea.l	$100(a1),a1
 	lea.l	$a0(a6),a6
-	dbra	d7,T_1c3d2
+	dbra	d7,.l_1c3d2
 	move.w	B_5d44c,d0
 	btst	#$0,d0
-	bne.b	T_1c3fc
+	bne.b	.l_1c3fc
 	addq.w	#$1,d0
-	bra.b	T_1c40a
-T_1c3fc:
+	bra.b	.l_1c40a
+.l_1c3fc:
 	addq.w	#$3,d0
 	cmpi.w	#$a0,d0
-	bmi.b	T_1c40a
+	bmi.b	.l_1c40a
 	bsr.w	DI_Carriage_return
-	bra.b	T_1c410
-T_1c40a:
+	bra.b	.l_1c410
+.l_1c40a:
 	move.w	d0,B_5d44c
-T_1c410:
+.l_1c410:
 	movem.l	(a7)+,d0-d2/d7/a1/a6
 	rts

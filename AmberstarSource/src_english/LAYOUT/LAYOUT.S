@@ -437,11 +437,11 @@ Show_layout:
 	movem.l	d0-d7/a0-a2,-(a7)
 	subq.w	#$1,d0
 	cmpi.w	#$c,d0
-	bmi.b	T_06d9a
+	bmi.b	.l_06d9a
 	lea.l	D_2eddf,a1
 	jsr	DI_Error
-	bra.w	T_06ea2
-T_06d9a:
+	bra.w	.l_06ea2
+.l_06d9a:
 	lea.l	D_319cc,a2
 	mulu.w	#$dc,d0
 	adda.w	d0,a2
@@ -451,7 +451,7 @@ T_06d9a:
 	moveq	#19,d5
 	moveq	#1,d6
 	moveq	#12,d7
-T_06db8:
+.l_06db8:
 	moveq	#0,d2
 	move.b	(a2)+,d2
 	subq.w	#$1,d2
@@ -460,13 +460,13 @@ T_06db8:
 	adda.w	d2,a0
 	jsr	Blot_unmasked_block
 	addi.w	#$10,d0
-	dbra	d5,T_06db8
+	dbra	d5,.l_06db8
 	move.w	#$31,d1
 	moveq	#8,d7
-T_06dda:
+.l_06dda:
 	moveq	#0,d0
 	moveq	#19,d6
-T_06dde:
+.l_06dde:
 	moveq	#0,d2
 	move.b	(a2)+,d2
 	subq.w	#$1,d2
@@ -475,15 +475,15 @@ T_06dde:
 	adda.w	d2,a0
 	jsr	Put_unmasked_block
 	addi.w	#$10,d0
-	dbra	d6,T_06dde
+	dbra	d6,.l_06dde
 	addi.w	#$10,d1
-	dbra	d7,T_06dda
+	dbra	d7,.l_06dda
 	moveq	#0,d0
 	move.w	#$c1,d1
 	moveq	#19,d5
 	moveq	#1,d6
 	moveq	#7,d7
-T_06e0c:
+.l_06e0c:
 	moveq	#0,d2
 	move.b	(a2)+,d2
 	subq.w	#$1,d2
@@ -492,7 +492,7 @@ T_06e0c:
 	adda.w	d2,a0
 	jsr	Blot_unmasked_block
 	addi.w	#$10,d0
-	dbra	d5,T_06e0c
+	dbra	d5,.l_06e0c
 	lea.l	D_3150c,a0
 	lea.l	D_3160c,a1
 	move.w	#$0,d0
@@ -500,7 +500,7 @@ T_06e0c:
 	jsr	Coord_convert
 	lea.l	(a6,d2.w),a2
 	moveq	#15,d7
-T_06e46:
+.l_06e46:
 	movem.w	(a2),d0-d3
 	move.w	(a1)+,d4
 	not.w	d4
@@ -514,13 +514,13 @@ T_06e46:
 	or.w	(a0)+,d3
 	movem.w	d0-d3,(a2)
 	lea.l	$a0(a2),a2
-	dbra	d7,T_06e46
+	dbra	d7,.l_06e46
 	move.w	#$130,d0
 	move.w	#$b8,d1
 	jsr	Coord_convert
 	lea.l	(a6,d2.w),a2
 	moveq	#15,d7
-T_06e7e:
+.l_06e7e:
 	movem.w	(a2),d0-d3
 	move.w	(a1)+,d4
 	not.w	d4
@@ -534,8 +534,8 @@ T_06e7e:
 	or.w	(a0)+,d3
 	movem.w	d0-d3,(a2)
 	lea.l	$a0(a2),a2
-	dbra	d7,T_06e7e
-T_06ea2:
+	dbra	d7,.l_06e7e
+.l_06ea2:
 	movem.l	(a7)+,d0-d7/a0-a2
 	rts
 Show_status_block:
@@ -549,10 +549,10 @@ Show_status_block:
 	jsr	Blot_unmasked_block
 	moveq	#5,d5
 	lea.l	Topblk_mid,a0
-T_06ece:
+.l_06ece:
 	addi.w	#$30,d0
 	jsr	Blot_unmasked_block
-	dbra	d5,T_06ece
+	dbra	d5,.l_06ece
 	addi.w	#$10,d0
 	lea.l	D_3188c,a0
 	jsr	Blot_unmasked_block
@@ -561,28 +561,28 @@ T_06ece:
 	moveq	#2,d6
 	moveq	#1,d7
 	lea.l	D_319ac,a0
-T_06efa:
+.l_06efa:
 	jsr	Blot_unmasked_block
 	addi.w	#$30,d0
-	dbra	d5,T_06efa
+	dbra	d5,.l_06efa
 	moveq	#16,d0
 	moveq	#35,d1
 	moveq	#5,d5
 	lea.l	Topblk_bot,a0
-T_06f14:
+.l_06f14:
 	jsr	Blot_unmasked_block
 	addi.w	#$30,d0
-	dbra	d5,T_06f14
+	dbra	d5,.l_06f14
 	moveq	#16,d0
 	moveq	#1,d1
 	moveq	#5,d5
 	moveq	#2,d6
 	moveq	#34,d7
 	lea.l	D_3db60,a0
-T_06f32:
+.l_06f32:
 	jsr	Blot_unmasked_block
 	addi.w	#$30,d0
-	dbra	d5,T_06f32
+	dbra	d5,.l_06f32
 	movem.l	(a7)+,d0-d1/d5-d7/a0/a6
 	rts
 ; ---- Show_control_icons (original source: LAYOUT/LAYOUT.ASM)

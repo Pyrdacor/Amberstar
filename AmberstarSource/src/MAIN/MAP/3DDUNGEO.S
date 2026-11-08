@@ -33,14 +33,14 @@ D3_DisInit:
 	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
-T_05324:
+.l_05324:
 	lea.l	Hbl_D3_map,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Below_pal_D3,a0
 	jsr	Fade_pal
-	bne.b	T_05324
+	bne.b	.l_05324
 	lea.l	Hbl_D3_map,a0
 	jsr	Update_HBL
 	rts
@@ -105,12 +105,12 @@ D3_DisUpd:
 	addq.w	#$1,d7
 	addq.l	#$2,a0
 	tst.w	d2
-	bne.b	T_0544e
+	bne.b	.l_0544e
 	jsr	Blot_unmasked_block
-	bra.b	T_05452
-T_0544e:
+	bra.b	.l_05452
+.l_0544e:
 	bsr.w	Blot_mirrored_unmasked_block
-T_05452:
+.l_05452:
 	movea.l	Floor_ptr,a0
 	lea.l	$a(a0),a0
 	move.w	#$c1,d1
@@ -122,22 +122,22 @@ T_05452:
 	sub.w	d7,d1
 	addq.l	#$2,a0
 	tst.w	d2
-	beq.b	T_0547a
+	beq.b	.l_0547a
 	jsr	Blot_unmasked_block
-	bra.b	T_0547e
-T_0547a:
+	bra.b	.l_0547e
+.l_0547a:
 	bsr.w	Blot_mirrored_unmasked_block
-T_0547e:
+.l_0547e:
 	tst.b	Pause_Upd
-	bne.b	T_0548a
+	bne.b	.l_0548a
 	bsr.w	ThreeD_char_handler
-T_0548a:
+.l_0548a:
 	bsr.w	Build_3D_map
 	bsr.w	Update_map_CIL
 	tst.b	CombatReq
-	beq.b	T_054a6
+	beq.b	.l_054a6
 	lea.l	CombatReq_Mod,a0
 	jsr	Push_Module
-T_054a6:
+.l_054a6:
 	movem.l	(a7)+,d0-d3/d6-d7/a0/a6
 	rts

@@ -33,16 +33,16 @@ Copy_screen:
 Set_screen:
 	movem.l	d0/a0,-(a7)
 	tst.b	d0
-	beq.b	T_1d826
+	beq.b	.l_1d826
 	lea.l	D_526c2,a1
 	jsr	DI_Error
-	bra.b	T_1d834
-T_1d826:
+	bra.b	.l_1d834
+.l_1d826:
 	move.l	d0,Screen_base
 	lea.l	$ffff8200.w,a0
 	lsr.w	#$8,d0
 	move.l	d0,(a0)
-T_1d834:
+.l_1d834:
 	movem.l	(a7)+,d0/a0
 	rts
 ; ---- Switch_screen (original source: NUCLEUS/SCREEN.ASM)

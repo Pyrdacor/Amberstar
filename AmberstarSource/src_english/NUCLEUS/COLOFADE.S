@@ -135,37 +135,37 @@ Subfade1:
 	and.w	d0,d2
 	and.w	d1,d3
 	cmp.w	d2,d3
-	beq.b	T_1c00c
-	bpl.b	T_1c008
+	beq.b	.l_1c00c
+	bpl.b	.l_1c008
 	subi.w	#$100,d0
-	bra.b	T_1c00c
-T_1c008:
+	bra.b	.l_1c00c
+.l_1c008:
 	dc.b	$06,$40,$01,$00
-T_1c00c:
+.l_1c00c:
 	move.w	#$70,d2
 	move.w	d2,d3
 	and.w	d0,d2
 	and.w	d1,d3
 	cmp.w	d2,d3
-	beq.b	T_1c026
-	bpl.b	T_1c022
+	beq.b	.l_1c026
+	bpl.b	.l_1c022
 	subi.w	#$10,d0
-	bra.b	T_1c026
-T_1c022:
+	bra.b	.l_1c026
+.l_1c022:
 	dc.b	$06,$40,$00,$10
-T_1c026:
+.l_1c026:
 	move.w	#$7,d2
 	move.w	d2,d3
 	and.w	d0,d2
 	and.w	d1,d3
 	cmp.w	d2,d3
-	beq.b	T_1c03c
-	bpl.b	T_1c03a
+	beq.b	.l_1c03c
+	bpl.b	.l_1c03a
 	subq.w	#$1,d0
-	bra.b	T_1c03c
-T_1c03a:
+	bra.b	.l_1c03c
+.l_1c03a:
 	dc.b	$52,$40
-T_1c03c:
+.l_1c03c:
 	movem.l	(a7)+,d2-d3
 	rts
 Subfade2:
@@ -175,38 +175,38 @@ Subfade2:
 	and.w	d0,d2
 	and.w	d1,d3
 	cmp.w	d2,d3
-	beq.b	T_1c062
-	bpl.b	T_1c05c
+	beq.b	.l_1c062
+	bpl.b	.l_1c05c
 	subi.w	#$100,d0
-	bra.b	T_1c094
-T_1c05c:
+	bra.b	.l_1c094
+.l_1c05c:
 	addi.w	#$100,d0
-	bra.b	T_1c094
-T_1c062:
+	bra.b	.l_1c094
+.l_1c062:
 	move.w	#$70,d2
 	move.w	d2,d3
 	and.w	d0,d2
 	and.w	d1,d3
 	cmp.w	d2,d3
-	beq.b	T_1c07e
-	bpl.b	T_1c078
+	beq.b	.l_1c07e
+	bpl.b	.l_1c078
 	subi.w	#$10,d0
-	bra.b	T_1c094
-T_1c078:
+	bra.b	.l_1c094
+.l_1c078:
 	addi.w	#$10,d0
-	bra.b	T_1c094
-T_1c07e:
+	bra.b	.l_1c094
+.l_1c07e:
 	move.w	#$7,d2
 	move.w	d2,d3
 	and.w	d0,d2
 	and.w	d1,d3
 	cmp.w	d2,d3
-	beq.b	T_1c094
-	bpl.b	T_1c092
+	beq.b	.l_1c094
+	bpl.b	.l_1c092
 	subq.w	#$1,d0
-	bra.b	T_1c094
-T_1c092:
+	bra.b	.l_1c094
+.l_1c092:
 	dc.b	$52,$40
-T_1c094:
+.l_1c094:
 	movem.l	(a7)+,d2-d3
 	rts

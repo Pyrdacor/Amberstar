@@ -105,26 +105,26 @@ T_07200:
 	lea.l	B_57dce,a1
 	move.l	a0,(a1)+
 	moveq	#0,d0
-T_07220:
+.l_07220:
 	moveq	#31,d7
-T_07222:
+.l_07222:
 	move.b	(a0),d0
-	beq.b	T_07230
+	beq.b	.l_07230
 	adda.w	d0,a0
-	dbra	d7,T_07222
+	dbra	d7,.l_07222
 	move.l	a0,(a1)+
-	bra.b	T_07220
-T_07230:
+	bra.b	.l_07220
+.l_07230:
 	movem.l	(a7)+,d0/d7/a0-a1
 	rts
 Find_word:
 	movem.l	d0-d1,-(a7)
 	cmp.w	B_57dcc,d0
-	bmi.b	T_07250
+	bmi.b	.l_07250
 	lea.l	D_2ee04,a1
 	jsr	DI_Error
 	bra.b	T_07282
-T_07250:
+.l_07250:
 	move.w	d0,d1
 	lsr.w	#$3,d1
 	andi.w	#$fffc,d1
@@ -183,11 +183,11 @@ Calc_textblock_address:
 	moveq	#0,d1
 	move.b	(a1),d1
 	cmp.w	d1,d0
-	bmi.b	T_072e8
+	bmi.b	.l_072e8
 	lea.l	D_2ee57,a1
 	jsr	DI_Error
-	bra.b	T_072fe
-T_072e8:
+	bra.b	.l_072fe
+.l_072e8:
 	addq.l	#$2,a1
 	add.w	d0,d0
 	move.w	(a1,d0.w),d6
@@ -197,7 +197,7 @@ T_072e8:
 	add.w	d1,d1
 	adda.w	d1,a1
 	addq.l	#$2,a1
-T_072fe:
+.l_072fe:
 	rts
 ; ---- Prepare_scrolling (original source: MAIN/WORDS.ASM)
 Prepare_scrolling:
@@ -357,31 +357,31 @@ Push_PA:
 	movea.l	PA_sp,a1
 	addq.l	#$4,a1
 	cmpa.l	#Textfile_ptr,a1
-	bmi.b	T_0751a
+	bmi.b	.l_0751a
 	lea.l	D_2ee92,a1
 	jsr	DI_Error
-	bra.b	T_07526
-T_0751a:
+	bra.b	.l_07526
+.l_0751a:
 	move.l	a0,(a1)
 	move.l	a1,PA_sp
 	bsr.w	Init_PA
-T_07526:
+.l_07526:
 	movem.l	(a7)+,d0/a1
 	rts
 Pop_PA:
 	movem.l	a0-a1,-(a7)
 	movea.l	PA_sp,a1
 	cmpa.l	#PA_Stack,a1
-	bpl.b	T_0754c
+	bpl.b	.l_0754c
 	lea.l	D_2eeb7,a1
 	jsr	DI_Error
-	bra.b	T_0755a
-T_0754c:
+	bra.b	.l_0755a
+.l_0754c:
 	subq.l	#$4,a1
 	move.l	a1,PA_sp
 	movea.l	(a1),a0
 	bsr.w	Init_PA
-T_0755a:
+.l_0755a:
 	movem.l	(a7)+,a0-a1
 	rts
 ; ---- Init_PA (original source: MAIN/WORDS.ASM)
@@ -552,7 +552,7 @@ Mr_Blue_Sky:
 	jsr	Copy_screen
 	move.w	$6(a5),d0
 	cmp.w	Height_of_buffer,d0
-	bmi.b	T_0776a
+	bmi.b	.l_0776a
 	moveq	#0,d0
 	movea.l	Off_screen,a6
 	bsr.w	Refresh_text_window
@@ -560,30 +560,30 @@ Mr_Blue_Sky:
 	jsr	Copy_screen
 	bsr.w	Wait_4_user
 	bra.w	Exit_Blue_Sky
-T_0776a:
+.l_0776a:
 	lea.l	Paragraph_list,a0
 	move.w	$6(a5),d0
 	neg.w	d0
 	move.w	Nr_of_lines,d6
 	move.w	Paras_in_text,d7
 	subq.w	#$1,d7
-T_07784:
+.l_07784:
 	move.w	(a0)+,d2
-T_07786:
+.l_07786:
 	cmp.w	d6,d2
-	bhi.b	T_07796
+	bhi.b	.l_07796
 	move.w	d2,d1
 	bsr.w	Scroll_up
 	bsr.w	Wait_4_user
-	bra.b	T_077a4
-T_07796:
+	bra.b	.l_077a4
+.l_07796:
 	move.w	d6,d1
 	bsr.w	Scroll_up
 	bsr.w	Wait_4_user
 	sub.w	d6,d2
-	bra.b	T_07786
-T_077a4:
-	dbra	d7,T_07784
+	bra.b	.l_07786
+.l_077a4:
+	dbra	d7,.l_07784
 	jsr	Mouse_off
 	lea.l	D_1e456,a0
 	move.w	Height_of_buffer,d1
@@ -593,31 +593,31 @@ T_077a4:
 	move.w	Height_of_buffer,d2
 	sub.w	$6(a5),d2
 	move.w	Mouse_Y,d1
-T_077d6:
+.l_077d6:
 	movea.l	Off_screen,a6
 	bsr.w	Refresh_text_window
 	jsr	Switch_screen
-T_077e6:
+.l_077e6:
 	tst.b	Mouse_button_state
-	bne.b	T_07812
+	bne.b	.l_07812
 	move.w	Mouse_Y,d3
 	move.w	d3,d4
 	sub.w	d1,d4
-	beq.b	T_077e6
+	beq.b	.l_077e6
 	move.w	d3,d1
 	tst.w	d4
-	bmi.b	T_0780a
+	bmi.b	.l_0780a
 	add.w	d4,d0
 	cmp.w	d2,d0
-	bmi.b	T_077d6
+	bmi.b	.l_077d6
 	move.w	d2,d0
-	bra.b	T_077d6
-T_0780a:
+	bra.b	.l_077d6
+.l_0780a:
 	add.w	d4,d0
-	bpl.b	T_077d6
+	bpl.b	.l_077d6
 	moveq	#0,d0
-	bra.b	T_077d6
-T_07812:
+	bra.b	.l_077d6
+.l_07812:
 	jsr	Pop_MA
 ; ---- Exit_Blue_Sky (original source: MAIN/WORDS.ASM)
 Exit_Blue_Sky:
@@ -638,13 +638,13 @@ Wait_4_user:
 	move.l	$4(a1),$4(a0)
 	move.l	$8(a1),$8(a0)
 	jsr	Push_Module
-T_0786e:
+.l_0786e:
 	jsr	Input_handler
 	tst.b	Abort_list
-	beq.b	T_0786e
-T_0787c:
+	beq.b	.l_0786e
+.l_0787c:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0787c
+	bne.b	.l_0787c
 	movem.l	(a7)+,a0-a1
 	rts
 ; ---- Scroll_up (original source: MAIN/WORDS.ASM)
@@ -668,51 +668,51 @@ Input_string:
 	lea.l	D_1e442,a2
 	move.w	d0,d1
 	moveq	#0,d7
-	lea.l	T_07944(pc),a0
+	lea.l	.l_07944(pc),a0
 	jsr	IG_Print
-T_078d6:
+.l_078d6:
 	jsr	Wait_4_key
 	cmpi.b	#$d,d0
-	beq.b	T_07930
+	beq.b	.l_07930
 	swap	d0
 	cmpi.b	#$e,d0
-	beq.b	T_0791e
+	beq.b	.l_0791e
 	swap	d0
 	cmp.w	d1,d7
-	bpl.b	T_078d6
+	bpl.b	.l_078d6
 	andi.w	#$ff,d0
 	cmpi.w	#$20,d0
-	bmi.b	T_078d6
+	bmi.b	.l_078d6
 	move.b	(a2,d0.w),d0
 	andi.w	#$ff,d0
 	cmpi.w	#$ff,d0
-	beq.b	T_078d6
-	lea.l	T_07946(pc),a0
+	beq.b	.l_078d6
+	lea.l	.l_07946(pc),a0
 	move.b	d0,$1(a0)
 	jsr	IG_Print
 	move.b	d0,(a1,d7.w)
 	addq.w	#$1,d7
-	bra.b	T_078d6
-T_0791e:
+	bra.b	.l_078d6
+.l_0791e:
 	tst.w	d7
-	beq.b	T_078d6
-	lea.l	T_0794a(pc),a0
+	beq.b	.l_078d6
+	lea.l	.l_0794a(pc),a0
 	jsr	IG_Print
 	subq.l	#$1,d7
-	bra.b	T_078d6
-T_07930:
-	lea.l	T_07950(pc),a0
+	bra.b	.l_078d6
+.l_07930:
+	lea.l	.l_07950(pc),a0
 	jsr	IG_Print
 	clr.b	(a1,d7.w)
 	movem.l	(a7)+,d0-d1/d7/a0-a2
 	rts
-T_07944:
+.l_07944:
 	dc.b	$5f,$00
-T_07946:
+.l_07946:
 	dc.b	$0e,$20,$5f,$00
-T_0794a:
+.l_0794a:
 	dc.b	$0e,$0e,$5f,$20,$0e,$00
-T_07950:
+.l_07950:
 	dc.b	$0e,$20,$00,$00
 ; ---- Init_RText (original source: MAIN/WORDS.ASM)
 Init_RText:

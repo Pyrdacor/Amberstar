@@ -189,41 +189,41 @@ ThreeD_char_handler:
 	lea.l	VChar_data,a1
 	move.l	CD_value,d6
 	moveq	#0,d7
-T_05d26:
+.l_05d26:
 	tst.w	(a1)
-	beq.w	T_05dc2
+	beq.w	.l_05dc2
 	btst	d7,d6
-	bne.w	T_05dc2
+	bne.w	.l_05dc2
 	bclr	#$2,$7(a1)
 	move.b	$4(a1),d0
 	btst	#$0,d0
-	beq.b	T_05d60
+	beq.b	.l_05d60
 	btst	#$2,d0
-	beq.b	T_05d56
+	beq.b	.l_05d56
 	move.w	$8(a1),d0
 	move.w	$a(a1),d1
 	bsr.w	Battle_check
-	bra.b	T_05dbc
-T_05d56:
+	bra.b	.l_05dbc
+.l_05d56:
 	bsr.w	Hunting_monster
 	bsr.w	Battle_check
-	bra.b	T_05dbc
-T_05d60:
+	bra.b	.l_05dbc
+.l_05d60:
 	btst	#$3,d0
-	beq.b	T_05d80
+	beq.b	.l_05d80
 	moveq	#0,d1
 	move.b	$5(a1),d1
 	cmp.w	Day,d1
-	bne.b	T_05dc2
+	bne.b	.l_05dc2
 	move.b	$6(a1),d1
 	cmp.w	Month,d1
-	bne.b	T_05dc2
-T_05d80:
+	bne.b	.l_05dc2
+.l_05d80:
 	btst	#$1,d0
-	beq.b	T_05d8c
+	beq.b	.l_05d8c
 	bsr.w	Random_person
-	bra.b	T_05dbc
-T_05d8c:
+	bra.b	.l_05dbc
+.l_05d8c:
 	movea.l	$c(a1),a2
 	move.w	Current_step,d2
 	moveq	#0,d0
@@ -232,19 +232,19 @@ T_05d8c:
 	moveq	#0,d1
 	move.b	(a2,d2.w),d1
 	cmpi.w	#$6,d0
-	bne.b	T_05db4
+	bne.b	.l_05db4
 	cmpi.w	#$6,d1
-	beq.b	T_05dc2
-T_05db4:
+	beq.b	.l_05dc2
+.l_05db4:
 	move.w	d0,$8(a1)
 	move.w	d1,$a(a1)
-T_05dbc:
+.l_05dbc:
 	bset	#$2,$7(a1)
-T_05dc2:
+.l_05dc2:
 	lea.l	$14(a1),a1
 	addq.w	#$1,d7
 	cmpi.w	#$18,d7
-	bmi.w	T_05d26
+	bmi.w	.l_05d26
 	sf.b	New_step
 	sf.b	New_move
 	move.w	Map_Xcoord,d0
@@ -256,7 +256,7 @@ T_05dc2:
 	lea.l	VChar_data,a0
 	lea.l	Persons_buf_3D,a2
 	moveq	#11,d7
-T_05e08:
+.l_05e08:
 	move.b	(a1)+,d2
 	ext.w	d2
 	move.b	(a1)+,d3
@@ -265,27 +265,27 @@ T_05e08:
 	add.w	d1,d3
 	movea.l	a0,a3
 	moveq	#0,d5
-T_05e18:
+.l_05e18:
 	tst.w	(a3)
-	beq.b	T_05e3a
+	beq.b	.l_05e3a
 	btst	d5,d6
-	bne.b	T_05e3a
+	bne.b	.l_05e3a
 	btst	#$2,$7(a3)
-	beq.b	T_05e3a
+	beq.b	.l_05e3a
 	cmp.w	$8(a3),d2
-	bne.b	T_05e3a
+	bne.b	.l_05e3a
 	cmp.w	$a(a3),d3
-	bne.b	T_05e3a
+	bne.b	.l_05e3a
 	move.b	$2(a3),(a2)
-	bra.b	T_05e46
-T_05e3a:
+	bra.b	.l_05e46
+.l_05e3a:
 	lea.l	$14(a3),a3
 	addq.w	#$1,d5
 	cmpi.w	#$18,d5
-	bmi.b	T_05e18
-T_05e46:
+	bmi.b	.l_05e18
+.l_05e46:
 	addq.l	#$1,a2
-	dbra	d7,T_05e08
+	dbra	d7,.l_05e08
 	movem.l	(a7)+,d0-d7/a0-a2
 	rts
 ; ---- Hunting_monster (original source: MAIN/PERSONS.ASM)
@@ -679,45 +679,45 @@ Check_line_of_sight:
 	rts	
 Battle_check:
 	tst.b	B_5ac7e
-	beq.b	T_062aa
+	beq.b	.l_062aa
 	sf.b	B_5ac7e
-	bra.b	T_062e0
-T_062aa:
+	bra.b	.l_062e0
+.l_062aa:
 	cmpi.w	#$5,Travel_mode
-	bpl.w	T_062e0
+	bpl.w	.l_062e0
 	cmp.w	Map_Xcoord,d0
-	bne.b	T_062e0
+	bne.b	.l_062e0
 	cmp.w	Map_Ycoord,d1
-	bne.b	T_062e0
+	bne.b	.l_062e0
 	move.w	$0(a1),B_5b94c
 	move.w	d7,B_5be92
 	st.b	CombatReq
 	st.b	Pause_Upd
-T_062e0:
+.l_062e0:
 	rts
 CombatReq_ModInit:
 	sf.b	CombatReq
 	sf.b	Party_advantage
 	sf.b	Monster_advantage
 	cmpi.b	#$2,Current_map_type
-	bmi.b	T_06338
+	bmi.b	.l_06338
 	tst.b	Stygian
-	bne.b	T_06338
+	bne.b	.l_06338
 	st.b	B_5a946
 	cmpi.b	#$2,Current_map_type
-	bne.b	T_0631e
+	bne.b	.l_0631e
 	lea.l	D3_DisUpd,a0
-	bra.b	T_06324
-T_0631e:
+	bra.b	.l_06324
+.l_0631e:
 	lea.l	C3_DisUpd,a0
-T_06324:
+.l_06324:
 	moveq	#7,d7
-T_06326:
+.l_06326:
 	jsr	(a0)
 	jsr	Switch_screen
-	dbra	d7,T_06326
+	dbra	d7,.l_06326
 	sf.b	B_5a946
-T_06338:
+.l_06338:
 	sf.b	Pause_Upd
 	moveq	#16,d0
 	moveq	#52,d1
@@ -738,11 +738,11 @@ T_06338:
 	move.w	Nr_of_chars,d0
 	move.w	Lines_in_text,d7
 	subq.w	#$1,d7
-T_06390:
+.l_06390:
 	jsr	IG_Print
 	jsr	IG_Carriage_return
 	lea.l	$1(a0,d0.w),a0
-	dbra	d7,T_06390
+	dbra	d7,.l_06390
 	moveq	#2,d6
 	moveq	#16,d7
 	move.w	#$20,d0
@@ -772,32 +772,32 @@ T_063fc:
 	jsr	Switch_screen
 CombatYes:
 	tst.w	Spell_6_duration
-	beq.b	T_0641e
+	beq.b	.l_0641e
 	st.b	Party_advantage
-T_0641e:
+.l_0641e:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	cmpi.b	#$2,Current_map_type
-	bpl.b	T_06446
+	bpl.b	.l_06446
 	bsr.w	Get_2D_icon_status
 	tst.l	d1
-	beq.b	T_0644a
+	beq.b	.l_0644a
 	btst	#$5,d1
-	bne.b	T_0644a
+	bne.b	.l_0644a
 	move.l	d1,d0
-	bra.b	T_0644a
-T_06446:
+	bra.b	.l_0644a
+.l_06446:
 	bsr.w	Get_3D_icon_status
-T_0644a:
+.l_0644a:
 	moveq	#16,d1
 	moveq	#13,d7
-T_0644e:
+.l_0644e:
 	btst	d1,d0
-	bne.b	T_0645a
+	bne.b	.l_0645a
 	addq.w	#$1,d1
-	dbra	d7,T_0644e
+	dbra	d7,.l_0644e
 	moveq	#16,d1
-T_0645a:
+.l_0645a:
 	subi.w	#$f,d1
 	move.w	d1,B_5b942
 	move.w	Active_member,B_5aa94
@@ -809,18 +809,18 @@ T_0645a:
 	jmp	Push_Module
 T_06494:
 	tst.w	Spell_6_duration
-	bne.b	T_064dc
+	bne.b	.l_064dc
 	cmpi.w	#$6,Travel_mode
-	bpl.b	T_064da
+	bpl.b	.l_064da
 	movea.l	Current_active_char_data,a0
 	move.w	$4c(a0),d0
 	add.w	$a0(a0),d0
 	add.w	$54(a0),d0
 	add.w	$a8(a0),d0
 	tst.w	d0
-	bmi.b	T_064da
+	bmi.b	.l_064da
 	cmpi.w	#$96,d0
-	bpl.b	T_064da
+	bpl.b	.l_064da
 	move.w	d0,d1
 	jsr	Random
 	lsr.w	#$1,d0
@@ -828,14 +828,14 @@ T_06494:
 	divu.w	#$96,d0
 	swap	d0
 	cmp.w	d0,d1
-T_064da:
-	bmi.b	T_064e8
-T_064dc:
+.l_064da:
+	bmi.b	.l_064e8
+.l_064dc:
 	bsr.w	T_01f98
 	jsr	Pop_Module
-	bra.b	T_064f2
-T_064e8:
+	bra.b	.l_064f2
+.l_064e8:
 	st.b	Monster_advantage
 	bsr.w	T_063fc
-T_064f2:
+.l_064f2:
 	rts

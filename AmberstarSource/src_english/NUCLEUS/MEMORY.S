@@ -43,14 +43,14 @@ Kill_memory:
 	bra.b	T_1d2dc
 T_1d2b8:
 	btst	#$7,$8(a1)
-	bne.b	T_1d2d8
+	bne.b	.l_1d2d8
 	cmpa.l	(a1),a0
-	bne.b	T_1d2d8
+	bne.b	.l_1d2d8
 	move.l	#$80000000,$8(a1)
 	move.l	$4(a1),d0
 	add.l	d0,Size_of_free_memory
 	bra.b	T_1d2ec
-T_1d2d8:
+.l_1d2d8:
 	lea.l	$c(a1),a1
 T_1d2dc:
 	cmpa.l	a2,a1
@@ -67,14 +67,14 @@ Free_memory:
 	bra.b	T_1d326
 T_1d304:
 	btst	#$7,$8(a1)
-	bne.b	T_1d322
+	bne.b	.l_1d322
 	cmpa.l	(a1),a0
-	bne.b	T_1d322
+	bne.b	.l_1d322
 	bset	#$7,$8(a1)
 	move.l	$4(a1),d0
 	add.l	d0,Size_of_free_memory
 	bra.b	T_1d336
-T_1d322:
+.l_1d322:
 	lea.l	$c(a1),a1
 T_1d326:
 	cmpa.l	a2,a1
@@ -93,23 +93,23 @@ Shrink_memory:
 	bra.b	T_1d38e
 T_1d354:
 	btst	#$7,$8(a1)
-	bne.b	T_1d38a
+	bne.b	.l_1d38a
 	cmpa.l	(a1),a0
-	bne.b	T_1d38a
+	bne.b	.l_1d38a
 	cmp.l	$4(a1),d0
 	beq.b	T_1d39e
-	bmi.b	T_1d376
+	bmi.b	.l_1d376
 	lea.l	D_525be,a1
 	jsr	DI_Error
 	bra.b	T_1d39e
-T_1d376:
+.l_1d376:
 	move.l	d0,d1
 	movea.l	a1,a0
 	bsr.w	T_1d530
 	move.l	$10(a0),d0
 	add.l	d0,Size_of_free_memory
 	bra.b	T_1d39e
-T_1d38a:
+.l_1d38a:
 	lea.l	$c(a1),a1
 T_1d38e:
 	cmpa.l	a2,a1
@@ -176,7 +176,7 @@ T_1d45e:
 	ext.w	d0
 	bsr.w	T_1d50e
 	cmp.l	$4(a0),d1
-	beq.b	T_1d498
+	beq.b	.l_1d498
 	move.l	d1,d0
 	sub.l	$4(a0),d1
 	neg.l	d1
@@ -184,7 +184,7 @@ T_1d45e:
 	move.l	#$80000000,$8(a0)
 	move.l	d0,d1
 	lea.l	$c(a0),a0
-T_1d498:
+.l_1d498:
 	move.l	d2,$8(a0)
 	sub.l	d1,Size_of_free_memory
 	movea.l	(a0),a1
@@ -197,16 +197,16 @@ Allocate_memory:
 	addq.l	#$1,d1
 	andi.b	#$fe,d1
 	cmp.l	Size_of_free_memory,d1
-	bls.b	T_1d4cc
+	bls.b	.l_1d4cc
 	lea.l	D_5263f,a1
 	jsr	DI_Error
 	bra.b	T_1d4e6
-T_1d4cc:
+.l_1d4cc:
 	bsr.w	T_1d4ec
 	cmp.l	$4(a0),d1
-	beq.b	T_1d4da
+	beq.b	.l_1d4da
 	bsr.w	T_1d530
-T_1d4da:
+.l_1d4da:
 	clr.l	$8(a0)
 T_1d4de:
 	sub.l	d1,Size_of_free_memory
@@ -217,29 +217,29 @@ T_1d4e6:
 T_1d4ec:
 	move.l	d0,-(a7)
 	moveq	#0,d0
-T_1d4f0:
+.l_1d4f0:
 	bsr.w	Connect_memory
 	bsr.w	Find_free_memory
 	cmpa.l	#$0,a0
-	bne.b	T_1d50a
+	bne.b	.l_1d50a
 	addq.b	#$1,d0
-	bne.b	T_1d4f0
+	bne.b	.l_1d4f0
 	jmp	T_1a212
-T_1d50a:
+.l_1d50a:
 	move.l	(a7)+,d0
 	rts
 T_1d50e:
 	move.l	d0,-(a7)
 	moveq	#0,d0
-T_1d512:
+.l_1d512:
 	bsr.w	Connect_memory
 	bsr.w	T_1d58c
 	cmpa.l	#$0,a0
-	bne.b	T_1d52c
+	bne.b	.l_1d52c
 	addq.b	#$1,d0
-	bne.b	T_1d512
+	bne.b	.l_1d512
 	jmp	T_1a212
-T_1d52c:
+.l_1d52c:
 	move.l	(a7)+,d0
 	rts
 T_1d530:

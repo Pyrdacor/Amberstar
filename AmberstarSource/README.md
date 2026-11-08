@@ -45,7 +45,8 @@ vasmm68k_mot -m68000 -Ftos -tos-flags=1 -nosym -no-opt -o AMBRSTAR.PRG AMBRSTAR_
 
 (`vasmm68k_mot` 1.9 is in `Disks/Bugfixing/Executables` of the Ambermoon repository.)
 
-* Labels are named after their section and offset: `T_` text, `D_` data, `B_` BSS (e.g. `T_00f12`).
+* Labels are named after their section and offset: `T_` text, `D_` data, `B_` BSS (e.g. `T_00f12`). Labels of the text
+  which are only used inside their routine (between two global labels) are local labels (`.l_17724`), option `--locals`.
 * Every relocated longword of the program is a label reference, so the assembled program has the same relocations.
 * Code is found by following the control flow from the start of the program and from the code pointers in the data
   (e.g. the module tables). Other pointers into the text and the gaps behind the end of a routine are taken as code

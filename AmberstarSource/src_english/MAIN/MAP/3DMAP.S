@@ -52,7 +52,7 @@ Build_3D_map:
 	movem.l	d0-d2/d6-d7/a0-a6,-(a7)
 	bsr.w	M3_Dark_check
 	tst.b	Stygian
-	beq.b	T_030be
+	beq.b	.l_030be
 	move.w	#$20,d0
 	move.w	#$31,d1
 	move.w	d0,d2
@@ -63,7 +63,7 @@ Build_3D_map:
 	movea.l	Off_screen,a6
 	jsr	Draw_box
 	bra.w	T_031ea
-T_030be:
+.l_030be:
 	lea.l	Map_buffer_3D,a1
 	movea.l	INB_ptr,a2
 	lea.l	Labblock_ptrs,a3
@@ -76,10 +76,10 @@ T_030e4:
 	move.b	-$1(a1,d7.w),d0
 	bsr.w	Get_ptr_to_labblock
 	cmpi.b	#$1,$1(a0)
-	bne.b	T_030fc
+	bne.b	.l_030fc
 	bsr.w	Display_element
 	bra.b	T_03142
-T_030fc:
+.l_030fc:
 	cmpi.b	#$2,$1(a0)
 	bne.b	T_0313e
 	movem.l	d0/a0,-(a7)
@@ -91,9 +91,9 @@ T_030fc:
 	bsr.w	Display_element
 	move.w	d7,d6
 	move.b	T_03130+1(pc,d7.w),d7
-	beq.b	T_0312e
+	beq.b	.l_0312e
 	bsr.w	Display_element
-T_0312e:
+.l_0312e:
 	move.w	d6,d7
 T_03130:
 	bra.b	T_03142
@@ -103,15 +103,15 @@ T_0313e:
 T_03142:
 	moveq	#0,d0
 	move.b	-$1(a5,d7.w),d0
-	beq.b	T_03196
+	beq.b	.l_03196
 	bsr.w	Get_ptr_to_labblock
 	cmpi.b	#$1,$1(a0)
-	bne.b	T_0315c
+	bne.b	.l_0315c
 	bsr.w	Display_element
-	bra.b	T_03196
-T_0315c:
+	bra.b	.l_03196
+.l_0315c:
 	cmpi.b	#$2,$1(a0)
-	bne.b	T_03192
+	bne.b	.l_03192
 	movem.l	d0/a0,-(a7)
 	movea.l	OUH_ptr,a0
 	move.b	-$1(a0,d0.w),d0
@@ -121,14 +121,14 @@ T_0315c:
 	bsr.w	Display_element
 	move.w	d7,d6
 	move.b	T_03130+1(pc,d7.w),d7
-	beq.b	T_0318e
+	beq.b	.l_0318e
 	bsr.w	Display_element
-T_0318e:
+.l_0318e:
 	move.w	d6,d7
-	bra.b	T_03196
-T_03192:
+	bra.b	.l_03196
+.l_03192:
 	bsr.w	Display_object
-T_03196:
+.l_03196:
 	addq.w	#$1,d7
 	cmpi.w	#$c,d7
 	bmi.w	T_030e4
@@ -136,14 +136,14 @@ T_03196:
 	move.b	$b(a1),d0
 	bsr.w	Get_ptr_to_labblock
 	cmpi.b	#$3,$1(a0)
-	bne.b	T_031c4
+	bne.b	.l_031c4
 	cmpi.b	#$1,$3(a0)
-	bne.b	T_031c0
+	bne.b	.l_031c0
 	bsr.w	Display_object
-	bra.b	T_031c4
-T_031c0:
+	bra.b	.l_031c4
+.l_031c0:
 	bsr.w	Display_special_object
-T_031c4:
+.l_031c4:
 	moveq	#0,d0
 	move.b	$b(a5),d0
 	beq.b	T_031ea
@@ -151,14 +151,14 @@ T_031c4:
 	cmpi.b	#$3,$1(a0)
 	bne.b	T_031ea
 	cmpi.b	#$1,$3(a0)
-	bne.b	T_031e6
+	bne.b	.l_031e6
 	bsr.w	Display_object
 	bra.b	T_031ea
-T_031e6:
+.l_031e6:
 	bsr.w	Display_special_object
 T_031ea:
 	tst.b	Bumped
-	beq.b	T_03222
+	beq.b	.l_03222
 	move.w	#$31,d1
 	jsr	Random
 	andi.w	#$3f,d0
@@ -170,7 +170,7 @@ T_031ea:
 	movea.l	Off_screen,a6
 	jsr	Blot_masked_block
 	sf.b	Bumped
-T_03222:
+.l_03222:
 	bsr.w	Update_animation
 	bsr.w	Update_status_block
 	bsr.w	Show_special_items
@@ -312,22 +312,22 @@ Display_special_object:
 Get_current_anim_frame:
 	movem.l	d0/a0-a1,-(a7)
 	subq.w	#$1,d1
-	beq.b	T_033e4
+	beq.b	.l_033e4
 	add.w	d0,d0
 	add.w	d0,d0
 	move.l	-$4(a4,d0.w),d0
 	lea.l	Circle_anim,a1
 	btst	#$0,d0
-	beq.b	T_033aa
+	beq.b	.l_033aa
 	lea.l	Wave_anim,a1
-T_033aa:
+.l_033aa:
 	add.w	d1,d1
 	add.w	d1,d1
 	adda.w	d1,a1
 	btst	#$4,d0
-	beq.b	T_033e0
+	beq.b	.l_033e0
 	tst.b	B_57914
-	bne.b	T_033e0
+	bne.b	.l_033e0
 	move.b	$1(a1),d0
 	ext.w	d0
 	lea.l	B_5793a,a0
@@ -337,13 +337,13 @@ T_033aa:
 	andi.w	#$f,d0
 	move.w	$2(a1),d1
 	btst	d0,d1
-	bne.b	T_033e0
+	bne.b	.l_033e0
 	moveq	#0,d1
-	bra.b	T_033e4
-T_033e0:
+	bra.b	.l_033e4
+.l_033e0:
 	move.b	(a1),d1
 	ext.w	d1
-T_033e4:
+.l_033e4:
 	movem.l	(a7)+,d0/a0-a1
 	rts
 End_masks:
@@ -753,75 +753,75 @@ T_037f0:
 	movem.l	d0-d1,-(a7)
 	move.w	View_direction,d1
 	add.w	d1,d1
-	move.b	T_03840(pc,d1.w),d0
+	move.b	.l_03840(pc,d1.w),d0
 	ext.w	d0
 	add.w	Map_Xcoord,d0
-	move.b	T_03841(pc,d1.w),d1
+	move.b	.l_03841(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
 	bsr.w	Movement_check_3D
 	sne.b	Bumped
-	bne.b	T_0383a
+	bne.b	.l_0383a
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
 	bsr.w	After_move
-T_0383a:
+.l_0383a:
 	movem.l	(a7)+,d0-d1
 	rts
-T_03840:
+.l_03840:
 	dc.b	$ff
-T_03841:
+.l_03841:
 	dc.b	$00,$00,$ff,$01,$00,$00,$01
 T_03848:
 	bsr.w	Before_move
 	movem.l	d0-d1,-(a7)
 	move.w	View_direction,d1
 	add.w	d1,d1
-	move.b	T_03898(pc,d1.w),d0
+	move.b	.l_03898(pc,d1.w),d0
 	ext.w	d0
 	add.w	Map_Xcoord,d0
-	move.b	T_03899(pc,d1.w),d1
+	move.b	.l_03899(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
 	bsr.w	Movement_check_3D
 	sne.b	Bumped
-	bne.b	T_03892
+	bne.b	.l_03892
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
 	bsr.w	After_move
-T_03892:
+.l_03892:
 	movem.l	(a7)+,d0-d1
 	rts
-T_03898:
+.l_03898:
 	dc.b	$01
-T_03899:
+.l_03899:
 	dc.b	$00,$00,$01,$ff,$00,$00,$ff
 T_038a0:
 	bsr.w	Before_move
 	movem.l	d0-d1,-(a7)
 	move.w	View_direction,d1
 	add.w	d1,d1
-	move.b	T_038f0(pc,d1.w),d0
+	move.b	.l_038f0(pc,d1.w),d0
 	ext.w	d0
 	add.w	Map_Xcoord,d0
-	move.b	T_038f1(pc,d1.w),d1
+	move.b	.l_038f1(pc,d1.w),d1
 	ext.w	d1
 	add.w	Map_Ycoord,d1
 	bsr.w	Movement_check_3D
 	sne.b	Bumped
-	bne.b	T_038ea
+	bne.b	.l_038ea
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	jsr	Update_automap
 	bsr.w	After_move
-T_038ea:
+.l_038ea:
 	movem.l	(a7)+,d0-d1
 	rts
-T_038f0:
+.l_038f0:
 	dc.b	$00
-T_038f1:
+.l_038f1:
 	dc.b	$01,$ff,$00,$00,$ff,$01,$00
 ; ---- Get_3D_icon_status (original source: MAIN/MAP/3DMAP.ASM)
 Get_3D_icon_status:
@@ -959,20 +959,20 @@ Prepare_3D_map:
 	lea.l	Labblock_ptrs,a1
 	moveq	#0,d7
 	move.b	(a2)+,d7
-	bne.b	T_03b6c
+	bne.b	.l_03b6c
 	lea.l	D_2edb3,a1
 	jsr	DI_Error
-	bra.w	T_03c5e
-T_03b6c:
+	bra.w	.l_03c5e
+.l_03b6c:
 	subq.w	#$1,d7
 	move.w	d7,Nr_labblocks
-T_03b74:
+.l_03b74:
 	lea.l	D_2f1c8,a0
 	moveq	#0,d0
 	move.b	(a2)+,d0
 	jsr	Load_subfile
 	move.l	a0,(a1)+
-	dbra	d7,T_03b74
+	dbra	d7,.l_03b74
 	addq.l	#$3,a2
 	lea.l	D_2f1d6,a1
 	movea.l	a1,a0
@@ -1023,6 +1023,6 @@ T_03b74:
 	bsr.w	Make_modifications
 	jsr	Init_automap
 	jsr	Update_automap
-T_03c5e:
+.l_03c5e:
 	movem.l	(a7)+,d0-d1/d7/a0-a3
 	rts

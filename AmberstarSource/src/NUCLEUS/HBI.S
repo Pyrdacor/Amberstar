@@ -49,16 +49,16 @@ No_new_list:
 	beq.b	No_HBLs
 	move.b	(a0)+,$fffffa21.w
 	tst.b	(a0)+
-	beq.b	T_1c88a
+	beq.b	.l_1c88a
 	move.l	#Single_HBL,$120.w
 	move.w	(a0)+,Single_HBL+4
 	move.w	(a0)+,Single_HBL+2
-	bra.b	T_1c892
-T_1c88a:
+	bra.b	.l_1c892
+.l_1c88a:
 	dc.b	$21,$fc
 	dc.l	Palette_HBL
 	dc.b	$01,$20
-T_1c892:
+.l_1c892:
 	move.b	#$8,$fffffa1b.w
 	move.l	a0,HBL_list_ptr
 ; ---- No_HBLs (original source: NUCLEUS/HBI.ASM)
@@ -71,21 +71,21 @@ Single_HBL:
 	clr.b	$fffffa1b.w
 	movea.l	HBL_list_ptr,a0
 	tst.w	(a0)
-	beq.b	T_1c8e4
+	beq.b	.l_1c8e4
 	move.b	(a0)+,$fffffa21.w
 	tst.b	(a0)+
-	bne.b	T_1c8cc
+	bne.b	.l_1c8cc
 	move.l	#Palette_HBL,$120.w
-	bra.b	T_1c8d8
-T_1c8cc:
+	bra.b	.l_1c8d8
+.l_1c8cc:
 	dc.b	$33,$d8
 	dc.l	Single_HBL+4
 	dc.b	$33,$d8
 	dc.l	Single_HBL+2
-T_1c8d8:
+.l_1c8d8:
 	move.l	a0,HBL_list_ptr
 	move.b	#$8,$fffffa1b.w
-T_1c8e4:
+.l_1c8e4:
 	movea.l	(a7)+,a0
 	bclr	#$0,$fffffa0f.w
 	rte
@@ -98,23 +98,23 @@ Palette_HBL:
 	moveq	#8,d0
 	move.b	d0,$fffffa21.w
 	move.b	#$8,$fffffa1b.w
-T_1c910:
+.l_1c910:
 	cmp.b	$fffffa21.w,d0
-	beq.b	T_1c910
+	beq.b	.l_1c910
 	movem.l	d1-d7/a1,(a2)
 	move.b	#$0,$fffffa1b.w
 	tst.w	(a0)
-	beq.b	T_1c94c
+	beq.b	.l_1c94c
 	move.b	(a0)+,$fffffa21.w
 	tst.b	(a0)+
-	beq.b	T_1c940
+	beq.b	.l_1c940
 	move.l	#Single_HBL,$120.w
 	move.w	(a0)+,Single_HBL+4
 	move.w	(a0)+,Single_HBL+2
-T_1c940:
+.l_1c940:
 	move.l	a0,HBL_list_ptr
 	move.b	#$8,$fffffa1b.w
-T_1c94c:
+.l_1c94c:
 	movem.l	(a7)+,d0-d7/a0-a2
 	bclr	#$0,$fffffa0f.w
 	rte

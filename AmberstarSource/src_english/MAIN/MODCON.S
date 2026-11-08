@@ -29,20 +29,20 @@ Exit_display:
 T_10936:
 	movem.l	d0-d7/a0-a6,-(a7)
 	st.b	Abort_list
-T_10940:
+.l_10940:
 	movea.l	Module_sp,a1
 	cmpa.l	#B_584f8,a1
-	beq.b	T_1096a
+	beq.b	.l_1096a
 	lea.l	-$2e(a1),a0
 	move.l	a0,Module_sp
 	move.l	$18(a1),d0
-	beq.b	T_10962
+	beq.b	.l_10962
 	movea.l	d0,a0
 	jsr	(a0)
-T_10962:
+.l_10962:
 	jsr	Pop_Mptr
-	bra.b	T_10940
-T_1096a:
+	bra.b	.l_10940
+.l_1096a:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 Push_Module:
@@ -52,25 +52,25 @@ Push_Module:
 	movea.l	Module_sp,a1
 	lea.l	$2e(a1),a1
 	cmpa.l	#Current_inventory_chardat_ptr,a1
-	bmi.b	T_109a2
+	bmi.b	.l_109a2
 	lea.l	D_2efbe,a1
 	jsr	DI_Error
-	bra.b	T_109ce
-T_109a2:
+	bra.b	.l_109ce
+.l_109a2:
 	move.l	a1,Module_sp
 	moveq	#22,d7
-T_109aa:
+.l_109aa:
 	move.w	(a0)+,(a1)+
-	dbra	d7,T_109aa
+	dbra	d7,.l_109aa
 	lea.l	-$2e(a1),a1
 	st.b	Abort_list
 	move.w	$2c(a1),d0
 	jsr	Push_Mptr
 	move.l	$14(a1),d0
-	beq.b	T_109ce
+	beq.b	.l_109ce
 	movea.l	d0,a0
 	jsr	(a0)
-T_109ce:
+.l_109ce:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 Pop_Module:
@@ -80,27 +80,27 @@ Pop_Module:
 	jsr	My_vsync
 	movea.l	Module_sp,a1
 	cmpa.l	#B_584f8,a1
-	bgt.b	T_10a08
+	bgt.b	.l_10a08
 	lea.l	D_2efeb,a1
 	jsr	DI_Error
-	bra.b	T_10a36
-T_10a08:
+	bra.b	.l_10a36
+.l_10a08:
 	lea.l	-$2e(a1),a0
 	move.l	a0,Module_sp
 	move.l	$18(a1),d0
-	beq.b	T_10a20
+	beq.b	.l_10a20
 	move.l	a1,-(a7)
 	movea.l	d0,a0
 	jsr	(a0)
 	movea.l	(a7)+,a1
-T_10a20:
+.l_10a20:
 	st.b	Abort_list
 	jsr	Pop_Mptr
 	move.l	$28(a1),d0
-	beq.b	T_10a36
+	beq.b	.l_10a36
 	movea.l	d0,a0
 	jsr	(a0)
-T_10a36:
+.l_10a36:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 Input_handler:
@@ -123,22 +123,22 @@ Input_handler:
 	clr.b	Mouse_unclick_state
 	movea.l	Module_sp,a0
 	move.l	$c(a0),d1
-	beq.b	T_10a9a
+	beq.b	.l_10a9a
 	movea.l	d1,a0
 	bsr.w	Handle_list
-T_10a9a:
+.l_10a9a:
 	tst.b	Abort_list
-	bne.b	T_10ac2
+	bne.b	.l_10ac2
 	jsr	T_1ce6e
 	tst.l	d0
-	beq.b	T_10ac2
+	beq.b	.l_10ac2
 	bset	#$1f,d0
 	movea.l	Module_sp,a0
 	move.l	$10(a0),d1
-	beq.b	T_10ac2
+	beq.b	.l_10ac2
 	movea.l	d1,a0
 	bsr.w	Handle_list
-T_10ac2:
+.l_10ac2:
 	movem.l	(a7)+,d0-d2/a0
 	rts
 ; ---- Handle_list (original source: MAIN/MODCON.ASM)
@@ -186,17 +186,17 @@ T_10b1e:
 	movem.l	d0-d7/a0-a6,-(a7)
 	movea.l	Module_sp,a0
 	move.l	$4(a0),d0
-	beq.b	T_10b40
+	beq.b	.l_10b40
 	movea.l	d0,a0
-T_10b30:
+.l_10b30:
 	tst.l	(a0)
-	beq.b	T_10b40
+	beq.b	.l_10b40
 	move.l	a0,-(a7)
 	movea.l	(a0),a0
 	jsr	(a0)
 	movea.l	(a7)+,a0
 	addq.l	#$4,a0
-	bra.b	T_10b30
-T_10b40:
+	bra.b	.l_10b30
+.l_10b40:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts

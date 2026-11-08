@@ -254,6 +254,43 @@ for a in list(merge):
     merge_inner[a] = sorted(t for t, srcs in refs_from.items() if a < t < a + size and any(not (a <= s < a + size) for s in srcs))
     merge_inner[a] += sorted(t for t in symbol_names if a < t < a + size and t not in merge_inner[a])
     merge_inner[a] += sorted(t for t in set(inside.values()) if a < t < a + size and t not in merge_inner[a])
+
+# --- local labels (option --locals): labels of the text which are only used inside their routine (the code between
+# two global labels) become local labels. Each label which becomes local joins two routines, so this is repeated.
+local_labels = set()
+if '--locals' in sys.argv[3:]:
+    import bisect as _bisect
+    merged_ranges = sorted((a, a + v[1]) for a, v in merge.items())
+    def merged_range_of(x):
+        k = _bisect.bisect_right(merged_ranges, (x, float('inf'))) - 1
+        if k >= 0 and merged_ranges[k][0] <= x < merged_ranges[k][1]: return merged_ranges[k]
+        return None
+    fixed = set(symbol_names) | set(inside.values()) | {t for t in labels if t >= tlen}
+    for a, (s, e) in [(a, r) for a, r in zip([r[0] for r in merged_ranges], merged_ranges)]:
+        fixed.add(s)
+        fixed.update(t for t in labels if s < t < e)
+    candidates = {t for t in labels if t < tlen and t not in fixed and t in refs_from}
+    changed = True
+    while changed:
+        changed = False
+        glob = sorted((set(labels) - local_labels) | {r[0] for r in merged_ranges})
+        for t in sorted(candidates - local_labels):
+            k = _bisect.bisect_left(glob, t)
+            lo = glob[k - 1] if k > 0 else 0
+            hi = glob[k + 1] if k + 1 < len(glob) else tlen
+            ok = True
+            for src_addr in refs_from[t]:
+                # references from the data, from merged routines or from another routine keep the label global
+                if src_addr >= tlen or merged_range_of(src_addr) or not (lo <= src_addr < hi):
+                    ok = False; break
+            if ok:
+                local_labels.add(t); changed = True
+                glob.remove(t)
+_name = name
+def name(t):
+    if t in local_labels: return '.l_%05x' % t
+    return _name(t)
+
 def ref(t):
     if t in inside: return '%s+%d' % (name(inside[t]), t - inside[t])
     return name(t)

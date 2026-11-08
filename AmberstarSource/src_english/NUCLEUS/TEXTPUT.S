@@ -5,9 +5,9 @@ IG_Backspace:
 	move.w	B_73702,d0
 	subq.w	#$6,d0
 	cmp.w	PArea,d0
-	bmi.b	T_1d8b0
+	bmi.b	.l_1d8b0
 	move.w	d0,B_73702
-T_1d8b0:
+.l_1d8b0:
 	move.l	(a7)+,d0
 	rts
 T_1d8b4:
@@ -21,43 +21,43 @@ IG_Carriage_return:
 	move.w	Print_Y,d0
 	addq.w	#$7,d0
 	cmp.w	$6(a0),d0
-	bmi.b	T_1d8ec
+	bmi.b	.l_1d8ec
 	move.w	$4(a0),d0
-T_1d8ec:
+.l_1d8ec:
 	move.w	d0,Print_Y
 	movem.l	(a7)+,d0/a0
 	rts
 IG_Set_ink:
 	move.l	d0,-(a7)
 	cmpi.w	#$10,d0
-	bmi.b	T_1d90e
+	bmi.b	.l_1d90e
 	lea.l	D_52af4,a1
 	jsr	DI_Error
-	bra.b	T_1d916
-T_1d90e:
+	bra.b	.l_1d916
+.l_1d90e:
 	lsl.w	#$3,d0
 	move.w	d0,IG_Ink
-T_1d916:
+.l_1d916:
 	move.l	(a7)+,d0
 	rts
 IG_Set_paper:
 	move.l	d0,-(a7)
 	tst.w	d0
-	bpl.b	T_1d932
+	bpl.b	.l_1d932
 	move.w	d0,IG_Paper
 	move.l	#IG_Pchar_TRANS,Pchar_ptr
-	bra.b	T_1d958
-T_1d932:
+	bra.b	.l_1d958
+.l_1d932:
 	cmpi.w	#$10,d0
-	bmi.b	T_1d946
+	bmi.b	.l_1d946
 	lea.l	D_52b18,a1
 	jsr	DI_Error
-	bra.b	T_1d958
-T_1d946:
+	bra.b	.l_1d958
+.l_1d946:
 	lsl.w	#$3,d0
 	move.w	d0,IG_Paper
 	move.l	#IG_Pchar_OPAQUE,Pchar_ptr
-T_1d958:
+.l_1d958:
 	move.l	(a7)+,d0
 	rts
 IG_Set_cursor:
@@ -110,12 +110,12 @@ IG_Pchar_TRANS:
 	movem.l	d0-d7/a0-a2,-(a7)
 	lea.l	D_526ce,a0
 	tst.b	Rune_flag
-	beq.b	T_1d9ea
+	beq.b	.l_1d9ea
 	lea.l	D_527ae,a0
-T_1d9ea:
+.l_1d9ea:
 	andi.w	#$ff,d0
 	move.b	(a0,d0.w),d0
-	bmi.w	T_1db2c
+	bmi.w	.l_1db2c
 	lea.l	Little_font,a0
 	ext.w	d0
 	adda.w	d0,a0
@@ -174,7 +174,7 @@ T_1d9ea:
 	or.w	d3,(a1)+
 	lea.l	$90(a1),a1
 	moveq	#3,d7
-T_1da86:
+.l_1da86:
 	moveq	#0,d0
 	moveq	#0,d1
 	moveq	#0,d2
@@ -224,7 +224,7 @@ T_1da86:
 	or.w	d3,(a1)+
 	swap	d4
 	lea.l	$90(a1),a1
-	dbra	d7,T_1da86
+	dbra	d7,.l_1da86
 	moveq	#0,d4
 	move.b	-$1(a0),d4
 	lsl.w	#$7,d4
@@ -242,12 +242,12 @@ T_1da86:
 	move.w	B_73702,d0
 	addq.w	#$6,d0
 	cmp.w	D_526e8,d0
-	bmi.b	T_1db26
+	bmi.b	.l_1db26
 	jsr	IG_Carriage_return
-	bra.b	T_1db2c
-T_1db26:
+	bra.b	.l_1db2c
+.l_1db26:
 	move.w	d0,B_73702
-T_1db2c:
+.l_1db2c:
 	movem.l	(a7)+,d0-d7/a0-a2
 	rts
 IG_Pchar_OPAQUE:
@@ -263,7 +263,7 @@ IG_Pchar_OPAQUE:
 	move.l	d0,d1
 	swap	d1
 	moveq	#5,d7
-T_1db60:
+.l_1db60:
 	and.w	d0,(a0)+
 	and.w	d0,(a0)+
 	and.w	d0,(a0)+
@@ -273,7 +273,7 @@ T_1db60:
 	and.w	d1,(a0)+
 	and.w	d1,(a0)+
 	lea.l	$90(a0),a0
-	dbra	d7,T_1db60
+	dbra	d7,.l_1db60
 	lea.l	Colour_table,a0
 	move.w	IG_Paper,d0
 	adda.w	d0,a0
@@ -281,17 +281,17 @@ T_1db60:
 	move.l	(a0)+,d1
 	lea.l	Char_buffer,a0
 	moveq	#5,d7
-T_1db92:
+.l_1db92:
 	move.l	d0,(a0)+
 	move.l	d1,(a0)+
-	dbra	d7,T_1db92
+	dbra	d7,.l_1db92
 	lea.l	D_526ce,a0
 	tst.b	Rune_flag
-	beq.b	T_1dbae
+	beq.b	.l_1dbae
 	lea.l	D_527ae,a0
-T_1dbae:
+.l_1dbae:
 	move.b	(a0,d6.w),d0
-	bmi.w	T_1dc8c
+	bmi.w	.l_1dc8c
 	lea.l	Little_font,a0
 	ext.w	d0
 	adda.w	d0,a0
@@ -301,7 +301,7 @@ T_1dbae:
 	adda.w	IG_Ink,a1
 	lea.l	Char_buffer,a2
 	moveq	#4,d7
-T_1dbd8:
+.l_1dbd8:
 	move.b	(a0)+,d0
 	lsl.w	#$8,d0
 	move.w	d0,d1
@@ -327,7 +327,7 @@ T_1dbd8:
 	and.l	d2,d4
 	or.l	d3,d4
 	move.l	d4,(a2)+
-	dbra	d7,T_1dbd8
+	dbra	d7,.l_1dbd8
 	lea.l	Char_buffer,a0
 	move.w	B_73702,d0
 	move.w	Print_Y,d1
@@ -335,7 +335,7 @@ T_1dbd8:
 	lea.l	(a6,d2.w),a1
 	move.w	d3,d6
 	moveq	#5,d7
-T_1dc36:
+.l_1dc36:
 	moveq	#0,d0
 	moveq	#0,d1
 	moveq	#0,d2
@@ -361,16 +361,16 @@ T_1dc36:
 	or.w	d2,(a1)+
 	or.w	d3,(a1)+
 	lea.l	$90(a1),a1
-	dbra	d7,T_1dc36
+	dbra	d7,.l_1dc36
 	move.w	B_73702,d0
 	addq.w	#$6,d0
 	cmp.w	D_526e8,d0
-	bmi.b	T_1dc86
+	bmi.b	.l_1dc86
 	jsr	IG_Carriage_return
-	bra.b	T_1dc8c
-T_1dc86:
+	bra.b	.l_1dc8c
+.l_1dc86:
 	dc.b	$33,$c0
 	dc.l	B_73702
-T_1dc8c:
+.l_1dc8c:
 	movem.l	(a7)+,d0-d7/a0-a2
 	rts

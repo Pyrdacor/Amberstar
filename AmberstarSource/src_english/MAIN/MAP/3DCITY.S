@@ -20,32 +20,32 @@ C3_ModInit:
 	lea.l	Night_pal,a2
 	move.w	Hour,d0
 	cmpi.w	#$6,d0
-	bmi.b	T_05534
+	bmi.b	.l_05534
 	cmpi.w	#$8,d0
-	bpl.b	T_05516
+	bpl.b	.l_05516
 	lea.l	Dawndusk_pal,a2
-	bra.b	T_05534
-T_05516:
+	bra.b	.l_05534
+.l_05516:
 	cmpi.w	#$12,d0
-	bpl.b	T_05526
+	bpl.b	.l_05526
 	lea.l	Day_pal,a2
 	exg.l	a1,a0
-	bra.b	T_05534
-T_05526:
+	bra.b	.l_05534
+.l_05526:
 	cmpi.w	#$14,d0
-	bpl.b	T_05534
+	bpl.b	.l_05534
 	lea.l	Dawndusk_pal,a2
 	exg.l	a1,a0
-T_05534:
+.l_05534:
 	move.l	a0,Sky_ptr
 	lea.l	B_579b8,a0
 	lea.l	D_2ff36,a1
 	moveq	#82,d7
-T_05548:
+.l_05548:
 	move.w	(a2),(a0)+
 	move.w	(a2)+,(a1)
 	addq.l	#$6,a1
-	dbra	d7,T_05548
+	dbra	d7,.l_05548
 	bsr.w	Init_persons
 	bsr.w	T_00208
 	bsr.w	C3_DisInit
@@ -72,14 +72,14 @@ C3_DisInit:
 	move.l	#D_1e17a,Mousemove_ptr
 	lea.l	Skypal_buffer,a1
 	lea.l	Subfade1,a2
-T_055d0:
+.l_055d0:
 	lea.l	Hbl_C3_map,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Below_pal_C3,a0
 	jsr	List_fade
-	bne.b	T_055d0
+	bne.b	.l_055d0
 	lea.l	Hbl_C3_map,a0
 	jsr	Update_HBL
 	rts
@@ -91,10 +91,10 @@ T_05604:
 	jsr	Free_memory
 	lea.l	Labblock_ptrs,a1
 	move.w	Nr_labblocks,d7
-T_0562a:
+.l_0562a:
 	movea.l	(a1)+,a0
 	jsr	Free_memory
-	dbra	d7,T_0562a
+	dbra	d7,.l_0562a
 	movea.l	Ceiling_ptr,a0
 	jsr	Free_memory
 	movea.l	Floor_ptr,a0
@@ -141,12 +141,12 @@ C3_DisUpd:
 	addq.w	#$1,d7
 	addq.l	#$2,a0
 	btst	#$0,B_59325
-	bne.b	T_05700
+	bne.b	.l_05700
 	jsr	Blot_unmasked_block
-	bra.b	T_05704
-T_05700:
+	bra.b	.l_05704
+.l_05700:
 	bsr.w	Blot_mirrored_unmasked_block
-T_05704:
+.l_05704:
 	movea.l	Floor_ptr,a0
 	lea.l	$a(a0),a0
 	move.w	#$c1,d1
@@ -158,23 +158,23 @@ T_05704:
 	sub.w	d7,d1
 	addq.l	#$2,a0
 	tst.w	d2
-	beq.b	T_0572c
+	beq.b	.l_0572c
 	jsr	Blot_unmasked_block
-	bra.b	T_05730
-T_0572c:
+	bra.b	.l_05730
+.l_0572c:
 	bsr.w	Blot_mirrored_unmasked_block
-T_05730:
+.l_05730:
 	tst.b	Pause_Upd
-	bne.b	T_0573c
+	bne.b	.l_0573c
 	bsr.w	ThreeD_char_handler
-T_0573c:
+.l_0573c:
 	bsr.w	Build_3D_map
 	bsr.w	Update_map_CIL
 	tst.b	CombatReq
-	beq.b	T_05758
+	beq.b	.l_05758
 	lea.l	CombatReq_Mod,a0
 	jsr	Push_Module
-T_05758:
+.l_05758:
 	movem.l	(a7)+,d0-d3/d6-d7/a0/a6
 	rts
 ; ---- C3_time_evaluate (original source: MAIN/MAP/3DCITY.ASM)
@@ -235,7 +235,7 @@ C3_time_evaluate:
 T_05836:
 	movem.l	d0-d5/d7/a0-a6,-(a7)
 	tst.b	D_1e1fa
-	beq.w	T_058c4
+	beq.w	.l_058c4
 	lea.l	Spiral_table,a0
 	lea.l	Underlay_buf,a1
 	lea.l	Overlay_buf,a2
@@ -255,21 +255,21 @@ T_05836:
 	add.w	Half_Y,d4
 	add.w	Half_Y,d5
 	move.w	#$db,d7
-T_058a4:
+.l_058a4:
 	move.b	(a0),d0
 	cmp.b	d2,d0
-	bgt.b	T_058be
+	bgt.b	.l_058be
 	cmp.b	d3,d0
-	blt.b	T_058be
+	blt.b	.l_058be
 	move.b	$1(a0),d1
 	cmp.b	d4,d1
-	bgt.b	T_058be
+	bgt.b	.l_058be
 	cmp.b	d5,d1
-	blt.b	T_058be
+	blt.b	.l_058be
 	bsr.w	Do_shadow
-T_058be:
+.l_058be:
 	addq.l	#$2,a0
-	dbra	d7,T_058a4
-T_058c4:
+	dbra	d7,.l_058a4
+.l_058c4:
 	movem.l	(a7)+,d0-d5/d7/a0-a6
 	rts

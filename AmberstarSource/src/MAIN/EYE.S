@@ -112,70 +112,70 @@ Handle_visible_events:
 	move.w	d0,d2
 	move.w	d1,d3
 	bsr.w	Find_event
-	beq.b	T_0dede
+	beq.b	.l_0dede
 	moveq	#0,d0
 	move.b	(a5),d0
 	cmpi.w	#$3,d0
-	bne.b	T_0de82
+	bne.b	.l_0de82
 	st.b	Eye_flag
 	bsr.w	Handle_event
 	sf.b	Eye_flag
-	bra.b	T_0defc
-T_0de82:
+	bra.b	.l_0defc
+.l_0de82:
 	cmpi.w	#$4,d0
-	bne.b	T_0de94
+	bne.b	.l_0de94
 	jsr	T_01ff6
 	bsr.w	Handle_event
-	bra.b	T_0defc
-T_0de94:
+	bra.b	.l_0defc
+.l_0de94:
 	cmpi.w	#$e,d0
-	bne.b	T_0dea0
+	bne.b	.l_0dea0
 	bsr.w	Handle_event
-	bra.b	T_0defc
-T_0dea0:
+	bra.b	.l_0defc
+.l_0dea0:
 	lea.l	D_292c6,a0
 	move.b	-$1(a0,d0.w),d1
-	bmi.b	T_0dede
+	bmi.b	.l_0dede
 	movea.l	Current_active_char_data,a0
 	moveq	#0,d0
 	move.b	$d(a0),d0
 	add.w	$be(a0),d0
 	bsr.w	Probe
-	bmi.b	T_0dede
+	bmi.b	.l_0dede
 	move.w	d1,WText_nr
 	move.l	#Code0003Sys,Textfile_ptr
 	lea.l	TxtW_Mod,a0
 	bsr.w	Push_Module
-	bra.b	T_0defc
-T_0dede:
+	bra.b	.l_0defc
+.l_0dede:
 	cmp.w	Map_Xcoord,d2
-	bne.b	T_0defc
+	bne.b	.l_0defc
 	cmp.w	Map_Ycoord,d3
-	bne.b	T_0defc
+	bne.b	.l_0defc
 	move.w	Active_member,d0
 	lsl.w	#$8,d0
 	jsr	T_004ce
-T_0defc:
+.l_0defc:
 	movem.l	(a7)+,d0-d3/a0/a5
 	rts
 T_0df02:
 	movem.l	d0-d1/a0,-(a7)
 	cmpi.b	#$2,Current_map_type
-	bpl.b	T_0df32
+	bpl.b	.l_0df32
 	bsr.w	T_0ddf2
-T_0df14:
+.l_0df14:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0df14
+	bne.b	.l_0df14
 	lea.l	Mouth2D_Mod,a0
 	movea.l	Module_sp,a1
 	move.l	(a1),(a0)
 	bsr.w	Push_Module
-	bra.b	T_0df42
-T_0df32:
+	bra.b	.l_0df42
+.l_0df32:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	bsr.w	Talk
-T_0df42:
+.l_0df42:
 	movem.l	(a7)+,d0-d1/a0
 	rts
 ; ---- Mouth_clicked (original source: MAIN/EYE.ASM)
@@ -381,15 +381,15 @@ Dialogue_DisInit:
 	move.w	#$38,d1
 	jsr	IG_Set_cursor
 	move.b	$3(a1),d0
-	beq.b	T_0e27a
+	beq.b	.l_0e27a
 	lea.l	Female_name,a0
-	bra.b	T_0e280
-T_0e27a:
+	bra.b	.l_0e280
+.l_0e27a:
 	lea.l	Male_name,a0
-T_0e280:
+.l_0e280:
 	jsr	IG_Print
 	cmpi.b	#$9,$4(a1)
-	bpl.b	T_0e304
+	bpl.b	.l_0e304
 	move.w	#$f2,d0
 	move.w	#$31,d1
 	jsr	IG_Set_cursor
@@ -402,7 +402,7 @@ T_0e280:
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
 	tst.b	$5(a1)
-	beq.b	T_0e304
+	beq.b	.l_0e304
 	move.w	#$f2,d0
 	move.w	#$46,d1
 	jsr	IG_Set_cursor
@@ -419,7 +419,7 @@ T_0e280:
 	bsr.w	LConvert_number
 	lea.l	Line_buffer,a0
 	jsr	IG_Print
-T_0e304:
+.l_0e304:
 	move.w	#$f2,d0
 	move.w	#$3f,d1
 	jsr	IG_Set_cursor
@@ -456,14 +456,14 @@ T_0e304:
 	jsr	Set_layout_data
 	lea.l	D_2930c,a1
 	lea.l	Subfade1,a2
-T_0e3be:
+.l_0e3be:
 	lea.l	Hbl_Lay8_list,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Lay8_below,a0
 	jsr	Hbl_fade
-	bne.b	T_0e3be
+	bne.b	.l_0e3be
 	lea.l	Hbl_Lay8_list,a0
 	jsr	Update_HBL
 	rts
@@ -681,33 +681,33 @@ T_0e6e6:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0e6e6
 	lea.l	WSelW_Mod,a0
-	move.l	#T_0e704,$28(a0)
+	move.l	#.l_0e704,$28(a0)
 	bsr.w	Push_Module
 	rts
-T_0e704:
+.l_0e704:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0e704
+	bne.b	.l_0e704
 	tst.b	No_word_entered
-	bne.b	T_0e75c
+	bne.b	.l_0e75c
 	movea.l	Action_ptr,a0
 	movea.l	Act_dat_ptr,a1
 	moveq	#0,d0
 	move.w	Found_word,d1
 	moveq	#9,d7
 	cmpi.b	#$1,(a0)+
-	bne.b	T_0e74c
+	bne.b	.l_0e74c
 	cmp.w	(a1),d1
-	bne.b	T_0e74c
+	bne.b	.l_0e74c
 	moveq	#7,d2
 	and.w	d1,d2
 	lsr.w	#$3,d1
 	lea.l	WD,a0
 	bset	d2,(a0,d1.w)
 	bsr.w	Do_results
-	bra.b	T_0e75c
-T_0e74c:
+	bra.b	.l_0e75c
+.l_0e74c:
 	dc.b	$52,$80,$54,$89,$51,$cf,$ff,$da,$30,$3c,$00,$03,$61,$00,$8a,$00
-T_0e75c:
+.l_0e75c:
 	rts
 T_0e75e:
 	btst	#$1,Mouse_button_state
@@ -856,9 +856,9 @@ T_0e93e:
 	bsr.w	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0e96e:
+.l_0e96e:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0e96e
+	bne.b	.l_0e96e
 	rts
 Do_TIDIA:
 	tst.b	d0
@@ -879,29 +879,29 @@ T_0e982:
 	moveq	#0,d0
 	move.w	$22(a2),d0
 	btst	#$2,$18(a2)
-	beq.b	T_0e9b8
+	beq.b	.l_0e9b8
 	move.w	$24(a2),d1
-	bra.b	T_0e9ba
-T_0e9b8:
+	bra.b	.l_0e9ba
+.l_0e9b8:
 	moveq	#-1,d1
-T_0e9ba:
+.l_0e9ba:
 	suba.l	a0,a0
 	bsr.w	Scan_4_transfer_victims
-	bne.b	T_0e9d0
+	bne.b	.l_0e9d0
 	move.w	#$5,d0
 	bsr.w	Plus_message
 	bsr.w	Pop_Module
-	bra.b	T_0e9f4
-T_0e9d0:
+	bra.b	.l_0e9f4
+.l_0e9d0:
 	bsr.w	Show_transfer_victims
 	move.b	(a2),TIVS_Icon_nr
-	move.l	#T_0e9f6,TIVS_Ptr
+	move.l	#.l_0e9f6,TIVS_Ptr
 	lea.l	TIVS2_Mod,a0
 	move.w	#$18,$2c(a0)
 	bsr.w	Push_Module
-T_0e9f4:
+.l_0e9f4:
 	rts
-T_0e9f6:
+.l_0e9f6:
 	lea.l	Sold_slots,a2
 	lea.l	Sold_data,a3
 	moveq	#0,d0
@@ -911,34 +911,34 @@ T_0e9f6:
 	mulu.w	#$28,d0
 	adda.w	d0,a3
 	btst	#$2,$18(a3)
-	beq.b	T_0ea44
+	beq.b	.l_0ea44
 	lea.l	$2b(a0),a4
 	lea.l	$29a(a0),a5
 	move.w	$24(a3),d0
 	moveq	#11,d7
-T_0ea2a:
+.l_0ea2a:
 	tst.b	(a4)
-	beq.b	T_0ea3a
+	beq.b	.l_0ea3a
 	cmp.w	$24(a5),d0
-	bne.b	T_0ea3a
+	bne.b	.l_0ea3a
 	cmpi.b	#$63,(a4)
-	bmi.b	T_0ea5e
-T_0ea3a:
+	bmi.b	.l_0ea5e
+.l_0ea3a:
 	addq.l	#$1,a4
 	lea.l	$28(a5),a5
-	dbra	d7,T_0ea2a
-T_0ea44:
+	dbra	d7,.l_0ea2a
+.l_0ea44:
 	lea.l	$2b(a0),a4
 	lea.l	$29a(a0),a5
 	moveq	#11,d7
-T_0ea4e:
+.l_0ea4e:
 	tst.b	(a4)
-	beq.b	T_0ea5e
+	beq.b	.l_0ea5e
 	addq.l	#$1,a4
 	lea.l	$28(a5),a5
-	dbra	d7,T_0ea4e
-	bra.b	T_0eace
-T_0ea5e:
+	dbra	d7,.l_0ea4e
+	bra.b	.l_0eace
+.l_0ea5e:
 	dc.b	$74,$00,$34,$2b,$00,$22,$d5,$a8,$00,$ec,$52,$14,$7e,$13,$3a,$db
 	dc.b	$51,$cf,$ff,$fc,$47,$eb,$ff,$d8,$42,$12,$2c,$79
 	dc.l	Off_screen
@@ -960,7 +960,7 @@ T_0ea5e:
 	dc.b	$23,$fc
 	dc.l	Code0006Sys
 	dc.l	Textfile_ptr
-T_0eace:
+.l_0eace:
 	rts
 T_0ead0:
 	btst	#$1,Mouse_button_state
@@ -988,7 +988,7 @@ T_0eb34:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0eb34
 	tst.b	d0
-	beq.w	T_0ebc2
+	beq.w	.l_0ebc2
 	move.b	d0,Object_slot_number
 	ext.w	d0
 	subq.w	#$1,d0
@@ -998,17 +998,17 @@ T_0eb34:
 	mulu.w	#$28,d0
 	adda.w	d0,a4
 	tst.b	(a3)
-	beq.b	T_0ebc2
+	beq.b	.l_0ebc2
 	move.w	$24(a4),d1
 	movea.l	Action_ptr,a0
 	movea.l	Act_dat_ptr,a1
 	moveq	#0,d0
 	moveq	#9,d7
-T_0eb7a:
+.l_0eb7a:
 	cmpi.b	#$3,(a0)+
-	bne.b	T_0ebb2
+	bne.b	.l_0ebb2
 	cmp.w	(a1),d1
-	bne.b	T_0ebb2
+	bne.b	.l_0ebb2
 	movea.l	Current_active_char_data,a0
 	subq.b	#$1,(a3)
 	move.w	$22(a4),d2
@@ -1019,14 +1019,14 @@ T_0eb7a:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	bsr.w	Do_results
-	bra.b	T_0ebc2
-T_0ebb2:
+	bra.b	.l_0ebc2
+.l_0ebb2:
 	addq.l	#$1,d0
 	addq.l	#$2,a1
-	dbra	d7,T_0eb7a
+	dbra	d7,.l_0eb7a
 	move.w	#$5,d0
 	bsr.w	Plus_message
-T_0ebc2:
+.l_0ebc2:
 	bra.w	Pop_Module
 ; ---- DIA_Give_food (original source: MAIN/EYE.ASM)
 DIA_Give_food:
@@ -1049,35 +1049,35 @@ DIA_Give_food:
 	rts	
 T_0ec18:
 	move.l	ItemW_nr,d1
-	beq.b	T_0ec6c
+	beq.b	.l_0ec6c
 	movea.l	Action_ptr,a0
 	movea.l	Act_dat_ptr,a1
 	moveq	#0,d0
 	moveq	#9,d7
-T_0ec30:
+.l_0ec30:
 	cmpi.b	#$5,(a0)+
-	bne.b	T_0ec52
+	bne.b	.l_0ec52
 	cmp.w	(a1),d1
-	bmi.b	T_0ec5a
+	bmi.b	.l_0ec5a
 	movea.l	Current_active_char_data,a0
 	sub.w	d1,$92(a0)
 	mulu.w	#$fa,d1
 	sub.l	d1,$ec(a0)
 	bsr.w	Do_results
-	bra.b	T_0ec6c
-T_0ec52:
+	bra.b	.l_0ec6c
+.l_0ec52:
 	addq.l	#$1,d0
 	addq.l	#$2,a1
-	dbra	d7,T_0ec30
-T_0ec5a:
+	dbra	d7,.l_0ec30
+.l_0ec5a:
 	move.l	#Code0006Sys,Textfile_ptr
 	move.w	#$8,d0
 	bsr.w	Plus_message
-T_0ec6c:
+.l_0ec6c:
 	move.l	#Code0006Sys,Textfile_ptr
-T_0ec76:
+.l_0ec76:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0ec76
+	bne.b	.l_0ec76
 	rts
 T_0ec82:
 	btst	#$1,Mouse_button_state
@@ -1087,27 +1087,27 @@ T_0ec82:
 	movea.l	Dialogue_chard_ptr,a0
 	moveq	#0,d0
 	move.b	$3c(a0),d0
-	beq.b	T_0ecb4
+	beq.b	.l_0ecb4
 	cmpi.w	#$64,d0
-	beq.b	T_0ecbe
+	beq.b	.l_0ecbe
 	bsr.w	Probe
-	bpl.b	T_0ecbe
-T_0ecb4:
+	bpl.b	.l_0ecbe
+.l_0ecb4:
 	move.w	#$9,d0
 	bsr.w	Plus_message
 	rts
-T_0ecbe:
+.l_0ecbe:
 	lea.l	Chard_ptrs,a1
 	moveq	#0,d0
 	moveq	#5,d7
-T_0ecc8:
+.l_0ecc8:
 	tst.l	(a1)
-	beq.b	T_0ecd8
+	beq.b	.l_0ecd8
 	addq.l	#$4,a1
 	addq.w	#$1,d0
-	dbra	d7,T_0ecc8
-	bra.w	T_0ed82
-T_0ecd8:
+	dbra	d7,.l_0ecc8
+	bra.w	.l_0ed82
+.l_0ecd8:
 	move.l	a0,(a1)
 	move.w	Map_nr,d7
 	subq.w	#$1,d7
@@ -1133,16 +1133,16 @@ T_0ecd8:
 	lea.l	B_5eed0,a0
 	moveq	#0,d0
 	moveq	#5,d7
-T_0ed3a:
+.l_0ed3a:
 	move.b	(a0)+,d1
 	bset	d1,d0
-	dbra	d7,T_0ed3a
+	dbra	d7,.l_0ed3a
 	moveq	#11,d7
-T_0ed44:
+.l_0ed44:
 	btst	d7,d0
-	beq.b	T_0ed4c
-	dbra	d7,T_0ed44
-T_0ed4c:
+	beq.b	.l_0ed4c
+	dbra	d7,.l_0ed44
+.l_0ed4c:
 	lea.l	B_5eed0,a0
 	move.w	(a7)+,d0
 	move.b	d7,(a0,d0.w)
@@ -1151,16 +1151,16 @@ T_0ed4c:
 	movea.l	Act_dat_ptr,a1
 	moveq	#0,d0
 	moveq	#9,d7
-T_0ed6e:
+.l_0ed6e:
 	cmpi.b	#$6,(a0)+
-	bne.b	T_0ed7a
+	bne.b	.l_0ed7a
 	bsr.w	Do_results
-	bra.b	T_0ed82
-T_0ed7a:
+	bra.b	.l_0ed82
+.l_0ed7a:
 	addq.l	#$1,d0
 	addq.l	#$2,a1
-	dbra	d7,T_0ed6e
-T_0ed82:
+	dbra	d7,.l_0ed6e
+.l_0ed82:
 	rts
 ; ---- Do_results (original source: MAIN/EYE.ASM)
 Do_results:
@@ -1229,15 +1229,15 @@ Item_res:
 	lea.l	Sold_slots,a1
 	moveq	#0,d1
 	moveq	#11,d7
-T_0ee5e:
+.l_0ee5e:
 	tst.b	(a1,d1.w)
-	beq.b	T_0ee78
+	beq.b	.l_0ee78
 	addq.l	#$1,d1
-	dbra	d7,T_0ee5e
+	dbra	d7,.l_0ee5e
 	lea.l	D_31ee1,a1
 	jsr	DI_Error
-	bra.b	T_0eea8
-T_0ee78:
+	bra.b	.l_0eea8
+.l_0ee78:
 	dc.b	$13,$bc,$00,$01,$10,$00,$43,$f9
 	dc.l	Sold_data
 	dc.b	$c2,$fc,$00,$28,$d2,$c1,$7e,$09,$22,$d8,$51,$cf,$ff,$fc,$2c,$79
@@ -1246,7 +1246,7 @@ T_0ee78:
 	dc.l	Switch_screen
 	dc.b	$4e,$b9
 	dc.l	Copy_screen
-T_0eea8:
+.l_0eea8:
 	rts
 ; ---- Gold_res (original source: MAIN/EYE.ASM)
 Gold_res:
@@ -1278,87 +1278,87 @@ Data_res:
 T_0eee4:
 	movea.l	T_0eee4+2(pc,d1.w),a4
 	jmp	(a4)
-	dc.l	T_0eefe
-	dc.l	T_0ef42
-	dc.l	T_0ef7a
-	dc.l	T_0ef80
-	dc.l	T_0ef86
-T_0eefe:
+	dc.l	.l_0eefe
+	dc.l	.l_0ef42
+	dc.l	.l_0ef7a
+	dc.l	.l_0ef80
+	dc.l	.l_0ef86
+.l_0eefe:
 	move.w	(a3),d1
 	ext.l	d1
 	cmpi.w	#$46,d0
-	bpl.b	T_0ef1c
+	bpl.b	.l_0ef1c
 	moveq	#0,d0
 	move.b	(a0),d0
 	add.w	d1,d0
 	cmpi.w	#$100,d0
-	bmi.b	T_0ef18
+	bmi.b	.l_0ef18
 	move.w	#$ff,d0
-T_0ef18:
+.l_0ef18:
 	move.b	d0,(a0)
-	bra.b	T_0ef40
-T_0ef1c:
+	bra.b	.l_0ef40
+.l_0ef1c:
 	cmpi.w	#$cc,d0
-	bpl.b	T_0ef32
+	bpl.b	.l_0ef32
 	moveq	#0,d0
 	move.w	(a0),d0
 	add.w	d1,d0
-	bvc.b	T_0ef2e
+	bvc.b	.l_0ef2e
 	move.w	#$7fff,d0
-T_0ef2e:
+.l_0ef2e:
 	move.w	d0,(a0)
-	bra.b	T_0ef40
-T_0ef32:
+	bra.b	.l_0ef40
+.l_0ef32:
 	dc.b	$20,$10,$d0,$81,$68,$06,$20,$3c,$7f,$ff,$ff,$ff,$20,$80
-T_0ef40:
+.l_0ef40:
 	rts
-T_0ef42:
+.l_0ef42:
 	move.w	(a3),d1
 	ext.l	d1
 	cmpi.w	#$46,d0
-	bpl.b	T_0ef5a
+	bpl.b	.l_0ef5a
 	moveq	#0,d0
 	move.b	(a0),d0
 	sub.b	d1,d0
-	bpl.b	T_0ef56
+	bpl.b	.l_0ef56
 	moveq	#0,d0
-T_0ef56:
+.l_0ef56:
 	move.b	d0,(a0)
-	bra.b	T_0ef78
-T_0ef5a:
+	bra.b	.l_0ef78
+.l_0ef5a:
 	cmpi.w	#$cc,d0
-	bpl.b	T_0ef6e
+	bpl.b	.l_0ef6e
 	moveq	#0,d0
 	move.w	(a0),d0
 	sub.w	d1,d0
-	bpl.b	T_0ef6a
+	bpl.b	.l_0ef6a
 	moveq	#0,d0
-T_0ef6a:
+.l_0ef6a:
 	move.w	d0,(a0)
-	bra.b	T_0ef78
-T_0ef6e:
+	bra.b	.l_0ef78
+.l_0ef6e:
 	dc.b	$20,$10,$90,$81,$6a,$02,$70,$00,$20,$80
-T_0ef78:
+.l_0ef78:
 	rts
-T_0ef7a:
+.l_0ef7a:
 	move.w	(a3),d1
 	bclr	d1,(a0)
 	rts
-T_0ef80:
+.l_0ef80:
 	move.w	(a3),d1
 	bset	d1,(a0)
 	rts
-T_0ef86:
+.l_0ef86:
 	move.w	(a3),d1
 	bchg	d1,(a0)
 	rts
 T_0ef8c:
 	tst.b	Print_objname_flag
-	beq.b	T_0efde
-	lea.l	T_0efe0(pc),a0
+	beq.b	.l_0efde
+	lea.l	.l_0efe0(pc),a0
 	jsr	IG_Print
 	move.w	Object_name_nr,d0
-	beq.b	T_0efde
+	beq.b	.l_0efde
 	bsr.w	Get_word
 	move.w	#$10,d0
 	move.w	#$48,d1
@@ -1371,13 +1371,13 @@ T_0ef8c:
 	lea.l	Line_buffer,a0
 	bsr.w	Print_centered_string
 	subq.b	#$1,Print_objname_flag
-T_0efde:
+.l_0efde:
 	rts
-T_0efe0:
+.l_0efe0:
 	dc.b	$01,$0f,$02,$ff,$00,$00
 T_0efe6:
 	tst.b	Erase_objname_flag
-	beq.b	T_0f01a
+	beq.b	.l_0f01a
 	move.w	#$10,d0
 	move.w	#$48,d1
 	move.w	#$bf,d2
@@ -1387,16 +1387,16 @@ T_0efe6:
 	jsr	Draw_box
 	subq.b	#$1,Erase_objname_flag
 	clr.w	Object_name_nr
-T_0f01a:
+.l_0f01a:
 	rts
 Change_travelmode:
 	movem.l	d0-d1/a0,-(a7)
 	tst.w	Travel_mode
-	beq.w	T_0f0c8
+	beq.w	.l_0f0c8
 	cmpi.w	#$4,Travel_mode
-	beq.w	T_0f0ba
+	beq.w	.l_0f0ba
 	cmpi.w	#$5,Travel_mode
-	bne.b	T_0f064
+	bne.b	.l_0f064
 	moveq	#0,d0
 	jsr	Set_new_travel_mode
 	jsr	W2_DisUpd
@@ -1404,15 +1404,15 @@ Change_travelmode:
 	lea.l	D_304ae,a0
 	bsr.w	Push_Module
 	bsr.w	Event_handler
-	bra.b	T_0f0de
-T_0f064:
+	bra.b	.l_0f0de
+.l_0f064:
 	cmpi.w	#$6,Travel_mode
-	beq.b	T_0f0ba
+	beq.b	.l_0f0ba
 	lea.l	Trans_T,a0
 	moveq	#29,d1
-T_0f076:
+.l_0f076:
 	tst.b	(a0,d1.w)
-	bne.b	T_0f0a8
+	bne.b	.l_0f0a8
 	move.w	Travel_mode,d0
 	move.b	d0,(a0,d1.w)
 	move.w	Map_Xcoord,d0
@@ -1421,26 +1421,26 @@ T_0f076:
 	move.b	d0,$3c(a0,d1.w)
 	lea.l	$5a(a0,d1.w),a0
 	move.w	Map_nr,(a0,d1.w)
-	bra.b	T_0f0ba
-T_0f0a8:
+	bra.b	.l_0f0ba
+.l_0f0a8:
 	subq.w	#$1,d1
-	bpl.b	T_0f076
+	bpl.b	.l_0f076
 	lea.l	D_31f1d,a1
 	jsr	DI_Error
-	bra.b	T_0f0de
-T_0f0ba:
+	bra.b	.l_0f0de
+.l_0f0ba:
 	moveq	#0,d0
 	jsr	Set_new_travel_mode
 	bsr.w	Event_handler
-	bra.b	T_0f0de
-T_0f0c8:
+	bra.b	.l_0f0de
+.l_0f0c8:
 	jsr	Seek_transport
 	lea.l	Trans_T,a0
 	clr.b	(a0,d1.w)
 	jsr	Set_new_travel_mode
-T_0f0de:
+.l_0f0de:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f0de
+	bne.b	.l_0f0de
 	movem.l	(a7)+,d0-d1/a0
 	rts
 ; ---- Automapper (original source: MAIN/EYE.ASM)
@@ -1482,9 +1482,9 @@ Automap_DisUpd:
 Automap_ModInit:
 	lea.l	Automap_CIL,a0
 	moveq	#8,d7
-T_0f160:
+.l_0f160:
 	bclr	#$7,(a0)+
-	dbra	d7,T_0f160
+	dbra	d7,.l_0f160
 	lea.l	-$9(a0),a0
 	move.w	#$6,Automap_X
 	move.w	#$6,Automap_Y
@@ -1493,7 +1493,7 @@ T_0f160:
 	move.w	Width_of_map,d0
 	subi.w	#$a,d0
 	cmpi.w	#$16,d0
-	bpl.b	T_0f1c6
+	bpl.b	.l_0f1c6
 	move.w	d0,Automap_width
 	bset	#$7,(a0)
 	bset	#$7,$2(a0)
@@ -1501,25 +1501,25 @@ T_0f160:
 	bset	#$7,$5(a0)
 	bset	#$7,$6(a0)
 	bset	#$7,$8(a0)
-	bra.b	T_0f1f2
-T_0f1c6:
+	bra.b	.l_0f1f2
+.l_0f1c6:
 	move.w	Map_Xcoord,d0
 	subi.w	#$a,d0
 	cmpi.w	#$6,d0
-	bmi.b	T_0f1f2
+	bmi.b	.l_0f1f2
 	moveq	#27,d1
 	add.w	d0,d1
 	cmp.w	Width_of_map,d1
-	bmi.b	T_0f1ec
+	bmi.b	.l_0f1ec
 	move.w	Width_of_map,d0
 	subi.w	#$1a,d0
-T_0f1ec:
+.l_0f1ec:
 	move.w	d0,Automap_X
-T_0f1f2:
+.l_0f1f2:
 	move.w	Height_of_map,d0
 	subi.w	#$a,d0
 	cmpi.w	#$12,d0
-	bpl.b	T_0f22e
+	bpl.b	.l_0f22e
 	move.w	d0,Automap_height
 	bset	#$7,$0(a0)
 	bset	#$7,$1(a0)
@@ -1527,21 +1527,21 @@ T_0f1f2:
 	bset	#$7,$6(a0)
 	bset	#$7,$7(a0)
 	bset	#$7,$8(a0)
-	bra.b	T_0f258
-T_0f22e:
+	bra.b	.l_0f258
+.l_0f22e:
 	move.w	Map_Ycoord,d0
 	subq.w	#$8,d0
 	cmpi.w	#$6,d0
-	bmi.b	T_0f258
+	bmi.b	.l_0f258
 	moveq	#23,d1
 	add.w	d0,d1
 	cmp.w	Height_of_map,d1
-	bmi.b	T_0f252
+	bmi.b	.l_0f252
 	move.w	Height_of_map,d0
 	subi.w	#$16,d0
-T_0f252:
+.l_0f252:
 	move.w	d0,Automap_Y
-T_0f258:
+.l_0f258:
 	move.w	Size_of_map,d0
 	ext.l	d0
 	jsr	Allocate_memory
@@ -1582,23 +1582,23 @@ T_0f2ce:
 	add.w	d0,d0
 	move.l	(a3,d0.w),d0
 	btst	#$5,d0
-	beq.b	T_0f2e8
+	beq.b	.l_0f2e8
 	bchg	#$7,d0
-T_0f2e8:
+.l_0f2e8:
 	btst	#$7,d0
-	bne.b	T_0f2f2
+	bne.b	.l_0f2f2
 	moveq	#2,d0
 	bra.b	T_0f2f4
-T_0f2f2:
+.l_0f2f2:
 	moveq	#1,d0
 T_0f2f4:
 	move.b	d0,(a1)
 	addq.w	#$1,d4
 	cmpi.w	#$8,d4
-	bmi.b	T_0f302
+	bmi.b	.l_0f302
 	moveq	#0,d4
 	addq.w	#$1,d5
-T_0f302:
+.l_0f302:
 	addq.l	#$1,a1
 	addq.l	#$1,a2
 	dbra	d7,T_0f296
@@ -1609,13 +1609,13 @@ T_0f302:
 	add.w	Map_Xcoord,d0
 	subq.w	#$1,d0
 	btst	#$0,B_5c36b
-	beq.b	T_0f33a
+	beq.b	.l_0f33a
 	moveq	#10,d1
 	add.w	View_direction,d1
-	bra.b	T_0f33c
-T_0f33a:
+	bra.b	.l_0f33c
+.l_0f33a:
 	moveq	#9,d1
-T_0f33c:
+.l_0f33c:
 	move.b	d1,(a0,d0.w)
 	move.w	d1,Party_automap_icon
 	bra.w	Init_display
@@ -1636,11 +1636,11 @@ Automap_DisInit:
 	moveq	#1,d6
 	moveq	#8,d7
 	lea.l	D_47bda,a0
-T_0f388:
+.l_0f388:
 	jsr	Blot_unmasked_block
 	addi.w	#$9,d1
 	lea.l	$40(a0),a0
-	dbra	d5,T_0f388
+	dbra	d5,.l_0f388
 	lea.l	Automap_icn,a0
 	move.w	Party_automap_icon,d2
 	lsl.w	#$6,d2
@@ -1658,7 +1658,7 @@ T_0f388:
 	moveq	#8,d7
 	lea.l	Line_buffer,a0
 	lea.l	Code0006Sys,a1
-T_0f3e2:
+.l_0f3e2:
 	jsr	IG_Set_cursor
 	exg.l	d2,d0
 	jsr	Convert_text_line
@@ -1666,7 +1666,7 @@ T_0f3e2:
 	jsr	IG_Print
 	addi.w	#$9,d1
 	addq.w	#$1,d2
-	dbra	d7,T_0f3e2
+	dbra	d7,.l_0f3e2
 	moveq	#15,d0
 	jsr	IG_Set_ink
 	moveq	#-1,d0
@@ -1686,14 +1686,14 @@ T_0f3e2:
 	jsr	Set_layout_data
 	lea.l	D_29350,a1
 	lea.l	Subfade1,a2
-T_0f466:
+.l_0f466:
 	lea.l	Hbl_Lay11_list,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Lay11_below,a0
 	jsr	Fade_pal
-	bne.b	T_0f466
+	bne.b	.l_0f466
 	lea.l	Hbl_Lay11_list,a0
 	jsr	Update_HBL
 	rts
@@ -1918,14 +1918,14 @@ Options_DisInit:
 T_0f744:
 	lea.l	Void,a1
 	lea.l	Subfade1,a2
-T_0f750:
+.l_0f750:
 	lea.l	Hbl_Lay6_list,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Lay6_below,a0
 	jsr	Fade_pal
-	bne.b	T_0f750
+	bne.b	.l_0f750
 	lea.l	Hbl_Lay6_list,a0
 	jsr	Update_HBL
 	rts
@@ -1970,10 +1970,10 @@ Quit_game:
 T_0f804:
 	bsr.w	Exit_display
 	cmpi.b	#$2,Current_map_type
-	bmi.b	T_0f81c
+	bmi.b	.l_0f81c
 	jsr	T_0025a
 	bsr.w	T_0f616
-T_0f81c:
+.l_0f81c:
 	jmp	Exit_all
 T_0f822:
 	btst	#$1,Mouse_button_state
@@ -1981,20 +1981,20 @@ T_0f822:
 	clr.w	SaveGame_bitlist
 	lea.l	B_600e6,a0
 	moveq	#4,d7
-T_0f83a:
+.l_0f83a:
 	tst.l	(a0)+
-	bne.b	T_0f86a
-	dbra	d7,T_0f83a
+	bne.b	.l_0f86a
+	dbra	d7,.l_0f83a
 	move.l	#Code0004Sys,Textfile_ptr
 	move.w	#$18,ReqText_nr
 	move.l	#T_0f9c6,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bsr.w	Push_Module
-	bra.b	T_0f874
-T_0f86a:
+	bra.b	.l_0f874
+.l_0f86a:
 	lea.l	SaveGame_Mod,a0
 	bsr.w	Push_Module
-T_0f874:
+.l_0f874:
 	rts
 SaveGame_ModInit:
 	move.l	#Lay6_PlusMes,PlusMes_info
@@ -2009,9 +2009,9 @@ SaveGame_ModInit:
 	moveq	#2,d5
 	moveq	#2,d6
 	moveq	#34,d7
-T_0f8b6:
+.l_0f8b6:
 	tst.l	(a1)
-	beq.b	T_0f8f6
+	beq.b	.l_0f8f6
 	movea.l	(a1),a3
 	move.w	(a2),d0
 	move.w	$2(a2),d1
@@ -2022,18 +2022,18 @@ T_0f8b6:
 	jsr	IG_Set_cursor
 	moveq	#9,d0
 	cmp.w	Active_member,d5
-	bne.b	T_0f8e6
+	bne.b	.l_0f8e6
 	moveq	#8,d0
-T_0f8e6:
+.l_0f8e6:
 	jsr	IG_Set_ink
 	lea.l	$f0(a3),a0
 	jsr	IG_Print
-T_0f8f6:
+.l_0f8f6:
 	addq.l	#$4,a1
 	addq.l	#$8,a2
 	addq.w	#$1,d5
 	cmpi.w	#$7,d5
-	bmi.b	T_0f8b6
+	bmi.b	.l_0f8b6
 	move.w	#$80,d0
 	move.w	#$b0,d1
 	moveq	#2,d6
@@ -2084,31 +2084,31 @@ T_0f9b8:
 	bsr.w	Pop_Module
 T_0f9c6:
 	cmpi.b	#$2,Current_map_type
-	bne.b	T_0f9d4
+	bne.b	.l_0f9d4
 	bsr.w	T_0f616
-T_0f9d4:
+.l_0f9d4:
 	lea.l	Chard_filename,a0
 	lea.l	Chard_ptrs,a2
 	lea.l	Member_1_nr,a3
 	moveq	#5,d7
-T_0f9e8:
+.l_0f9e8:
 	tst.l	(a2)
-	beq.b	T_0f9f6
+	beq.b	.l_0f9f6
 	move.w	(a3),d0
 	movea.l	(a2),a1
 	jsr	Save_subfile
-T_0f9f6:
+.l_0f9f6:
 	addq.l	#$4,a2
 	addq.l	#$2,a3
-	dbra	d7,T_0f9e8
+	dbra	d7,.l_0f9e8
 	lea.l	B_600e6,a1
 	lea.l	B_5c380,a2
 	lea.l	B_5bef3,a3
 	move.w	SaveGame_bitlist,d0
 	moveq	#1,d7
-T_0fa18:
+.l_0fa18:
 	btst	d7,d0
-	beq.b	T_0fa50
+	beq.b	.l_0fa50
 	movea.l	(a1),a0
 	move.w	$c4(a0),d2
 	lea.l	CD,a0
@@ -2124,13 +2124,13 @@ T_0fa18:
 	clr.b	$6(a3)
 	clr.b	$c(a3)
 	subq.w	#$1,Nr_members
-T_0fa50:
+.l_0fa50:
 	addq.l	#$4,a1
 	addq.l	#$2,a2
 	addq.l	#$1,a3
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
-	bmi.b	T_0fa18
+	bmi.b	.l_0fa18
 	jsr	Update_status_block
 	jsr	Switch_screen
 	jsr	Copy_screen
@@ -2161,14 +2161,14 @@ T_0fa50:
 	lea.l	Month,a0
 	moveq	#0,d0
 	moveq	#23,d7
-T_0fad8:
+.l_0fad8:
 	move.w	(a0)+,d0
 	move.b	d0,(a1)+
-	dbra	d7,T_0fad8
+	dbra	d7,.l_0fad8
 	move.w	#$15ad,d7
-T_0fae4:
+.l_0fae4:
 	move.w	(a0)+,(a1)+
-	dbra	d7,T_0fae4
+	dbra	d7,.l_0fae4
 	movea.l	Modifications_ptr,a0
 	move.w	Nr_of_modifications,d7
 	bra.b	T_0fafc
@@ -2198,32 +2198,32 @@ T_0fb38:
 	bne.b	T_0fb38
 	lsr.w	#$8,d0
 	tst.w	d0
-	beq.w	T_0fcc0
+	beq.w	.l_0fcc0
 	move.w	Active_member,d1
 	subq.w	#$1,d1
 	cmp.w	d0,d1
-	bne.b	T_0fb64
+	bne.b	.l_0fb64
 	move.w	#$19,d0
 	jsr	Plus_message
-	bra.w	T_0fcc0
-T_0fb64:
+	bra.w	.l_0fcc0
+.l_0fb64:
 	lea.l	Chard_ptrs,a0
 	move.w	d0,d1
 	add.w	d1,d1
 	add.w	d1,d1
 	tst.l	(a0,d1.w)
-	beq.w	T_0fcc0
+	beq.w	.l_0fcc0
 	movea.l	(a0,d1.w),a2
 	move.w	$3a(a2),d1
 	move.w	#$e000,d2
 	and.w	d1,d2
-	beq.b	T_0fb96
+	beq.b	.l_0fb96
 	move.w	#$15,d0
 	jsr	Plus_message
-	bra.w	T_0fcc0
-T_0fb96:
+	bra.w	.l_0fcc0
+.l_0fb96:
 	btst	#$1,d1
-	beq.w	T_0fc2a
+	beq.w	.l_0fc2a
 	lea.l	Lay6_PlusMes,a0
 	jsr	Push_MA
 	addq.l	#$8,a0
@@ -2248,14 +2248,14 @@ T_0fb96:
 	jsr	Pop_PA
 	jsr	Pop_MA
 	clr.b	Mouse_click_state
-	bra.w	T_0fcc0
-T_0fc2a:
+	bra.w	.l_0fcc0
+.l_0fc2a:
 	btst	#$a,d1
-	beq.b	T_0fc3e
+	beq.b	.l_0fc3e
 	move.w	#$17,d0
 	jsr	Plus_message
-	bra.w	T_0fcc0
-T_0fc3e:
+	bra.w	.l_0fcc0
+.l_0fc3e:
 	lea.l	Portrait_pos_list,a1
 	move.w	d0,d1
 	subq.w	#$1,d1
@@ -2266,7 +2266,7 @@ T_0fc3e:
 	bchg	d0,d1
 	move.w	d1,SaveGame_bitlist
 	btst	d0,d1
-	bne.b	T_0fc84
+	bne.b	.l_0fc84
 	move.w	(a1)+,d0
 	move.w	(a1)+,d1
 	moveq	#2,d6
@@ -2275,8 +2275,8 @@ T_0fc3e:
 	jsr	Blot_unmasked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bra.b	T_0fcc0
-T_0fc84:
+	bra.b	.l_0fcc0
+.l_0fc84:
 	move.w	(a1)+,d0
 	move.w	(a1)+,d1
 	moveq	#2,d6
@@ -2291,17 +2291,17 @@ T_0fc84:
 	jsr	Blot_masked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_0fcc0:
+.l_0fcc0:
 	rts
 T_0fcc2:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0fcc2
 	move.l	#Code0004Sys,Textfile_ptr
 	move.w	#$19,ReqText_nr
-	move.l	#T_0fcf2,ReqDo_ptr
+	move.l	#.l_0fcf2,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bra.w	Push_Module
-T_0fcf2:
+.l_0fcf2:
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bsr.w	Pop_Module
@@ -2429,7 +2429,7 @@ T_0ff02:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0ff02
 	tst.b	d0
-	beq.w	T_10064
+	beq.w	.l_10064
 	move.b	d0,Object_slot_number
 	ext.w	d0
 	subq.w	#$1,d0
@@ -2439,21 +2439,21 @@ T_0ff02:
 	mulu.w	#$28,d0
 	adda.w	d0,a1
 	tst.b	(a0)
-	beq.w	T_10064
+	beq.w	.l_10064
 	cmpi.b	#$8,$1(a1)
-	beq.b	T_0ff4c
+	beq.b	.l_0ff4c
 	move.w	#$c,d0
 	jsr	Plus_message
-	bra.w	T_10064
-T_0ff4c:
+	bra.w	.l_10064
+.l_0ff4c:
 	movea.l	Current_active_char_data,a2
 	move.b	$c(a1),d0
 	btst	d0,$1a(a2)
-	bne.b	T_0ff6a
+	bne.b	.l_0ff6a
 	move.w	#$d,d0
 	jsr	Plus_message
-	bra.w	T_10064
-T_0ff6a:
+	bra.w	.l_10064
+.l_0ff6a:
 	lea.l	$d0(a2),a3
 	move.b	$c(a1),d0
 	ext.w	d0
@@ -2464,7 +2464,7 @@ T_0ff6a:
 	move.b	$d(a1),d0
 	move.l	(a3),d1
 	btst	d0,d1
-	bne.w	T_10064
+	bne.w	.l_10064
 	lea.l	D_4b4aa,a3
 	move.b	$c(a1),d0
 	ext.w	d0
@@ -2480,20 +2480,20 @@ T_0ff6a:
 	moveq	#0,d0
 	move.b	$2(a3),d0
 	cmp.w	$8e(a2),d0
-	bls.b	T_0ffc4
+	bls.b	.l_0ffc4
 	move.w	#$18,d0
 	jsr	Plus_message
-	bra.w	T_10064
-T_0ffc4:
+	bra.w	.l_10064
+.l_0ffc4:
 	moveq	#0,d0
 	move.b	$e(a2),d0
 	add.w	$c0(a2),d0
 	jsr	Probe
-	bpl.b	T_0ffe2
+	bpl.b	.l_0ffe2
 	move.w	#$f,d0
 	jsr	Plus_message
-	bra.b	T_10012
-T_0ffe2:
+	bra.b	.l_10012
+.l_0ffe2:
 	moveq	#0,d0
 	move.b	$2(a3),d0
 	sub.w	d0,$8e(a2)
@@ -2510,7 +2510,7 @@ T_0ffe2:
 	move.l	d1,(a3)
 	move.w	#$e,d0
 	jsr	Plus_message
-T_10012:
+.l_10012:
 	subq.b	#$1,(a0)
 	moveq	#0,d0
 	move.w	$22(a1),d0
@@ -2533,7 +2533,7 @@ T_10012:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
-T_10064:
+.l_10064:
 	bra.w	Pop_Module
 T_10068:
 	btst	#$1,Mouse_button_state
@@ -2554,27 +2554,27 @@ T_10068:
 	lsl.w	#$3,d7
 	divu.w	d6,d7
 	subq.w	#$1,d7
-T_100bc:
+.l_100bc:
 	jsr	Update_time
-	dbra	d7,T_100bc
+	dbra	d7,.l_100bc
 	cmpi.b	#$2,Current_map_type
-	bpl.b	T_100e0
+	bpl.b	.l_100e0
 	jsr	M2_time_evaluate
 	move.w	New_radius,Current_radius
-T_100e0:
+.l_100e0:
 	tst.b	Inn_flag
-	bne.w	T_10298
+	bne.w	.l_10298
 	lea.l	Chard_ptrs,a0
 	moveq	#1,d7
-T_100f2:
+.l_100f2:
 	tst.l	(a0)
-	beq.b	T_10148
+	beq.b	.l_10148
 	movea.l	(a0),a1
 	move.w	#$e400,d0
 	and.w	$3a(a1),d0
-	bne.b	T_10148
+	bne.b	.l_10148
 	btst	#$4,$3a(a1)
-	beq.b	T_10148
+	beq.b	.l_10148
 	addq.w	#$1,$ca(a1)
 	move.w	$58(a1),d0
 	addq.w	#$1,d0
@@ -2583,64 +2583,64 @@ T_100f2:
 	add.w	Time_data_year,d0
 	move.w	$6c(a1),d1
 	cmp.w	d0,d1
-	bpl.b	T_10148
+	bpl.b	.l_10148
 	ori.w	#$2000,$3a(a1)
 	cmp.w	Active_member,d7
-	bne.b	T_10148
+	bne.b	.l_10148
 	clr.w	Active_member
 	bsr.w	Exit_display
 	jsr	Check_party_alive
-T_10148:
+.l_10148:
 	addq.l	#$4,a0
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
-	bmi.b	T_100f2
+	bmi.b	.l_100f2
 	moveq	#4,d7
 	lea.l	Code0005Sys,a1
 	lea.l	Chard_ptrs,a2
 	moveq	#5,d6
-T_10162:
+.l_10162:
 	tst.l	(a2)
-	beq.w	T_1028e
+	beq.w	.l_1028e
 	movea.l	(a2),a4
 	move.w	$3a(a4),d0
 	andi.w	#$e400,d0
-	bne.w	T_1028e
+	bne.w	.l_1028e
 	jsr	Init_RText
 	lea.l	$f0(a4),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
 	tst.w	$92(a4)
-	bne.b	T_101a4
+	bne.b	.l_101a4
 	moveq	#17,d0
 	jsr	Add_encoded_2_RText
-	bra.w	T_10266
-T_101a4:
+	bra.w	.l_10266
+.l_101a4:
 	moveq	#18,d0
 	jsr	Add_encoded_2_RText
 	moveq	#0,d0
 	move.w	$88(a4),d0
 	add.w	$98(a4),d0
 	cmp.w	$86(a4),d0
-	bpl.b	T_101c4
+	bpl.b	.l_101c4
 	moveq	#0,d0
 	move.w	$86(a4),d2
-	bra.b	T_101e0
-T_101c4:
+	bra.b	.l_101e0
+.l_101c4:
 	move.w	d0,d1
 	divu.w	#$a,d0
-	bne.b	T_101ce
+	bne.b	.l_101ce
 	moveq	#1,d0
-T_101ce:
+.l_101ce:
 	move.w	d0,d2
 	add.w	$86(a4),d2
 	cmp.w	d2,d1
-	bpl.b	T_101e0
+	bpl.b	.l_101e0
 	move.w	d1,d2
 	move.w	d1,d0
 	sub.w	$86(a4),d0
-T_101e0:
+.l_101e0:
 	move.w	d2,$86(a4)
 	lea.l	Number_buffer,a0
 	movea.l	a0,a3
@@ -2649,21 +2649,21 @@ T_101e0:
 	move.w	$8c(a4),d0
 	add.w	$9a(a4),d0
 	cmp.w	$8a(a4),d0
-	bpl.b	T_10208
+	bpl.b	.l_10208
 	moveq	#0,d0
 	move.w	$8a(a4),d2
-	bra.b	T_10220
-T_10208:
+	bra.b	.l_10220
+.l_10208:
 	move.w	d0,d1
 	divu.w	#$a,d0
 	move.w	d0,d2
 	add.w	$8a(a4),d2
 	cmp.w	d2,d1
-	bpl.b	T_10220
+	bpl.b	.l_10220
 	move.w	d1,d2
 	move.w	d1,d0
 	sub.w	$8a(a4),d0
-T_10220:
+.l_10220:
 	move.w	d2,$8a(a4)
 	move.b	#$4c,(a3)+
 	move.b	#$50,(a3)+
@@ -2680,31 +2680,31 @@ T_10220:
 	jsr	Add_encoded_2_RText
 	subq.w	#$1,$92(a4)
 	subi.l	#$fa,$ec(a4)
-T_10266:
+.l_10266:
 	jsr	T_0707a
 	jsr	Switch_screen
 	jsr	Copy_screen
 	jsr	Exit_RText
-T_1027e:
+.l_1027e:
 	btst	#$1,Mouse_button_state
-	bne.b	T_1027e
+	bne.b	.l_1027e
 	jsr	Wait_4_user
-T_1028e:
+.l_1028e:
 	addq.l	#$4,a2
-	dbra	d6,T_10162
-	bra.w	T_1037c
-T_10298:
+	dbra	d6,.l_10162
+	bra.w	.l_1037c
+.l_10298:
 	moveq	#4,d7
 	lea.l	Code0005Sys,a1
 	lea.l	Chard_ptrs,a2
 	moveq	#5,d6
-T_102a8:
+.l_102a8:
 	tst.l	(a2)
-	beq.w	T_10376
+	beq.w	.l_10376
 	movea.l	(a2),a4
 	move.w	$3a(a4),d0
 	andi.w	#$e400,d0
-	bne.w	T_10376
+	bne.w	.l_10376
 	jsr	Init_RText
 	lea.l	$f0(a4),a0
 	jsr	Add_ASCII_2_RText
@@ -2716,9 +2716,9 @@ T_102a8:
 	move.w	$88(a4),d0
 	add.w	$98(a4),d0
 	sub.w	$86(a4),d0
-	bpl.b	T_102f2
+	bpl.b	.l_102f2
 	moveq	#0,d0
-T_102f2:
+.l_102f2:
 	add.w	d0,$86(a4)
 	lea.l	Number_buffer,a0
 	movea.l	a0,a3
@@ -2727,9 +2727,9 @@ T_102f2:
 	move.w	$8c(a4),d0
 	add.w	$9a(a4),d0
 	sub.w	$8a(a4),d0
-	bpl.b	T_10314
+	bpl.b	.l_10314
 	moveq	#0,d0
-T_10314:
+.l_10314:
 	add.w	d0,$8a(a4)
 	move.b	#$4c,(a3)+
 	move.b	#$50,(a3)+
@@ -2748,14 +2748,14 @@ T_10314:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	jsr	Exit_RText
-T_10366:
+.l_10366:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10366
+	bne.b	.l_10366
 	jsr	Wait_4_user
-T_10376:
+.l_10376:
 	addq.l	#$4,a2
-	dbra	d6,T_102a8
-T_1037c:
+	dbra	d6,.l_102a8
+.l_1037c:
 	lea.l	Spell_1_data,a0
 	clr.l	(a0)+
 	clr.l	(a0)+
@@ -2770,9 +2770,9 @@ T_1037c:
 	jsr	Copy_screen
 	jsr	Pop_MA
 	jsr	Pop_PA
-T_103b8:
+.l_103b8:
 	btst	#$1,Mouse_button_state
-	bne.b	T_103b8
+	bne.b	.l_103b8
 	rts
 ; ---- Ear_action (original source: MAIN/EYE.ASM)
 Ear_action:
@@ -2914,9 +2914,9 @@ T_10570:
 	andi.w	#$fff0,d3
 	lsr.w	#$4,d3
 	cmpi.w	#$2,d3
-	bpl.b	T_1058c
+	bpl.b	.l_1058c
 	moveq	#2,d3
-T_1058c:
+.l_1058c:
 	move.w	d3,d4
 	lsl.w	#$4,d4
 	sub.w	d0,d4
@@ -2957,30 +2957,30 @@ T_10600:
 	lea.l	Chard_ptrs,a1
 	lea.l	B_5eed0,a2
 	moveq	#1,d7
-T_1061c:
+.l_1061c:
 	tst.l	(a1)
-	beq.b	T_10628
+	beq.b	.l_10628
 	move.b	(a2),d0
 	ext.w	d0
 	move.b	d7,(a0,d0.w)
-T_10628:
+.l_10628:
 	addq.l	#$4,a1
 	addq.l	#$1,a2
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
-	bmi.b	T_1061c
+	bmi.b	.l_1061c
 	bra.w	T_10658
 T_10638:
 	lea.l	B_5b526,a0
 	lea.l	B_5eed0,a1
 	moveq	#11,d7
-T_10646:
+.l_10646:
 	move.b	-(a0),d0
-	beq.b	T_10650
+	beq.b	.l_10650
 	ext.w	d0
 	move.b	d7,-$1(a1,d0.w)
-T_10650:
-	dbra	d7,T_10646
+.l_10650:
+	dbra	d7,.l_10646
 	bra.w	T_0f744
 T_10658:
 	movea.l	Off_screen,a6
@@ -2999,14 +2999,14 @@ T_10658:
 	jsr	Set_layout_data
 	lea.l	Lay6_target,a1
 	lea.l	Subfade1,a2
-T_106bc:
+.l_106bc:
 	lea.l	Hbl_Lay6_list,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Lay6_below,a0
 	jsr	Fade_pal
-	bne.b	T_106bc
+	bne.b	.l_106bc
 	lea.l	Hbl_Lay6_list,a0
 	jsr	Update_HBL
 	rts
@@ -3024,11 +3024,11 @@ T_106f0:
 	lea.l	B_5b51a,a3
 	moveq	#11,d5
 	moveq	#32,d7
-T_10728:
+.l_10728:
 	move.w	(a2)+,d0
 	move.w	(a2)+,d1
 	move.b	(a3)+,d2
-	beq.b	T_10748
+	beq.b	.l_10748
 	ext.w	d2
 	add.w	d2,d2
 	add.w	d2,d2
@@ -3036,16 +3036,16 @@ T_10728:
 	lea.l	$6b0(a0),a0
 	moveq	#2,d6
 	jsr	Blot_unmasked_block
-	bra.b	T_1075c
-T_10748:
+	bra.b	.l_1075c
+.l_10748:
 	move.w	d0,d2
 	move.w	d1,d3
 	addi.w	#$1f,d2
 	addi.w	#$1f,d3
 	moveq	#3,d6
 	jsr	Draw_box
-T_1075c:
-	dbra	d5,T_10728
+.l_1075c:
+	dbra	d5,.l_10728
 	movem.l	(a7)+,d0-d3/d5-d7/a0-a3/a6
 	rts
 T_10766:
@@ -3057,17 +3057,17 @@ T_10778:
 	btst	#$1,Mouse_button_state
 	bne.b	T_10778
 	tst.b	d0
-	beq.b	T_107ac
+	beq.b	.l_107ac
 	lea.l	B_5b519,a0
 	ext.w	d0
 	adda.w	d0,a0
 	tst.b	(a0)
-	beq.b	T_107ac
+	beq.b	.l_107ac
 	move.b	d0,B_5b526
 	move.w	#$0,B_5b518
 	lea.l	D_2feda,a0
 	bsr.w	Push_Module
-T_107ac:
+.l_107ac:
 	rts
 T_107ae:
 	movea.l	Off_screen,a6
@@ -3084,15 +3084,15 @@ T_107ae:
 	andi.w	#$1f,d2
 	move.w	d2,B_5b518
 	btst	#$4,d2
-	bne.b	T_107fa
+	bne.b	.l_107fa
 	move.w	d0,d2
 	move.w	d1,d3
 	addi.w	#$1f,d2
 	addi.w	#$1f,d3
 	moveq	#1,d6
 	jsr	Draw_box
-	bra.b	T_1082a
-T_107fa:
+	bra.b	.l_1082a
+.l_107fa:
 	lea.l	B_5b519,a0
 	move.b	B_5b526,d2
 	ext.w	d2
@@ -3106,17 +3106,17 @@ T_107fa:
 	moveq	#2,d6
 	moveq	#32,d7
 	jsr	Blot_unmasked_block
-T_1082a:
+.l_1082a:
 	rts
 T_1082c:
 	btst	#$1,Mouse_button_state
 	bne.b	T_1082c
 	tst.b	d0
-	beq.b	T_1088e
+	beq.b	.l_1088e
 	cmp.b	B_5b526,d0
-	bne.b	T_10846
+	bne.b	.l_10846
 	bra.w	T_10890
-T_10846:
+.l_10846:
 	lea.l	B_5b519,a0
 	ext.w	d0
 	adda.w	d0,a0
@@ -3125,23 +3125,23 @@ T_10846:
 	ext.w	d0
 	adda.w	d0,a1
 	tst.b	(a0)
-	bne.b	T_1086a
+	bne.b	.l_1086a
 	move.b	(a1),(a0)
 	clr.b	(a1)
-	bra.b	T_10870
-T_1086a:
+	bra.b	.l_10870
+.l_1086a:
 	move.b	(a1),d0
 	move.b	(a0),(a1)
 	move.b	d0,(a0)
-T_10870:
+.l_10870:
 	bsr.w	T_106f0
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_10880:
+.l_10880:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10880
+	bne.b	.l_10880
 	bsr.w	Pop_Module
-T_1088e:
+.l_1088e:
 	rts
 T_10890:
 	movea.l	Off_screen,a6

@@ -57,7 +57,7 @@ T_1cb2c:
 	move.l	#My_mkb,$118.w
 	move.l	#T_1cc0c,$70.w
 	clr.w	$454.w
-	move.l	#T_1cbc6,$502.w
+	move.l	#.l_1cbc6,$502.w
 	move.b	#$8,$484.w
 	movea.l	KBD_vec,a0
 	move.l	#T_1cef8,$10(a0)
@@ -68,7 +68,7 @@ T_1cb2c:
 	move.b	#$0,$ffff8260.w
 	jsr	Init_screen
 	movem.l	(a7)+,d0-d7/a0
-T_1cbc6:
+.l_1cbc6:
 	rts
 ; ---- My_mkb (original source: NUCLEUS/INTROUTS.ASM)
 My_mkb:
@@ -83,14 +83,14 @@ T_1cbd8:
 T_1cbdc:
 	move.w	#$2500,sr
 	tst.w	Music_block
-	bne.b	T_1cc04
+	bne.b	.l_1cc04
 	andi.b	#$f0,$fffffa1d.w
 	movem.l	d0-d7/a0-a6,-(a7)
 	moveq	#1,d1
 	jsr	T_1a894
 	movem.l	(a7)+,d0-d7/a0-a6
 	ori.b	#$7,$fffffa1d.w
-T_1cc04:
+.l_1cc04:
 	bclr	#$4,$fffffa11.w
 	rte
 T_1cc0c:
@@ -121,31 +121,31 @@ IFF_pal_convert:
 Random:
 	movem.l	d1-d5,-(a7)
 	move.l	B_5d864,d0
-	bne.b	T_1cc5c
+	bne.b	.l_1cc5c
 	move.l	$466.w,d0
 	lsl.l	#$2,d0
 	asl.l	#$8,d0
 	asl.l	#$8,d0
 	or.w	$466.w,d0
-T_1cc5c:
+.l_1cc5c:
 	move.l	#$bb40e62d,d1
-	bsr.w	T_1cc74
+	bsr.w	.l_1cc74
 	addq.l	#$1,d0
 	move.l	d0,B_5d864
 	movem.l	(a7)+,d1-d5
 	rts
-T_1cc74:
+.l_1cc74:
 	moveq	#0,d2
 	tst.l	d0
-	bge.b	T_1cc7e
+	bge.b	.l_1cc7e
 	neg.l	d0
 	addq.w	#$1,d2
-T_1cc7e:
+.l_1cc7e:
 	tst.l	d1
-	bge.b	T_1cc86
+	bge.b	.l_1cc86
 	neg.l	d1
 	addq.w	#$1,d2
-T_1cc86:
+.l_1cc86:
 	move.w	d0,d3
 	mulu.w	d1,d3
 	move.w	d0,d5
@@ -161,9 +161,9 @@ T_1cc86:
 	swap	d3
 	move.l	d3,d0
 	btst	#$0,d2
-	beq.b	T_1ccaa
+	beq.b	.l_1ccaa
 	neg.l	d0
-T_1ccaa:
+.l_1ccaa:
 	rts
 T_1ccac:
 	move.l	$4(a7),d0
@@ -172,16 +172,16 @@ T_1ccac:
 	rts
 T_1ccb6:
 	movem.l	d0-d3/a0-a3,-(a7)
-T_1ccba:
+.l_1ccba:
 	move.w	#$b,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
 	tst.l	d0
-	beq.b	T_1ccd0
+	beq.b	.l_1ccd0
 	move.w	#$7,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
-	bra.b	T_1ccba
-T_1ccd0:
+	bra.b	.l_1ccba
+.l_1ccd0:
 	movem.l	(a7)+,d0-d3/a0-a3
 	rts

@@ -209,58 +209,58 @@ T_06752:
 DoAutoIcon:
 	movem.l	d0-d3/d5-d7/a0-a3,-(a7)
 	tst.b	AutoIcon_flag
-	beq.w	T_067f4
+	beq.w	.l_067f4
 	lea.l	Chard_ptrs,a0
 	lea.l	Char_status_icons,a1
 	lea.l	B_5ad8a,a3
 	move.b	B_5c30f,d5
 	moveq	#1,d7
-T_0678c:
+.l_0678c:
 	tst.l	(a0)
-	beq.b	T_067e6
+	beq.b	.l_067e6
 	btst	d7,d5
-	beq.b	T_0679a
+	beq.b	.l_0679a
 	move.b	#$14,(a1)
-	bra.b	T_067e6
-T_0679a:
+	bra.b	.l_067e6
+.l_0679a:
 	movea.l	(a0),a2
 	move.w	$3a(a2),d1
 	move.w	#$e000,d2
 	and.w	d1,d2
-	bne.b	T_067e6
+	bne.b	.l_067e6
 	move.w	(a3),d2
 	addq.w	#$1,d2
 	cmpi.w	#$a,d2
-	bmi.b	T_067b6
+	bmi.b	.l_067b6
 	subi.w	#$a,d2
-T_067b6:
+.l_067b6:
 	moveq	#9,d6
-T_067b8:
-	move.b	T_067d4(pc,d2.w),d3
+.l_067b8:
+	move.b	.l_067d4(pc,d2.w),d3
 	btst	d3,d1
-	bne.b	T_067de
+	bne.b	.l_067de
 	addq.w	#$1,d2
 	cmpi.w	#$a,d2
-	bmi.b	T_067cc
+	bmi.b	.l_067cc
 	subi.w	#$a,d2
-T_067cc:
-	dbra	d6,T_067b8
+.l_067cc:
+	dbra	d6,.l_067b8
 	clr.b	(a1)
-	bra.b	T_067e6
-T_067d4:
+	bra.b	.l_067e6
+.l_067d4:
 	dc.b	$08,$09,$0a,$0b,$0c,$00,$01,$02,$03,$04
-T_067de:
+.l_067de:
 	move.w	d2,(a3)
 	addi.w	#$a,d2
 	move.b	d2,(a1)
-T_067e6:
+.l_067e6:
 	addq.l	#$4,a0
 	addq.l	#$1,a1
 	addq.l	#$2,a3
 	addq.w	#$1,d7
 	cmpi.w	#$7,d7
-	bmi.b	T_0678c
-T_067f4:
+	bmi.b	.l_0678c
+.l_067f4:
 	movem.l	(a7)+,d0-d3/d5-d7/a0-a3
 T_067f8:
 	rts

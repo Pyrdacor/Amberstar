@@ -22,10 +22,10 @@ Save_file:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	bpl.b	T_1b8d8
+	bpl.b	.l_1b8d8
 	bsr.w	T_1b6ce
-	bra.b	T_1b936
-T_1b8d8:
+	bra.b	.l_1b936
+.l_1b8d8:
 	move.l	d0,d6
 	movea.l	a4,a0
 	move.l	a0,-(a7)
@@ -35,25 +35,25 @@ T_1b8d8:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1b8f6
+	bpl.b	.l_1b8f6
 	bsr.w	T_1b6ce
-	bra.b	T_1b936
-T_1b8f6:
+	bra.b	.l_1b936
+.l_1b8f6:
 	cmp.l	d7,d0
-	beq.b	T_1b908
+	beq.b	.l_1b908
 	lea.l	D_51984,a1
 	jsr	DI_Error
-	bra.b	T_1b936
-T_1b908:
+	bra.b	.l_1b936
+.l_1b908:
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
 	tst.l	d0
-	bpl.b	T_1b91c
+	bpl.b	.l_1b91c
 	bsr.w	T_1b6ce
-	bra.b	T_1b936
-T_1b91c:
+	bra.b	.l_1b936
+.l_1b91c:
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	andi.b	#$df,$fffffa09.w
@@ -61,14 +61,14 @@ T_1b91c:
 	jsr	Pop_Mptr
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-T_1b936:
+.l_1b936:
 	tst.w	d6
-	beq.b	T_1b944
+	beq.b	.l_1b944
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
-T_1b944:
+.l_1b944:
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	andi.b	#$df,$fffffa09.w
@@ -110,7 +110,7 @@ T_1b944:
 	move.w	(a7)+,sr
 	move.w	#$f,d0
 	jsr	Push_Mptr
-T_1b9d6:
+.l_1b9d6:
 	lea.l	B_5d42a,a5
 	move.w	d7,-(a7)
 	move.l	a5,-(a7)
@@ -118,10 +118,10 @@ T_1b9d6:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	beq.b	T_1b9f4
+	beq.b	.l_1b9f4
 	jsr	T_1a10c
-	bra.b	T_1b9d6
-T_1b9f4:
+	bra.b	.l_1b9d6
+.l_1b9f4:
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	andi.b	#$df,$fffffa09.w
@@ -137,11 +137,11 @@ T_1b9f4:
 Load_subfile:
 	movem.l	d0-d7/a1-a6,-(a7)
 	subq.w	#$1,d0
-	bpl.b	T_1ba34
+	bpl.b	.l_1ba34
 	lea.l	D_519a3,a1
 	jsr	DI_Error
 	bra.w	T_1bc40
-T_1ba34:
+.l_1ba34:
 	moveq	#0,d6
 	move.w	d0,d5
 	movea.l	a0,a5
@@ -166,10 +166,10 @@ T_1ba34:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	bpl.b	T_1ba8a
+	bpl.b	.l_1ba8a
 	bsr.w	T_1b6ce
 	bra.w	T_1bc46
-T_1ba8a:
+.l_1ba8a:
 	move.w	d0,d6
 	move.l	#B_5d104,-(a7)
 	move.l	#$326,-(a7)
@@ -178,25 +178,25 @@ T_1ba8a:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1bab0
+	bpl.b	.l_1bab0
 	bsr.w	T_1b6ce
 	bra.w	T_1bc46
-T_1bab0:
+.l_1bab0:
 	cmpi.l	#$414d4252,B_5d104
-	beq.b	T_1bad8
+	beq.b	.l_1bad8
 	cmpi.l	#$414d5043,B_5d104
-	beq.b	T_1bad8
+	beq.b	.l_1bad8
 	lea.l	D_519cc,a1
 	jsr	DI_Error
 	bra.w	T_1bc40
-T_1bad8:
+.l_1bad8:
 	move.w	B_5d108,d4
 	cmp.w	d4,d5
-	bmi.b	T_1baf2
+	bmi.b	.l_1baf2
 	lea.l	D_519fd,a1
 	jsr	DI_Error
 	bra.w	T_1bc40
-T_1baf2:
+.l_1baf2:
 	ext.l	d4
 	lsl.l	#$2,d4
 	addq.l	#$6,d4
@@ -209,7 +209,7 @@ T_1bb04:
 	dbra	d0,T_1bb02
 	move.l	(a0),d7
 	cmpi.l	#$414d4252,B_5d104
-	bne.b	T_1bb6a
+	bne.b	.l_1bb6a
 	move.b	(a5),d0
 	move.l	d7,d1
 	move.w	d5,d2
@@ -222,10 +222,10 @@ T_1bb04:
 	trap	#$1
 	lea.l	$a(a7),a7
 	tst.l	d0
-	bpl.b	T_1bb42
+	bpl.b	.l_1bb42
 	bsr.w	T_1b6ce
 	bra.w	T_1bc46
-T_1bb42:
+.l_1bb42:
 	movea.l	a4,a0
 	move.l	a0,-(a7)
 	move.l	d7,-(a7)
@@ -234,13 +234,13 @@ T_1bb42:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1bb60
+	bpl.b	.l_1bb60
 	bsr.w	T_1b6ce
 	bra.w	T_1bc46
-T_1bb60:
+.l_1bb60:
 	move.l	d0,B_5d0f4
-	bra.w	T_1bc16
-T_1bb6a:
+	bra.w	.l_1bc16
+.l_1bb6a:
 	move.w	#$0,-(a7)
 	move.w	d6,-(a7)
 	move.l	d4,-(a7)
@@ -248,10 +248,10 @@ T_1bb6a:
 	trap	#$1
 	lea.l	$a(a7),a7
 	tst.l	d0
-	bpl.b	T_1bb88
+	bpl.b	.l_1bb88
 	bsr.w	T_1b6ce
 	bra.w	T_1bc46
-T_1bb88:
+.l_1bb88:
 	move.l	#B_5d0fc,-(a7)
 	move.l	#$8,-(a7)
 	move.w	d6,-(a7)
@@ -259,10 +259,10 @@ T_1bb88:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1bbac
+	bpl.b	.l_1bbac
 	bsr.w	T_1b6ce
 	bra.w	T_1bc46
-T_1bbac:
+.l_1bbac:
 	move.b	(a5),d0
 	move.l	B_5d100,d1
 	andi.l	#$ffffff,d1
@@ -282,10 +282,10 @@ T_1bbac:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1bbf6
+	bpl.b	.l_1bbf6
 	bsr.w	T_1b6ce
 	bra.b	T_1bc46
-T_1bbf6:
+.l_1bbf6:
 	movea.l	a4,a0
 	bsr.w	T_1bde2
 	movea.l	a4,a0
@@ -293,16 +293,16 @@ T_1bbf6:
 	andi.l	#$ffffff,d0
 	move.l	d0,B_5d0f4
 	jsr	Shrink_memory
-T_1bc16:
+.l_1bc16:
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
 	tst.l	d0
-	bpl.b	T_1bc2a
+	bpl.b	.l_1bc2a
 	bsr.w	T_1b6ce
 	bra.b	T_1bc46
-T_1bc2a:
+.l_1bc2a:
 	jsr	Pop_Mptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
@@ -314,12 +314,12 @@ T_1bc40:
 	rts
 T_1bc46:
 	tst.w	d6
-	beq.b	T_1bc54
+	beq.b	.l_1bc54
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
-T_1bc54:
+.l_1bc54:
 	jsr	Pop_Mptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
@@ -330,11 +330,11 @@ T_1bc54:
 Save_subfile:
 	movem.l	d0-d7/a0-a6,-(a7)
 	subq.w	#$1,d0
-	bpl.b	T_1bc88
+	bpl.b	.l_1bc88
 	lea.l	D_51a23,a1
 	jsr	DI_Error
 	bra.w	T_1bdb2
-T_1bc88:
+.l_1bc88:
 	moveq	#0,d6
 	move.w	d0,d5
 	movea.l	a0,a5
@@ -355,10 +355,10 @@ T_1bc88:
 	trap	#$1
 	addq.l	#$8,a7
 	tst.l	d0
-	bpl.b	T_1bccc
+	bpl.b	.l_1bccc
 	bsr.w	T_1b6ce
 	bra.w	T_1bdb8
-T_1bccc:
+.l_1bccc:
 	move.w	d0,d6
 	move.l	#B_5d104,-(a7)
 	move.l	#$326,-(a7)
@@ -367,23 +367,23 @@ T_1bccc:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1bcf2
+	bpl.b	.l_1bcf2
 	bsr.w	T_1b6ce
 	bra.w	T_1bdb8
-T_1bcf2:
+.l_1bcf2:
 	cmpi.l	#$414d4252,B_5d104
-	beq.b	T_1bd0e
+	beq.b	.l_1bd0e
 	lea.l	D_51a4c,a1
 	jsr	DI_Error
 	bra.w	T_1bdb2
-T_1bd0e:
+.l_1bd0e:
 	move.w	B_5d108,d4
 	cmp.w	d4,d5
-	bmi.b	T_1bd28
+	bmi.b	.l_1bd28
 	lea.l	D_51a86,a1
 	jsr	DI_Error
 	bra.w	T_1bdb2
-T_1bd28:
+.l_1bd28:
 	ext.l	d4
 	lsl.l	#$2,d4
 	addq.l	#$6,d4
@@ -402,10 +402,10 @@ T_1bd3a:
 	trap	#$1
 	lea.l	$a(a7),a7
 	tst.l	d0
-	bpl.b	T_1bd5c
+	bpl.b	.l_1bd5c
 	bsr.w	T_1b6ce
 	bra.b	T_1bdb8
-T_1bd5c:
+.l_1bd5c:
 	movea.l	a4,a0
 	move.l	a0,-(a7)
 	move.l	d7,-(a7)
@@ -414,25 +414,25 @@ T_1bd5c:
 	trap	#$1
 	lea.l	$c(a7),a7
 	tst.l	d0
-	bpl.b	T_1bd78
+	bpl.b	.l_1bd78
 	bsr.w	T_1b6ce
 	bra.b	T_1bdb8
-T_1bd78:
+.l_1bd78:
 	cmp.l	d7,d0
-	beq.b	T_1bd8a
+	beq.b	.l_1bd8a
 	lea.l	D_51aac,a1
 	jsr	DI_Error
 	bra.b	T_1bdb8
-T_1bd8a:
+.l_1bd8a:
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
 	tst.l	d0
-	bpl.b	T_1bd9e
+	bpl.b	.l_1bd9e
 	bsr.w	T_1b6ce
 	bra.b	T_1bdb8
-T_1bd9e:
+.l_1bd9e:
 	jsr	Pop_Mptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
@@ -443,12 +443,12 @@ T_1bdb2:
 	rts
 T_1bdb8:
 	tst.w	d6
-	beq.b	T_1bdc6
+	beq.b	.l_1bdc6
 	move.w	d6,-(a7)
 	move.w	#$3e,-(a7)
 	trap	#$1
 	addq.l	#$4,a7
-T_1bdc6:
+.l_1bdc6:
 	jsr	Pop_Mptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
@@ -459,20 +459,20 @@ T_1bdc6:
 T_1bde2:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.l	#$800,d0
-	bsr.w	T_1bdf6
+	bsr.w	.l_1bdf6
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-T_1bdf6:
-	lea.l	T_1be14(pc),a2
+.l_1bdf6:
+	lea.l	.l_1be14(pc),a2
 	move.l	a0,$2(a2)
 	move.l	d0,$e(a2)
 	movea.l	a0,a1
 	jsr	(a2)
-	lea.l	T_1be14(pc),a2
+	lea.l	.l_1be14(pc),a2
 	movea.l	$2(a2),a0
 	move.l	$6(a2),d0
 	rts
-T_1be14:
+.l_1be14:
 	bra.b	T_1be3a
 T_1be16:
 	dc.b	$00,$00,$00,$00
@@ -488,20 +488,20 @@ T_1be26:
 T_1be3a:
 	lea.l	T_1be1e(pc),a0
 	move.l	(a1)+,(a0)
-T_1be40:
-	beq.b	T_1be5a
+.l_1be40:
+	beq.b	.l_1be5a
 	moveq	#0,d0
 	move.b	(a1),d0
 	add.w	d0,d0
 	move.w	T_1be26(pc,d0.w),d0
-	bsr.b	T_1be5c
+	bsr.b	.l_1be5c
 	movea.l	T_1be16(pc),a1
 	lea.l	T_1be1e(pc),a0
 	subq.b	#$1,(a0)
-	bra.b	T_1be40
-T_1be5a:
+	bra.b	.l_1be40
+.l_1be5a:
 	rts
-T_1be5c:
+.l_1be5c:
 	lea.l	T_1be1a(pc),a0
 	move.l	(a1),d1
 	andi.l	#$ffffff,d1
@@ -513,32 +513,32 @@ T_1be5c:
 	adda.l	T_1be22(pc),a0
 	adda.l	d1,a0
 	adda.l	d2,a1
-T_1be7e:
+.l_1be7e:
 	move.l	-(a1),-(a0)
 	move.l	-(a1),-(a0)
 	subq.l	#$8,d2
-	bpl.b	T_1be7e
+	bpl.b	.l_1be7e
 	suba.l	d2,a0
 	movea.l	T_1be16(pc),a1
 	cmpi.b	#$6,(a0)
-	bne.w	T_1beda
+	bne.w	.l_1beda
 	move.l	(a0)+,d0
 	andi.l	#$ffffff,d0
 	add.l	a1,d0
 	addq.l	#$4,a0
 	move.l	#$80,d1
-T_1bea6:
+.l_1bea6:
 	add.b	d1,d1
-	bne.b	T_1beae
+	bne.b	.l_1beae
 	move.b	(a0)+,d1
 	addx.b	d1,d1
-T_1beae:
-	bcc.b	T_1beb8
+.l_1beae:
+	bcc.b	.l_1beb8
 	move.b	(a0)+,(a1)+
 	cmpa.l	d0,a1
-	blt.b	T_1bea6
+	blt.b	.l_1bea6
 	rts
-T_1beb8:
+.l_1beb8:
 	moveq	#0,d3
 	move.b	(a0)+,d3
 	move.b	d3,d2
@@ -549,11 +549,11 @@ T_1beb8:
 	suba.l	d3,a2
 	move.b	(a2)+,(a1)+
 	move.b	(a2)+,(a1)+
-T_1bece:
+.l_1bece:
 	move.b	(a2)+,(a1)+
-	dbra	d2,T_1bece
+	dbra	d2,.l_1bece
 	cmpa.l	d0,a1
-	blt.b	T_1bea6
+	blt.b	.l_1bea6
 	rts
-T_1beda:
+.l_1beda:
 	rts

@@ -7,15 +7,15 @@ Push_MA:
 	addq.l	#$4,a1
 	move.l	Mouse_X,(a1)+
 	cmpa.l	#Last_key,a1
-	bmi.b	T_1cd02
+	bmi.b	.l_1cd02
 	lea.l	D_523fa,a1
 	jsr	DI_Error
-	bra.b	T_1cd0e
-T_1cd02:
+	bra.b	.l_1cd0e
+.l_1cd02:
 	move.l	a0,(a1)
 	move.l	a1,MA_sp
 	bsr.w	T_1cd18
-T_1cd0e:
+.l_1cd0e:
 	bsr.w	Mouse_on
 	movem.l	(a7)+,d0-d2/a0-a1
 	rts
@@ -26,25 +26,25 @@ T_1cd18:
 	move.w	Mouse_X,d0
 	move.w	d0,d1
 	sub.w	(a1),d1
-	bpl.b	T_1cd38
+	bpl.b	.l_1cd38
 	move.w	(a1),Mouse_X
-	bra.b	T_1cd46
-T_1cd38:
+	bra.b	.l_1cd46
+.l_1cd38:
 	sub.w	$2(a1),d0
-	blt.b	T_1cd46
+	blt.b	.l_1cd46
 	move.w	$2(a1),Mouse_X
-T_1cd46:
+.l_1cd46:
 	move.w	Mouse_Y,d0
 	move.w	d0,d1
 	sub.w	$4(a1),d1
-	bpl.b	T_1cd5e
+	bpl.b	.l_1cd5e
 	move.w	$4(a1),Mouse_Y
-	bra.b	T_1cd6c
-T_1cd5e:
+	bra.b	.l_1cd6c
+.l_1cd5e:
 	sub.w	$6(a1),d0
-	blt.b	T_1cd6c
+	blt.b	.l_1cd6c
 	move.w	$6(a1),Mouse_Y
-T_1cd6c:
+.l_1cd6c:
 	movem.l	(a7)+,d0-d1/a1
 	rts
 Pop_MA:
@@ -52,16 +52,16 @@ Pop_MA:
 	bsr.w	Mouse_off
 	movea.l	MA_sp,a1
 	cmpa.l	#B_5d8b2,a1
-	bhi.b	T_1cd96
+	bhi.b	.l_1cd96
 	lea.l	D_5241f,a1
 	jsr	DI_Error
-	bra.b	T_1cda8
-T_1cd96:
+	bra.b	.l_1cda8
+.l_1cd96:
 	move.l	-(a1),Mouse_X
 	subq.l	#$4,a1
 	move.l	a1,MA_sp
 	bsr.w	T_1cd18
-T_1cda8:
+.l_1cda8:
 	bsr.w	Mouse_on
 	movem.l	(a7)+,d0-d2/a0-a1
 	rts
@@ -69,25 +69,25 @@ Push_Mptr:
 	movem.l	d0/a0-a1,-(a7)
 	bsr.w	Mouse_off
 	cmpi.w	#$1b,d0
-	bmi.b	T_1cdce
+	bmi.b	.l_1cdce
 	lea.l	D_52444,a1
 	jsr	DI_Error
-	bra.b	T_1ce00
-T_1cdce:
+	bra.b	.l_1ce00
+.l_1cdce:
 	lea.l	Mouse_base,a0
 	mulu.w	#$44,d0
 	adda.w	d0,a0
 	movea.l	Mptr_sp,a1
 	addq.l	#$4,a1
 	cmpa.l	#Mouse_flag,a1
-	bmi.b	T_1cdf8
+	bmi.b	.l_1cdf8
 	lea.l	D_52467,a1
 	jsr	DI_Error
-	bra.b	T_1ce00
-T_1cdf8:
+	bra.b	.l_1ce00
+.l_1cdf8:
 	move.l	a0,(a1)
 	move.l	a1,Mptr_sp
-T_1ce00:
+.l_1ce00:
 	bsr.w	Mouse_on
 	movem.l	(a7)+,d0/a0-a1
 	rts
@@ -96,31 +96,31 @@ Pop_Mptr:
 	bsr.w	Mouse_off
 	movea.l	Mptr_sp,a1
 	cmpa.l	#D_51c84,a1
-	bhi.b	T_1ce2c
+	bhi.b	.l_1ce2c
 	lea.l	D_5248a,a1
 	jsr	DI_Error
-	bra.b	T_1ce34
-T_1ce2c:
+	bra.b	.l_1ce34
+.l_1ce2c:
 	subq.l	#$4,a1
 	move.l	a1,Mptr_sp
-T_1ce34:
+.l_1ce34:
 	bsr.w	Mouse_on
 	movea.l	(a7)+,a1
 	rts
 Change_Mptr:
 	movem.l	d0/a0-a1,-(a7)
 	cmpi.w	#$1b,d0
-	bmi.b	T_1ce54
+	bmi.b	.l_1ce54
 	lea.l	D_524ad,a1
 	jsr	DI_Error
-	bra.b	T_1ce68
-T_1ce54:
+	bra.b	.l_1ce68
+.l_1ce54:
 	lea.l	Mouse_base,a0
 	mulu.w	#$44,d0
 	adda.w	d0,a0
 	movea.l	Mptr_sp,a1
 	move.l	a0,(a1)
-T_1ce68:
+.l_1ce68:
 	movem.l	(a7)+,d0/a0-a1
 	rts
 T_1ce6e:
@@ -129,39 +129,39 @@ T_1ce6e:
 	trap	#$1
 	addq.l	#$2,a7
 	tst.w	d0
-	bne.b	T_1cea8
+	bne.b	.l_1cea8
 	movea.l	$4f2.w,a0
 	cmpi.w	#$102,$2(a0)
-	bmi.b	T_1ce94
+	bmi.b	.l_1ce94
 	movea.l	$24(a0),a0
 	move.b	$1e(a0),d1
-	bra.b	T_1ce98
-T_1ce94:
+	bra.b	.l_1ce98
+.l_1ce94:
 	move.b	$e39.w,d1
-T_1ce98:
+.l_1ce98:
 	cmp.b	B_5d8f3,d1
-	bne.b	T_1ced0
+	bne.b	.l_1ced0
 	move.l	Last_key,d0
-	bra.b	T_1ced0
-T_1cea8:
+	bra.b	.l_1ced0
+.l_1cea8:
 	move.w	#$7,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
 	move.l	d0,d3
-T_1ceb2:
+.l_1ceb2:
 	move.w	#$b,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
 	tst.w	d0
-	beq.b	T_1cec8
+	beq.b	.l_1cec8
 	move.w	#$7,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
-	bra.b	T_1ceb2
-T_1cec8:
+	bra.b	.l_1ceb2
+.l_1cec8:
 	move.l	d3,d0
 	move.l	d0,Last_key
-T_1ced0:
+.l_1ced0:
 	movem.l	(a7)+,d1-d3/a0-a2
 	rts
 Wait_4_key:
@@ -195,30 +195,30 @@ T_1cef8:
 	add.w	d0,d1
 	move.w	d1,d2
 	sub.w	(a1),d2
-	bpl.b	T_1cf3e
+	bpl.b	.l_1cf3e
 	move.w	(a1),d1
-	bra.b	T_1cf4c
-T_1cf3e:
+	bra.b	.l_1cf4c
+.l_1cf3e:
 	move.w	d1,d2
 	sub.w	$2(a1),d2
-	blt.b	T_1cf4c
+	blt.b	.l_1cf4c
 	move.w	$2(a1),d1
-	bra.b	T_1cf52
-T_1cf4c:
+	bra.b	.l_1cf52
+.l_1cf4c:
 	move.w	d1,Mouse_X
-T_1cf52:
+.l_1cf52:
 	move.w	Mouse_Y,d1
 	move.b	$2(a0),d0
 	ext.w	d0
 	add.w	d0,d1
 	move.w	d1,d2
 	sub.w	$4(a1),d2
-	bpl.b	T_1cf6e
+	bpl.b	.l_1cf6e
 	move.w	$4(a1),d1
-	bra.b	T_1cf7a
-T_1cf6e:
+	bra.b	.l_1cf7a
+.l_1cf6e:
 	dc.b	$34,$01,$94,$69,$00,$06,$6d,$04,$32,$29,$00,$06
-T_1cf7a:
+.l_1cf7a:
 	move.w	d1,Mouse_Y
 	rts
 ; ---- Mouse_on (original source: NUCLEUS/KBDROUTS.ASM)
@@ -307,7 +307,7 @@ Mouse_draw_normal:
 	move.w	d3,d0
 	lea.l	(a6,d2.w),a1
 	move.l	a1,Erase_adr
-T_1d076:
+.l_1d076:
 	moveq	#0,d2
 	moveq	#-1,d3
 	move.w	(a0)+,d2
@@ -341,7 +341,7 @@ T_1d076:
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
 	lea.l	$90(a1),a1
-	dbra	d7,T_1d076
+	dbra	d7,.l_1d076
 	rts
 Mouse_draw_left:
 	move.l	#T_1d174,Erase_rout
@@ -350,7 +350,7 @@ Mouse_draw_left:
 	move.w	d3,d0
 	lea.l	(a6,d2.w),a1
 	move.l	a1,Erase_adr
-T_1d0e2:
+.l_1d0e2:
 	moveq	#0,d2
 	moveq	#-1,d3
 	move.w	(a0)+,d2
@@ -372,7 +372,7 @@ T_1d0e2:
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
 	lea.l	$98(a1),a1
-	dbra	d7,T_1d0e2
+	dbra	d7,.l_1d0e2
 	rts
 Mouse_draw_right:
 	move.l	#T_1d182,Erase_rout
@@ -380,7 +380,7 @@ Mouse_draw_right:
 	move.w	d3,d0
 	lea.l	(a6,d2.w),a1
 	move.l	a1,Erase_adr
-T_1d132:
+.l_1d132:
 	moveq	#0,d2
 	moveq	#-1,d3
 	move.w	(a0)+,d2
@@ -400,7 +400,7 @@ T_1d132:
 	and.w	d3,(a1)
 	or.w	d2,(a1)+
 	lea.l	$98(a1),a1
-	dbra	d7,T_1d132
+	dbra	d7,.l_1d132
 	rts
 T_1d162:
 	movem.l	(a2)+,d0-d3
@@ -428,7 +428,7 @@ T_1d190:
 	move.l	$4(a0),d1
 	sub.l	d0,d1
 	cmpi.l	#$4b000,d1
-	bpl.b	T_1d210
+	bpl.b	.l_1d210
 	movem.l	d0-d7/a0-a6,-(a7)
 	jsr	T_1c0e8
 	jsr	T_1c1aa
@@ -447,7 +447,7 @@ T_1d190:
 	movea.l	$4f2.w,a0
 	movea.l	$4(a0),a0
 	jmp	(a0)
-T_1d210:
+.l_1d210:
 	move.l	d1,Size_of_free_memory
 	move.l	d1,B_5da0c
 	lea.l	Memory_list,a0

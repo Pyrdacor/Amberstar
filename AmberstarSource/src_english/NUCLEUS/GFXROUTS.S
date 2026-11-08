@@ -19,10 +19,10 @@ T_1c42e:
 	bsr.w	Coord_convert
 	lea.l	(a6,d2.w),a1
 	andi.w	#$f,d0
-T_1c444:
+.l_1c444:
 	movea.l	a1,a3
 	move.w	a4,d6
-T_1c448:
+.l_1c448:
 	moveq	#0,d1
 	moveq	#0,d2
 	moveq	#0,d3
@@ -62,9 +62,9 @@ T_1c448:
 	and.w	d5,(a3)
 	or.w	d4,(a3)+
 	subq.l	#$8,a3
-	dbra	d6,T_1c448
+	dbra	d6,.l_1c448
 	lea.l	$a0(a1),a1
-	dbra	d7,T_1c444
+	dbra	d7,.l_1c444
 	movem.l	(a7)+,d0-d7/a0-a4
 	rts
 Draw_box:
@@ -133,16 +133,16 @@ T_1c594:
 	lea.l	Box_hl_comms,a2
 	lsl.w	#$3,d6
 	movem.l	(a2,d6.w),d0-d1
-	movem.l	d0-d1,T_1c5ae
+	movem.l	d0-d1,.l_1c5ae
 	and.w	d3,d2
 	or.w	d5,d4
-T_1c5ae:
+.l_1c5ae:
 	or.w	d2,(a0)+
 	or.w	d2,(a0)+
 	and.w	d4,(a0)+
 	and.w	d4,(a0)+
 	lea.l	$98(a0),a0
-	dbra	d7,T_1c5ae
+	dbra	d7,.l_1c5ae
 T_1c5be:
 	movem.l	(a7)+,d0-d7/a0-a3
 	rts
@@ -199,7 +199,7 @@ Blit_unmasked_block:
 	move.l	#$ffff0000,d5
 	ror.l	d3,d5
 	moveq	#15,d7
-T_1c648:
+.l_1c648:
 	moveq	#0,d0
 	move.w	(a0)+,d0
 	moveq	#0,d1
@@ -235,7 +235,7 @@ T_1c648:
 	or.w	d4,(a1)+
 	swap	d5
 	lea.l	$90(a1),a1
-	dbra	d7,T_1c648
+	dbra	d7,.l_1c648
 	movem.l	(a7)+,d0-d5/d7/a0-a1
 	rts
 Blit_masked_block:
@@ -246,7 +246,7 @@ Blit_masked_block:
 	ror.l	d3,d5
 	move.w	d3,d6
 	moveq	#15,d7
-T_1c6b2:
+.l_1c6b2:
 	moveq	#0,d0
 	move.w	(a0)+,d0
 	moveq	#0,d1
@@ -287,7 +287,7 @@ T_1c6b2:
 	and.w	d4,(a1)
 	or.w	d3,(a1)+
 	lea.l	$90(a1),a1
-	dbra	d7,T_1c6b2
+	dbra	d7,.l_1c6b2
 	movem.l	(a7)+,d0-d7/a0-a1
 	rts
 Put_unmasked_block:
@@ -295,11 +295,11 @@ Put_unmasked_block:
 	bsr.w	Coord_convert
 	lea.l	(a6,d2.w),a1
 	moveq	#15,d7
-T_1c71c:
+.l_1c71c:
 	move.l	(a0)+,(a1)+
 	move.l	(a0)+,(a1)+
 	lea.l	$98(a1),a1
-	dbra	d7,T_1c71c
+	dbra	d7,.l_1c71c
 	movem.l	(a7)+,d2-d3/d7/a0-a1
 	rts
 Blot_unmasked_block:
@@ -312,14 +312,14 @@ Blot_unmasked_block:
 	neg.w	d5
 	subq.w	#$1,d7
 	subq.w	#$1,d6
-T_1c748:
+.l_1c748:
 	move.w	d6,d4
-T_1c74a:
+.l_1c74a:
 	move.l	(a0)+,(a1)+
 	move.l	(a0)+,(a1)+
-	dbra	d4,T_1c74a
+	dbra	d4,.l_1c74a
 	adda.w	d5,a1
-	dbra	d7,T_1c748
+	dbra	d7,.l_1c748
 	movem.l	(a7)+,d2-d7/a0-a1
 	rts
 Put_masked_block:
@@ -327,7 +327,7 @@ Put_masked_block:
 	bsr.w	Coord_convert
 	lea.l	(a6,d2.w),a1
 	moveq	#15,d7
-T_1c76c:
+.l_1c76c:
 	movem.w	(a0)+,d0-d3
 	move.w	d0,d4
 	or.w	d1,d4
@@ -343,7 +343,7 @@ T_1c76c:
 	and.w	d4,(a1)
 	or.w	d3,(a1)+
 	lea.l	$98(a1),a1
-	dbra	d7,T_1c76c
+	dbra	d7,.l_1c76c
 	movem.l	(a7)+,d0-d4/d7/a0-a1
 	rts
 Blot_masked_block:
@@ -357,9 +357,9 @@ Blot_masked_block:
 	subq.w	#$1,d7
 	subq.w	#$1,d6
 	move.w	d6,-(a7)
-T_1c7b4:
+.l_1c7b4:
 	move.w	(a7),d6
-T_1c7b6:
+.l_1c7b6:
 	movem.w	(a0)+,d0-d3
 	move.w	d0,d4
 	or.w	d1,d4
@@ -374,9 +374,9 @@ T_1c7b6:
 	or.w	d2,(a1)+
 	and.w	d4,(a1)
 	or.w	d3,(a1)+
-	dbra	d6,T_1c7b6
+	dbra	d6,.l_1c7b6
 	adda.w	d5,a1
-	dbra	d7,T_1c7b4
+	dbra	d7,.l_1c7b4
 	addq.l	#$2,a7
 	movem.l	(a7)+,d0-d7/a0-a1
 	rts

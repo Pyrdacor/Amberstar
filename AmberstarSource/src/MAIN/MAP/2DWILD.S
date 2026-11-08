@@ -40,22 +40,22 @@ W2_ModInit:
 	move.w	Map_Ycoord,d1
 	moveq	#0,d2
 	cmpi.w	#$1a,d0
-	bpl.b	T_03d36
+	bpl.b	.l_03d36
 	addi.w	#$32,d0
 	bset	#$0,d2
-T_03d36:
+.l_03d36:
 	cmpi.w	#$1a,d1
-	bpl.b	T_03d44
+	bpl.b	.l_03d44
 	addi.w	#$32,d1
 	bset	#$1,d2
-T_03d44:
+.l_03d44:
 	move.w	d0,Quad_X
 	move.w	d1,Quad_Y
 	move.w	d2,Quad_index
 	move.w	World_X,d0
 	move.w	World_Y,d1
 	lea.l	Quad_map,a1
-	lea.l	T_03dc6,a2
+	lea.l	.l_03dc6,a2
 	add.w	d2,d2
 	add.w	d2,d2
 	move.l	a5,(a1,d2.w)
@@ -77,7 +77,7 @@ T_03d44:
 	bsr.w	Event_handler
 	rts
 	dc.b	$00,$00,$00,$04,$00,$00,$00,$08,$00,$00,$00,$00,$00,$00,$00,$0c
-T_03dc6:
+.l_03dc6:
 	dc.l	Load_0	; ori.b #$d6, d0
 	dc.l	Load_3	; ori.b #$f6, d0
 	dc.l	T_03e18	; ori.b #$18, d0
@@ -154,14 +154,14 @@ W2_DisInit:
 	lea.l	Pal_buffer,a1
 	jsr	IFF_pal_convert
 	lea.l	Subfade1,a2
-T_03ed8:
+.l_03ed8:
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	jsr	My_vsync
 	jsr	My_vsync
 	lea.l	Below_pal_2D,a0
 	jsr	Fade_pal
-	bne.b	T_03ed8
+	bne.b	.l_03ed8
 	lea.l	Hbl_2D_map,a0
 	jsr	Update_HBL
 	rts
@@ -171,15 +171,15 @@ W2_ModExit:
 	move.b	d0,(a0)+
 	move.w	d0,(a0)+
 	moveq	#34,d7
-T_03f1a:
+.l_03f1a:
 	move.l	d0,(a0)+
-	dbra	d7,T_03f1a
+	dbra	d7,.l_03f1a
 	lea.l	Quad_map,a1
 	moveq	#7,d7
-T_03f28:
+.l_03f28:
 	movea.l	(a1)+,a0
 	jsr	Free_memory
-	dbra	d7,T_03f28
+	dbra	d7,.l_03f28
 	movea.l	Icondata_ptr,a0
 	jsr	Free_memory
 	jsr	Next_generation
@@ -210,41 +210,41 @@ Quad_evaluate:
 	move.w	World_Y,d3
 	move.w	Quad_index,d4
 	cmpi.w	#$1,d0
-	bpl.b	T_03fc8
+	bpl.b	.l_03fc8
 	addi.w	#$32,d0
 	bclr	#$0,d4
 	subq.w	#$1,d2
-	bpl.b	T_03fe0
+	bpl.b	.l_03fe0
 	move.w	#$7,d2
-	bra.b	T_03fe0
-T_03fc8:
+	bra.b	.l_03fe0
+.l_03fc8:
 	cmpi.w	#$33,d0
-	bmi.b	T_03fe0
+	bmi.b	.l_03fe0
 	subi.w	#$32,d0
 	bset	#$0,d4
 	addq.w	#$1,d2
 	cmpi.w	#$8,d2
-	bmi.b	T_03fe0
+	bmi.b	.l_03fe0
 	moveq	#0,d2
-T_03fe0:
+.l_03fe0:
 	cmpi.w	#$1,d1
-	bpl.b	T_03ff8
+	bpl.b	.l_03ff8
 	addi.w	#$32,d1
 	bclr	#$1,d4
 	subq.w	#$1,d3
-	bpl.b	T_04010
+	bpl.b	.l_04010
 	move.w	#$7,d3
-	bra.b	T_04010
-T_03ff8:
+	bra.b	.l_04010
+.l_03ff8:
 	cmpi.w	#$33,d1
-	bmi.b	T_04010
+	bmi.b	.l_04010
 	subi.w	#$32,d1
 	bset	#$1,d4
 	addq.w	#$1,d3
 	cmpi.w	#$8,d3
-	bmi.b	T_04010
+	bmi.b	.l_04010
 	moveq	#0,d3
-T_04010:
+.l_04010:
 	move.w	d0,Map_Xcoord
 	move.w	d1,Map_Ycoord
 	move.w	d2,World_X
@@ -258,34 +258,34 @@ T_04010:
 	move.w	Quad_Y,d1
 	moveq	#0,d3
 	cmpi.w	#$8,d0
-	bmi.b	T_0405c
+	bmi.b	.l_0405c
 	cmpi.w	#$5e,d0
-	bmi.b	T_0405a
+	bmi.b	.l_0405a
 	addq.w	#$8,d3
-	bra.b	T_0405c
-T_0405a:
+	bra.b	.l_0405c
+.l_0405a:
 	addq.w	#$4,d3
-T_0405c:
+.l_0405c:
 	cmpi.w	#$8,d1
-	bmi.b	T_04072
+	bmi.b	.l_04072
 	cmpi.w	#$5e,d1
-	bmi.b	T_0406e
+	bmi.b	.l_0406e
 	addi.w	#$18,d3
-	bra.b	T_04072
-T_0406e:
+	bra.b	.l_04072
+.l_0406e:
 	addi.w	#$c,d3
-T_04072:
+.l_04072:
 	move.w	World_X,d0
 	move.w	World_Y,d1
 	move.w	Quad_index,d2
 	lea.l	Quad_map,a1
-	lea.l	T_040d2,a0
+	lea.l	.l_040d2,a0
 	move.l	(a0,d3.w),d3
-	beq.b	T_040a0
+	beq.b	.l_040a0
 	movea.l	d3,a0
 	jsr	(a0)
 	move.w	d2,Quad_index
-T_040a0:
+.l_040a0:
 	lea.l	Quad_map,a1
 	move.w	Quad_index,d2
 	add.w	d2,d2
@@ -297,7 +297,7 @@ T_040a0:
 	move.l	$10(a1,d2.w),Maptext_ptr
 	movem.l	(a7)+,d0-d4/a0-a1
 	rts
-T_040d2:
+.l_040d2:
 	dc.l	Shift_UL	; ori.b #$f6, d0
 	dc.l	Shift_U	; ori.b #$8c, d0
 	dc.l	Shift_UR	; ori.b #$16, d0
@@ -594,19 +594,19 @@ Shift_DR:
 Load_submap:
 	movem.l	d0-d1/d7,-(a7)
 	tst.w	d0
-	bpl.b	T_04586
+	bpl.b	.l_04586
 	addq.w	#$8,d0
-	bra.b	T_0458e
-T_04586:
+	bra.b	.l_0458e
+.l_04586:
 	dc.b	$0c,$40,$00,$08,$6b,$02,$51,$40
-T_0458e:
+.l_0458e:
 	tst.w	d1
-	bpl.b	T_04596
+	bpl.b	.l_04596
 	addq.w	#$8,d1
-	bra.b	T_0459e
-T_04596:
+	bra.b	.l_0459e
+.l_04596:
 	dc.b	$0c,$41,$00,$08,$6b,$02,$51,$41
-T_0459e:
+.l_0459e:
 	mulu.w	#$8,d1
 	add.w	d1,d0
 	addq.w	#$1,d0
@@ -863,9 +863,9 @@ W2_DisUpd:
 	move.b	d0,(a0)+
 	move.w	d0,(a0)+
 	moveq	#34,d1
-T_04990:
+.l_04990:
 	move.l	d0,(a0)+
-	dbra	d1,T_04990
+	dbra	d1,.l_04990
 	move.w	Quad_X,d0
 	move.w	Quad_Y,d1
 	subq.w	#$7,d0
@@ -874,35 +874,35 @@ T_04990:
 	add.w	d2,d2
 	add.w	d2,d2
 	cmpi.w	#$26,d0
-	bmi.b	T_049c0
+	bmi.b	.l_049c0
 	cmpi.w	#$32,d0
-	bpl.b	T_049c0
+	bpl.b	.l_049c0
 	bset	#$4,d2
-T_049c0:
+.l_049c0:
 	cmpi.w	#$28,d1
-	bmi.b	T_049d0
+	bmi.b	.l_049d0
 	cmpi.w	#$32,d1
-	bpl.b	T_049d0
+	bpl.b	.l_049d0
 	bset	#$5,d2
-T_049d0:
+.l_049d0:
 	lea.l	Quad_map,a1
-	lea.l	T_04a04,a0
+	lea.l	.l_04a04,a0
 	movea.l	(a0,d2.w),a0
 	jsr	(a0)
 	bsr.w	Build_2D_map
 	bsr.w	Update_map_CIL
 	tst.b	CombatReq
-	beq.b	T_049fe
+	beq.b	.l_049fe
 	lea.l	CombatReq_Mod,a0
 	jsr	Push_Module
-T_049fe:
+.l_049fe:
 	movem.l	(a7)+,d0-d2/a0-a1
 	rts
-T_04a04:
-	dc.l	T_04a44	; ori.b #$44, d0
-	dc.l	T_04a44	; ori.b #$44, d0
-	dc.l	T_04a44	; ori.b #$44, d0
-	dc.l	T_04a44	; ori.b #$44, d0
+.l_04a04:
+	dc.l	.l_04a44	; ori.b #$44, d0
+	dc.l	.l_04a44	; ori.b #$44, d0
+	dc.l	.l_04a44	; ori.b #$44, d0
+	dc.l	.l_04a44	; ori.b #$44, d0
 	dc.l	Cut_C	; ori.b #$64, d0
 	dc.l	Cut_C	; ori.b #$64, d0
 	dc.l	T_04ab8	; ori.b #$b8, d0
@@ -915,7 +915,7 @@ T_04a04:
 	dc.l	Cut_F	; ori.b #$d8, d0
 	dc.l	Cut_F	; ori.b #$d8, d0
 	dc.l	Cut_F	; ori.b #$d8, d0
-T_04a44:
+.l_04a44:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	subq.w	#$7,d0

@@ -31,67 +31,67 @@ Hex_convert:
 Dec_convert:
 	movem.l	d0-d3/d7/a1,-(a7)
 	cmpi.w	#$b,d7
-	bmi.b	T_1d70a
+	bmi.b	.l_1d70a
 	lea.l	D_556c2,a1
 	jsr	DI_Error
-	bra.w	T_1d79e
-T_1d70a:
+	bra.w	.l_1d79e
+.l_1d70a:
 	lea.l	Output_string,a0
 	move.l	#$20202020,(a0)
 	move.l	#$20202020,$4(a0)
 	move.l	#$20202020,$8(a0)
 	tst.l	d0
-	bpl.b	T_1d732
+	bpl.b	.l_1d732
 	neg.l	d0
 	move.b	#$2d,(a0)+
-	bra.b	T_1d736
-T_1d732:
+	bra.b	.l_1d736
+.l_1d732:
 	move.b	#$20,(a0)+
-T_1d736:
+.l_1d736:
 	lea.l	D_556c2,a1
 	move.w	d7,d3
 	add.w	d3,d3
 	add.w	d3,d3
 	suba.w	d3,a1
 	cmp.l	-$4(a1),d0
-	bmi.b	T_1d756
+	bmi.b	.l_1d756
 	subq.w	#$1,d7
-T_1d74c:
+.l_1d74c:
 	move.b	#$2a,(a0)+
-	dbra	d7,T_1d74c
-	bra.b	T_1d78c
-T_1d756:
+	dbra	d7,.l_1d74c
+	bra.b	.l_1d78c
+.l_1d756:
 	moveq	#0,d3
 	subq.w	#$1,d7
-T_1d75a:
+.l_1d75a:
 	move.l	(a1)+,d1
 	move.w	#$30,d2
-T_1d760:
+.l_1d760:
 	cmp.l	d1,d0
-	bmi.b	T_1d76a
+	bmi.b	.l_1d76a
 	sub.l	d1,d0
 	addq.w	#$1,d2
-	bra.b	T_1d760
-T_1d76a:
+	bra.b	.l_1d760
+.l_1d76a:
 	cmpi.w	#$30,d2
-	bne.b	T_1d77a
+	bne.b	.l_1d77a
 	tst.w	d3
-	bne.b	T_1d77a
+	bne.b	.l_1d77a
 	move.b	#$20,(a0)+
-	bra.b	T_1d77e
-T_1d77a:
+	bra.b	.l_1d77e
+.l_1d77a:
 	st.b	d3
 	move.b	d2,(a0)+
-T_1d77e:
-	dbra	d7,T_1d75a
+.l_1d77e:
+	dbra	d7,.l_1d75a
 	tst.w	d3
-	bne.b	T_1d78c
+	bne.b	.l_1d78c
 	move.b	#$30,-$1(a0)
-T_1d78c:
+.l_1d78c:
 	move.b	#$20,(a0)+
 	move.b	#$20,(a0)+
 	move.b	#$0,(a0)
 	lea.l	Output_string,a0
-T_1d79e:
+.l_1d79e:
 	movem.l	(a7)+,d0-d3/d7/a1
 	rts
