@@ -10,7 +10,7 @@ of the later development (bugfixes and other changes).
 * `removed "…"` – an instruction of the original source which is not in the program
 
 Some changes may also come from the assembler which built the program (e.g. other encodings of the same
-instruction). 580 routines are taken from the original source, 131 of them have changes.
+instruction). 593 routines are taken from the original source, 131 of them have changes.
 
 ## LAYOUT/LAYOUT.ASM
 
@@ -370,7 +370,7 @@ instruction). 580 routines are taken from the original source, 131 of them have 
 
 ## MAIN/MAGIC.ASM
 
-61 routines taken, 19 with changes.
+74 routines taken, 19 with changes.
 
 ### Heal_diseased
 

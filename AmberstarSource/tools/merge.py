@@ -101,8 +101,35 @@ def equates_for(sym, skip):
             eq.append('%s\tequ\t$%x' % (nm, a))
     return eq
 
+import hashlib, pickle, atexit
+# Results of vasm by source text. Only the names which the routine uses are defined, so the source of a routine stays
+# the same while other names are found, and the rounds (and later runs) take the results from the cache.
+CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(out_json)), 'vasm.cache')   # shared by both versions
+try:
+    asm_cache = pickle.load(open(CACHE_PATH, 'rb'))
+except Exception:
+    asm_cache = {}
+cache_stats = collections.Counter()
+def save_cache():
+    pickle.dump(asm_cache, open(CACHE_PATH, 'wb'))
+atexit.register(save_cache)
+WORD = re.compile(r'[A-Za-z_]\w*')
+
 def assemble(addr, body, eq):
+    used = set(WORD.findall('\n'.join(body)))
+    eq = [e for e in eq if e.split('\t', 1)[0] in used]
     src = '\n'.join(eq) + '\n\torg\t$%x\n' % addr + '\n'.join(body) + '\n'
+    key = hashlib.sha1(src.encode('latin-1', 'replace')).digest()
+    if key in asm_cache:
+        cache_stats['hit'] += 1
+        return asm_cache[key]
+    cache_stats['vasm'] += 1
+    result = assemble_vasm(src)
+    if not (result[2] or '').endswith('vasm did not end'):
+        asm_cache[key] = result
+    return result
+
+def assemble_vasm(src):
     for attempt in range(8):
         open(SP, 'w', encoding='latin-1').write(src)
         if os.path.exists(BP): os.remove(BP)
@@ -385,7 +412,8 @@ def assembled_size(nm, addr):
     b, _, _ = assemble(addr, convert_lines(routine_lines[nm][1]), equates_for(sym, nm))
     return len(b) if b is not None else None
 
-for outer in range(10):
+last_tried = None
+for outer in range(100):
     results, votes, counts = check_all(sym, only)
     rcounts = collections.Counter()
     if prog and not only:
@@ -420,8 +448,11 @@ for outer in range(10):
                     s1 = assembled_size(prv, v['addr'] - s0)
                     if s1 and v['addr'] - s1 >= 0:
                         sym[prv] = v['addr'] - s1; candidates[prv] = True
-    print('round', outer + 1, dict(counts), 'refined', dict(rcounts), 'new names', new, 'candidates', len(candidates))
-    if (not new and not candidates) or only: break
+    print('round', outer + 1, dict(counts), 'refined', dict(rcounts), 'new names', new, 'candidates', len(candidates), 'assembled', dict(cache_stats), flush=True)
+    # ends when a round finds nothing new (the same candidates are tried again and again)
+    tried = {u: sym[u] for u in candidates}
+    if (not new and (not candidates or tried == last_tried)) or only: break
+    last_tried = tried
 
 # open candidates: confirmed if a routine which assembles to the same bytes uses them
 used = set()

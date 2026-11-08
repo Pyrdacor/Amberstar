@@ -84,7 +84,8 @@ names_added = {n for _, n, _, _ in added}
 out = []
 for r in rows:
     a, nm = int(r[0], 16), r[2]
-    if (a, nm) in removed or nm in names_added: continue
+    # reconstructed names of an earlier run are replaced (also the ones which were deleted since)
+    if (a, nm) in removed or nm in names_added or (len(r) > 4 and r[4] == 'R'): continue
     out.append(r + [''] * (6 - len(r)))
 for a, nm, f, comment in added:
     tl = ttlen

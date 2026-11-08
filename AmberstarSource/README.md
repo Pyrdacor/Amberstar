@@ -18,7 +18,7 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 580 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 593 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 95 names with comments (`SYMBOLS_RECONSTRUCTED.txt`), among them the COSO music player, the code is still the disassembly |
 
 ## The program file
@@ -145,7 +145,11 @@ python changes.py merged.s CHANGES.md
   routine is taken. Names which are still unknown get marker values: if all other bytes match, the program gives
   their addresses.
 * Routines whose address is unknown are tried behind the routine which is in front of them in their file, and in
-  front of the routine which follows them. Checking, merging and these neighbours are repeated in rounds.
+  front of the routine which follows them. Checking, merging and these neighbours are repeated in rounds until a
+  round finds nothing new.
+* Only the names which a routine uses are defined in its source, so the source of a routine stays the same while other
+  names are found. The results of vasm are kept by source text (`vasm.cache` next to `merge.json`), so the rounds and
+  later runs only assemble what has changed.
 * The assembler which built the shipped program optimized the code: `jsr`/`jmp` to a routine in reach became
   `bsr.w`/`bra.w`, and branches without a size became short branches where possible. The conversion does the same.
 * Routines which differ are aligned instruction by instruction with the program. Equal instructions keep the line of
@@ -159,8 +163,8 @@ python changes.py merged.s CHANGES.md
 * The boundaries of the modules are chosen so that as few known routines as possible are in another module than
   their file (a few names of the original are used in several modules).
 
-So far 580 routines of the original source are in the merged source (German version), 131 of them with changes.
-`CHANGES.md` lists these changes. About 140 routines of the original could not be found in the program yet, the
+So far 593 routines of the original source are in the merged source (German version), 131 of them with changes.
+`CHANGES.md` lists these changes. About 120 routines of the original could not be found in the program yet, the
 others could not be aligned or assembled.
 ## Known differences between the original source and the shipped program
 

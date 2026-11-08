@@ -104,19 +104,19 @@ Do_magic:
 	dc.l	Armour_2
 	dc.l	Armour_3
 	dc.l	Weapon_1
-	dc.l	T_140c0
-	dc.l	T_140d8
-	dc.l	T_140f0
-	dc.l	T_14108
-	dc.l	T_14120
-	dc.l	T_14138
-	dc.l	T_14150
-	dc.l	T_14168
-	dc.l	T_14180
-	dc.l	T_14198
-	dc.l	T_141b0
+	dc.l	Weapon_2
+	dc.l	Weapon_3
+	dc.l	AntiMagic_1
+	dc.l	AntiMagic_2
+	dc.l	AntiMagic_3
+	dc.l	ClearV_1
+	dc.l	ClearV_2
+	dc.l	ClearV_3
+	dc.l	Invisible_1
+	dc.l	Invisible_2
+	dc.l	Invisible_3
 	dc.l	Magic_sphere
-	dc.l	T_14230
+	dc.l	Magic_compass
 	dc.l	Identify
 	dc.l	T_14434
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
@@ -640,107 +640,120 @@ Weapon_1:
 	move.w	#24,Spell_3_duration
 .Exit:
 	rts	
-T_140c0:
+; ---- Weapon_2 (original source: MAIN/MAGIC.ASM)
+Weapon_2:
 	bsr.w	Handle_spell
-	bmi.b	.l_140d6
-	move.w	#$a,Spell_3_data
-	move.w	#$60,Spell_3_duration
-.l_140d6:
-	rts
-T_140d8:
+	bmi.s	.Exit
+	move.w	#10,Spell_3_data
+	move.w	#96,Spell_3_duration
+.Exit:
+	rts	
+; ---- Weapon_3 (original source: MAIN/MAGIC.ASM)
+Weapon_3:
 	bsr.w	Handle_spell
-	bmi.b	.l_140ee
-	move.w	#$f,Spell_3_data
-	move.w	#$c0,Spell_3_duration
-.l_140ee:
-	rts
-T_140f0:
+	bmi.s	.Exit
+	move.w	#15,Spell_3_data
+	move.w	#192,Spell_3_duration
+.Exit:
+	rts	
+; ---- AntiMagic_1 (original source: MAIN/MAGIC.ASM)
+AntiMagic_1:
 	bsr.w	Handle_spell
-	bmi.b	.l_14106
-	move.w	#$5,Spell_4_data
-	move.w	#$18,Spell_4_duration
-.l_14106:
-	rts
-T_14108:
+	bmi.s	.Exit
+	move.w	#5,Spell_4_data
+	move.w	#24,Spell_4_duration
+.Exit:
+	rts	
+; ---- AntiMagic_2 (original source: MAIN/MAGIC.ASM)
+AntiMagic_2:
 	bsr.w	Handle_spell
-	bmi.b	.l_1411e
-	move.w	#$a,Spell_4_data
-	move.w	#$60,Spell_4_duration
-.l_1411e:
-	rts
-T_14120:
+	bmi.s	.Exit
+	move.w	#10,Spell_4_data
+	move.w	#96,Spell_4_duration
+.Exit:
+	rts	
+; ---- AntiMagic_3 (original source: MAIN/MAGIC.ASM)
+AntiMagic_3:
 	bsr.w	Handle_spell
-	bmi.b	.l_14136
-	move.w	#$f,Spell_4_data
-	move.w	#$c0,Spell_4_duration
-.l_14136:
-	rts
-T_14138:
+	bmi.s	.Exit
+	move.w	#15,Spell_4_data
+	move.w	#192,Spell_4_duration
+.Exit:
+	rts	
+; ---- ClearV_1 (original source: MAIN/MAGIC.ASM)
+ClearV_1:
 	bsr.w	Handle_spell
-	bmi.b	.l_1414e
-	move.w	#$2,Spell_5_data
-	move.w	#$18,Spell_5_duration
-.l_1414e:
-	rts
-T_14150:
+	bmi.s	.Exit
+	move.w	#2,Spell_5_data
+	move.w	#24,Spell_5_duration
+.Exit:
+	rts	
+; ---- ClearV_2 (original source: MAIN/MAGIC.ASM)
+ClearV_2:
 	bsr.w	Handle_spell
-	bmi.b	.l_14166
-	move.w	#$4,Spell_5_data
-	move.w	#$60,Spell_5_duration
-.l_14166:
-	rts
-T_14168:
+	bmi.s	.Exit
+	move.w	#4,Spell_5_data
+	move.w	#96,Spell_5_duration
+.Exit:
+	rts	
+; ---- ClearV_3 (original source: MAIN/MAGIC.ASM)
+ClearV_3:
 	bsr.w	Handle_spell
-	bmi.b	.l_1417e
-	move.w	#$6,Spell_5_data
-	move.w	#$c0,Spell_5_duration
-.l_1417e:
-	rts
-T_14180:
+	bmi.s	.Exit
+	move.w	#6,Spell_5_data
+	move.w	#192,Spell_5_duration
+.Exit:
+	rts	
+; ---- Invisible_1 (original source: MAIN/MAGIC.ASM)
+Invisible_1:
 	bsr.w	Handle_spell
-	bmi.b	.l_14196
-	move.w	#$0,Spell_6_data
-	move.w	#$18,Spell_6_duration
-.l_14196:
-	rts
-T_14198:
+	bmi.s	.Exit
+	move.w	#0,Spell_6_data
+	move.w	#24,Spell_6_duration
+.Exit:
+	rts	
+; ---- Invisible_2 (original source: MAIN/MAGIC.ASM)
+Invisible_2:
 	bsr.w	Handle_spell
-	bmi.b	.l_141ae
-	move.w	#$0,Spell_6_data
-	move.w	#$60,Spell_6_duration
-.l_141ae:
-	rts
-T_141b0:
+	bmi.s	.Exit
+	move.w	#0,Spell_6_data
+	move.w	#96,Spell_6_duration
+.Exit:
+	rts	
+; ---- Invisible_3 (original source: MAIN/MAGIC.ASM)
+Invisible_3:
 	bsr.w	Handle_spell
-	bmi.b	.l_141c6
-	move.w	#$0,Spell_6_data
-	move.w	#$c0,Spell_6_duration
-.l_141c6:
-	rts
+	bmi.s	.Exit
+	move.w	#0,Spell_6_data
+	move.w	#192,Spell_6_duration
+.Exit:
+	rts	
+; ---- Magic_sphere (original source: MAIN/MAGIC.ASM)
 Magic_sphere:
 	bsr.w	Handle_spell
-	bmi.b	.l_1422e
-	move.w	#$6,Spell_1_data
-	move.w	#$c0,Spell_1_duration
-	move.w	#$f,Spell_2_data
-	move.w	#$c0,Spell_2_duration
-	move.w	#$f,Spell_3_data
-	move.w	#$c0,Spell_3_duration
-	move.w	#$f,Spell_4_data
-	move.w	#$c0,Spell_4_duration
-	move.w	#$6,Spell_5_data
-	move.w	#$c0,Spell_5_duration
-	move.w	#$0,Spell_6_data
-	move.w	#$c0,Spell_6_duration
-.l_1422e:
-	rts
-T_14230:
+	bmi.s	.Exit
+	move.w	#6,Spell_1_data
+	move.w	#192,Spell_1_duration
+	move.w	#15,Spell_2_data
+	move.w	#192,Spell_2_duration
+	move.w	#15,Spell_3_data
+	move.w	#192,Spell_3_duration
+	move.w	#15,Spell_4_data
+	move.w	#192,Spell_4_duration
+	move.w	#6,Spell_5_data
+	move.w	#192,Spell_5_duration
+	move.w	#0,Spell_6_data
+	move.w	#192,Spell_6_duration
+.Exit:
+	rts	
+; ---- Magic_compass (original source: MAIN/MAGIC.ASM)
+Magic_compass:
 	bsr.w	Handle_spell
-	bmi.b	.l_14240
+	bmi.s	.Exit
 	lea.l	MagicCompass_Mod,a0
 	bsr.w	Push_Module
-.l_14240:
-	rts
+.Exit:
+	rts	
 MagicComp_DisInit:
 	moveq	#48,d0
 	moveq	#64,d1
