@@ -71,8 +71,8 @@ Recalc_mapbuf_coords:
 C2_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
-	bsr.w	T_02724
 	bsr.w	Set_spell_area
+	bsr.w	Set_map_music
 	movea.l	Off_screen,a6
 	moveq	#1,d0
 	bsr.w	Show_layout

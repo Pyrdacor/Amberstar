@@ -689,7 +689,8 @@ B_5beae:
 	ds.b	48
 B_5bede:
 	ds.b	4
-B_5bee2:
+; The song which is played (see Play_song).
+Current_song:
 	ds.b	2
 Magic_anim_counter:
 	ds.b	2

@@ -106,7 +106,12 @@ def assemble(addr, body, eq):
     for attempt in range(8):
         open(SP, 'w', encoding='latin-1').write(src)
         if os.path.exists(BP): os.remove(BP)
-        r = subprocess.run([vasm, '-quiet', '-m68000', '-Fbin', '-no-opt', '-nowarn=62', '-o', BP, SP], capture_output=True, text=True, encoding='latin-1')
+        try:
+            r = subprocess.run([vasm, '-quiet', '-m68000', '-Fbin', '-no-opt', '-nowarn=62', '-o', BP, SP], capture_output=True, text=True, encoding='latin-1', timeout=20)
+        except subprocess.TimeoutExpired:
+            # (it happened once that vasm did not end)
+            open(SP + '.hang', 'w', encoding='latin-1').write(src)
+            return None, src, 'error: vasm did not end'
         out = r.stdout + r.stderr
         # short branches which don't reach their target become word branches
         far = [int(m.group(1)) for m in re.finditer(r'in line (\d+) of "[^"]*": (?:branch destination )?out of range', out)]

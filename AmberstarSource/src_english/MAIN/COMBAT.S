@@ -4,7 +4,7 @@ Combat_ModInit:
 	sf.b	B_58aae
 	jsr	T_00194
 	moveq	#16,d0
-	jsr	T_00f12
+	jsr	Play_song
 	lea.l	D_2dfc2,a0
 	jsr	Push_PA
 	tst.b	Party_advantage
@@ -24,7 +24,7 @@ T_15984:
 	clr.w	B_58ab0
 	clr.w	B_58e5e
 	sf.b	B_58aad
-	bsr.w	T_183a8
+	bsr.w	Choose_particle_path
 	lea.l	T_15bab,a0
 	jsr	T_1b786
 	move.l	a0,B_58908
@@ -423,7 +423,7 @@ T_15e96:
 T_15e9e:
 	adda.w	#$a,a4
 	dbra	d7,T_15e76
-	jsr	Set_spell_area
+	jsr	Set_map_music
 	jsr	Pop_PA
 	rts
 Combat_DisInit:
@@ -439,7 +439,7 @@ Combat_DisInit:
 	bsr.w	T_15d08
 	move.l	a0,Control_list_ptr
 	jsr	Show_control_icons
-	move.l	#T_163e0,B_58920
+	move.l	#Blink_markers,B_58920
 	bsr.w	T_15f8c
 	jsr	Switch_screen
 	jsr	Copy_screen
@@ -547,12 +547,13 @@ T_1603a:
 	movea.l	d0,a0
 	jsr	(a0)
 T_1604a:
-	bsr.b	T_1605a
+	bsr.b	Show_damage
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 T_16052:
 	dc.b	$00,$00,$00,$01,$00,$02,$00,$01
-T_1605a:
+; Shows the damage of a participant in its tactical cell (monsters for 100 VBL, party members for 70 VBL).
+Show_damage:
 	movem.l	d0-d2/d4-d5/d7/a0/a4,-(a7)
 	lea.l	B_58a0e,a4
 	moveq	#0,d4
@@ -568,7 +569,7 @@ T_1606a:
 	move.w	d4,d0
 	addi.w	#$d,d0
 	move.w	d5,d1
-	bsr.w	T_165c0
+	bsr.w	Draw_damage_digits
 T_16086:
 	addq.w	#$1,d4
 	cmpi.w	#$6,d4
@@ -588,7 +589,7 @@ T_1609a:
 	move.w	d4,d0
 	addi.w	#$d,d0
 	move.w	d5,d1
-	bsr.w	T_165c0
+	bsr.w	Draw_damage_digits
 T_160b6:
 	addq.w	#$1,d4
 	cmpi.w	#$6,d4
@@ -616,19 +617,19 @@ T_160ec:
 	bsr.w	T_1642a
 	movem.w	d0-d1,-(a7)
 	moveq	#10,d2
-	bsr.w	T_16490
+	bsr.w	Draw_grid_frame
 	movem.w	(a7)+,d2-d3
 	move.w	B_5891e,d0
 	btst	#$4,d0
 	bne.b	T_16128
 	moveq	#0,d6
 T_16114:
-	bsr.w	T_162aa
+	bsr.w	Get_move_targets
 	tst.w	d0
 	bmi.b	T_1615e
 	move.w	d2,-(a7)
 	moveq	#9,d2
-	bsr.w	T_16576
+	bsr.w	Draw_cell_frame
 	move.w	(a7)+,d2
 	bra.b	T_16114
 T_16128:
@@ -642,7 +643,7 @@ T_16128:
 	cmp.w	Active_member,d7
 	beq.b	T_1614e
 	moveq	#6,d2
-	bsr.w	T_1656a
+	bsr.w	Draw_cell_cross
 	bra.b	T_16154
 T_1614e:
 	dc.b	$74,$06,$61,$00,$04,$24
@@ -656,7 +657,7 @@ T_16160:
 	bsr.w	T_1642a
 	movem.w	d0-d1,-(a7)
 	moveq	#10,d2
-	bsr.w	T_16490
+	bsr.w	Draw_grid_frame
 	movem.w	(a7)+,d2-d3
 	move.w	B_5891e,d0
 	btst	#$4,d0
@@ -669,7 +670,7 @@ T_16192:
 	tst.l	(a0)+
 	beq.b	T_1619c
 	moveq	#1,d2
-	bsr.w	T_16576
+	bsr.w	Draw_cell_frame
 T_1619c:
 	addq.w	#$1,d0
 	cmpi.w	#$6,d0
@@ -692,7 +693,7 @@ T_161c6:
 	tst.l	(a0)+
 	beq.b	T_161d0
 	moveq	#1,d2
-	bsr.w	T_16576
+	bsr.w	Draw_cell_frame
 T_161d0:
 	addq.w	#$1,d0
 	cmpi.w	#$6,d0
@@ -709,7 +710,7 @@ T_161e2:
 	bsr.w	T_1642a
 	movem.w	d0-d1,-(a7)
 	moveq	#10,d2
-	bsr.w	T_16490
+	bsr.w	Draw_grid_frame
 	movem.w	(a7)+,d2-d3
 	move.w	B_5891e,d0
 	btst	#$4,d0
@@ -730,7 +731,7 @@ T_1622e:
 	tst.l	(a0)+
 	beq.b	T_16238
 	moveq	#1,d2
-	bsr.w	T_16576
+	bsr.w	Draw_cell_frame
 T_16238:
 	addq.w	#$1,d0
 	cmpi.w	#$6,d0
@@ -747,19 +748,19 @@ T_1624a:
 	bsr.w	T_1642a
 	movem.w	d0-d1,-(a7)
 	moveq	#10,d2
-	bsr.w	T_16490
+	bsr.w	Draw_grid_frame
 	movem.w	(a7)+,d2-d3
 	move.w	B_5891e,d0
 	btst	#$4,d0
 	bne.b	T_16286
 	moveq	#0,d6
 T_16272:
-	bsr.w	T_1634a
+	bsr.w	Get_melee_targets
 	tst.w	d0
 	bmi.b	T_162a8
 	move.w	d2,-(a7)
 	moveq	#1,d2
-	bsr.w	T_16576
+	bsr.w	Draw_cell_frame
 	move.w	(a7)+,d2
 	bra.b	T_16272
 T_16286:
@@ -771,7 +772,8 @@ T_16286:
 	dc.b	$74,$05,$61,$00,$02,$d0
 T_162a8:
 	rts
-T_162aa:
+; The free neighbour cells in the party rows which no other member wants to move to.
+Get_move_targets:
 	movem.l	d4-d5/a0,-(a7)
 	move.w	Active_member,d5
 	neg.w	d5
@@ -825,7 +827,8 @@ T_16324:
 T_1632a:
 	dc.b	$ff,$ff,$ff,$ff,$00,$00,$ff,$ff,$00,$01,$ff,$ff,$ff,$ff,$00,$00
 	dc.b	$00,$01,$00,$00,$ff,$ff,$00,$01,$00,$00,$00,$01,$00,$01,$00,$01
-T_1634a:
+; Melee attacks only from the front row against the cell in front or diagonal in front. Ranged weapons reach every monster.
+Get_melee_targets:
 	tst.w	B_58958
 	bne.b	T_163aa
 	movem.l	d4/a0,-(a7)
@@ -887,7 +890,8 @@ T_163d8:
 T_163da:
 	movem.l	(a7)+,d4/a0
 	rts
-T_163e0:
+; The markers on the tactical battle field blink.
+Blink_markers:
 	move.w	B_5891e,d0
 	btst	#$4,d0
 	bne.b	T_16428
@@ -895,7 +899,7 @@ T_163e0:
 	beq.b	T_16428
 	bsr.b	T_1642a
 	moveq	#9,d2
-	bsr.w	T_16490
+	bsr.w	Draw_grid_frame
 	lea.l	B_58924,a0
 	move.w	Active_member,d0
 	subq.w	#$1,d0
@@ -952,7 +956,8 @@ T_1646a:
 	jsr	Put_unmasked_block
 	movem.l	(a7)+,d0-d2/a0
 	rts
-T_16490:
+; A frame on the grid lines around a cell.
+Draw_grid_frame:
 	movem.l	d0-d7/a0-a6,-(a7)
 	lsl.w	#$4,d1
 	addi.w	#$30,d1
@@ -995,14 +1000,17 @@ T_164ea:
 T_1652e:
 	dc.b	$ff,$fe,$80,$02,$80,$02,$80,$02,$80,$02,$80,$02,$80,$02,$80,$02
 	dc.b	$80,$02,$80,$02,$80,$02,$80,$02,$80,$02,$80,$02,$ff,$fe
-T_1654c:
+; The lines of the cross (y offset, x offset, width).
+Cross_lines:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$0c,$60,$0e,$e0,$07,$c0,$03,$80
 	dc.b	$07,$c0,$0e,$e0,$0c,$60,$00,$00,$00,$00,$00,$00,$00,$00
-T_1656a:
+; A cross inside of a cell.
+Draw_cell_cross:
 	movem.l	d0-d7/a0-a6,-(a7)
-	lea.l	T_1654c,a0
+	lea.l	Cross_lines,a0
 	bra.b	T_16580
-T_16576:
+; A frame inside of a cell.
+Draw_cell_frame:
 	movem.l	d0-d7/a0-a6,-(a7)
 	lea.l	T_1652e,a0
 T_16580:
@@ -1034,7 +1042,8 @@ T_165ae:
 	dbra	d7,T_1659a
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-T_165c0:
+; 3 digits (leading zeros) of a 4x5 font at the top left of the lower half of the tactical cell.
+Draw_damage_digits:
 	movem.l	d0-d2/a0-a2/a5,-(a7)
 	lsl.w	#$3,d0
 	mulu.w	#$a0,d1
@@ -1105,7 +1114,8 @@ T_16644:
 	bra.b	T_16624
 	dc.b	$e0,$d0,$60,$f0,$30,$60,$c0,$c0,$60,$d0,$60,$d0,$60,$60,$b0,$70
 	dc.b	$30,$60
-T_16676:
+; While the actions are chosen, random participants show their frames (not stunned or sleeping ones).
+Idle_animations:
 	movem.l	d0/d6-d7/a0/a4,-(a7)
 T_1667a:
 	move.w	B_5891e,d5
@@ -1139,7 +1149,8 @@ T_166ce:
 T_166d2:
 	movem.l	(a7)+,d0/d6-d7/a0/a4
 	rts
-T_166d8:
+; Next frame of the attack animation of a monster.
+Attack_animation_step:
 	movem.l	d0/d6-d7/a0/a4,-(a7)
 	subq.w	#$1,B_589e6
 	bgt.b	T_1675e
@@ -1184,7 +1195,8 @@ T_16752:
 T_1675e:
 	movem.l	(a7)+,d0/d6-d7/a0/a4
 	rts
-T_16764:
+; A monster which attacks or casts a spell shows the frames 1 to count-1 and back to 0.
+Start_attack_animation:
 	movem.l	d0-d1/a0,-(a7)
 	moveq	#0,d0
 	moveq	#0,d1
@@ -1201,7 +1213,8 @@ T_16764:
 	move.w	#$6,B_589e6
 	movem.l	(a7)+,d0-d1/a0
 	rts
-T_167a8:
+; The next action waits until the animation is finished.
+Wait_for_animation:
 	movem.l	d0-d7/a0-a6,-(a7)
 	tst.w	B_589e2
 	beq.b	T_16806
@@ -1288,14 +1301,14 @@ Combat_DisUpd:
 	tst.b	Monster_advantage
 	beq.b	T_168f6
 	clr.b	Monster_advantage
-	bsr.w	T_16f36
+	bsr.w	Monster_actions
 	tst.b	B_58aac
 	bne.w	T_16a48
 T_168f6:
 	tst.w	B_589da
 	beq.b	T_16908
 	clr.w	B_589da
-	bsr.w	T_16a64
+	bsr.w	Prepare_party_actions
 T_16908:
 	movea.l	Off_screen,a6
 	move.w	Active_member,d0
@@ -1335,7 +1348,7 @@ T_1698e:
 	bra.w	T_16a34
 T_169b0:
 	moveq	#0,d6
-	bsr.w	T_162aa
+	bsr.w	Get_move_targets
 	tst.w	d0
 	bpl.b	T_169c0
 	bset	#$7,$3(a5)
@@ -1363,13 +1376,13 @@ T_169c0:
 T_16a06:
 	move.w	#$1,B_58958
 	moveq	#0,d6
-	bsr.w	T_1634a
+	bsr.w	Get_melee_targets
 	tst.w	d0
 	bpl.b	T_16a2a
 	bra.b	T_16a24
 T_16a1a:
 	moveq	#0,d6
-	bsr.w	T_1634a
+	bsr.w	Get_melee_targets
 	tst.w	d0
 	bpl.b	T_16a2a
 T_16a24:
@@ -1395,7 +1408,8 @@ T_16a50:
 	bsr.w	T_15f8c
 T_16a62:
 	rts
-T_16a64:
+; Resets the actions for the next round and chooses the actions of members which can't act on their own.
+Prepare_party_actions:
 	lea.l	B_58924,a5
 	moveq	#5,d7
 T_16a6c:
@@ -1450,7 +1464,7 @@ T_16ac6:
 	btst	#$2,d4
 	bne.b	T_16b5a
 	btst	#$3,d4
-	bne.b	T_16b12
+	bne.b	Panic_action
 	btst	#$1,d4
 	bne.b	T_16b06
 	bra.b	T_16b5e
@@ -1458,12 +1472,13 @@ T_16b00:
 	move.w	#$7,(a0)
 	bra.b	T_16b5e
 T_16b06:
-	bsr.w	T_16b98
+	bsr.w	Mad_action
 	bra.b	T_16b5e
 T_16b0c:
 	move.w	#$6,(a0)
 	bra.b	T_16b5e
-T_16b12:
+; Panicking members flee from the back row or move back.
+Panic_action:
 	move.w	d5,d0
 	bsr.w	T_1642a
 	tst.w	d1
@@ -1515,7 +1530,8 @@ T_16b8a:
 	rts
 T_16b90:
 	dc.b	$03,$06,$05,$02,$04,$11,$0a,$0c
-T_16b98:
+; Mad members attack, flee or move randomly.
+Mad_action:
 	move.w	d5,d0
 	bsr.w	T_1642a
 	movea.l	$2(a4),a4
@@ -1541,7 +1557,7 @@ T_16bd0:
 	move.w	d1,d4
 	moveq	#0,d6
 T_16bda:
-	bsr.w	T_162aa
+	bsr.w	Get_move_targets
 	tst.w	d0
 	bmi.b	T_16bf4
 	dbra	d4,T_16bda
@@ -1564,7 +1580,7 @@ T_16bf8:
 	beq.b	T_16bf4
 T_16c16:
 	moveq	#0,d6
-	bsr.w	T_1634a
+	bsr.w	Get_melee_targets
 	tst.w	d0
 	bmi.b	T_16bf4
 	movea.l	a0,a2
@@ -1614,7 +1630,7 @@ T_16cd6:
 	jsr	Erase_text_window
 	jsr	Switch_screen
 	jsr	Copy_screen
-	move.l	#T_163e0,B_58920
+	move.l	#Blink_markers,B_58920
 	jsr	Pop_MA
 	rts
 T_16d06:
@@ -1647,7 +1663,7 @@ T_16d38:
 T_16d50:
 	moveq	#0,d6
 T_16d52:
-	bsr.w	T_162aa
+	bsr.w	Get_move_targets
 	tst.w	d0
 	bmi.b	T_16d8c
 	cmp.w	d0,d4
@@ -1731,7 +1747,7 @@ T_16e72:
 T_16e8a:
 	moveq	#0,d6
 T_16e8c:
-	bsr.w	T_1634a
+	bsr.w	Get_melee_targets
 	tst.w	d0
 	bmi.b	T_16ecc
 	cmp.w	d0,d4
@@ -1779,7 +1795,8 @@ T_16f14:
 	bsr.w	T_13772
 	bsr.w	T_16b64
 	rts
-T_16f36:
+; Chooses the actions of the monsters (before the party actions are added).
+Monster_actions:
 	tst.b	Monster_advantage
 	bne.w	T_16cc0
 	move.w	#$0,Draw_Cicon
@@ -1794,7 +1811,7 @@ T_16f5c:
 	clr.w	$6(a1)
 T_16f66:
 	dbra	d7,T_16f5c
-	bsr.w	T_183a8
+	bsr.w	Choose_particle_path
 	movea.l	Off_screen,a6
 	move.l	B_58920,-(a7)
 	clr.l	B_58920
@@ -1822,7 +1839,8 @@ T_16fb2:
 	moveq	#0,d4
 	moveq	#0,d5
 	moveq	#17,d7
-T_16fde:
+; Morale, retreat, advance, spells and attacks of a monster.
+Choose_monster_action:
 	clr.w	B_589de
 	move.l	(a1)+,d0
 	beq.w	T_17256
@@ -1844,11 +1862,11 @@ T_16fde:
 	tst.b	Party_advantage
 	bne.w	T_1724e
 	btst	#$0,$2e(a2)
-	bne.w	T_170f8
+	bne.w	Monster_attack
 	btst	#$2,$2f(a2)
 	bne.w	T_1724e
 	btst	#$3,$2f(a2)
-	bne.b	T_1706c
+	bne.b	Monster_retreat
 	movem.l	a0-a1,-(a7)
 	movea.l	a3,a1
 	lea.l	B_589b0,a0
@@ -1865,7 +1883,8 @@ T_16fde:
 	addi.w	#$64,d0
 	cmp.w	d0,d2
 	bgt.b	T_17088
-T_1706c:
+; Monsters flee from the back row and move back otherwise.
+Monster_retreat:
 	move.w	#$ffff,B_589de
 	tst.w	d5
 	bne.b	T_17080
@@ -1875,7 +1894,7 @@ T_17080:
 	move.w	d4,d0
 	move.w	d5,d1
 	subq.w	#$1,d1
-	bra.b	T_170a8
+	bra.b	Monster_move_to_row
 T_17088:
 	move.w	d5,d1
 	moveq	#2,d0
@@ -1885,7 +1904,7 @@ T_17088:
 	ext.w	d0
 T_1709a:
 	sub.w	d5,d0
-	beq.b	T_170f8
+	beq.b	Monster_attack
 	bmi.b	T_170a4
 	addq.w	#$1,d1
 	bra.b	T_170a6
@@ -1893,7 +1912,8 @@ T_170a4:
 	subq.w	#$1,d1
 T_170a6:
 	move.w	d4,d0
-T_170a8:
+; The monster moves to a row: to the same column or one beside it.
+Monster_move_to_row:
 	lea.l	B_58a0e,a6
 	move.w	d1,d2
 	mulu.w	#$6,d2
@@ -1923,7 +1943,8 @@ T_170d6:
 T_170ee:
 	tst.w	B_589de
 	bne.w	T_17248
-T_170f8:
+; Spells, ranged attacks or melee attacks of a monster.
+Monster_attack:
 	btst	#$0,$2f(a2)
 	bne.b	T_1714a
 	move.w	B_589dc,d0
@@ -1967,7 +1988,7 @@ T_1714a:
 	move.b	$2(a6),d0
 	cmp.b	$f(a1),d0
 	bne.b	T_1719a
-	bsr.w	T_175c2
+	bsr.w	Random_party_target
 	move.w	#$3,(a0)+
 	move.w	d0,(a0)+
 	move.w	d1,(a0)+
@@ -1976,7 +1997,7 @@ T_1714a:
 	bra.w	T_17252
 T_1719a:
 	movea.l	(a7)+,a1
-	bra.w	T_1706c
+	bra.w	Monster_retreat
 T_171a0:
 	movea.l	(a7)+,a1
 	cmpi.w	#$2,d5
@@ -2068,7 +2089,7 @@ T_17256:
 	moveq	#0,d4
 	addq.w	#$1,d5
 T_17262:
-	dbra	d7,T_16fde
+	dbra	d7,Choose_monster_action
 	clr.b	Party_advantage
 	lea.l	B_58924,a0
 	moveq	#11,d7
@@ -2109,7 +2130,7 @@ T_172b8:
 	move.w	d6,d7
 	cmpi.w	#$1,d7
 	ble.b	T_172d6
-	bsr.w	T_1827e
+	bsr.w	Sort_action_list
 T_172d6:
 	move.w	(a7)+,d6
 	movea.l	Off_screen,a6
@@ -2119,9 +2140,10 @@ T_172d6:
 	movea.l	B_5895a,a5
 	adda.w	d0,a5
 	sf.b	B_58aac
-T_172f2:
+; Executes the actions of a round, the fastest participant first.
+Execute_round:
 	movem.l	d6/a4-a5,-(a7)
-	bsr.w	T_183a8
+	bsr.w	Choose_particle_path
 	movea.l	$4(a5),a4
 	moveq	#0,d0
 	moveq	#0,d1
@@ -2133,18 +2155,19 @@ T_172f2:
 	lea.l	B_58a0e,a0
 	adda.w	d0,a0
 	tst.l	(a0)
-	beq.b	T_17390
+	beq.b	Remove_dead_participants
 	tst.b	(a4)
 	beq.b	T_1732e
 	movea.l	(a0),a0
 	move.b	$2e(a0),d0
 	move.b	$2f(a0),d1
-	bra.b	T_1733a
+	bra.b	Set_success_factor
 T_1732e:
 	movea.l	$c(a4),a0
 	move.b	$3a(a0),d0
 	move.b	$3b(a0),d1
-T_1733a:
+; Diseases, irritation and blindness lower the chance to hit.
+Set_success_factor:
 	moveq	#100,d2
 	btst	#$3,d0
 	beq.b	T_17344
@@ -2166,13 +2189,14 @@ T_1735a:
 	movea.l	(a0,d2.w),a0
 	jsr	(a0)
 	tst.w	d0
-	bne.b	T_17390
+	bne.b	Remove_dead_participants
 	bsr.w	T_17b08
 	movea.l	Off_screen,a6
 	jsr	Erase_text_window
 	jsr	Switch_screen
 	jsr	Copy_screen
-T_17390:
+; Dead monsters and dead or petrified party members leave the battle field.
+Remove_dead_participants:
 	lea.l	B_58a0e,a0
 	moveq	#17,d7
 T_17398:
@@ -2217,9 +2241,10 @@ T_17416:
 	movea.l	Current_active_char_data,a0
 	move.w	$3a(a0),d0
 	andi.w	#$e480,d0
-	beq.b	T_17430
-	jsr	T_006fe
-T_17430:
+	beq.b	Check_party_left
+	jsr	Check_party_alive
+; The battle ends if no party member is left on the battle field.
+Check_party_left:
 	lea.l	B_589c2,a0
 	bsr.w	T_15d6c
 	moveq	#2,d7
@@ -2240,7 +2265,7 @@ T_1745a:
 	subq.l	#$8,a5
 	tst.b	B_58aac
 	bne.b	T_17488
-	dbra	d6,T_172f2
+	dbra	d6,Execute_round
 	addq.w	#$1,B_589dc
 	movea.l	Off_screen,a6
 	bsr.w	T_15f8c
@@ -2256,6 +2281,8 @@ T_174a2:
 	bne.b	T_174a2
 	clr.w	B_5891c
 	move.w	#$1,B_589da
+; Moves are not kept. If the front row of the party is empty, the back row moves to the front.
+End_of_round:
 	lea.l	B_58924,a0
 	moveq	#5,d7
 T_174c2:
@@ -2338,7 +2365,8 @@ T_175a4:
 	jsr	Copy_screen
 	movem.l	(a7)+,d0-d3/d6-d7/a0-a1/a6
 	rts
-T_175c2:
+; A random cell of a party member.
+Random_party_target:
 	jsr	Random
 	lea.l	B_58a56,a1
 T_175ce:
@@ -2362,8 +2390,8 @@ T_175e8:
 T_175fc:
 	dc.l	T_1761c
 	dc.l	T_17624
-	dc.l	T_17688
-	dc.l	T_17732
+	dc.l	Flee
+	dc.l	Execute_attacks
 	dc.l	T_17b2a
 	dc.l	T_17620
 	dc.l	T_17620
@@ -2404,7 +2432,8 @@ T_1766e:
 T_17684:
 	moveq	#0,d0
 	rts
-T_17688:
+; Dexterity and luck against a random value below 150.
+Flee:
 	btst	#$0,d0
 	bne.b	T_17620
 	btst	#$2,d1
@@ -2461,7 +2490,8 @@ T_17722:
 T_1772e:
 	moveq	#0,d0
 	rts
-T_17732:
+; Executes the attacks of a participant (attacks per round, doubled by haste).
+Execute_attacks:
 	btst	#$0,d0
 	bne.w	T_17620
 	btst	#$3,d1
@@ -2502,7 +2532,7 @@ T_177ae:
 	move.b	$20(a0),d0
 	cmp.b	$40(a1),d0
 	blt.w	T_179ac
-	bra.b	T_177de
+	bra.b	Attack_once
 T_177c2:
 	dc.b	$61,$00,$03,$44,$2c,$79
 	dc.l	Off_screen
@@ -2512,10 +2542,11 @@ T_177c2:
 	dc.l	Switch_screen
 	dc.b	$4e,$b9
 	dc.l	Copy_screen
-T_177de:
+; One attack: hit, parry, damage and the ammunition of ranged weapons.
+Attack_once:
 	tst.b	(a4)
 	beq.b	T_177e6
-	bsr.w	T_16764
+	bsr.w	Start_attack_animation
 T_177e6:
 	moveq	#0,d0
 	move.b	$6(a0),d0
@@ -2755,7 +2786,7 @@ T_17b08:
 	jsr	Update_status_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bsr.w	T_167a8
+	bsr.w	Wait_for_animation
 	rts
 T_17b2a:
 	btst	#$0,d1
@@ -2764,6 +2795,8 @@ T_17b2a:
 	bne.w	T_17620
 	btst	#$2,d1
 	bne.w	T_17620
+; A spell of a participant or of an item.
+Execute_spell_action:
 	tst.b	(a4)
 	bne.w	T_17cd6
 	tst.w	$6(a4)
@@ -2783,13 +2816,14 @@ T_17b2a:
 	move.w	d0,Selected_spell
 	st.b	Magic_object_flag
 	movem.l	(a7)+,d0/a0
-	bra.b	T_17ba2
+	bra.b	Show_spell_result
 T_17b92:
 	dc.b	$33,$ec,$00,$06
 	dc.l	Selected_class
 	dc.b	$33,$ec,$00,$08
 	dc.l	Selected_spell
-T_17ba2:
+; The name of the spell is shown first, the result after the effects of the spell.
+Show_spell_result:
 	jsr	Init_RText
 	movea.l	$c(a4),a0
 	lea.l	$f0(a0),a0
@@ -2829,7 +2863,7 @@ T_17c08:
 	moveq	#0,d0
 	move.b	$1(a4),d0
 	move.w	d0,B_58ab8
-	bsr.w	T_18934
+	bsr.w	Cast_combat_spell
 	sf.b	Magic_object_flag
 	tst.b	B_5882f
 	bmi.b	T_17c96
@@ -2876,7 +2910,7 @@ T_17cd6:
 	lea.l	B_58a0e,a5
 	movea.l	(a5,d0.w),a5
 	movea.l	$c(a4),a3
-	bsr.w	T_16764
+	bsr.w	Start_attack_animation
 	move.w	$6(a4),Selected_class
 	move.w	$8(a4),Selected_spell
 	move.l	a3,B_58abe
@@ -2887,14 +2921,14 @@ T_17cd6:
 	jsr	Copy_screen
 	bsr.w	T_18668
 	st.b	B_58ab7
-	bsr.w	T_18934
+	bsr.w	Cast_combat_spell
 	sf.b	B_58ab7
 	moveq	#0,d0
 	rts
 T_17d42:
 	movem.l	d0-d1/a0-a1,-(a7)
 	move.w	#$1,B_58ac6
-	bsr.w	T_175c2
+	bsr.w	Random_party_target
 	lea.l	B_58ac8,a0
 	movea.l	(a1),a1
 	move.l	$2(a1),(a0)+
@@ -3256,7 +3290,8 @@ T_18276:
 	movea.l	a1,a0
 	movem.l	(a7)+,d7/a1
 	rts
-T_1827e:
+; Stable bubble sort of the action list by the initiative (speed and its bonus).
+Sort_action_list:
 	lsl.w	#$3,d7
 	lea.l	-$8(a0,d7.w),a1
 	moveq	#8,d6
@@ -3289,7 +3324,8 @@ T_182b2:
 	bne.b	T_18288
 T_182c0:
 	rts
-T_182c2:
+; Vertical blank handler of the battle (animations).
+Combat_VBL:
 	tst.b	B_58aae
 	beq.w	T_18368
 	addq.w	#$1,B_5891e
@@ -3338,10 +3374,10 @@ T_18352:
 	dbra	d7,T_1832e
 	tst.w	B_589e0
 	bpl.b	T_18364
-	bsr.w	T_16676
+	bsr.w	Idle_animations
 	rts
 T_18364:
-	bsr.w	T_166d8
+	bsr.w	Attack_animation_step
 T_18368:
 	rts
 T_1836a:
@@ -3367,7 +3403,8 @@ T_18398:
 	dbra	d7,T_18396
 	movem.l	(a7)+,d6-d7/a2
 	rts
-T_183a8:
+; A random path for the particles of the spell animations (per round).
+Choose_particle_path:
 	movem.l	d0-d1/a0,-(a7)
 	jsr	Random
 	lsr.w	#$1,d0
@@ -3411,14 +3448,15 @@ T_18416:
 	moveq	#17,d7
 T_1843e:
 	move.l	(a0)+,d0
-	beq.b	T_18452
+	beq.b	Display_monsters
 	movea.l	d0,a2
 	move.w	$6(a2),d0
 	move.b	d0,(a1)+
 	move.w	$c(a2),d0
 	move.b	d0,(a1)+
 	bra.b	T_18456
-T_18452:
+; The monsters are drawn from the back row to the front row, their size depends on the row.
+Display_monsters:
 	move.w	#$ffff,(a1)+
 T_18456:
 	dbra	d7,T_1843e
@@ -3472,7 +3510,7 @@ T_184e0:
 	dbra	d2,T_184de
 	moveq	#0,d3
 	move.b	$1(a5),d3
-	bne.b	T_18500
+	bne.b	Spell_animation_frame
 	tst.w	d5
 	bmi.w	T_18590
 	move.b	(a5),d3
@@ -3480,7 +3518,8 @@ T_184e0:
 	lea.l	T_185a0(pc),a0
 	move.w	(a0,d3.w),d3
 	bra.b	T_18506
-T_18500:
+; 6 particles fly around the center of the monster.
+Spell_animation_frame:
 	tst.w	d5
 	bgt.w	T_18590
 T_18506:
@@ -3620,7 +3659,8 @@ T_18708:
 T_18728:
 	movem.l	(a7)+,d0/a0
 	rts
-T_1872e:
+; The spell of an item which was used in the inventory becomes the action of its owner.
+Item_spell_action:
 	movem.l	d0-d7/a0-a6,-(a7)
 	tst.b	No_spell_selected
 	beq.b	T_18742
@@ -3736,7 +3776,8 @@ T_188e8:
 	dc.b	$00,$00,$00,$00
 	dc.l	T_19580
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-T_18934:
+; Executes a spell in a battle (table of the spell classes behind it).
+Cast_combat_spell:
 	movem.l	d0-d7/a0-a6,-(a7)
 	lea.l	D_484a4,a0
 	move.w	Selected_class,d0
@@ -3792,11 +3833,11 @@ T_189aa:
 	dc.l	T_18d14	; ori.b #$14, d1
 	dc.l	T_18d14	; ori.b #$14, d1
 	dc.l	T_18d14	; ori.b #$14, d1
-	dc.l	T_18dba	; ori.b #$ba, d1
+	dc.l	Monster_resists	; ori.b #$ba, d1
 	dc.l	T_18e66	; ori.b #$66, d1
-	dc.l	T_18dba	; ori.b #$ba, d1
-	dc.l	T_18dba	; ori.b #$ba, d1
-	dc.l	T_18dba	; ori.b #$ba, d1
+	dc.l	Monster_resists	; ori.b #$ba, d1
+	dc.l	Monster_resists	; ori.b #$ba, d1
+	dc.l	Monster_resists	; ori.b #$ba, d1
 	dc.l	T_18f10	; ori.b #$10, d1
 	dc.l	T_18f10	; ori.b #$10, d1
 	ori.b	#$0,d0
@@ -3852,16 +3893,16 @@ T_18a82:
 	dc.l	T_1928e	; ori.b #$8e, d1
 	dc.l	T_192fa	; ori.b #$fa, d1
 T_18ada:
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_193f2	; ori.b #$f2, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
-	dc.l	T_1935e	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_sleep_spell	; ori.b #$f2, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
+	dc.l	Monster_condition_spell	; ori.b #$5e, d1
 	ori.b	#$0,d0
 	ori.b	#$0,d0
 	dc.l	T_19476	; ori.b #$76, d1
@@ -3871,7 +3912,8 @@ T_18ada:
 	dc.l	T_1959a	; ori.b #$9a, d1
 	ori.b	#$0,d0
 	ori.b	#$0,d0
-T_18b26:
+; Party spells use the spell points and probe the skill to use magic, spells of items always succeed.
+Use_spell_points:
 	movem.l	d0-d1/d7/a0-a1,-(a7)
 	moveq	#-1,d7
 	lea.l	Chard_ptrs,a0
@@ -3891,7 +3933,7 @@ T_18b26:
 	lsl.w	#$3,d0
 	adda.w	d0,a1
 	move.w	$4(a1),B_5880c
-	bsr.w	T_12040
+	bsr.w	Remove_used_magic_item
 	sf.b	B_5882f
 	moveq	#0,d7
 	bra.b	T_18bcc
@@ -3952,7 +3994,7 @@ T_18c5c:
 	dc.l	Random
 	dc.b	$c0,$fc,$00,$40,$48,$40,$06,$40,$00,$10
 T_18c6c:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18c9e
 	lea.l	B_58aee,a1
 	move.w	B_58ab8,d1
@@ -3969,7 +4011,7 @@ T_18c6c:
 T_18c9e:
 	rts
 T_18ca0:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18ce0
 	lea.l	Chard_ptrs,a1
 	moveq	#1,d7
@@ -4015,7 +4057,7 @@ T_18d14:
 	move.w	$3a(a0),d0
 	andi.w	#$e080,d0
 	bne.b	T_18d5a
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18d5a
 	move.w	Selected_spell,d0
 	subi.w	#$a,d0
@@ -4030,7 +4072,7 @@ T_18d5a:
 T_18d5c:
 	dc.b	$09,$08,$0b,$0c,$0a,$ff,$03,$00,$04,$01
 T_18d66:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18d98
 	lea.l	Chard_ptrs,a0
 	moveq	#1,d0
@@ -4057,7 +4099,8 @@ T_18d9a:
 	move.l	#Code0007Sys,B_58e5a
 	bsr.w	T_17de2
 	bra.w	T_18708
-T_18dba:
+; Monsters resist with their anti-magic, some are immune to the condition spells.
+Monster_resists:
 	lea.l	B_58aee,a0
 	move.w	B_58ab8,d1
 	subq.w	#$1,d1
@@ -4068,7 +4111,7 @@ T_18dba:
 	move.w	$2e(a2),d0
 	andi.w	#$e080,d0
 	bne.b	T_18e40
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18e40
 	move.w	$56(a1),d0
 	add.w	$aa(a1),d0
@@ -4106,7 +4149,7 @@ T_18e4c:
 	bsr.w	T_18018
 	bra.w	T_18708
 T_18e66:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18eda
 	lea.l	B_58aec,a0
 	move.w	B_58ab8,d0
@@ -4157,7 +4200,7 @@ T_18ef6:
 	bsr.w	T_18018
 	bra.w	T_18708
 T_18f10:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18f6c
 	lea.l	B_58aec,a0
 	move.w	B_58ab8,d0
@@ -4191,7 +4234,7 @@ T_18f68:
 T_18f6c:
 	rts
 T_18f6e:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18f90
 	move.w	Selected_spell,d0
 	subq.w	#$3,d0
@@ -4206,7 +4249,7 @@ T_18f92:
 T_18f94:
 	dc.b	$00,$18,$00,$0a,$00,$60,$00,$0f,$00,$c0
 T_18f9e:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18fc0
 	move.w	Selected_spell,d0
 	subq.w	#$6,d0
@@ -4221,7 +4264,7 @@ T_18fc2:
 T_18fc4:
 	dc.b	$00,$18,$00,$0a,$00,$60,$00,$0f,$00,$c0
 T_18fce:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_18ff2
 	move.w	Selected_spell,d0
 	subi.w	#$9,d0
@@ -4250,7 +4293,7 @@ T_1901a:
 	move.w	$3a(a0),d0
 	andi.w	#$e080,d0
 	bne.b	T_19054
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_19054
 	move.w	$4(a1),d0
 	bset	d0,B_58831
@@ -4260,7 +4303,7 @@ T_1901a:
 T_19054:
 	rts
 T_19056:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_19094
 	lea.l	Chard_ptrs,a0
 	moveq	#1,d0
@@ -4335,7 +4378,7 @@ T_1912e:
 	dbra	d6,T_19126
 	bra.b	T_1915e
 T_19134:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_1915e
 	lea.l	B_58aec,a0
 	move.w	B_58ab8,d0
@@ -4349,6 +4392,8 @@ T_1915a:
 	dc.b	$51,$cf,$ff,$f6
 T_1915e:
 	rts
+; Damage spells, dissolve and magic arrows on monsters.
+Damage_spell:
 	movem.l	d0-d3/a0,-(a7)
 	move.w	$2e(a2),d0
 	andi.w	#$e080,d0
@@ -4383,7 +4428,7 @@ T_191c4:
 	dc.b	$58,$40,$01,$01,$56,$f9
 	dc.l	B_58ab6
 	dc.b	$41,$f9
-	dc.l	D_2e43a
+	dc.l	Spell_damage_table
 	dc.b	$30,$39
 	dc.l	Selected_spell
 	dc.b	$c0,$fc,$00,$06,$d0,$c0,$4c,$90,$00,$0e,$94,$41,$4e,$b9
@@ -4394,6 +4439,8 @@ T_191c4:
 T_1920a:
 	movem.l	(a7)+,d0-d3/a0
 	rts
+; Black magic damage spells of monsters on the party.
+Monster_damage_spell:
 	movem.l	d0-d3/a0,-(a7)
 	move.w	$56(a1),d0
 	add.w	$aa(a1),d0
@@ -4408,7 +4455,7 @@ T_1920a:
 	bra.b	T_1926e
 T_1923c:
 	dc.b	$41,$f9
-	dc.l	D_2e43a
+	dc.l	Spell_damage_table
 	dc.b	$30,$39
 	dc.l	Selected_spell
 	dc.b	$c0,$fc,$00,$06,$d0,$c0,$4c,$90,$00,$0e,$94,$41,$4e,$b9
@@ -4425,7 +4472,7 @@ T_19274:
 	bsr.w	T_17de2
 	bra.w	T_18708
 T_1928e:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_192de
 	lea.l	B_58aee,a0
 	move.w	B_58ab8,d0
@@ -4457,7 +4504,7 @@ T_192e0:
 	bsr.w	T_18018
 	bra.w	T_18708
 T_192fa:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_1935c
 	lea.l	B_58aec,a0
 	move.w	B_58ab8,d0
@@ -4488,7 +4535,8 @@ T_19358:
 	dbra	d7,T_19318
 T_1935c:
 	rts
-T_1935e:
+; Condition spells of monsters on a random party member.
+Monster_condition_spell:
 	bsr.w	T_195e8
 	bmi.b	T_193dc
 	bsr.w	T_17d42
@@ -4522,7 +4570,8 @@ T_193dc:
 	rts
 	dc.b	$08,$0f,$09,$10,$0a,$11,$0b,$12,$0c,$13,$00,$14,$01,$15,$ff,$ff
 	dc.b	$03,$17,$04,$18
-T_193f2:
+; Sleep on the whole party.
+Monster_sleep_spell:
 	bsr.w	T_195e8
 	bmi.b	T_1945a
 	bsr.w	T_17dae
@@ -4558,7 +4607,7 @@ T_1945c:
 	bsr.w	T_17de2
 	bra.w	T_18708
 T_19476:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_194ce
 	lea.l	B_58aee,a0
 	move.w	B_58ab8,d0
@@ -4592,7 +4641,7 @@ T_194d0:
 	bsr.w	T_17f00
 	bra.w	T_18708
 T_194ea:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_1953c
 	lea.l	B_58aee,a1
 	move.w	B_58ab8,d1
@@ -4620,7 +4669,7 @@ T_19530:
 T_1953c:
 	rts
 T_1953e:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_1957e
 	lea.l	B_58aee,a1
 	move.w	B_58ab8,d1
@@ -4646,7 +4695,7 @@ T_19580:
 	bsr.w	T_17f00
 	bra.w	T_18708
 T_1959a:
-	bsr.w	T_18b26
+	bsr.w	Use_spell_points
 	bmi.b	T_195e6
 	lea.l	B_58aee,a1
 	move.w	B_58ab8,d1
@@ -4698,13 +4747,16 @@ T_19646:
 	move.w	d2,$30(a0)
 	move.l	(a7)+,d2
 	rts
+; Starts the particle animation of a spell (96 VBL).
+Start_spell_animation:
 	move.w	d0,$14(a0)
 	clr.w	$16(a0)
 	move.w	#$1,B_589e2
 	rts
-T_19660:
+; Clears irritation, sleep, panic and the fled flag, removes the group from the map, loot and experience.
+End_of_combat:
 	sf.b	Battling
-	jsr	T_02724
+	jsr	Set_spell_area
 	move.w	B_57a62,d0
 	beq.b	T_196ac
 	move.w	d0,d1
@@ -4728,7 +4780,7 @@ T_196ac:
 	move.w	$3a(a0),d0
 	andi.w	#$e406,d0
 	beq.b	T_196c2
-	jsr	T_006fe
+	jsr	Check_party_alive
 T_196c2:
 	tst.w	B_58e5e
 	beq.b	T_196d8
@@ -5546,7 +5598,7 @@ T_1a2d6:
 	clr.l	D_281f6
 	clr.l	D_28188
 	moveq	#0,d0
-	jsr	T_00f12
+	jsr	Play_song
 	lea.l	D_2fcfa,a0
 	jsr	Push_Root
 	jsr	T_1d278

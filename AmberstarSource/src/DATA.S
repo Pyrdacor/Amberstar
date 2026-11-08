@@ -8179,7 +8179,7 @@ D_2fb7a:
 	dc.l	Basic_ScrQ
 	dc.b	$00,$00,$00,$00
 	dc.l	Basic_Kev
-	dc.l	T_009a8
+	dc.l	Resurrection_sequence
 	dc.l	T_00b50
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	D_2fba8
@@ -8193,7 +8193,7 @@ D_2fbc0:
 	dc.l	Basic_ScrQ
 	dc.l	D_2fc02
 	dc.l	Basic_Kev
-	dc.l	T_00ba4
+	dc.l	Game_over_sequence
 	dc.l	T_00bd0
 	dc.l	T_00be8
 	dc.l	T_00ce2
@@ -8397,7 +8397,7 @@ D_2fff2:
 	dc.l	Feedb_off
 	dc.l	Feedb_on
 	dc.l	Draw_mouse
-	dc.l	T_182c4
+	dc.l	Combat_VBL
 	dc.b	$00,$00,$00,$00
 Combat_Mod_ScrQ:
 	dc.l	Show_updated_status_block
@@ -8416,7 +8416,7 @@ Combat_Mod:
 	dc.l	Combat_DisInit
 	dc.l	Combat_DisExit
 	dc.l	Combat_Mod_ID
-	dc.l	T_19662
+	dc.l	End_of_combat
 	dc.b	$00,$00
 Combat_Mod_ID:
 	dc.b	$43,$6f,$6d,$62,$61,$74,$20,$73,$63,$72,$65,$65,$6e,$2e,$00,$00
@@ -9106,7 +9106,7 @@ D_30f58:
 	dc.b	$42,$38,$3b,$26,$44,$45,$24,$25,$0c,$00
 	dc.l	T_16da2
 	dc.b	$00,$00,$00,$00
-	dc.l	T_16f38
+	dc.l	Monster_actions
 	dc.l	T_16c30
 	dc.l	T_15d2e
 	dc.l	T_15d4e
@@ -9203,7 +9203,8 @@ D_313be:
 	dc.b	$20,$3a,$20,$00
 D_313c2:
 	dc.b	$3a,$0d
-D_313c4:
+; Black spells: 6 bytes per spell (minimum, maximum, animation) behind an unused entry with the immunity bits of the elements.
+Spell_damage_table:
 	dc.b	$00,$00
 D_313c6:
 	dc.b	$00,$02,$01,$03,$00,$01,$00,$02,$00,$0c,$00,$02,$00,$04,$00,$07
@@ -9294,7 +9295,8 @@ D_316b9:
 	dc.b	$54,$68,$61,$74,$27,$73,$20,$69,$74,$21,$20,$4e,$6f,$20,$6d,$6f
 	dc.b	$72,$65,$20,$27,$53,$43,$48,$4e,$49,$53,$4d,$27,$73,$20,$21,$21
 	dc.b	$21,$00,$00
-D_316dc:
+; Pointers to the music modules of the songs 1-19 (several songs use the same module).
+Song_table:
 	dc.l	D_4da4e
 	dc.l	D_4e060
 	dc.l	D_4e5fc

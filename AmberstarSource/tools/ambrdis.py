@@ -29,6 +29,7 @@ MODULE_ORDER = ['MAIN/TEST.ASM', 'MAIN/STATUS.ASM', 'MAIN/MAP/MAP.ASM', 'MAIN/MA
 # optional SYMBOLS.txt with the names of the original source
 symbol_names = {}
 file_of_addr = {}
+symbol_comments = {}
 for x in sys.argv[3:]:
     if x.endswith('.txt'):
         for l in open(x):
@@ -36,6 +37,7 @@ for x in sys.argv[3:]:
             c = l.rstrip('\n').split('\t')
             symbol_names.setdefault(int(c[0], 16), []).append(c[2].replace('.', '_'))
             if len(c) > 3 and c[3] and '.' not in c[2]: file_of_addr.setdefault(int(c[0], 16), c[3])
+            if len(c) > 5 and c[5]: symbol_comments.setdefault(int(c[0], 16), c[5])
 for x in sys.argv[3:]:
     if x.endswith('.json') and os.path.exists(x + '.names.txt'):
         for l in open(x + '.names.txt'):
@@ -218,7 +220,8 @@ def section_of(t):
 def name(t): return symbol_names[t][0] if t in symbol_names else '%s_%05x' % (section_of(t), t)
 def label_lines(t):
     # all names of an address (the first one is used for references)
-    return [n + ':' for n in symbol_names.get(t, [])] or [name(t) + ':']
+    comment = ['; ' + symbol_comments[t]] if t in symbol_comments else []
+    return comment + ([n + ':' for n in symbol_names.get(t, [])] or [name(t) + ':'])
 
 # a label must be at a boundary of an instruction; inside one it becomes an expression
 inside = {}

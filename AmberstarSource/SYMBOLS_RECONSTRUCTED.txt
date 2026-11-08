@@ -1,0 +1,69 @@
+# Names which are not in the original source (reconstructed) and corrections of found names.
+# Address (German version)	Name (a leading - removes a wrong name)	File	Comment
+# ---- corrections
+02754	-Set_spell_area
+02724	Set_spell_area	MAIN/MAP/MAP.ASM
+# ---- music (not part of the original source)
+00f12	Play_song	MAIN/TEST.ASM	Plays the song in d0 (1-19, 0 stops the music, 20 and more are ignored). The current song is in Current_song.
+02754	Set_map_music	MAIN/MAP/MAP.ASM	Plays the song of the map: on the world map (maps 1-64) the song of the travel mode, otherwise the song of the map data (byte 6).
+1a88e	Coso_player	MAIN/COMBAT.ASM	Entry of the COSO music player by Jochen Hippel: d0 = 0 init, 1 play module a0.
+# ---- party death (Docs/Combat.md)
+006fe	Check_party_alive	MAIN/TEST.ASM	If no member can be the active member, a battle ends or the party is dead (Shandra's rescue or game over).
+009a8	Resurrection_sequence	MAIN/TEST.ASM	Shandra rescues the party once: song 19, next day 7:20, map 70 at 16,13, conditions cleared, hit points filled.
+00ba4	Game_over_sequence	MAIN/TEST.ASM	Song 19, the message of the dead party, then the game restarts.
+# ---- items in battles (Docs/Combat.md)
+11ed4	Use_item_in_combat	MAIN/INVENT.ASM	The spell of an item must work in battles. The inventory is closed and the spell becomes the action of the owner.
+12042	Remove_used_magic_item	MAIN/INVENT.ASM	Removes a charge of a magic item or the item itself.
+1212a	Show_item_sparkle	MAIN/INVENT.ASM	The item sparkles in its slot (8 frames of 3 vertical blanks).
+# ---- combat (Docs/Combat.md of Amberstar.net, COMBAT.ASM is only a stub in the original source)
+1605c	Show_damage	MAIN/COMBAT.ASM	Shows the damage of a participant in its tactical cell (monsters for 100 VBL, party members for 70 VBL).
+162ac	Get_move_targets	MAIN/COMBAT.ASM	The free neighbour cells in the party rows which no other member wants to move to.
+1634c	Get_melee_targets	MAIN/COMBAT.ASM	Melee attacks only from the front row against the cell in front or diagonal in front. Ranged weapons reach every monster.
+163e2	Blink_markers	MAIN/COMBAT.ASM	The markers on the tactical battle field blink.
+16492	Draw_grid_frame	MAIN/COMBAT.ASM	A frame on the grid lines around a cell.
+16578	Draw_cell_frame	MAIN/COMBAT.ASM	A frame inside of a cell.
+1654e	Cross_lines	MAIN/COMBAT.ASM	The lines of the cross (y offset, x offset, width).
+1656c	Draw_cell_cross	MAIN/COMBAT.ASM	A cross inside of a cell.
+165c2	Draw_damage_digits	MAIN/COMBAT.ASM	3 digits (leading zeros) of a 4x5 font at the top left of the lower half of the tactical cell.
+16678	Idle_animations	MAIN/COMBAT.ASM	While the actions are chosen, random participants show their frames (not stunned or sleeping ones).
+166da	Attack_animation_step	MAIN/COMBAT.ASM	Next frame of the attack animation of a monster.
+16766	Start_attack_animation	MAIN/COMBAT.ASM	A monster which attacks or casts a spell shows the frames 1 to count-1 and back to 0.
+167aa	Wait_for_animation	MAIN/COMBAT.ASM	The next action waits until the animation is finished.
+16a66	Prepare_party_actions	MAIN/COMBAT.ASM	Resets the actions for the next round and chooses the actions of members which can't act on their own.
+16b14	Panic_action	MAIN/COMBAT.ASM	Panicking members flee from the back row or move back.
+16b9a	Mad_action	MAIN/COMBAT.ASM	Mad members attack, flee or move randomly.
+16f38	Monster_actions	MAIN/COMBAT.ASM	Chooses the actions of the monsters (before the party actions are added).
+16fe0	Choose_monster_action	MAIN/COMBAT.ASM	Morale, retreat, advance, spells and attacks of a monster.
+1706e	Monster_retreat	MAIN/COMBAT.ASM	Monsters flee from the back row and move back otherwise.
+170aa	Monster_move_to_row	MAIN/COMBAT.ASM	The monster moves to a row: to the same column or one beside it.
+170fa	Monster_attack	MAIN/COMBAT.ASM	Spells, ranged attacks or melee attacks of a monster.
+172f4	Execute_round	MAIN/COMBAT.ASM	Executes the actions of a round, the fastest participant first.
+1733c	Set_success_factor	MAIN/COMBAT.ASM	Diseases, irritation and blindness lower the chance to hit.
+17392	Remove_dead_participants	MAIN/COMBAT.ASM	Dead monsters and dead or petrified party members leave the battle field.
+17432	Check_party_left	MAIN/COMBAT.ASM	The battle ends if no party member is left on the battle field.
+174bc	End_of_round	MAIN/COMBAT.ASM	Moves are not kept. If the front row of the party is empty, the back row moves to the front.
+175c4	Random_party_target	MAIN/COMBAT.ASM	A random cell of a party member.
+1768a	Flee	MAIN/COMBAT.ASM	Dexterity and luck against a random value below 150.
+17734	Execute_attacks	MAIN/COMBAT.ASM	Executes the attacks of a participant (attacks per round, doubled by haste).
+177e0	Attack_once	MAIN/COMBAT.ASM	One attack: hit, parry, damage and the ammunition of ranged weapons.
+17b44	Execute_spell_action	MAIN/COMBAT.ASM	A spell of a participant or of an item.
+17ba4	Show_spell_result	MAIN/COMBAT.ASM	The name of the spell is shown first, the result after the effects of the spell.
+18280	Sort_action_list	MAIN/COMBAT.ASM	Stable bubble sort of the action list by the initiative (speed and its bonus).
+182c4	Combat_VBL	MAIN/COMBAT.ASM	Vertical blank handler of the battle (animations).
+183aa	Choose_particle_path	MAIN/COMBAT.ASM	A random path for the particles of the spell animations (per round).
+18454	Display_monsters	MAIN/COMBAT.ASM	The monsters are drawn from the back row to the front row, their size depends on the row.
+18502	Spell_animation_frame	MAIN/COMBAT.ASM	6 particles fly around the center of the monster.
+18730	Item_spell_action	MAIN/COMBAT.ASM	The spell of an item which was used in the inventory becomes the action of its owner.
+18936	Cast_combat_spell	MAIN/COMBAT.ASM	Executes a spell in a battle (table of the spell classes behind it).
+18b28	Use_spell_points	MAIN/COMBAT.ASM	Party spells use the spell points and probe the skill to use magic, spells of items always succeed.
+18dbc	Monster_resists	MAIN/COMBAT.ASM	Monsters resist with their anti-magic, some are immune to the condition spells.
+19162	Damage_spell	MAIN/COMBAT.ASM	Damage spells, dissolve and magic arrows on monsters.
+19212	Monster_damage_spell	MAIN/COMBAT.ASM	Black magic damage spells of monsters on the party.
+19360	Monster_condition_spell	MAIN/COMBAT.ASM	Condition spells of monsters on a random party member.
+193f4	Monster_sleep_spell	MAIN/COMBAT.ASM	Sleep on the whole party.
+19650	Start_spell_animation	MAIN/COMBAT.ASM	Starts the particle animation of a spell (96 VBL).
+19662	End_of_combat	MAIN/COMBAT.ASM	Clears irritation, sleep, panic and the fled flag, removes the group from the map, loot and experience.
+# ---- data of the music and the combat
+5bee2	Current_song	MAIN/TEST.ASM	The song which is played (see Play_song).
+316dc	Song_table	MAIN/TEST.ASM	Pointers to the music modules of the songs 1-19 (several songs use the same module).
+313c4	Spell_damage_table	MAIN/COMBAT.ASM	Black spells: 6 bytes per spell (minimum, maximum, animation) behind an unused entry with the immunity bits of the elements.

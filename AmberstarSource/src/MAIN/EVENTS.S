@@ -209,7 +209,7 @@ T_07d7e:
 	movea.l	Current_active_char_data,a0
 	btst	#$2,$3a(a0)
 	beq.b	T_07d9c
-	bsr.w	T_006fe
+	bsr.w	Check_party_alive
 T_07d9c:
 	movea.l	(a7)+,a0
 T_07d9e:
@@ -281,7 +281,7 @@ Do_damage:
 	clr.w	$86(a0)
 	tst.b	Battling
 	bne.b	T_07e62
-	bsr.w	T_006fe
+	bsr.w	Check_party_alive
 	bra.b	T_07e82
 T_07e62:
 	moveq	#0,d2
@@ -2528,7 +2528,7 @@ T_09cb2:
 T_09cb4:
 	jsr	T_0025a
 	moveq	#13,d0
-	jsr	T_00f12
+	jsr	Play_song
 	lea.l	D_321b1,a0
 	jsr	T_1b788
 	move.l	a0,B_600d2
@@ -2553,7 +2553,7 @@ T_09d1e:
 	jsr	Free_memory
 	movea.l	B_600d6,a0
 	jsr	Free_memory
-	bsr.w	Set_spell_area
+	bsr.w	Set_map_music
 	rts
 T_09d44:
 	move.l	B_600d6,Textfile_ptr
@@ -2759,7 +2759,7 @@ T_0a00a:
 	movea.l	Current_active_char_data,a0
 	clr.w	$86(a0)
 	bset	#$6,$3a(a0)
-	jsr	T_006fe
+	jsr	Check_party_alive
 	bra.w	T_0a18e
 T_0a05c:
 	move.w	B_5b24c,d0
@@ -2827,7 +2827,7 @@ T_0a134:
 	addq.l	#$4,a0
 	dbra	d7,T_0a100
 	moveq	#6,d0
-	jsr	T_00f12
+	jsr	Play_song
 	moveq	#3,d0
 	bsr.w	T_0a220
 	bset	#$1,B_5c36b

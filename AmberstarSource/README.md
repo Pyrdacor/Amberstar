@@ -18,8 +18,8 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 576 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
-| 4. Missing parts (combat, music, …) reconstructed with names and comments | open |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 577 routines of the original source, 131 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
+| 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 60 reconstructed names with comments (`SYMBOLS_RECONSTRUCTED.txt`), the code is still the disassembly |
 
 ## The program file
 
@@ -88,7 +88,15 @@ python ambrdis.py <inner program> <named.s> SYMBOLS.txt
   generic call), which makes short routines distinct.
 * An address can have several names. The first one is used for references, the others are additional labels.
 
-Names which are not in the original source (e.g. the music) will be added in step 4.
+Names which are not in the original source are in `SYMBOLS_RECONSTRUCTED.txt` (addresses of the German version):
+the music (`Play_song`, `Set_map_music`, `Coso_player`, `Current_song`, `Song_table`), the death of the party, the
+items in battles and about 55 routines of the combat (`Get_melee_targets`, `Flee`, `Execute_attacks`, `End_of_combat`, …).
+They come from the notes of the Amberstar.net project (its `Docs/Combat.md` and the comments of its code) and have a
+comment which is written in front of the label. The file also corrects names which were found at a wrong address
+(e.g. `Set_spell_area` was found at the start of `Set_map_music`, because the shipped program calls the new music
+routine where the original source calls `Set_spell_area`). `tools/overrides.py` applies it to a `SYMBOLS` file; for the
+English version the addresses are found by the bytes of the German program (and by the references for tables).
+In `SYMBOLS.txt` these names have an `R` instead of the number of votes.
 
 ## The merged source (`src/`, `src_english/`)
 
@@ -118,6 +126,7 @@ and the constants of the other modules).
 ```
 python ambrdis.py <inner program> plain.s                          (also writes plain.s.code.tsv)
 python symmatch.py <original src folder> plain.s.code.tsv SYMBOLS.txt <inner program>
+python overrides.py SYMBOLS.txt SYMBOLS_RECONSTRUCTED.txt <German inner program> <inner program>
 python ambrdis.py <inner program> named.s SYMBOLS.txt              (also writes named.s.code.tsv)
 python merge.py <original src folder> <inner program> SYMBOLS.txt <vasm> merge.json plain.s.code.tsv named.s.code.tsv
 python ambrdis.py <inner program> merged.s SYMBOLS.txt merge.json merge.json.constants.i --split=src

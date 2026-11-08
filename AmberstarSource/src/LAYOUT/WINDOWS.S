@@ -221,7 +221,8 @@ T_1a882:
 	jsr	Mouse_on
 	movem.l	(a7)+,d0-d1/d6-d7/a0-a1/a6
 	rts
-T_1a88e:
+; Entry of the COSO music player by Jochen Hippel: d0 = 0 init, 1 play module a0.
+Coso_player:
 	bra.w	T_1a8ba
 	bra.w	T_1a8c8
 T_1a896:

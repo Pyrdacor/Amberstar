@@ -53,7 +53,7 @@ T_0002c:
 	move.w	#$ffff,Music_block
 T_000d6:
 	moveq	#0,d0
-	bsr.w	T_00f12
+	bsr.w	Play_song
 	lea.l	D_32c84,a0
 	jsr	Push_Root
 	movea.l	Off_screen,a6
@@ -298,7 +298,7 @@ T_00440:
 	move.w	d0,Travel_mode
 	cmpi.b	#$1,Current_map_type
 	bne.b	T_00454
-	bsr.w	Set_spell_area
+	bsr.w	Set_map_music
 T_00454:
 	cmpi.w	#$5,d0
 	smi.b	D_1e1fc
@@ -544,7 +544,8 @@ Display_magic:
 	jsr	Blot_masked_block
 	movem.l	(sp)+,d0/d1/d6/d7/a0
 	rts	
-T_006fe:
+; If no member can be the active member, a battle ends or the party is dead (Shandra's rescue or game over).
+Check_party_alive:
 	movem.l	d0-d1/d7/a0-a1,-(a7)
 	jsr	Exit_display
 	lea.l	Chard_ptrs,a0
@@ -719,7 +720,8 @@ Options_DisExit:
 	lea.l	Hbl_Lay6_list,a0
 	jsr	Update_HBL
 	rts	
-T_009a8:
+; Shandra rescues the party once: song 19, next day 7:20, map 70 at 16,13, conditions cleared, hit points filled.
+Resurrection_sequence:
 	bsr.w	T_0025a
 	moveq	#19,d0
 	lea.l	B_5c31c,a0
@@ -834,10 +836,11 @@ T_00b72:
 	bne.b	T_00b72
 	lea.l	D_33392,a0
 	jmp	Update_HBL
-T_00ba4:
+; Song 19, the message of the dead party, then the game restarts.
+Game_over_sequence:
 	bsr.w	T_0025a
 	moveq	#19,d0
-	bsr.w	T_00f12
+	bsr.w	Play_song
 	moveq	#18,d0
 	lea.l	B_5c31c,a0
 	jsr	Load_80x80_picture
@@ -1057,15 +1060,16 @@ T_00f08:
 	dbra	d7,T_00efe
 	movem.l	(a7)+,d0-d2/d7/a0
 	rts
-T_00f12:
+; Plays the song in d0 (1-19, 0 stops the music, 20 and more are ignored). The current song is in Current_song.
+Play_song:
 	movem.l	d0-d1/a0,-(a7)
 	tst.w	d0
 	bne.b	T_00f32
 	lea.l	D_4da4e,a0
 	moveq	#0,d0
 	moveq	#1,d1
-	jsr	T_1a88e
-	move.w	d0,B_5bee2
+	jsr	Coso_player
+	move.w	d0,Current_song
 	bra.b	T_00f9a
 T_00f32:
 	cmpi.w	#$14,d0
@@ -1074,22 +1078,22 @@ T_00f32:
 	jsr	DI_Error
 	bra.b	T_00f9a
 T_00f46:
-	cmp.w	B_5bee2,d0
+	cmp.w	Current_song,d0
 	beq.b	T_00f9a
-	move.w	d0,B_5bee2
+	move.w	d0,Current_song
 	move.l	d0,-(a7)
 	lea.l	D_4da4e,a0
 	moveq	#0,d0
 	moveq	#1,d1
-	jsr	T_1a88e
+	jsr	Coso_player
 	move.l	(a7)+,d0
-	lea.l	D_316dc,a0
+	lea.l	Song_table,a0
 	add.w	d0,d0
 	add.w	d0,d0
 	movea.l	-$4(a0,d0.w),a0
 	moveq	#1,d0
 	moveq	#1,d1
-	jsr	T_1a88e
+	jsr	Coso_player
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	andi.b	#$f0,$fffffa1d.w

@@ -645,26 +645,28 @@ Update_map_CIL:
 .Exit:
 	movem.l	(sp)+,a0/a1
 	rts	
-T_02724:
-	movem.l	d0/a0,-(a7)
-	movea.l	Mapd_ptr,a0
-	move.b	$5(a0),d0
-	btst	#$5,d0
-	beq.b	T_0273c
-	moveq	#0,d0
-	bra.b	T_02748
-T_0273c:
-	btst	#$6,d0
-	beq.b	T_02746
-	moveq	#1,d0
-	bra.b	T_02748
-T_02746:
-	moveq	#2,d0
-T_02748:
-	move.w	d0,Spell_area_type
-	movem.l	(a7)+,d0/a0
-	rts
+; ---- Set_spell_area (original source: MAIN/MAP/MAP.ASM)
 Set_spell_area:
+	movem.l	d0/a0,-(sp)
+	movea.l	Mapd_ptr,a0
+	move.b	Map_special(a0),d0
+	btst	#5,d0
+	beq.s	.No_W
+	moveq.l	#0,d0
+	bra.s	.Exit
+.No_W:
+	btst	#6,d0
+	beq.s	.No_C
+	moveq.l	#1,d0
+	bra.s	.Exit
+.No_C:
+	moveq.l	#2,d0
+.Exit:
+	move.w	d0,Spell_area_type
+	movem.l	(sp)+,d0/a0
+	rts	
+; Plays the song of the map: on the world map (maps 1-64) the song of the travel mode, otherwise the song of the map data (byte 6).
+Set_map_music:
 	movem.l	d0/a0,-(a7)
 	movea.l	Mapd_ptr,a0
 	cmpi.w	#$41,Map_nr
@@ -678,6 +680,6 @@ T_0277c:
 	moveq	#0,d0
 	move.b	$6(a0),d0
 T_02782:
-	bsr.w	T_00f12
+	bsr.w	Play_song
 	movem.l	(a7)+,d0/a0
 	rts

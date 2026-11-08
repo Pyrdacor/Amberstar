@@ -2324,7 +2324,7 @@ Camp_DisUpd:
 Camp_ModInit:
 	jsr	T_0025a
 	moveq	#17,d0
-	jsr	T_00f12
+	jsr	Play_song
 	sf.b	Slept
 	moveq	#1,d0
 	lea.l	D_2902e,a0
@@ -2335,7 +2335,7 @@ Camp_ModInit:
 Camp_ModExit:
 	movea.l	Pic80_ptr,a0
 	jsr	Free_memory
-	jsr	Set_spell_area	; CHANGE: added
+	jsr	Set_map_music	; CHANGE: added
 	bra.w	Fadeout_lay3
 ; ---- Camp_DisInit (original source: MAIN/EYE.ASM)
 Camp_DisInit:
@@ -2589,7 +2589,7 @@ T_100f2:
 	bne.b	T_10148
 	clr.w	Active_member
 	bsr.w	Exit_display
-	jsr	T_006fe
+	jsr	Check_party_alive
 T_10148:
 	addq.l	#$4,a0
 	addq.w	#$1,d7

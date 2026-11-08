@@ -170,7 +170,7 @@ Every_year:
 	cmp.w	Active_member,d7
 	bne.s	.Next
 ; CHANGE: removed "clr.w Active_member"
-	bsr.w	T_006fe	; CHANGE: was "jsr Exit_display"
+	bsr.w	Check_party_alive	; CHANGE: was "jsr Exit_display"
 ; CHANGE: removed "move.l a0,-(sp)"
 ; CHANGE: removed "Push Module,ActSel_Mod"
 ; CHANGE: removed "Push Module,ActSel_Mod"

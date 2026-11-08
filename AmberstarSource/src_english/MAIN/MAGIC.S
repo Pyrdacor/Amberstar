@@ -23,7 +23,7 @@ T_13812:
 T_1381e:
 	move.w	d0,Active_member
 T_13824:
-	bsr.w	T_1872e
+	bsr.w	Item_spell_action
 	tst.b	Magic_object_flag
 	beq.b	T_1384e
 	move.w	B_5883e,d0
@@ -160,7 +160,7 @@ T_13a4c:
 	move.b	Object_slot_number,d0
 	ext.w	d0
 	move.w	d0,B_5880c
-	bsr.w	T_12040
+	bsr.w	Remove_used_magic_item
 T_13a68:
 	sf.b	B_5882f
 	moveq	#0,d0
@@ -854,7 +854,7 @@ T_143e2:
 	move.b	B_58832,d0
 	moveq	#0,d2
 	move.b	(a2),d2
-	bsr.w	T_12128
+	bsr.w	Show_item_sparkle
 	move.b	B_58832,Object_slot_number
 	lea.l	D_281ce,a0
 	move.l	#T_1441a,$28(a0)
@@ -1691,7 +1691,7 @@ T_14ee6:
 	move.b	B_58832,d0
 	moveq	#0,d2
 	move.b	(a2),d2
-	bsr.w	T_12128
+	bsr.w	Show_item_sparkle
 	bsr.w	Pop_Module
 T_14efe:
 	rts
@@ -1761,7 +1761,7 @@ T_14fae:
 	adda.w	d1,a2
 	moveq	#0,d2
 	move.b	(a2),d2
-	bsr.w	T_12128
+	bsr.w	Show_item_sparkle
 	tst.b	(a1)
 	bne.b	T_14ff6
 	move.b	Object_slot_number,d0
@@ -2003,7 +2003,7 @@ T_15356:
 	bne.b	T_15356
 	lsr.w	#$8,d0
 	beq.b	T_1536e
-	jsr	T_00f12
+	jsr	Play_song
 	bsr.w	T_15370
 T_1536e:
 	rts
@@ -2013,7 +2013,7 @@ T_15370:
 	move.w	#$20,d2
 	move.w	#$55,d3
 	moveq	#1,d4
-	move.w	B_58eb0,d5
+	move.w	Current_song,d5
 	moveq	#9,d7
 T_1538e:
 	move.w	d2,d0

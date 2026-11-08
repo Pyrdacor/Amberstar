@@ -1387,7 +1387,7 @@ T_11e80:
 	move.b	(a3),d0
 	move.w	Spell_area_type,d1
 	btst	d1,d0
-	bne.b	T_11ed4
+	bne.b	Use_item_in_combat
 	movea.l	Textfile_ptr,a1
 	move.w	#$0,WText_nr
 	move.l	#Code0007Sys,Textfile_ptr
@@ -1395,7 +1395,8 @@ T_11e80:
 	bsr.w	Push_Module
 	move.l	a1,Textfile_ptr
 	rts
-T_11ed4:
+; The spell of an item must work in battles. The inventory is closed and the spell becomes the action of the owner.
+Use_item_in_combat:
 	tst.b	Battling
 	beq.b	T_11ee4
 	bsr.w	Pop_Module
@@ -1492,7 +1493,8 @@ Destroy_used_item:
 	bsr.w	Show_item_destruction
 	movem.l	(sp)+,d0-d3/a3
 	rts	
-T_12042:
+; Removes a charge of a magic item or the item itself.
+Remove_used_magic_item:
 	movem.l	d0-d1/a0-a2/a5-a6,-(a7)
 	movea.l	B_5b840,a0
 	lea.l	$21(a0),a1
@@ -1550,7 +1552,7 @@ T_120ee:
 	move.w	B_5b83e,d0
 	moveq	#0,d2
 	move.b	(a2),d2
-	bsr.w	T_1212a
+	bsr.w	Show_item_sparkle
 	tst.b	(a1)
 	bne.b	T_12124
 	move.w	B_5b83e,d0
@@ -1561,7 +1563,8 @@ T_120ee:
 T_12124:
 	movem.l	(a7)+,d0-d1/a0-a2/a5-a6
 	rts
-T_1212a:
+; The item sparkles in its slot (8 frames of 3 vertical blanks).
+Show_item_sparkle:
 	movem.l	d0-d2/d7/a0-a4/a6,-(a7)
 	lea.l	D_30bf0,a1
 	add.w	d0,d0
