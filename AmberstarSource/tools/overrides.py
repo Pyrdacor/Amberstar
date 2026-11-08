@@ -29,6 +29,10 @@ def pattern(img, relocs, a, n=24):
     mask = set()
     for r in range(a - 3, a + n):
         if r in relocs: mask.update(range(r, r + 4))
+    # the displacements of word branches (bra.w/bsr.w/bcc.w) differ when code between moved
+    if a < len(img):
+        for x in range(a, min(a + n, len(img) - 1), 2):
+            if img[x] & 0xf0 == 0x60 and img[x + 1] == 0: mask.update((x + 2, x + 3))
     return [(None if x in mask else img[x]) for x in range(a, min(a + n, len(img)))]
 
 def translate_code(a):

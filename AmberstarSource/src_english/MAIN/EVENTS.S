@@ -1414,19 +1414,19 @@ T_08a34:
 	dc.b	$61,$00,$7e,$ba
 .l_08ab8:
 	rts
-T_08aba:
-	bsr.w	Restore_coords
-	bsr.w	Exit_display
-	bsr.w	Pop_Module
-	bra.w	Init_display
 
-; ---- Chest_exit (original source: MAIN/EVENTS.ASM) - not found in the shipped program, the original source is older, not assembled:
+; ---- Chest_exit (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
 ;Chest_exit:
 ;             Restore_coords
 ;             jsr       Exit_display
 ;             Pop       Module
 ;             jmp       Init_display
 
+Chest_exit:
+	bsr.w	Restore_coords
+	bsr.w	Exit_display
+	bsr.w	Pop_Module
+	bra.w	Init_display
 ; ---- Init_chest (original source: MAIN/EVENTS.ASM)
 Init_chest:
 	movem.l	d0-d2/d7/a0,-(sp)
@@ -3882,7 +3882,7 @@ ClosedChest_CIL:
 	dc.b	$0f,$20,$1e,$0d,$a3,$a1,$0e,$92,$b2,$00
 	dc.l	Pick_lock_DOOR
 	dc.l	Use_item_CHEST
-	dc.l	T_08aba
+	dc.l	Chest_exit
 	dc.l	Find_trap_DOOR
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_08332
@@ -3890,7 +3890,7 @@ ClosedChest_CIL:
 OpenedChest_CIL:
 	dc.b	$8f,$a0,$1e,$8d,$23,$21,$8e,$12,$32,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
-	dc.l	T_08aba
+	dc.l	Chest_exit
 	dc.b	$00,$00,$00,$00
 	dc.l	T_08f2c
 	dc.l	T_08f8a
