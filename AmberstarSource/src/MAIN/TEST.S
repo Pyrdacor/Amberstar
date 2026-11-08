@@ -4,7 +4,7 @@
 
 	dc.w	$a00a
 	movea.l	$4(a7),a0
-	move.l	a0,B_5eed6
+	move.l	a0,Basepage
 	lea.l	$80(a0),a0
 	move.b	(a0)+,d0
 	bne.b	T_00022
@@ -22,21 +22,21 @@ T_00022:
 	cmpm.b	(a0)+,(a1)+
 	bne.b	T_00014
 	dbra	d0,.l_0002c
-	move.l	a7,B_5eeda
+	move.l	a7,Old_usp
 	lea.l	Icondata_ptr,a7
 	clr.l	-(a7)
 	move.w	#$20,-(a7)
 	trap	#$1
 	addq.l	#$6,a7
-	move.l	d0,B_5eede
+	move.l	d0,Old_ssp
 	lea.l	B_5fee2,a7
 	jsr	Init_DI_print
-	jsr	T_1c9b0
+	jsr	Save_computer
 	jsr	Init_computer
-	movea.l	B_5eed6,a0
-	jsr	T_1d192
+	movea.l	Basepage,a0
+	jsr	Init_memory
 	jsr	Init_kbd
-	jsr	T_1b63e
+	jsr	Init_file
 	jsr	HBL_on
 	jsr	Mouse_on
 	move.b	#$dd,d0
@@ -75,6 +75,55 @@ T_000d6:
 	jsr	Copy_screen
 	bsr.w	DoAutoIcon
 	bsr.w	Init_map
+
+; ---- Supervisor (original source: MAIN/TEST.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Supervisor:
+;             move.l    sp,Old_ssp
+;             lea.l     My_super_stack,sp
+;
+;             jsr       Save_computer        ; Save system settings
+;             jsr       Init_computer        ; System initialize
+;             jsr       Init_gfx
+;             jsr       Init_kbd
+;             jsr       Init_DI_print
+;             jsr       Init_file
+;             jsr       HBL_on
+;             jsr       Mouse_on
+;
+;;*****************************************************************************
+;
+;             Push      PA,Standard_PA
+;             jsr       Init_dictionary
+;             jsr       Restore_game
+;
+;             lea.l     Place_dat,a0         ; Calculate pointer to place
+;             move.w    (a0)+,d0             ; texts
+;             mulu.w    #24,d0
+;             adda.w    d0,a0
+;             move.l    a0,Placetext_ptr
+;
+;             jsr       Show_status_block    ; Show status block
+;             Update_screen
+;
+;             Push      Root,Main_root       ; Initialize object tree
+;
+;;*****************************************************************************
+;
+;             .IF Debug
+;;ori.w      #$0030,Special_item_flags
+;
+;             tst.w     Number
+;             beq.s     .Skip
+;             move.w    #7,Map_Xcoord
+;             move.w    #7,Map_Ycoord
+;             move.w    Number,Map_nr
+;.Skip:       .ENDIF
+;
+;             jsr       DoAutoIcon
+;             jsr       Update_status_block
+;             Push      Module,Buffer_Mod
+;             jsr       Init_map
+
 ; ---- Main_loop (original source: MAIN/TEST.ASM)
 Main_loop:
 	move.w	#0,Draw_Cicon
@@ -87,14 +136,45 @@ Main_loop:
 .Skip:
 	jsr	Switch_screen
 	bra.s	Main_loop
-Exit_all:
+
+; ---- Exit_program (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Exit_program:
+;             jsr       Restore_computer
+;             movea.l   Old_ssp,sp
+;             rts
+;
+;;*****************************************************************************
+;; Included files
+;;*****************************************************************************
+;
+;             .IF Debug=1
+;             .INCLUDE 'STATUS.IS'
+;             .ENDIF
+;             .INCLUDE 'MAP.IS'
+;             .INCLUDE 'TIME.IS'
+;             .INCLUDE 'LAYOUT.IS'
+;             .INCLUDE 'WORDS.IS'
+;             .INCLUDE 'EVENTS.IS'
+;             .INCLUDE 'EYE.IS'
+;             .INCLUDE 'MODCON.IS'
+;             .INCLUDE 'MODULES.IS'
+;             .INCLUDE 'INVENT.IS'
+;             .INCLUDE 'MAGIC.IS'
+;             .INCLUDE 'COMBAT.IS'
+;
+;;*****************************************************************************
+;; Subroutines
+;;*****************************************************************************
+;             .TEXT
+
+Exit_program:
 	move.l	#$700ff00,$ffff8800.w
 	jsr	Restore_computer
-	move.l	B_5eede,-(a7)
+	move.l	Old_ssp,-(a7)
 	move.w	#$20,-(a7)
 	trap	#$1
 	addq.l	#$6,a7
-	movea.l	B_5eeda,a7
+	movea.l	Old_usp,a7
 	dc.w	$a009
 	move.w	B_5c344,-(a7)
 	move.w	#$4c,-(a7)
@@ -192,6 +272,12 @@ Restore_game:
 	move.l	-4(a0,d0.w),Current_active_char_data
 	movem.l	(sp)+,d0/d7/a0-a2
 	rts	
+
+; ---- Constant_logic (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Constant_logic:
+;
+;             rts
+
 ; ---- Load_party_data (original source: MAIN/TEST.ASM)
 Load_party_data:
 	movem.l	d0/d7/a0/a1,-(sp)
@@ -224,6 +310,25 @@ Load_party_data:
 	jsr	Kill_memory
 	movem.l	(sp)+,d0/d7/a0/a1
 	rts	
+
+; ---- Init_modifications (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Init_modifications:
+;             movem.l   d0/a0/a1,-(sp)
+;             move.l    #Max_mods,d0         ; Allocate modification buffer
+;             mulu.w    #6,d0
+;             jsr       Allocate_memory
+;             move.l    a1,Modifications_ptr ; Store
+;             moveq.l   #0,d0
+;.Again:      tst.w     (a0)                 ; End of list ?
+;             beq.s     .Exit
+;             move.l    (a0)+,(a1)+          ; Copy info
+;             move.w    (a0)+,(a1)+
+;             addq.w    #1,d0                ; Count
+;             bra.s     .Again
+;.Exit:       move.w    d0,Nr_of_modifications     ; Store
+;             movem.l   (sp)+,d0/a0/a1
+;             rts
+
 Init_modifications:
 	movem.l	d0/a0-a1,-(a7)
 	move.l	#$200,d0
@@ -291,6 +396,25 @@ Enter_modification:
 .Exit:
 	movem.l	(sp)+,d7/a0
 	rts	
+
+; ---- Set_new_travel_mode (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Set_new_travel_mode:
+;             move.l    d0,-(sp)
+;             cmpi.w    #6,d0                ; In range ?
+;             bls.s     .Ok
+;             ERROR     "[ Set_new_travel_mode ] : Input out of range !!!"
+;             bra.s     .Exit
+;.Ok:         move.w    d0,Travel_mode       ; Store
+;             cmpi.w    #5,d0                ; Re-evaluate shadow
+;             smi       Shadow_flag
+;             add.w     d0,d0                ; Set new movement speed
+;             move.w    .Move_speed_table(pc,d0.w),Move_speed
+;             move.w    #1,Move_count
+;.Exit:       move.l    (sp)+,d0
+;             rts
+;
+;.Move_speed_table:     .DC.w 4,8,6,8,4,12,12
+
 Set_new_travel_mode:
 	move.l	d0,-(a7)
 	cmpi.w	#$7,d0
@@ -339,6 +463,24 @@ Member_left:
 	move.l	-4(a0,d1.w),Current_active_char_data
 .Exit:
 	rts	
+
+; ---- Member_right (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Member_right:
+;             movem.l   d0/a0,-(sp)
+;             andi.l    #$0000ff00,d0        ; Get member number
+;             beq.s     .Exit
+;             lsr.w     #6,d0
+;             lea.l     Chard_ptrs-4,a0      ; Any character there ?
+;             adda.w    d0,a0
+;             tst.l     (a0)
+;             beq       .Exit
+;             movea.l   (a0),a0
+;             move.l    a0,Current_inventory_chardat_ptr
+;             jsr       Exit_display
+;             Push      Module,Inv1_Mod      ; Inventory I
+;.Exit:       movem.l   (sp)+,d0/a0
+;             rts
+
 T_004ce:
 	movem.l	d0/a0,-(a7)
 	andi.l	#$ff00,d0
@@ -363,6 +505,11 @@ Delay:
 .Exit:
 	move.l	(sp)+,d0
 	rts	
+
+; ---- Icon_1 (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Icon_1:      moveq.l   #1,d0
+;             jmp       Do_control_icons
+
 T_00500:
 	move.w	#$100,d0
 	bra.w	Member_left
@@ -558,6 +705,15 @@ Display_magic:
 	jsr	Blot_masked_block
 	movem.l	(sp)+,d0/d1/d6/d7/a0
 	rts	
+
+; ---- ActSel_DisUpd (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;ActSel_DisUpd:
+;             jsr       Update_status_block
+;             tst.w     Active_member        ; Any found ?
+;             beq.s     .Exit
+;             Pop       Module
+;.Exit:       rts
+
 ; If no member can be the active member, a battle ends or the party is dead (Shandra's rescue or game over).
 Check_party_alive:
 	movem.l	d0-d1/d7/a0-a1,-(a7)
@@ -633,6 +789,12 @@ Check_party_alive:
 .l_00800:
 	movem.l	(a7)+,d0-d1/d7/a0-a1
 	rts
+
+; ---- ActSel_ModInit (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;ActSel_ModInit:
+;             Push      MA,Load_area
+;             rts
+
 ActSel_ModInit:
 	move.w	#$0,d0
 	move.w	#$25,d1
@@ -714,6 +876,12 @@ HearTxtW_ModInit:
 	lea.l	Hbl_Lay6_list,a0	; CHANGE: added
 	jsr	Update_HBL	; CHANGE: was "jsr Exit_RText"
 	rts	
+
+; ---- ActSel_ModExit (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;ActSel_ModExit:
+;             Pop       MA
+;             jmp       Init_display
+
 ActSel_ModExit:
 	jsr	Pop_Root
 	bsr.w	Pop_PA
@@ -940,9 +1108,10 @@ T_00ce2:
 	bne.b	.l_00cf4
 	lea.l	D_33392,a0
 	jmp	Update_HBL
-T_00d26:
+; Load game requester of the game over menu. (Not in the original source.)
+Death_load_game:
 	btst	#$1,Mouse_button_state
-	bne.b	T_00d26
+	bne.b	Death_load_game
 	move.l	#Code0004Sys,Textfile_ptr
 	move.w	#$19,ReqText_nr
 	move.l	#.l_00d58,ReqDo_ptr
@@ -950,7 +1119,7 @@ T_00d26:
 	jmp	Push_Module
 .l_00d58:
 	jsr	Pop_Module
-	bra.w	T_00e04
+	bra.w	Restart_game
 ; ---- Req_ModInit (original source: MAIN/TEST.ASM)
 Req_ModInit:
 	move.w	#48,d0
@@ -992,7 +1161,35 @@ Req_Yes:
 	jsr	Pop_Module
 	movea.l	ReqDo_ptr,a0
 	jmp	(a0)
-T_00e04:
+
+; ---- Overweight_check (original source: MAIN/TEST.ASM) - the shipped program differs, its code follows, not assembled:
+;Overweight_check:
+;             movem.l   d0/d1/d7/a0-a2,-(sp)
+;             sf        Overweight           ; Clear flag
+;             lea.l     Chard_ptrs,a0        ; Anyone too heavy
+;             lea.l     Char_status_icons,a1
+;             moveq.l   #1,d7
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a0),a2
+;             move.l    Weight_normal(a2),d0 ; Get current weight
+;             move.w    Attr_1_normal(a2),d1 ; Get maximum weight
+;             add.w     Attr_1_normal_magic(a2),d1
+;             mulu.w    #1000,d1
+;             cmp.l     d0,d1                ; Too heavy ?
+;             bpl.s     .Next
+;             move.b    #20,(a1)             ; Overweight !
+;             st        Overweight
+;.Next:       addq.l    #4,a0                ; Next member
+;             addq.l    #1,a1
+;             addq.w    #1,d7
+;             cmpi.w    #6+1,d7
+;             bmi.s     .Loop
+;             movem.l   (sp)+,d0/d1/d7/a0-a2
+;             rts
+
+; Clears the party and the state of the game, resets the stacks and starts the game again. (Not in the original source.)
+Restart_game:
 	lea.l	Chard_ptrs,a0
 	moveq	#5,d7
 .l_00e0c:
@@ -1161,7 +1358,7 @@ T_00fa0:
 T_01038:
 	tst.b	D_1dc94
 	beq.b	.l_01044
-	bra.w	Exit_all
+	bra.w	Exit_program
 .l_01044:
 	rts
 T_01046:
@@ -1379,7 +1576,7 @@ T_013ba:
 	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
-	movea.l	B_5eed6,a1
+	movea.l	Basepage,a1
 	lea.l	D_31941,a0
 	jsr	DI_Print
 	move.l	$c(a1),d0

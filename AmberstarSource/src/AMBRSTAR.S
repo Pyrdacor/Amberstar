@@ -53,7 +53,11 @@ T_07c84	equ	Probe+4
 T_0acf2	equ	Exit_PLACES+130
 T_0ddf2	equ	Make_area_MOUTH+60
 T_0edd2	equ	Do_results+78
-T_12ca0	equ	Transfer_gold+86
+Transfer_food	equ	Equip_item+86
+T_12eda	equ	Equip_item+182
+T_12f1e	equ	Equip_item+250
+T_12ffa	equ	Equip_item+470
+T_13050	equ	Equip_item+556
 T_1cbd0	equ	Old_mkb+2
 T_1cbda	equ	Old_timer_C+2
 T_1cc22	equ	Old_vbi+2

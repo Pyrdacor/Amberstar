@@ -2,6 +2,150 @@
 
 	section	text
 
+
+; ---- WSelW_ModInit (original source: MAIN/WSELW.ASM) - the shipped program differs, its code follows, not assembled:
+;WSelW_ModInit:
+;             movem.l   d0-d7/a0-a6,-(sp)
+;             sf        No_word_entered
+;; ------------- Make list of known words -----------------------------
+;             move.l    #5000*2,d0           ; Make word buffer
+;             jsr       Allocate_memory
+;             move.l    a1,Word_list_ptr
+;             lea.l     WD,a0                ; Initialize registers
+;             moveq.l   #0,d0
+;             moveq.l   #1,d1
+;             moveq.l   #1,d2
+;             moveq.l   #0,d3
+;             move.w    #5000-1,d7
+;.Loop:       btst      d1,0(a0,d0.w)        ; Word known ?
+;             beq.s     .Zero
+;             move.w    d2,(a1)+             ; Store word number
+;             addq.w    #1,d3
+;.Zero:       addq.w    #1,d1                ; Next bit
+;             cmpi.w    #8,d1
+;             bmi.s     .Ok
+;             moveq.l   #0,d1
+;             addq.w    #1,d0
+;.Ok:         addq.w    #1,d2
+;             dbra      d7,.Loop
+;             tst.w     d3                   ; Know any words ?
+;             beq       No_words_known
+;             moveq.l   #0,d0                ; Return unused memory
+;             move.w    d3,d0
+;             add.l     d0,d0
+;             movea.l   Word_list_ptr,a0
+;             jsr       Shrink_memory
+;             move.w    d3,Nr_of_known_words ; Store results
+;             .LOCAL
+;; ------------- Convert list to text ---------------------------------
+;             move.w    #21,d0               ; Make text buffer
+;             mulu.w    d3,d0
+;             jsr       Allocate_memory
+;             move.l    a1,Text_buffer
+;             movea.l   Word_list_ptr,a2
+;             subq.w    #1,d3
+;.Loop1:      movea.l   a1,a3
+;             move.w    (a2)+,d0             ; Get pointer to word
+;             jsr       Find_word
+;             moveq.l   #0,d0                ; Get length of word
+;             move.b    (a0)+,d0
+;             subq.w    #1,d0                ; !!! REMOVE LATER !!!
+;             bra.s     .Entry2
+;.Loop2:      move.b    (a0)+,(a3)+          ; Copy word
+;.Entry2:     dbra      d0,.Loop2
+;             clr.b     (a3)                 ; Insert EOL
+;             lea.l     21(a1),a1            ; Next word
+;             dbra      d3,.Loop1
+;             movea.l   Word_list_ptr,a0     ; Free memory
+;             jsr       Free_memory
+;             cmpi.w    #1,Nr_of_known_words ; Only one word ?
+;             beq.s     .No_sort
+;             jsr       Sort_word_list       ; Sort words
+;.No_sort:    .LOCAL
+;; ------------- Make graphics buffer ---------------------------------
+;             moveq.l   #15,d0               ; Set ink & paper
+;             jsr       IG_Set_ink
+;             moveq.l   #-1,d0
+;             jsr       IG_Set_paper
+;             move.w    #448,d0              ; Make graphics buffer
+;             mulu.w    Nr_of_known_words,d0
+;             jsr       Allocate_memory
+;             move.l    a1,Text_graphics_buffer
+;             move.l    #7*160,d0            ; Make line graphics buffer
+;             jsr       Allocate_memory
+;             movea.l   a1,a6
+;             moveq.l   #0,d0                ; Initialize registers
+;             moveq.l   #0,d1
+;             move.w    #128-1,d2
+;             moveq.l   #7-1,d3
+;             moveq.l   #3,d4
+;             move.w    Nr_of_known_words,d5
+;             subq.w    #1,d5
+;             moveq.l   #8,d6
+;             moveq.l   #7,d7
+;             movea.l   Text_buffer,a0
+;             movea.l   Text_graphics_buffer,a1
+;             lea.l     3,a2
+;.Loop:       exg.l     d4,d6                ; Clear line graphics buffer
+;             jsr       Draw_box
+;             exg.l     d4,d6
+;             exg.l     d0,a2                ; Set cursor at (3,0)
+;             jsr       IG_Set_cursor
+;             exg.l     d0,a2
+;             jsr       IG_Print             ; Print text on fake screen
+;             exg.l     a0,a1                ; Copy line to graphics buffer
+;             jsr       Get2_block
+;             exg.l     a0,a1
+;             lea.l     21(a0),a0            ; Next line
+;             lea.l     448(a1),a1
+;             dbra      d5,.Loop
+;             .LOCAL
+;; ------------- Do stuff ---------------------------------------------
+;             move.w    Nr_of_known_words,d0 ; Store height of buffer
+;             mulu.w    #7,d0
+;             move.w    d0,Height_of_buffer
+;             move.w    #64,Width_of_buffer  ; Store width of buffer
+;             movea.l   a6,a0                ; Free memory
+;             jsr       Free_memory
+;             Push      PA,WSelW_PA
+;             move.w    #First_add,Adding    ; Reset
+;; ------------- Open a window ----------------------------------------
+;             moveq.l   #32,d0
+;             moveq.l   #40,d1
+;             moveq.l   #10,d2
+;             moveq.l   #10,d3
+;             moveq.l   #2,d4
+;             moveq.l   #1,d6
+;             lea.l     WSelW_L1,a0
+;             jsr       Open_window
+;             move.w    d0,WSelW_handle
+;; ------------- Fill window ------------------------------------------
+;             movea.l   Off_screen,a6
+;             moveq.l   #32+16,d0            ; Clear word area
+;             moveq.l   #40+16,d1
+;             move.w    d0,d2
+;             addi.w    #127,d2
+;             move.w    d1,d3
+;             addi.w    #111,d3
+;             moveq.l   #3,d6
+;             jsr       Draw_box
+;             moveq.l   #2,d6                ; Display icons
+;             moveq.l   #16,d7
+;             move.w    #32+16,d0            ; Input word
+;             move.w    #40+16+112,d1
+;             lea.l     Control_icn+4352,a0
+;             jsr       Blot_unmasked_block
+;             addi.w    #32,d0               ; Up
+;             lea.l     Control_icn+256,a0
+;             jsr       Blot_unmasked_block
+;             addi.w    #32,d0               ; Down
+;             lea.l     Control_icn+512,a0
+;             jsr       Blot_unmasked_block
+;             addi.w    #32,d0               ; Exit
+;             lea.l     Control_icn+7680,a0
+;             jsr       Blot_unmasked_block
+;             Update_screen
+
 WSelW_ModInit:
 	movem.l	d0-d7/a0-a6,-(a7)
 	sf.b	No_word_entered

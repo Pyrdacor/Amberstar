@@ -2,6 +2,47 @@
 
 	section	text
 
+
+; ---- Init_map (original source: MAIN/MAP/MAP.ASM) - the shipped program differs, its code follows, not assembled:
+;Init_map:
+;             movem.l   d0/a0/a5,-(sp)
+;             st        Time_lock
+;             Push      MA,Load_area
+;             lea.l     Mapd_filename,a0     ; Load map
+;             move.w    Map_nr,d0
+;             jsr       Load_subfile
+;             movea.l   a0,a5                ; Protect map-data pointer
+;             move.b    Map_type(a5),d0      ; Get map type
+;             tst.b     d0                   ; 2D or 3D map ?
+;             beq.s     .2D
+;             move.b    Map_special(a5),d0   ; Get statusbits
+;             btst      #6,d0                ; City or dungeon ?
+;             bne.s     .3DCity
+;             moveq.l   #2,d0                ; 3D dungeon
+;             bra.s     .Cont
+;.3DCity:     moveq.l   #3,d0                ; 3D city
+;             bra.s     .Cont
+;.2D:         move.b    Map_special(a5),d0   ; Get statusbits
+;             btst      #5,d0                ; City or wilderness ?
+;             bne.s     .2DWild
+;             moveq.l   #0,d0                ; 2D city
+;             bra.s     .Cont
+;.2DWild:     moveq.l   #1,d0                ; 2D wilderness
+;.Cont:       move.b    d0,Current_map_type  ; Set map type
+;             tst.b     First                ; First time ?
+;             bne.s     .Skip
+;             jsr       Init_time
+;             st        First
+;.Skip:       lea.l     .Map_modules(pc),a0  ; Get pointer to module
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             movea.l   0(a0,d0.w),a0
+;             jsr       Push_Module
+;.Exit:       movem.l   (sp)+,d0/a0/a5
+;             rts
+;
+;.Map_modules:          .DC.l C2map_Mod,W2map_Mod,D3map_Mod,C3map_Mod
+
 Init_map:
 	movem.l	d0/a0/a5,-(a7)
 	bsr.w	T_00194
@@ -61,7 +102,68 @@ Init_maptexts:
 	move.l	a0,Maptext_ptr
 	movem.l	(sp)+,d0/a0
 	rts	
-T_01f98:
+
+; ---- Change_mouse (original source: MAIN/MAP/MAP.ASM) - the shipped program differs, its code follows, not assembled:
+;Change_mouse:
+;             movem.l   d0-d2/a0,-(sp)
+;             move.w    Mouse_X,d0           ; Load mouse coordinates
+;             move.w    Mouse_Y,d1
+;             cmpi.b    #2,Current_map_type  ; 2D or 3D map ?
+;             bpl.s     .3D_map
+;; ------------- Calculate index for 2D map ---------------------------
+;             lea.l     .Mousetab2D,a0
+;             subi.w    #16,d0               ; Translate to (0,0)
+;             subi.w    #49,d1
+;             lsr.w     #4,d0                ; Divide by 16
+;             lsr.w     #4,d1
+;             sub.w     Mapbuf_X,d0          ; Calculate dX
+;             sub.w     Mapbuf_Y,d1          ; Calculate dY
+;             tst.w     d0                   ; Test dX
+;             beq.s     .Zero1
+;             bmi.s     .Neg1
+;             moveq.l   #2,d2                ; V = 2
+;             bra.s     .Test_Y
+;.Zero1:      moveq.l   #1,d2                ; V = 1
+;             bra.s     .Test_Y
+;.Neg1:       moveq.l   #0,d2                ; V = 0
+;.Test_Y:     tst.w     d1                   ; Test dY
+;             beq.s     .Zero2
+;             bmi.s     .Continue
+;             addq.w    #6,d2                ; V = V + (2 x 3)
+;             bra.s     .Continue
+;.Zero2:      addq.w    #3,d2                ; V = V + (1 x 3)
+;             bra.s     .Continue
+;; ------------- Calculate index for 3D map ---------------------------
+;.3D_map:     lea.l     .Mousetab3D,a0
+;             subi.w    #Topleft_X,d0        ; Translate to top-left
+;             subi.w    #Topleft_Y,d1        ;  corner of map window
+;             asr.w     #4,d0                ; Divide by 16
+;             asr.w     #4,d1
+;             move.b    .Div_3(pc,d0.w),d0   ; Divide by 3
+;             move.b    .Div_3(pc,d1.w),d2
+;             ext.w     d2
+;             add.w     d2,d0                ; Calculate index
+;             add.w     d2,d2
+;             add.w     d0,d2
+;; ------------- Set new mouse pointer --------------------------------
+;.Continue:   move.w    d2,Mouse_direction   ; Store number
+;             moveq.l   #0,d0                ; Get number of new pointer
+;             move.b    0(a0,d2.w),d0
+;             jsr       Change_Mptr          ; Set new mouse pointer
+;             movem.l   (sp)+,d0-d2/a0
+;             rts
+;
+;.Div_3:      .DC.b 0,0,0,1,1,1,2,2,2
+;.Mousetab2D: .DC.b 5,1,6                    ; Mouse pointer matrix (2D)
+;             .DC.b 4,16,3
+;             .DC.b 8,2,7
+;.Mousetab3D: .DC.b 14,9,13                  ; Mouse pointer matrix (3D)
+;             .DC.b 12,16,11
+;             .DC.b 23,10,20
+;             .EVEN
+
+; A macro in the original source, a subroutine in the shipped program.
+Restore_coords:
 	move.w	B_5ac80,Map_Xcoord
 	move.w	B_5ac82,Map_Ycoord
 	cmpi.b	#$0,Current_map_type
@@ -233,6 +335,23 @@ Recalc_random:
 	move.b	d0,1(a0)
 	move.l	(sp)+,d0
 	rts	
+
+; ---- Before_move (original source: MAIN/MAP/MAP.ASM) - the shipped program differs, its code follows, not assembled:
+;Before_move: movem.l   d0/a0,-(sp)
+;             movea.l   Current_active_char_data,a0          ; Can one move ?
+;             move.w    Body_conditions(a0),d0     ; i.e. not paralyzed ?
+;             btst      #0,d0
+;             beq.s     .Ok
+;             movem.l   (sp)+,d0/a0
+;             addq.l    #4,sp                ; OBSCENE STACK TRICK !!!
+;             rts
+;.Ok:         move.w    Map_Xcoord,Old_Xcoord      ; Save old coordinates
+;             move.w    Map_Ycoord,Old_Ycoord
+;             move.w    Mapbuf_X,Old_mapbufX
+;             move.w    Mapbuf_Y,Old_mapbufY
+;             movem.l   (sp)+,d0/a0
+;             rts
+
 Before_move:
 	movem.l	d0/a0,-(a7)
 	tst.b	Overweight
@@ -244,6 +363,124 @@ Before_move:
 	bsr.w	T_01ff6
 	movem.l	(a7)+,d0/a0
 	rts
+
+; ---- After_move (original source: MAIN/MAP/MAP.ASM) - the shipped program differs, its code follows, not assembled:
+;After_move:  movem.l   d0/d1/d7/a0/a1,-(sp)
+;             st        New_move             ; Signal new move
+;             move.w    #0,Frame             ; Clear Vbl-counter
+;             subq.w    #1,Move_count        ; Next step ?
+;             bne.s     .Skip
+;             move.w    Move_speed,Move_count      ; Reset counter
+;             jsr       Update_time          ; Next step
+;; ------------- Check for poison field -------------------------------
+;.Skip:       cmpi.w    #4,Travel_mode       ; Foot, horse or disc ?
+;             beq.s     .Try
+;             cmpi.w    #2,Travel_mode
+;             bpl       .No_poison
+;.Try:        move.w    Map_Xcoord,d0        ; Get coordinates
+;             move.w    Map_Ycoord,d1
+;             cmpi.b    #2,Current_map_type  ; 2D or 3D map ?
+;             bpl.s     .3D_map
+;             jsr       Get_2D_icon_status
+;             tst.l     d1                   ; Any overlay ?
+;             beq.s     .Underlay
+;             btst      #5,d1                ; Underlay priority ?
+;             bne.s     .Underlay
+;             btst      #31,d1               ; Poison ?
+;             beq       .No_poison
+;             bra.s     .Poison
+;.Underlay:   btst      #31,d0               ; Poison ?
+;             beq       .No_poison
+;             bra.s     .Poison
+;.3D_map:     jsr       Get_3D_icon_status
+;             btst      #31,d0               ; Poison ?
+;             beq       .No_poison
+;; ------------- Poison party -----------------------------------------
+;.Poison:     lea.l     Chard_ptrs,a0
+;             moveq.l   #0,d1
+;             moveq.l   #1,d7
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a0),a1
+;             move.w    #$e400,d0            ; Alive and kicking ?
+;             and.w     Body_conditions(a1),d0
+;             bne.s     .Next
+;             move.w    Attr_7_normal(a1),d0 ; Probe luck
+;             add.w     Attr_7_normal_magic(a1),d0
+;             jsr       Probe
+;             bpl.s     .Next
+;             bset      #1,Body_conditions(a1)     ; Poisoned!
+;             move.w    d7,d0                ; Show empty damage star
+;             jsr       Do_damage
+;.Next:       addq.l    #4,a0                ; Next character
+;             addq.w    #1,d7
+;             cmpi.w    #6+1,d7
+;             bmi.s     .Loop
+;.No_poison:  .LOCAL
+;; ------------- Check for swimming field -----------------------------
+;             tst.w     Travel_mode          ; On foot ?
+;             bne       .No_swim
+;             cmpi.b    #2,Current_map_type  ; 2D map ?
+;             bpl.s     .No_swim
+;             move.w    Map_Xcoord,d0        ; Get coordinates
+;             move.w    Map_Ycoord,d1
+;             jsr       Get_2D_icon_status
+;             tst.l     d1                   ; Any overlay ?
+;             beq.s     .Underlay
+;             btst      #5,d1                ; Underlay priority ?
+;             bne.s     .Underlay
+;             btst      #14,d1               ; Swim ?
+;             beq.s     .No_swim
+;             bra.s     .Swim
+;.Underlay:   btst      #14,d0               ; Swim ?
+;             beq.s     .No_swim
+;; ------------- Let the party swim -----------------------------------
+;.Swim:       lea.l     Chard_ptrs,a0
+;             moveq.l   #1,d7
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a0),a1
+;             move.w    #$e400,d0            ; Alive and kicking ?
+;             and.w     Body_conditions(a1),d0
+;             bne.s     .Next
+;             moveq.l   #0,d0                ; Probe swimming
+;             move.b    Skill_3(a1),d0
+;             add.w     Skill_3_normal_magic(a1),d0
+;             jsr       Probe
+;             bpl.s     .Next
+;             jsr       Random               ; Do damage !
+;             move.w    d0,d1
+;             mulu.w    #5,d1
+;             swap.w    d1
+;             addq.w    #1,d1
+;             move.w    d7,d0
+;             jsr       Do_damage
+;.Next:       addq.l    #4,a0                ; Next character
+;             addq.w    #1,d7
+;             cmpi.w    #6+1,d7
+;             bmi.s     .Loop
+;.No_swim:    .LOCAL
+;             jsr       Event_handler
+;; ------------- World map movement delay -----------------------------
+;             cmpi.b    #1,Current_map_type  ; Wilderniss ?
+;             bne.s     .No_delay
+;             move.w    Travel_mode,d0       ; Get delay
+;             add.w     d0,d0
+;             move.w    .Move_delay(pc,d0.w),d0
+;             beq.s     .No_delay
+;             jsr       Delay                ; Delay
+;; ------------- Clearvoyance -----------------------------------------
+;.No_delay:
+;
+;; Check in front
+;; Call EYE
+;
+;
+;             movem.l   (sp)+,d0/d1/d7/a0/a1
+;             rts
+;
+;.Move_delay: .DC.w 5,2,3,2,4,0,0            ; Number of VBL's pro step
+
 After_move:
 	movem.l	d0-d1/d7/a0-a1,-(a7)
 	st.b	New_move

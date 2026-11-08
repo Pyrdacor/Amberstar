@@ -4,7 +4,7 @@
 
 	dc.w	$a00a
 	movea.l	$4(a7),a0
-	move.l	a0,B_5eed6
+	move.l	a0,Basepage
 	lea.l	$80(a0),a0
 	move.b	(a0)+,d0
 	bne.b	T_00022
@@ -22,21 +22,21 @@ T_00022:
 	cmpm.b	(a0)+,(a1)+
 	bne.b	T_00014
 	dbra	d0,.l_0002c
-	move.l	a7,B_5eeda
+	move.l	a7,Old_usp
 	lea.l	Icondata_ptr,a7
 	clr.l	-(a7)
 	move.w	#$20,-(a7)
 	trap	#$1
 	addq.l	#$6,a7
-	move.l	d0,B_5eede
+	move.l	d0,Old_ssp
 	lea.l	B_5fee2,a7
 	jsr	T_1c1a0
-	jsr	T_1c9b0
+	jsr	Save_computer
 	jsr	Init_computer
-	movea.l	B_5eed6,a0
-	jsr	T_1d192
+	movea.l	Basepage,a0
+	jsr	Init_memory
 	jsr	T_1ceea
-	jsr	T_1b63e
+	jsr	Init_file
 	jsr	T_1c958
 	jsr	Mouse_on
 	move.b	#$dd,d0
@@ -73,7 +73,7 @@ T_000d6:
 	bsr.w	Update_status_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bsr.w	T_06764
+	bsr.w	DoAutoIcon
 	bsr.w	Init_map
 Main_loop:
 	move.w	#$0,Draw_Cicon
@@ -86,14 +86,14 @@ Main_loop:
 .l_0015a:
 	jsr	Switch_screen
 	bra.b	Main_loop
-T_00162:
+Exit_program:
 	move.l	#$700ff00,$ffff8800.w
 	jsr	Restore_computer
-	move.l	B_5eede,-(a7)
+	move.l	Old_ssp,-(a7)
 	move.w	#$20,-(a7)
 	trap	#$1
 	addq.l	#$6,a7
-	movea.l	B_5eeda,a7
+	movea.l	Old_usp,a7
 	dc.w	$a009
 	move.w	B_5c344,-(a7)
 	move.w	#$4c,-(a7)
@@ -192,7 +192,7 @@ Restore_game:
 	rts
 Load_party_data:
 	movem.l	d0/d7/a0-a1,-(a7)
-	lea.l	D_321f4,a0
+	lea.l	Partydata_filename,a0
 	jsr	T_1b788
 	move.l	a0,-(a7)
 	cmpi.l	#$59415921,(a0)
@@ -443,7 +443,7 @@ T_005d2:
 	bra.w	Do_control_icons
 Update_damage_magic:
 	movem.l	d0/d7/a0-a1/a6,-(a7)
-	lea.l	B_5bef2,a0
+	lea.l	Damage_timers,a0
 	lea.l	Char_damage,a1
 	movea.l	Off_screen,a6
 	moveq	#1,d7
@@ -779,7 +779,7 @@ Resurrection_sequence:
 	lsl.w	#$8,d0
 	bsr.w	Member_left
 	movea.l	Off_screen,a6
-	bsr.w	T_06764
+	bsr.w	DoAutoIcon
 	bsr.w	Update_status_block
 	moveq	#7,d0
 	bsr.w	Show_layout
@@ -918,9 +918,10 @@ T_00ce2:
 	bne.b	.l_00cf4
 	lea.l	D_33392,a0
 	jmp	Update_HBL
-T_00d26:
+; Load game requester of the game over menu. (Not in the original source.)
+Death_load_game:
 	btst	#$1,Mouse_button_state
-	bne.b	T_00d26
+	bne.b	Death_load_game
 	move.l	#Code0004Sys,Textfile_ptr
 	move.w	#$19,ReqText_nr
 	move.l	#.l_00d58,ReqDo_ptr
@@ -928,7 +929,7 @@ T_00d26:
 	jmp	Push_Module
 .l_00d58:
 	jsr	Pop_Module
-	bra.w	T_00e04
+	bra.w	Restart_game
 Req_ModInit:
 	move.w	#$30,d0
 	move.w	#$3c,d1
@@ -967,7 +968,8 @@ T_00df6:
 	jsr	Pop_Module
 	movea.l	ReqDo_ptr,a0
 	jmp	(a0)
-T_00e04:
+; Clears the party and the state of the game, resets the stacks and starts the game again. (Not in the original source.)
+Restart_game:
 	lea.l	Chard_ptrs,a0
 	moveq	#5,d7
 .l_00e0c:
@@ -1115,15 +1117,15 @@ T_00fa0:
 	movea.l	(a1,d0.w),a1
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	(a1),a0
 	jsr	DI_Print
 	lea.l	D_314d6,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 	addq.w	#$1,B_5c33c
@@ -1136,19 +1138,19 @@ T_00fa0:
 T_01038:
 	tst.b	D_1dc94
 	beq.b	.l_01044
-	bra.w	T_00162
+	bra.w	Exit_program
 .l_01044:
 	rts
 T_01046:
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_1df50,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 	rts
@@ -1216,13 +1218,13 @@ T_01142:
 	beq.b	.l_01188
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_1dcb1,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_01188:
@@ -1232,8 +1234,8 @@ T_0118a:
 	beq.w	.l_013aa
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_317f1,a0
 	jsr	DI_Print
@@ -1318,7 +1320,7 @@ T_0118a:
 	lea.l	D_318d2,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_013aa:
@@ -1334,8 +1336,8 @@ T_013ba:
 	beq.w	.l_01514
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_318ed,a0
 	jsr	DI_Print
@@ -1354,7 +1356,7 @@ T_013ba:
 	jsr	DI_Decl_print
 	jsr	DI_Carriage_return
 	jsr	DI_Carriage_return
-	movea.l	B_5eed6,a1
+	movea.l	Basepage,a1
 	lea.l	D_31941,a0
 	jsr	DI_Print
 	move.l	$c(a1),d0
@@ -1391,7 +1393,7 @@ T_013ba:
 	lea.l	D_319dc,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_01514:
@@ -1401,8 +1403,8 @@ T_01516:
 	beq.w	T_015fe
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_319f7,a0
 	jsr	DI_Print
@@ -1440,7 +1442,7 @@ T_015d2:
 	lea.l	D_31a37,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 T_015fe:
@@ -1450,8 +1452,8 @@ T_01600:
 	beq.w	T_016a8
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31a52,a0
 	jsr	DI_Print
@@ -1477,7 +1479,7 @@ T_0165a:
 	lea.l	D_31a69,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 T_016a8:
@@ -1491,8 +1493,8 @@ T_016bc:
 	beq.b	.l_0173a
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31a84,a0
 	jsr	DI_Print
@@ -1511,7 +1513,7 @@ T_016bc:
 	beq.b	.l_01714
 	add.l	d0,$cc(a1)
 .l_0172a:
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_0173a:
@@ -1530,8 +1532,8 @@ T_0175e:
 	beq.w	.l_017fa
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31ad7,a0
 	jsr	DI_Print
@@ -1543,7 +1545,7 @@ T_0175e:
 	bmi.b	.l_017ea
 	beq.b	.l_01796
 	move.w	d0,New_map
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 	bsr.w	Exit_map
@@ -1554,7 +1556,7 @@ T_0175e:
 	bsr.w	Init_map
 	rts
 .l_017ea:
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_017fa:
@@ -1564,8 +1566,8 @@ T_017fc:
 	beq.w	T_019b0
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31af8,a0
 	jsr	DI_Print
@@ -1666,7 +1668,7 @@ T_01960:
 	jsr	DI_Print
 	jsr	Wait_4_key
 T_019a0:
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 T_019b0:
@@ -1693,8 +1695,8 @@ T_019d6:
 	beq.w	.l_01af8
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31bba,a0
 	jsr	DI_Print
@@ -1757,7 +1759,7 @@ T_019d6:
 	lea.l	D_31c1b,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_01af8:
@@ -1819,8 +1821,8 @@ T_01bb2:
 	beq.w	.l_01c46
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31c36,a0
 	jsr	DI_Print
@@ -1846,7 +1848,7 @@ T_01bb2:
 	add.l	d1,$ec(a1)
 	add.w	d0,$90(a1)
 .l_01c36:
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_01c46:
@@ -1856,8 +1858,8 @@ T_01c48:
 	beq.w	.l_01d8c
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31c7b,a0
 	jsr	DI_Print
@@ -1907,7 +1909,7 @@ T_01c48:
 	lea.l	D_31ce0,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_01d8c:
@@ -1917,15 +1919,15 @@ T_01d8e:
 	beq.b	.l_01de0
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_31cfb,a0
 	jsr	DI_Print
 	move.w	Active_member,d0
 	jsr	DI_Decw_print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 .l_01de0:
@@ -1933,8 +1935,8 @@ T_01d8e:
 T_01de2:
 	st.b	B_5ad1e
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	Memory_list,a1
 	movea.l	Memlist_end,a2
@@ -1991,7 +1993,7 @@ T_01de2:
 	jsr	DI_Print
 .l_01ec4:
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	sf.b	B_5ad1e
 	rts
@@ -2053,7 +2055,8 @@ Init_maptexts:
 	move.l	a0,Maptext_ptr
 	movem.l	(a7)+,d0/a0
 	rts
-T_01f98:
+; A macro in the original source, a subroutine in the shipped program.
+Restore_coords:
 	move.w	B_5ac80,Map_Xcoord
 	move.w	B_5ac82,Map_Ycoord
 	cmpi.b	#$0,Current_map_type
@@ -7289,7 +7292,7 @@ T_06494:
 .l_064da:
 	bmi.b	.l_064e8
 .l_064dc:
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	jsr	Pop_Module
 	bra.b	.l_064f2
 .l_064e8:
@@ -7486,17 +7489,17 @@ Realtime_step:
 .l_0674e:
 	move.l	(a7)+,d0
 	rts
-T_06752:
-	cmpi.w	#$64,B_5ad96
-	bmi.w	T_067f8
-	clr.w	B_5ad96
-T_06764:
+AutoIcon_switch:
+	cmpi.w	#$64,AutoIcon_timer
+	bmi.w	ExitAutoIcon
+	clr.w	AutoIcon_timer
+DoAutoIcon:
 	movem.l	d0-d3/d5-d7/a0-a3,-(a7)
 	tst.b	AutoIcon_flag
 	beq.w	.l_067f4
 	lea.l	Chard_ptrs,a0
 	lea.l	Char_status_icons,a1
-	lea.l	B_5ad8a,a3
+	lea.l	AutoIcon_counters,a3
 	move.b	B_5c30f,d5
 	moveq	#1,d7
 .l_0678c:
@@ -7546,10 +7549,10 @@ T_06764:
 	bmi.b	.l_0678c
 .l_067f4:
 	movem.l	(a7)+,d0-d3/d5-d7/a0-a3
-T_067f8:
+ExitAutoIcon:
 	rts
-T_067fa:
-	addq.w	#$1,B_5ad96
+TimeAutoIcon:
+	addq.w	#$1,AutoIcon_timer
 	rts
 Show_updated_status_block:
 	tst.b	Updated
@@ -9168,8 +9171,8 @@ T_07bf0:
 	dc.l	T_085aa
 	dc.l	T_08a34
 	dc.l	T_092d4
-	dc.l	T_0935a
-	dc.l	T_093f2
+	dc.l	Teleporter
+	dc.l	Wind_gate
 	dc.l	Spinner
 	dc.l	Damage_field
 	dc.l	T_0948e
@@ -9360,7 +9363,7 @@ Do_damage:
 	add.w	d2,d2
 	lea.l	Char_damage,a0
 	move.w	d1,-$2(a0,d2.w)
-	lea.l	B_5bef2,a0
+	lea.l	Damage_timers,a0
 	move.b	#$a,-$1(a0,d0.w)
 .l_07e82:
 	movem.l	(a7)+,d2/a0
@@ -9489,14 +9492,14 @@ Door_DisInit:
 	lea.l	Hbl_Lay3_list,a0
 	jsr	Update_HBL
 	rts
-T_08084:
-	bsr.w	T_01f98
+Door_Exit:
+	bsr.w	Restore_coords
 	jsr	Exit_display
 	jsr	Pop_Module
 	jmp	Init_display
-T_0809a:
+Pick_lock_DOOR:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0809a
+	bne.b	Pick_lock_DOOR
 	move.w	#$0,Draw_Cicon
 	jsr	My_vsync
 	movea.l	Current_active_char_data,a0
@@ -9544,9 +9547,9 @@ T_08128:
 	bsr.w	Plus_message
 T_0813a:
 	rts
-T_0813c:
+Use_item_DOOR:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0813c
+	bne.b	Use_item_DOOR
 	lea.l	UseItemDoor_Mod,a0
 	jmp	Push_Module
 UseItemDoor_DisUpd:
@@ -9818,7 +9821,6 @@ DoorCIL_evaluate:
 .l_084ee:
 	movem.l	(a7)+,d0/d7/a2
 	rts
-AutoIcon_switch:
 Display2_quantities:
 	lea.l	Quant_init_string,a0
 	jsr	IG_Print
@@ -10029,7 +10031,7 @@ TxtW_ModInit:
 	moveq	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	lsr.w	#$1,d4
 	add.w	d4,d1
 	addi.w	#$10,d1
@@ -10064,7 +10066,7 @@ T_0886c:
 	moveq	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	bsr.w	Pop_PA
@@ -10080,7 +10082,7 @@ T_088b4:
 TxtW_ModExit:
 	movem.l	d0/a0,-(a7)
 	st.b	B_5c310
-	move.w	B_5b288,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	bsr.w	Pop_PA
 .l_088d4:
@@ -10154,7 +10156,7 @@ T_089be:
 	moveq	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	bsr.w	Pop_PA
@@ -10214,8 +10216,8 @@ T_08a34:
 	dc.b	$61,$00,$7e,$bc
 .l_08ab8:
 	rts
-T_08aba:
-	bsr.w	T_01f98
+Chest_exit:
+	bsr.w	Restore_coords
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bra.w	Init_display
@@ -10802,7 +10804,8 @@ Trap_door:
 	bsr.w	Init_map
 .l_09358:
 	rts
-T_0935a:
+; To another map: the map is changed inline instead of calling Map_exit.
+Teleporter:
 	move.b	$4(a5),d0
 	bsr.w	Event_text
 	move.w	$6(a5),d0
@@ -10838,13 +10841,13 @@ T_0935a:
 .l_093ec:
 	bsr.w	Save_event
 	rts
-T_093f2:
+Wind_gate:
 	move.w	Special_item_flags,d0
 	btst	#$3,d0
 	bne.b	.l_09400
 	rts
 .l_09400:
-	bra.w	T_0935a
+	bra.w	Teleporter
 Spinner:
 	move.b	$4(a5),d0
 	bsr.w	Event_text
@@ -11430,7 +11433,7 @@ T_09b2c:
 T_09c06:
 	btst	#$1,B_5c36b
 	beq.b	.l_09c18
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	bra.w	.l_09cb2
 .l_09c18:
 	lea.l	Chard_ptrs,a0
@@ -11476,7 +11479,7 @@ T_09c06:
 	jsr	Switch_screen
 	tst.b	B_5c310
 	beq.b	.l_09c76
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	bra.b	.l_09cb2
 .l_09ca4:
 	dc.b	$61,$00,$6c,$6a,$41,$f9
@@ -11790,7 +11793,7 @@ T_0a00a:
 	moveq	#3,d0
 	bsr.w	T_0a220
 	bset	#$1,B_5c36b
-	jsr	T_01f98
+	jsr	Restore_coords
 	bsr.w	Pop_Module
 	bsr.w	Init_display
 	bra.b	.l_0a18e
@@ -11877,7 +11880,7 @@ T_0a220:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 T_0a262:
-	movea.l	B_5eed6,a0
+	movea.l	Basepage,a0
 	lea.l	$80(a0),a0
 	lea.l	Chard_ptrs,a1
 	moveq	#5,d7
@@ -11907,7 +11910,7 @@ T_0a262:
 	jsr	Clear_screen
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jmp	T_00162
+	jmp	Exit_program
 Fadein_lay3:
 	lea.l	Lay3_target_hbl,a1
 	bra.b	Fade_lay3
@@ -12018,7 +12021,7 @@ Do_WordIn:
 	moveq	#1,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Screen_base,a6
 	move.w	#$40,d0
 	move.w	#$67,d1
@@ -12043,7 +12046,7 @@ Do_WordIn:
 	jsr	IG_Set_paper
 	moveq	#19,d0
 	bsr.w	T_078b8
-	move.w	B_5b288,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	bsr.w	Pop_PA
 	jsr	Mouse_on
@@ -12531,7 +12534,7 @@ Places:
 	cmp.w	d1,d0
 	ble.b	T_0aab0
 T_0aa82:
-	jsr	T_01f98
+	jsr	Restore_coords
 	moveq	#0,d0
 	move.b	$4(a5),d0
 	cmpi.w	#$1a,d0
@@ -12691,7 +12694,7 @@ T_0acf2:
 	dc.b	$08,$08,$08,$08,$08,$08,$08,$08,$11,$11,$ff,$12,$15,$12,$12,$12
 	dc.b	$05,$11,$ff,$ff
 Do_PlacesExit:
-	jsr	T_01f98
+	jsr	Restore_coords
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	cmpi.w	#$11,Place_nr
@@ -13119,7 +13122,7 @@ SkillW_ModInit:
 	moveq	#1,d6
 	lea.l	D_3248c,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Off_screen,a6
 	move.w	#$30,d0
 	move.w	#$3c,d1
@@ -13231,7 +13234,7 @@ SkillW_ModInit:
 	jsr	Copy_screen
 	rts
 SkillW_ModExit:
-	move.w	B_5b288,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	rts
 SkillW_DisUpd:
@@ -17718,12 +17721,13 @@ Init_automap:
 	rts
 Exit_automap:
 	move.l	a0,-(a7)
-	bsr.w	T_0f616
+	bsr.w	Save_automap
 	movea.l	Automap_ptr,a0
 	jsr	Free_memory
 	movea.l	(a7)+,a0
 	rts
-T_0f616:
+; Saves the current automap with Save_subfile (also called by Exit_automap). (Not in the original source.)
+Save_automap:
 	movem.l	d0/a0-a1,-(a7)
 	lea.l	Automap_filename,a0
 	movea.l	Automap_ptr,a1
@@ -17826,9 +17830,9 @@ OptionsCIL_evaluate:
 	bclr	#$7,$4(a0)
 .l_0f7a6:
 	rts
-T_0f7a8:
+Exit_options:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f7a8
+	bne.b	Exit_options
 	bsr.w	Pop_Module
 	bra.w	Init_display
 T_0f7ba:
@@ -17838,9 +17842,9 @@ T_0f7c2:
 	move.w	#$ffff,B_5c36c
 	move.l	#$700ff00,$ffff8800.w
 	rts
-T_0f7d4:
+Quit_game:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f7d4
+	bne.b	Quit_game
 	move.l	#Code0008Sys,Textfile_ptr
 	move.w	#$8,ReqText_nr
 	move.l	#.l_0f804,ReqDo_ptr
@@ -17851,12 +17855,12 @@ T_0f7d4:
 	cmpi.b	#$2,Current_map_type
 	bmi.b	.l_0f81c
 	jsr	T_0025a
-	bsr.w	T_0f616
+	bsr.w	Save_automap
 .l_0f81c:
-	jmp	T_00162
-T_0f822:
+	jmp	Exit_program
+Save_game:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f822
+	bne.b	Save_game
 	clr.w	SaveGame_bitlist
 	lea.l	B_600e6,a0
 	moveq	#4,d7
@@ -17866,7 +17870,7 @@ T_0f822:
 	dbra	d7,.l_0f83a
 	move.l	#Code0004Sys,Textfile_ptr
 	move.w	#$18,ReqText_nr
-	move.l	#T_0f9c6,ReqDo_ptr
+	move.l	#Really_save_game,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bsr.w	Push_Module
 	bra.b	.l_0f874
@@ -17949,19 +17953,21 @@ SaveGame_ModExit:
 	jsr	Pop_Root
 	jsr	Pop_MA
 	rts
-T_0f9a6:
+Exit_SaveGame:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f9a6
+	bne.b	Exit_SaveGame
 	bsr.w	Pop_Module
 	bra.w	Init_display
-T_0f9b8:
+; The check of the active member was removed, it falls through into Really_save_game.
+Do_SaveGame:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f9b8
+	bne.b	Do_SaveGame
 	bsr.w	Pop_Module
-T_0f9c6:
+; Also saves the automap, writes a header, scrambles the data and saves it to PARTYDAT.SAV.
+Really_save_game:
 	cmpi.b	#$2,Current_map_type
 	bne.b	.l_0f9d4
-	bsr.w	T_0f616
+	bsr.w	Save_automap
 .l_0f9d4:
 	lea.l	Chard_filename,a0
 	lea.l	Chard_ptrs,a2
@@ -17978,7 +17984,7 @@ T_0f9c6:
 	addq.l	#$2,a3
 	dbra	d7,.l_0f9e8
 	lea.l	B_600e6,a1
-	lea.l	B_5c380,a2
+	lea.l	Member_2_nr,a2
 	lea.l	B_5bef3,a3
 	move.w	SaveGame_bitlist,d0
 	moveq	#1,d7
@@ -18029,7 +18035,7 @@ T_0f9c6:
 	move.w	Nr_of_modifications,d0
 	mulu.w	#$6,d0
 	addi.l	#$2b7e,d0
-	move.l	d0,B_5b514
+	move.l	d0,Partydata_length
 	jsr	Allocate_memory
 	move.l	a1,-(a7)
 	move.l	#$59415921,(a1)+
@@ -18055,7 +18061,7 @@ T_0fafc:
 	dbra	d7,T_0faf8
 	clr.w	(a1)+
 	jsr	Random
-	move.l	B_5b514,d7
+	move.l	Partydata_length,d7
 	movea.l	(a7)+,a0
 	addq.l	#$4,a0
 	subq.l	#$4,d7
@@ -18064,14 +18070,15 @@ T_0fafc:
 	movea.l	a0,a1
 	addq.l	#$4,d0
 	subq.l	#$4,a1
-	lea.l	D_321f4,a0
+	lea.l	Partydata_filename,a0
 	jsr	Save_file
 	movea.l	a1,a0
 	jsr	Free_memory
 	rts
-T_0fb38:
+; The active member can't be deselected (message 25).
+Portrait_selected:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0fb38
+	bne.b	Portrait_selected
 	lsr.w	#$8,d0
 	tst.w	d0
 	beq.w	.l_0fcc0
@@ -18169,22 +18176,23 @@ T_0fb38:
 	jsr	Copy_screen
 .l_0fcc0:
 	rts
-T_0fcc2:
+Load_game:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0fcc2
+	bne.b	Load_game
 	move.l	#Code0004Sys,Textfile_ptr
 	move.w	#$19,ReqText_nr
-	move.l	#.l_0fcf2,ReqDo_ptr
+	move.l	#Really_load_game,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bra.w	Push_Module
-.l_0fcf2:
+; Rewritten: the game restarts through Restart_game.
+Really_load_game:
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bsr.w	Pop_Module
-	jmp	T_00e04
-T_0fd04:
+	jmp	Restart_game
+Camp:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0fd04
+	bne.b	Camp
 	bsr.w	Exit_display
 	lea.l	Camp_Mod,a0
 	bra.w	Push_Module
@@ -18242,9 +18250,9 @@ CampCIL_evaluate:
 	bset	#$7,$3(a0)
 .l_0fe0c:
 	rts
-T_0fe0e:
+Exit_camp:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0fe0e
+	bne.b	Exit_camp
 	tst.b	Inn_flag
 	beq.b	.l_0fe54
 	movea.l	Placedat_ptr,a0
@@ -18258,9 +18266,9 @@ T_0fe0e:
 .l_0fe54:
 	bsr.w	Pop_Module
 	bra.w	Init_display
-T_0fe5c:
+Learn_spell:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0fe5c
+	bne.b	Learn_spell
 	lea.l	LearnSpell_Mod,a0
 	bra.w	Push_Module
 T_0fe70:
@@ -18401,9 +18409,9 @@ T_0ff02:
 	rts
 .l_10064:
 	bra.w	Pop_Module
-T_10068:
+Rest:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10068
+	bne.b	Rest
 	move.l	#Code0005Sys,Textfile_ptr
 	st.b	Slept
 	move.w	#$10,d0
@@ -18429,7 +18437,7 @@ T_10068:
 	move.w	New_radius,Current_radius
 .l_100e0:
 	tst.b	Inn_flag
-	bne.w	.l_10298
+	bne.w	Inn
 	lea.l	Chard_ptrs,a0
 	moveq	#1,d7
 .l_100f2:
@@ -18558,8 +18566,8 @@ T_10068:
 .l_1028e:
 	addq.l	#$4,a2
 	dbra	d6,.l_10162
-	bra.w	.l_1037c
-.l_10298:
+	bra.w	T_1037c
+Inn:
 	moveq	#4,d7
 	lea.l	Code0005Sys,a1
 	lea.l	Chard_ptrs,a2
@@ -18621,7 +18629,7 @@ T_10068:
 .l_10376:
 	addq.l	#$4,a2
 	dbra	d6,.l_102a8
-.l_1037c:
+T_1037c:
 	lea.l	Spell_1_data,a0
 	clr.l	(a0)+
 	clr.l	(a0)+
@@ -18790,7 +18798,7 @@ T_10570:
 	moveq	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	lsr.w	#$1,d4
 	add.w	d4,d1
 	addi.w	#$10,d1
@@ -19158,7 +19166,7 @@ T_10a3e:
 .l_10a9c:
 	tst.b	Abort_list
 	bne.b	.l_10ac4
-	jsr	T_1ce70
+	jsr	Read_key
 	tst.l	d0
 	beq.b	.l_10ac4
 	bset	#$1f,d0
@@ -19234,9 +19242,9 @@ Basic_DisUpd:
 Inv1_DisUpd:
 	jsr	Update_status_block
 	rts
-T_10b58:
+Inv1_Exit:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10b58
+	bne.b	Inv1_Exit
 	bsr.w	Pop_Module
 	bra.w	Init_display
 Inv1_ModInit:
@@ -19509,19 +19517,19 @@ Go_Inv2:
 	bsr.w	Push_Module
 .l_10f3a:
 	rts
-T_10f3c:
+Inv21_Exit:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10f3c
+	bne.b	Inv21_Exit
 	bsr.w	Pop_Module
-	bra.w	T_10b58
-T_10f4e:
+	bra.w	Inv1_Exit
+Inv2_Exit:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10f4e
+	bne.b	Inv2_Exit
 	bsr.w	Pop_Module
 	bra.w	Init_display
 Inv2_DisUpd:
 	jsr	Update_status_block
-	lea.l	D_30980,a0
+	lea.l	Inv2_CIL,a0
 	lea.l	Inv2CIL_evaluate,a1
 	bsr.w	Update_control_icons
 	bsr.w	Update_quantity_colours
@@ -19588,7 +19596,7 @@ Inv2_DisInit:
 	move.w	#$50,d2
 	lea.l	D_30a46,a0
 	jsr	Print_centered_string
-	lea.l	D_30980,a0
+	lea.l	Inv2_CIL,a0
 	bsr.w	Inv2CIL_evaluate
 	move.l	a0,Control_list_ptr
 	jsr	Show_control_icons
@@ -20167,13 +20175,12 @@ T_11870:
 	clr.w	Object_name_nr
 .l_118a4:
 	rts
-T_118a6:
+Drop_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_118a6
+	bne.b	Drop_item
 	lea.l	DropItem_Mod,a0
 	bsr.w	Push_Module
 	rts
-TransferItem_DisInit:
 DropItem_DisInit:
 	lea.l	Backpack_area,a0
 	jsr	Push_MA
@@ -20395,7 +20402,7 @@ ItemW_DisInit:
 	moveq	#1,d6
 	lea.l	D_3284c,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Off_screen,a6
 	moveq	#2,d6
 	moveq	#16,d7
@@ -20415,7 +20422,7 @@ ItemW_DisInit:
 	movem.l	(a7)+,d0-d3/d6-d7/a0/a6
 	rts
 ItemW_DisExit:
-	move.w	B_5b288,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	jsr	Copy_screen
 	movea.l	Off_screen,a6
@@ -20483,9 +20490,9 @@ ItemW_Down:
 	move.l	d0,ItemW_nr
 .l_11d6c:
 	rts
-T_11d6e:
+Use_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_11d6e
+	bne.b	Use_item
 	lea.l	UseItem_Mod,a0
 	bsr.w	Push_Module
 	rts
@@ -20553,7 +20560,7 @@ UseItem_entry:
 	bsr.w	Destroy_used_item
 .l_11e54:
 	bsr.w	Pop_Module
-	bsr.w	T_10f3c
+	bsr.w	Inv21_Exit
 	rts
 .l_11e5e:
 	tst.b	$e(a2)
@@ -20592,7 +20599,7 @@ Use_item_in_combat:
 	tst.b	Battling
 	beq.b	.l_11ee4
 	bsr.w	Pop_Module
-	bsr.w	T_10f3c
+	bsr.w	Inv21_Exit
 .l_11ee4:
 	moveq	#0,d0
 	move.b	$c(a2),d0
@@ -20792,12 +20799,11 @@ Show_item_sparkle:
 	jsr	Copy_screen
 	movem.l	(a7)+,d0-d2/d7/a0-a4/a6
 	rts
-T_121c0:
+Pool_gold_INV2:
 	btst	#$1,Mouse_button_state
-	bne.b	T_121c0
+	bne.b	Pool_gold_INV2
 	move.w	#$0,Draw_Cicon
 	jsr	My_vsync
-Pool_gold_INV2:
 	movea.l	Current_inventory_chardat_ptr,a0
 	move.w	$90(a0),d0
 	move.l	$ec(a0),d1
@@ -20809,9 +20815,9 @@ Pool_gold_INV2:
 	mulu.w	#$a,d0
 	add.l	d0,$ec(a0)
 	rts
-T_12204:
+View_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_12204
+	bne.b	View_item
 	lea.l	ViewItem_Mod,a0
 	bra.w	Push_Module
 ViewItem_DisInit:
@@ -20855,7 +20861,7 @@ T_12286:
 	lea.l	D_2b0ce,a0
 	bsr.w	Push_Module
 	rts
-T_122b2:
+ItemViewW1_DisInit:
 	moveq	#16,d0
 	moveq	#112,d1
 	moveq	#18,d2
@@ -20864,7 +20870,7 @@ T_122b2:
 	moveq	#1,d6
 	lea.l	D_328ee,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Itemdata_ptr,a1
 	move.b	Object_slot_number,d0
 	ext.w	d0
@@ -21271,21 +21277,21 @@ Accursed_blink:
 	jsr	Print_centered_string
 .l_12926:
 	rts
-T_12928:
+Double_Pop:
 	bsr.w	Pop_Module
 	bra.w	Pop_Module
-T_12930:
+Window_DisExit:
 	move.l	d0,-(a7)
-	move.w	B_5b288,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	move.l	(a7)+,d0
 	rts
-T_12942:
+Transfer_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_12942
+	bne.b	Transfer_item
 	lea.l	TransferItem_Mod,a0
 	bra.w	Push_Module
-T_12956:
+TransferItem_DisInit:
 	lea.l	Backpack_area,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
@@ -21500,10 +21506,9 @@ Inv2_Do_TI:
 	dc.l	Copy_screen
 .l_12c3c:
 	bra.w	Pop_Module
-T_12c40:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12c40
 Transfer_gold:
+	btst	#$1,Mouse_button_state
+	bne.b	Transfer_gold
 	movea.l	Off_screen,a6
 	move.w	#$6,d0
 	jsr	Minus_message
@@ -21534,7 +21539,7 @@ T_12ca0:
 	moveq	#1,d6
 	lea.l	D_32894,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	movea.l	Off_screen,a6
 	moveq	#2,d6
 	moveq	#16,d7
@@ -21638,10 +21643,9 @@ T_12e24:
 	mulu.w	#$a,d0
 	sub.l	d0,$ec(a1)
 	bra.w	Pop_Module
-T_12e7a:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12e7a
 Transfer_food:
+	btst	#$1,Mouse_button_state
+	bne.b	Transfer_food
 	movea.l	Off_screen,a6
 	move.w	#$7,d0
 	jsr	Minus_message
@@ -22132,7 +22136,7 @@ TIVS_DisUpd:
 	rts
 TIVS_ModExit:
 	st.b	AutoIcon_flag
-	jsr	T_06764
+	jsr	DoAutoIcon
 	movea.l	Off_screen,a6
 	jsr	Erase_message_minus
 	jsr	Switch_screen
@@ -22380,9 +22384,9 @@ Remove_boni:
 .l_1376e:
 	movem.l	(a7)+,d0/d2/a0-a2/a5
 	rts
-T_13774:
+Cast_spell:
 	btst	#$1,Mouse_button_state
-	bne.b	T_13774
+	bne.b	Cast_spell
 	sf.b	Magic_object_flag
 	movea.l	Current_active_char_data,a0
 	move.b	$1a(a0),d0
@@ -22464,7 +22468,7 @@ Do_magic:
 	add.w	d0,d0
 	adda.w	d0,a0
 	move.l	a0,B_5b856
-	lea.l	.l_138bc,a0
+	lea.l	SpellClass_ptrs,a0
 	move.w	Selected_class,d0
 	add.w	d0,d0
 	add.w	d0,d0
@@ -22481,32 +22485,33 @@ Do_magic:
 .l_138b6:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-.l_138bc:
+; Pointers to the spell tables of the classes (the black class is 0).
+SpellClass_ptrs:
 	dc.l	.l_138d8
 	dc.l	.l_13948
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	.l_139b0
 .l_138d8:
-	dc.l	T_13afc
-	dc.l	T_13b0e
-	dc.l	T_13b20
-	dc.l	T_13b32
-	dc.l	T_13b44
-	dc.l	T_13bd2
-	dc.l	T_13c14
-	dc.l	T_13c98
+	dc.l	Heal_1
+	dc.l	Heal_2
+	dc.l	Heal_3
+	dc.l	Heal_4
+	dc.l	Heal_5
+	dc.l	Heal_all
 	dc.l	Resurrect
-	dc.l	T_13d9c
-	dc.l	T_13da4
-	dc.l	T_13dac
-	dc.l	T_13db4
-	dc.l	T_13dbc
+	dc.l	Change_ashes
+	dc.l	Change_dust
+	dc.l	Heal_poisoned
+	dc.l	Heal_lamed
+	dc.l	Heal_diseased
+	dc.l	Heal_aged
+	dc.l	Heal_stoned
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_13dc4
-	dc.l	T_13dcc
+	dc.l	Heal_blind
+	dc.l	Heal_mad
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	Weapon_gunk
+	dc.l	Remove_curse
 	dc.l	Create_food
 .l_13948:
 	dc.l	T_14018
@@ -22530,19 +22535,19 @@ Do_magic:
 	dc.l	Magic_sphere
 	dc.l	T_14230
 	dc.l	Identify
-	dc.l	T_14434
+	dc.l	Levitate
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_144de
-	dc.l	T_145e6
+	dc.l	MTeleport
+	dc.l	Look_through
 .l_139b0:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_14610
+	dc.l	Map_view
 	dc.b	$00,$00,$00,$00
 	dc.l	Spellpts1
 	dc.l	Spellpts2
-	dc.l	T_14d9c
+	dc.l	Weapon_gunk
 	dc.l	Youth
 	dc.b	$00,$00,$00,$00
 	dc.l	T_150aa
@@ -22616,31 +22621,31 @@ Handle_spell:
 	move.w	(a7)+,sr
 	movem.l	(a7)+,d0-d1/a0-a1
 	rts
-T_13afc:
+Heal_1:
 	jsr	Random
 	mulu.w	#$5,d0
 	swap	d0
 	addq.w	#$1,d0
 	bra.w	Common_heal
-T_13b0e:
+Heal_2:
 	jsr	Random
 	mulu.w	#$8,d0
 	swap	d0
 	addq.w	#$2,d0
 	bra.w	Common_heal
-T_13b20:
+Heal_3:
 	jsr	Random
 	mulu.w	#$10,d0
 	swap	d0
 	addq.w	#$4,d0
 	bra.w	Common_heal
-T_13b32:
+Heal_4:
 	jsr	Random
 	mulu.w	#$20,d0
 	swap	d0
 	addq.w	#$8,d0
 	bra.w	Common_heal
-T_13b44:
+Heal_5:
 	dc.b	$4e,$b9
 	dc.l	Random
 	dc.b	$c0,$fc,$00,$40,$48,$40,$06,$40,$00,$10
@@ -22672,7 +22677,7 @@ Common_heal:
 	bsr.w	T_15938
 .l_13bd0:
 	rts
-T_13bd2:
+Heal_all:
 	bsr.w	Handle_spell
 	bmi.b	.l_13c12
 	lea.l	Chard_ptrs,a1
@@ -22698,7 +22703,7 @@ T_13bd2:
 	bmi.b	.l_13be0
 .l_13c12:
 	rts
-T_13c14:
+Resurrect:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$2,WText_nr
@@ -22730,7 +22735,7 @@ T_13c14:
 	bsr.w	T_15938
 .l_13c96:
 	rts
-T_13c98:
+Change_ashes:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$3,WText_nr
@@ -22763,8 +22768,7 @@ T_13c98:
 	jsr	Force_char_update
 .l_13d20:
 	rts
-Resurrect:
-Change_ashes:
+Change_dust:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$4,WText_nr
@@ -22792,31 +22796,31 @@ Change_ashes:
 	jsr	Force_char_update
 .l_13d9a:
 	rts
-T_13d9c:
+Heal_poisoned:
 	moveq	#5,d0
 	moveq	#9,d1
 	bra.w	Common_heal_condition
-T_13da4:
+Heal_lamed:
 	moveq	#6,d0
 	moveq	#8,d1
 	bra.w	Common_heal_condition
-T_13dac:
+Heal_diseased:
 	moveq	#7,d0
 	moveq	#11,d1
 	bra.w	Common_heal_condition
-T_13db4:
+Heal_aged:
 	moveq	#8,d0
 	moveq	#12,d1
 	bra.w	Common_heal_condition
-T_13dbc:
+Heal_stoned:
 	moveq	#9,d0
 	moveq	#10,d1
 	bra.w	Common_heal_condition
-T_13dc4:
+Heal_blind:
 	moveq	#12,d0
 	moveq	#4,d1
 	bra.w	Common_heal_condition
-T_13dcc:
+Heal_mad:
 	dc.b	$70,$0d,$72,$01
 Common_heal_condition:
 	move.w	d1,Condition_nr
@@ -22846,7 +22850,6 @@ Common_heal_condition:
 	bsr.w	T_15938
 .l_13e44:
 	rts
-Weapon_gunk:
 Remove_curse:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
@@ -23134,7 +23137,7 @@ MagicComp_DisInit:
 	moveq	#1,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_5b288
+	move.w	d0,Window_handle
 	lea.l	D_35eea,a0
 	move.w	View_direction,d0
 	lsl.w	#$8,d0
@@ -23152,7 +23155,7 @@ MagicComp_DisInit:
 MagicComp_DisExit:
 	btst	#$1,Mouse_button_state
 	bne.b	MagicComp_DisExit
-	move.w	B_5b288,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	rts
 Identify:
@@ -23255,7 +23258,7 @@ T_14398:
 	bsr.w	Init_display
 T_14432:
 	rts
-T_14434:
+Levitate:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	jsr	Find_event
@@ -23284,7 +23287,7 @@ T_14434:
 	tst.b	Magic_object_flag
 	beq.b	Do_levitate
 	bsr.w	Pop_Module
-	bsr.w	T_10f3c
+	bsr.w	Inv21_Exit
 Do_levitate:
 	jsr	Exit_map
 	moveq	#0,d0
@@ -23297,7 +23300,8 @@ Do_levitate:
 	jsr	Save_event
 T_144dc:
 	rts
-T_144de:
+; New code in the shipped program (only a label in the original).
+MTeleport:
 	cmpi.b	#$1,Current_map_type
 	bne.b	.l_14528
 	bsr.w	Handle_spell
@@ -23393,7 +23397,8 @@ T_144de:
 	rts
 .l_145de:
 	dc.b	$02,$03,$12,$13,$14,$15,$23,$00
-T_145e6:
+; A real spell in the shipped program (only an rts in the original).
+Look_through:
 	cmpi.b	#$2,Current_map_type
 	bpl.b	.l_1460e
 	bsr.w	Handle_spell
@@ -23405,7 +23410,7 @@ T_145e6:
 	sf.b	D_1e1fc
 .l_1460e:
 	rts
-T_14610:
+Map_view:
 	bsr.w	Handle_spell
 	bmi.b	.l_1466c
 	movea.l	Mapd_ptr,a0
@@ -23955,7 +23960,7 @@ Spellpts2:
 	bsr.w	T_15938
 .l_14d9a:
 	rts
-T_14d9c:
+Weapon_gunk:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0006Sys,Textfile_ptr
 	move.w	#$19,WText_nr
@@ -24177,7 +24182,7 @@ T_150aa:
 	tst.b	Magic_object_flag
 	beq.b	.l_150c8
 	bsr.w	Pop_Module
-	bsr.w	T_10f3c
+	bsr.w	Inv21_Exit
 .l_150c8:
 	lea.l	D_30462,a0
 	bsr.w	Push_Module
@@ -26604,7 +26609,7 @@ T_16f16:
 	bne.w	T_16cc2
 	move.w	#$0,Draw_Cicon
 	jsr	My_vsync
-	bsr.w	T_13774
+	bsr.w	Cast_spell
 	bsr.w	T_16b66
 	rts
 ; Chooses the actions of the monsters (before the party actions are added).
@@ -29596,7 +29601,7 @@ End_of_combat:
 .l_196c4:
 	tst.w	B_5be90
 	beq.b	.l_196da
-	jsr	T_01f98
+	jsr	Restore_coords
 	sf.b	B_5bea6
 	bra.b	.l_19748
 .l_196da:
@@ -30288,7 +30293,7 @@ T_1a10e:
 	beq.b	.l_1a140
 	tst.b	B_5beac
 	bne.b	.l_1a162
-	jmp	T_00162
+	jmp	Exit_program
 .l_1a162:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
@@ -30338,11 +30343,11 @@ T_1a214:
 	cmpi.b	#$2,Current_map_type
 	bmi.b	.l_1a236
 	jsr	T_0025a
-	jsr	T_0f616
+	jsr	Save_automap
 	jsr	T_00208
 .l_1a236:
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_320ac,a0
 	jsr	DI_Print
@@ -30460,7 +30465,7 @@ T_1a3de:
 	lea.l	D_32119,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	move.b	#$0,Mouse_flag
 	movea.l	Off_screen,a6
 	jsr	Clear_screen
@@ -30470,7 +30475,7 @@ T_1a3de:
 	jsr	Update_status_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jsr	T_06764
+	jsr	DoAutoIcon
 	jsr	T_00194
 	jsr	Init_map
 	jmp	Main_loop
@@ -31799,7 +31804,8 @@ Coso_period_table:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 T_1b63a:
 	dc.b	$00,$00,$00,$00
-T_1b63e:
+; Also checks the drive and masks an MFP interrupt.
+Init_file:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
@@ -31821,7 +31827,7 @@ T_1b63e:
 	addq.l	#$4,a7
 	bra.b	.l_1b6a8
 .l_1b688:
-	move.l	#D_5496d,-(a7)
+	move.l	#Amberfile_path,-(a7)
 	move.w	#$3b,-(a7)
 	trap	#$1
 	addq.l	#$6,a7
@@ -31834,7 +31840,7 @@ T_1b63e:
 	move.w	#$2f,-(a7)
 	trap	#$1
 	addq.l	#$2,a7
-	move.l	d0,B_6012a
+	move.l	d0,DTA_ptr
 	move.w	sr,-(a7)
 	ori.w	#$700,sr
 	andi.b	#$df,$fffffa09.w
@@ -31852,7 +31858,8 @@ T_1b6d0:
 	jsr	T_1a10e
 .l_1b6e4:
 	rts
-T_1b6e6:
+; Checks the drive / disk change (new in the shipped program).
+Check_disk:
 	movem.l	d0-d7/a0-a6,-(a7)
 	tst.b	B_60123
 	bne.w	T_1b782
@@ -31869,7 +31876,7 @@ T_1b704:
 	addq.l	#$8,a7
 	tst.l	d0
 	bmi.b	.l_1b72c
-	movea.l	B_6012a,a0
+	movea.l	DTA_ptr,a0
 	move.b	$24(a0),d0
 	subi.b	#$41,d0
 	cmp.b	d0,d7
@@ -31897,7 +31904,7 @@ T_1b73e:
 	addq.l	#$8,a7
 	tst.l	d0
 	bmi.b	T_1b734
-	movea.l	B_6012a,a0
+	movea.l	DTA_ptr,a0
 	move.b	$24(a0),d0
 	subi.b	#$41,d0
 	cmp.b	d0,d7
@@ -31923,7 +31930,7 @@ T_1b788:
 	move.w	#$f,d0
 	jsr	Push_Mptr
 	movea.l	a5,a0
-	bsr.w	T_1b6e6
+	bsr.w	Check_disk
 	movea.l	a5,a0
 	addq.l	#$1,a0
 	move.w	#$0,-(a7)
@@ -31936,7 +31943,7 @@ T_1b788:
 	bsr.w	T_1b6d0
 	bra.w	.l_1b86a
 .l_1b7e2:
-	movea.l	B_6012a,a0
+	movea.l	DTA_ptr,a0
 	move.l	$1a(a0),d7
 	move.b	(a5),d0
 	move.l	d7,d1
@@ -32015,7 +32022,7 @@ Save_file:
 	move.w	#$f,d0
 	jsr	Push_Mptr
 	movea.l	a5,a0
-	bsr.w	T_1b6e6
+	bsr.w	Check_disk
 	movea.l	a5,a0
 	addq.l	#$1,a0
 	move.w	#$0,-(a7)
@@ -32078,6 +32085,7 @@ Save_file:
 	jsr	Pop_Mptr
 	movem.l	(a7)+,d0-d7/a0-a6
 	bra.w	Save_file
+Exist_file:
 	movem.l	d0-d7/a0-a6,-(a7)
 	moveq	#0,d6
 	movea.l	a0,a5
@@ -32088,7 +32096,7 @@ Save_file:
 	move.w	#$f,d0
 	jsr	Push_Mptr
 	movea.l	a5,a0
-	bsr.w	T_1b6e6
+	bsr.w	Check_disk
 	movea.l	a5,a0
 	addq.l	#$1,a0
 	move.w	#$0,-(a7)
@@ -32159,7 +32167,7 @@ Load_subfile:
 	move.w	#$f,d0
 	jsr	Push_Mptr
 	movea.l	a5,a0
-	bsr.w	T_1b6e6
+	bsr.w	Check_disk
 	movea.l	a5,a0
 	addq.l	#$1,a0
 	move.w	#$0,-(a7)
@@ -32289,7 +32297,7 @@ T_1bb06:
 	bra.b	T_1bc48
 .l_1bbf8:
 	movea.l	a4,a0
-	bsr.w	T_1bde4
+	bsr.w	Decompress
 	movea.l	a4,a0
 	move.l	B_60132,d0
 	andi.l	#$ffffff,d0
@@ -32348,7 +32356,7 @@ Save_subfile:
 	move.w	#$f,d0
 	jsr	Push_Mptr
 	movea.l	a5,a0
-	bsr.w	T_1b6e6
+	bsr.w	Check_disk
 	movea.l	a5,a0
 	addq.l	#$1,a0
 	move.w	#$2,-(a7)
@@ -32458,7 +32466,7 @@ T_1bdba:
 	move.w	(a7)+,sr
 	movem.l	(a7)+,d0-d7/a0-a6
 	bra.w	Save_subfile
-T_1bde4:
+Decompress:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.l	#$800,d0
 	bsr.w	.l_1bdf8
@@ -32767,9 +32775,9 @@ Subfade2:
 	rts
 DI_Error:
 	movem.l	d0-d2/a0-a2/a6,-(a7)
-	bsr.w	T_1c0ea
+	bsr.w	ON_Diag_screen
 	movea.l	Screen_base,a6
-	bsr.w	T_1c1ac
+	bsr.w	DI_Cursor_home
 	lea.l	D_54b09,a0
 	bsr.w	DI_Print
 	movea.l	a1,a0
@@ -32785,10 +32793,10 @@ DI_Error:
 	movea.l	$4(a0),a0
 	jmp	(a0)
 .l_1c0e0:
-	bsr.w	T_1c160
+	bsr.w	OFF_Diag_screen
 	movem.l	(a7)+,d0-d2/a0-a2/a6
 	rts
-T_1c0ea:
+ON_Diag_screen:
 	movem.l	d0/a0/a6,-(a7)
 	tst.b	B_6046c
 	bne.b	.l_1c15a
@@ -32811,7 +32819,7 @@ T_1c0ea:
 .l_1c15a:
 	movem.l	(a7)+,d0/a0/a6
 	rts
-T_1c160:
+OFF_Diag_screen:
 	move.l	a0,-(a7)
 	sf.b	B_6046c
 	jsr	My_vsync
@@ -32828,7 +32836,7 @@ T_1c1a0:
 	dc.w	$a000
 	move.l	-$16(a0),B_60484
 	rts
-T_1c1ac:
+DI_Cursor_home:
 	clr.w	B_6047e
 	clr.w	B_60480
 	rts
@@ -33570,11 +33578,12 @@ Copy_HBL_list:
 	move.w	#$0,(a1)+
 	movem.l	(a7)+,d0-d7/a0-a1
 	rts
-T_1c9b0:
+; Also saves $404 and the vector and the registers of timer D (music).
+Save_computer:
 	movem.l	d0-d7/a0,-(a7)
-	move.l	$404.w,B_6089a
+	move.l	$404.w,Old_crit_vec
 	movem.l	$ffff8240.w,d0-d7
-	movem.l	d0-d7,B_608b0
+	movem.l	d0-d7,Old_pal
 	move.b	$ffff8260.w,Old_rez
 	lea.l	$ffff8201.w,a0
 	movep.w	$0(a0),d0
@@ -33594,7 +33603,7 @@ T_1c9b0:
 	move.b	$fffffa1d.w,(a0)+
 	move.b	$fffffa25.w,(a0)+
 	move.l	$114.w,T_1cbda
-	move.l	$110.w,B_608aa
+	move.l	$110.w,Old_timer_D_vec
 	move.l	$118.w,T_1cbd0
 	move.l	$70.w,T_1cc22
 	move.w	$454.w,Old_nvbls
@@ -33626,7 +33635,7 @@ Restore_computer:
 	move.b	(a0)+,$fffffa1d.w
 	move.b	(a0)+,$fffffa25.w
 	move.l	T_1cbda,$114.w
-	move.l	B_608aa,$110.w
+	move.l	Old_timer_D_vec,$110.w
 	move.l	T_1cbd0,$118.w
 	move.l	T_1cc22,$70.w
 	move.w	Old_nvbls,$454.w
@@ -33639,12 +33648,12 @@ Restore_computer:
 	trap	#$e
 	addq.l	#$2,a7
 	move.b	Old_rez,$ffff8260.w
-	movem.l	B_608b0,d0-d7
+	movem.l	Old_pal,d0-d7
 	movem.l	d0-d7,$ffff8240.w
 	lea.l	$ffff8201.w,a0
 	move.w	Old_screen,d0
 	movep.w	d0,$0(a0)
-	move.l	B_6089a,$404.w
+	move.l	Old_crit_vec,$404.w
 	movem.l	(a7)+,d0-d7/a0
 	rts
 ; The shipped program also sets the vector of timer D for the music (My_timer_D).
@@ -33921,7 +33930,7 @@ Change_Mptr:
 .l_1ce6a:
 	movem.l	(a7)+,d0/a0-a1
 	rts
-T_1ce70:
+Read_key:
 	movem.l	d1-d3/a0-a2,-(a7)
 	move.w	#$b,-(a7)
 	trap	#$1
@@ -34210,18 +34219,19 @@ T_1d184:
 	lea.l	$98(a3),a3
 	dbra	d7,T_1d184
 	rts
-T_1d192:
+; The ERROR is replaced by a diagnostic screen and a reset.
+Init_memory:
 	movem.l	d0-d1/a0,-(a7)
 	move.l	$18(a0),d0
 	add.l	$1c(a0),d0
-	move.l	d0,B_60a36
+	move.l	d0,Start_of_free_memory
 	move.l	$4(a0),d1
 	sub.l	d0,d1
 	cmpi.l	#$4b000,d1
 	bpl.b	.l_1d212
 	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	T_1c0ea
-	jsr	T_1c1ac
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
 	movea.l	Screen_base,a6
 	lea.l	D_55504,a0
 	jsr	DI_Print
@@ -34232,7 +34242,7 @@ T_1d192:
 	lea.l	D_55579,a0
 	jsr	DI_Print
 	jsr	Wait_4_key
-	jsr	T_1c160
+	jsr	OFF_Diag_screen
 	movem.l	(a7)+,d0-d7/a0-a6
 	movea.l	$4f2.w,a0
 	movea.l	$4(a0),a0
@@ -34274,7 +34284,7 @@ T_1d270:
 T_1d27a:
 	move.l	a0,-(a7)
 	lea.l	Memory_list,a0
-	move.l	B_60a36,(a0)+
+	move.l	Start_of_free_memory,(a0)+
 	move.l	B_60a3e,(a0)+
 	move.l	#$80000000,(a0)+
 	move.l	a0,Memlist_end
@@ -34446,7 +34456,7 @@ Allocate_memory:
 	jsr	DI_Error
 	bra.b	T_1d4e8
 .l_1d4ce:
-	bsr.w	T_1d4ee
+	bsr.w	Scan_memory
 	cmp.l	$4(a0),d1
 	beq.b	.l_1d4dc
 	bsr.w	T_1d532
@@ -34458,7 +34468,7 @@ T_1d4e0:
 T_1d4e8:
 	movem.l	(a7)+,d0-d1/d7/a0
 	rts
-T_1d4ee:
+Scan_memory:
 	move.l	d0,-(a7)
 	moveq	#0,d0
 .l_1d4f2:
@@ -35371,8 +35381,8 @@ Second_CIL:
 	dc.l	Ear_action
 	dc.l	T_0df02
 	dc.l	Change_travelmode
-	dc.l	T_13774
-	dc.l	T_0fd04
+	dc.l	Cast_spell
+	dc.l	Camp
 	dc.l	T_0f0ee
 	dc.l	T_105e8
 	dc.l	T_0f698
@@ -38208,18 +38218,18 @@ Door_object_pos_list:
 	dc.b	$00,$50,$00,$b1,$00,$70,$00,$b1,$00,$90,$00,$b1,$00,$b0,$00,$b1
 Door_CIL:
 	dc.b	$0f,$20,$1e,$0d,$38,$38,$0e,$38,$38,$00
-	dc.l	T_0809a
-	dc.l	T_0813c
-	dc.l	T_08084
+	dc.l	Pick_lock_DOOR
+	dc.l	Use_item_DOOR
+	dc.l	Door_Exit
 	dc.l	T_082e6
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_08332
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 ClosedChest_CIL:
 	dc.b	$0f,$20,$1e,$0d,$a3,$a1,$0e,$92,$b2,$00
-	dc.l	T_0809a
+	dc.l	Pick_lock_DOOR
 	dc.l	T_08bf6
-	dc.l	T_08aba
+	dc.l	Chest_exit
 	dc.l	T_082e6
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_08332
@@ -38227,7 +38237,7 @@ ClosedChest_CIL:
 OpenedChest_CIL:
 	dc.b	$8f,$a0,$1e,$8d,$23,$21,$8e,$12,$32,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00
-	dc.l	T_08aba
+	dc.l	Chest_exit
 	dc.b	$00,$00,$00,$00
 	dc.l	T_08f2c
 	dc.l	T_08f8a
@@ -38419,14 +38429,14 @@ Lay8_PA:
 	dc.b	$00,$10,$00,$31,$00,$b0,$00,$4d,$00,$0f,$00,$02
 Options_CIL:
 	dc.b	$41,$38,$1e,$19,$1a,$38,$17,$18,$38,$00
-	dc.l	T_0f7d4
+	dc.l	Quit_game
 	dc.b	$00,$00,$00,$00
-	dc.l	T_0f7a8
+	dc.l	Exit_options
 	dc.l	T_0f7ba
 	dc.l	T_0f7c2
 	dc.b	$00,$00,$00,$00
-	dc.l	T_0f822
-	dc.l	T_0fcc2
+	dc.l	Save_game
+	dc.l	Load_game
 	dc.b	$00,$00,$00,$00
 D_2940e:
 	dc.b	$38,$38,$1e,$38,$38,$38,$38,$38,$38,$00,$00,$00,$00,$00,$00,$00
@@ -38439,12 +38449,12 @@ D_2943c:
 	dc.b	$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10,$07,$65
 Camp_CIL:
 	dc.b	$0c,$38,$1e,$3a,$38,$38,$07,$38,$38,$00
-	dc.l	T_13774
+	dc.l	Cast_spell
 	dc.b	$00,$00,$00,$00
-	dc.l	T_0fe0e
-	dc.l	T_0fe5c
+	dc.l	Exit_camp
+	dc.l	Learn_spell
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_10068
+	dc.l	Rest
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 D_2948a:
 	dc.b	$00,$08,$00,$10,$00,$18,$00,$20,$00,$28
@@ -38470,13 +38480,13 @@ Basic_VblQ:
 	dc.l	Feedb_off
 	dc.l	Feedb_on
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 Basic_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_CIL
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 Basic_Kev:
 	dc.b	$00,$ff,$00,$00,$00,$01,$00,$00
@@ -38532,13 +38542,13 @@ Map_VblQ:
 	dc.l	Feedb_on
 	dc.l	T_1cfe4
 	dc.l	Realtime_step
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 Map_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
 	dc.l	Reset_mouse
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.l	T_00e80
 	dc.b	$00,$00,$00,$00
@@ -38615,7 +38625,7 @@ Wait_Mev:
 	dc.b	$00,$00,$00,$00
 D_29816:
 	dc.b	$00,$ff,$00,$00,$00,$39,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$00,$ff,$00,$00,$00,$01,$00,$00
 	dc.l	T_01038
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
@@ -38663,9 +38673,9 @@ D_29816:
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
 	dc.l	T_01086
 	dc.b	$00,$00,$00,$00,$04,$00,$00,$00,$04,$00,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$08,$00,$00,$00,$08,$00,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$00,$00,$00,$00
 Buffer_Mod:
 	dc.l	Basic_DisUpd
@@ -38674,7 +38684,7 @@ Buffer_Mod:
 	dc.b	$00,$00,$00,$00
 	dc.l	Basic_Kev
 	dc.b	$00,$00,$00,$00
-	dc.l	T_00162
+	dc.l	Exit_program
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Buffer_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -39154,7 +39164,7 @@ TxtW_Mod_ID:
 TxtW_Mod_VblQ:
 	dc.l	T_1cfb8
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 TxtW_Mod_Mev:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
@@ -39176,7 +39186,7 @@ D_2a43e:
 D_2a44e:
 	dc.l	T_1cfb8
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 D_2a45e:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
@@ -39191,7 +39201,7 @@ TIVS_Mev:
 TIVS_VblQ:
 	dc.l	T_1cfb8
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 TIVS1_Mod:
 	dc.l	TIVS_DisUpd
@@ -39211,7 +39221,7 @@ TIVS1_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
 	dc.l	Display_quantities
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 TIVS2_Mod:
 	dc.l	TIVS_DisUpd
@@ -39337,7 +39347,7 @@ Inv2_Mod_ScrQ:
 	dc.l	Update_CIL
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 Inv2_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
@@ -39441,7 +39451,7 @@ D_2a9be:
 	dc.l	Display_quantities
 	dc.l	T_11814
 	dc.l	T_11870
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_character_info
 	dc.b	$00,$00,$00,$00
 DropItem_Mod:
@@ -39450,7 +39460,7 @@ DropItem_Mod:
 	dc.l	D_2a9be
 	dc.l	DropItem_Mod_Mev
 	dc.l	DropItem_Mod_Kev
-	dc.l	TransferItem_DisInit
+	dc.l	DropItem_DisInit
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	DropItem_Mod_ID
@@ -39764,8 +39774,8 @@ D_2b0ce:
 	dc.l	Basic_ScrQ
 	dc.l	D_2b120
 	dc.l	D_29816
-	dc.l	T_122b2
-	dc.l	T_12930
+	dc.l	ItemViewW1_DisInit
+	dc.l	Window_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	D_2b0fc
 D_2b0f6:
@@ -39776,7 +39786,7 @@ D_2b0fc:
 	dc.b	$41,$2e,$00,$00
 D_2b120:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$08,$ff,$00,$00,$08,$01,$00,$00
 	dc.l	T_12580
 	dc.b	$00,$00,$00,$00
@@ -39786,8 +39796,8 @@ D_2b13c:
 	dc.l	Basic_ScrQ
 	dc.l	D_2b18e
 	dc.l	D_29816
-	dc.l	T_122b2
-	dc.l	T_12930
+	dc.l	ItemViewW1_DisInit
+	dc.l	Window_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	D_2b16a
 D_2b164:
@@ -39821,7 +39831,7 @@ ItemView2_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_CIL
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Accursed_blink
 	dc.b	$00,$00,$00,$00
 TransferItem_Mod:
@@ -39830,7 +39840,7 @@ TransferItem_Mod:
 	dc.l	D_2a9be
 	dc.l	TransferItem_Mod_Mev
 	dc.l	TransferItem_Mod_Kev
-	dc.l	T_12956
+	dc.l	TransferItem_DisInit
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TransferItem_Mod_ID
@@ -40113,8 +40123,8 @@ UseItemDoor_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.b	$00,$00,$00,$00
 UseItemDoor_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
@@ -40258,7 +40268,7 @@ OpenedChest_Mod_ScrQ:
 	dc.l	Update_CIL
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 OpenedChest_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
@@ -40291,8 +40301,8 @@ UseItemChest_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.b	$00,$00,$00,$00
 UseItemChest_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
@@ -40323,7 +40333,7 @@ TIChest_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 TIChest_Mod_Mev:
@@ -40737,8 +40747,8 @@ MerchOBJC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
 	dc.l	AutoIcon_switch
+	dc.l	Display2_quantities
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 MerchOBJC_Mod_Mev:
@@ -40803,7 +40813,7 @@ Healer_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.l	Display_Ankh
 	dc.b	$00,$00,$00,$00
@@ -40919,7 +40929,7 @@ Sage_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 Sage_Mod_Mev:
@@ -41079,8 +41089,8 @@ MerchMAGIC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
 	dc.l	AutoIcon_switch
+	dc.l	Display2_quantities
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 MerchMAGIC_Mod_Mev:
@@ -41232,8 +41242,8 @@ SellItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd4_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 SellItem_Mod_Mev:
@@ -41280,8 +41290,8 @@ SellReq_Mod_ID:
 SellReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 SellReq_Mod_Mev:
@@ -41309,8 +41319,8 @@ BuyItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd4_objname_print
 	dc.l	T_0c740
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 BuyItem_Mod_Mev:
@@ -41357,8 +41367,8 @@ BuyReq_Mod_ID:
 BuyReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 BuyReq_Mod_Mev:
@@ -41387,8 +41397,8 @@ TIMOBJC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 TIMOBJC_Mod_Mev:
@@ -41546,7 +41556,7 @@ HealCondReq_Mod_ID:
 HealCondReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Display_Ankh
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -41574,7 +41584,7 @@ RemCurseReq_Mod_ID:
 RemCurseReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Display_Ankh
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -41603,7 +41613,7 @@ RemCurse_Mod_ScrQ:
 	dc.l	Display_quantities
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 ActSel_Mod:
@@ -41624,7 +41634,7 @@ ActSel_Mod_ID:
 ActSel_Mod_VblQ:
 	dc.l	T_1cfb8
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 ActSel_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
@@ -41876,13 +41886,13 @@ Dialogue_Mod_VblQ:
 	dc.l	Feedb_off
 	dc.l	Feedb_on
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 Dialogue_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_CIL
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
 	dc.b	$00,$00,$00,$00
@@ -42008,7 +42018,7 @@ TIDIA_Mod_ScrQ:
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
 	dc.l	Update_CIL
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 TIDIA_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
@@ -42089,8 +42099,8 @@ ShowItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 ShowItem_Mod_Mev:
@@ -42172,8 +42182,8 @@ GiveItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 GiveItem_Mod_Mev:
@@ -42286,7 +42296,7 @@ DIADropItem_Mod_ScrQ:
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
 	dc.l	Update_CIL
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 DIADropItem_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
@@ -42591,8 +42601,8 @@ LearnSpell_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 LearnSpell_Mod_Mev:
@@ -42767,7 +42777,7 @@ RemCurse2_Mod_ScrQ:
 	dc.l	Display_quantities
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 RemCurse2_Mod_Mev:
@@ -42843,7 +42853,7 @@ HearTxtW_Mod_ID:
 HearTxtW_Mod_VblQ:
 	dc.l	T_1cfb8
 	dc.l	T_1cfe4
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 HearTxtW_Mod_Mev:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
@@ -42976,11 +42986,11 @@ SaveGame_Mod_ID:
 	dc.b	$53,$61,$76,$65,$20,$67,$61,$6d,$65,$2e,$00,$00
 SaveGame_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
-	dc.l	T_0fb38
+	dc.l	Portrait_selected
 	dc.b	$02,$ff,$00,$00,$02,$02,$00,$00
-	dc.l	T_0f9b8
+	dc.l	Do_SaveGame
 	dc.b	$02,$ff,$00,$00,$02,$03,$00,$00
-	dc.l	T_0f9a6
+	dc.l	Exit_SaveGame
 	dc.b	$00,$00,$00,$00
 MagicCompass_Mod:
 	dc.l	Basic_DisUpd
@@ -43018,7 +43028,7 @@ Lore_Mod_ScrQ:
 	dc.l	T_11870
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 Lore_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
@@ -43104,7 +43114,7 @@ Gunk_Mod_ScrQ:
 	dc.l	Display_quantities
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 Gunk_Mod_Mev:
@@ -43296,8 +43306,8 @@ ViewItemMOBJC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 ViewItemMOBJC_Mod_Mev:
@@ -43361,9 +43371,9 @@ D_2fbee:
 	dc.b	$63,$65,$2e,$00
 D_2fc02:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
-	dc.l	T_00d26
+	dc.l	Death_load_game
 	dc.b	$02,$ff,$00,$00,$02,$02,$00,$00
-	dc.l	T_0f7d4
+	dc.l	Quit_game
 	dc.b	$00,$00,$00,$00
 D_2fc1e:
 	dc.l	OpenedChest_DisUpd
@@ -43384,7 +43394,7 @@ D_2fc66:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 D_2fc82:
@@ -43720,7 +43730,7 @@ D_3035e:
 	dc.l	Update_CIL
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 D_3037a:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
@@ -43994,20 +44004,20 @@ D_30952:
 	dc.b	$1d,$38,$1e,$38,$38,$38,$38,$38,$38,$00
 	dc.l	T_10f12
 	dc.b	$00,$00,$00,$00
-	dc.l	T_10b58
+	dc.l	Inv1_Exit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-D_30980:
+Inv2_CIL:
 	dc.b	$08,$22,$1e,$20,$1f,$23,$21,$12,$14,$00
-	dc.l	T_10f4e
-	dc.l	T_118a6
-	dc.l	T_10f3c
-	dc.l	T_11d6e
-	dc.l	T_121c0
-	dc.l	T_12204
-	dc.l	T_12942
-	dc.l	T_12c40
-	dc.l	T_12e7a
+	dc.l	Inv2_Exit
+	dc.l	Drop_item
+	dc.l	Inv21_Exit
+	dc.l	Use_item
+	dc.l	Pool_gold_INV2
+	dc.l	View_item
+	dc.l	Transfer_item
+	dc.l	Transfer_gold
+	dc.l	Transfer_food
 D_309ae:
 	dc.b	$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31
 	dc.b	$02,$00,$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10
@@ -44807,7 +44817,7 @@ Automap_filename:
 	dc.b	$11,$41,$55,$54,$4f,$4d,$41,$50,$2e,$41,$4d,$42,$00,$00
 D_321e6:
 	dc.b	$12,$43,$4f,$44,$45,$54,$58,$54,$2e,$41,$4d,$42,$00,$00
-D_321f4:
+Partydata_filename:
 	dc.b	$01,$50,$41,$52,$54,$59,$44,$41,$54,$2e,$53,$41,$56,$00
 Chard_filename:
 	dc.b	$03,$43,$48,$41,$52,$44,$41,$54,$41,$2e,$41,$4d,$42,$00
@@ -54281,7 +54291,7 @@ D_5494f:
 	dc.b	$01,$01,$02,$02,$00,$00
 D_54965:
 	dc.b	$41,$4d,$42,$45,$52,$2e,$2a,$00
-D_5496d:
+Amberfile_path:
 	dc.b	$5c,$41,$4d,$42,$52,$53,$54,$41,$52,$5c,$41,$4d,$42,$52,$46,$49
 	dc.b	$4c,$45,$5c,$00,$00
 D_54982:
@@ -54871,9 +54881,9 @@ Shadow_data:
 	ds.b	84
 Updated:
 	ds.b	2
-B_5ad8a:
+AutoIcon_counters:
 	ds.b	12
-B_5ad96:
+AutoIcon_timer:
 	ds.b	2
 B_5ad98:
 	ds.b	50
@@ -54969,7 +54979,7 @@ Event_data_ptr:
 	ds.b	4
 WText_nr:
 	ds.b	2
-B_5b288:
+Window_handle:
 	ds.b	2
 B_5b28a:
 	ds.b	2
@@ -55083,7 +55093,7 @@ B_5b50c:
 	ds.b	6
 SaveGame_bitlist:
 	ds.b	2
-B_5b514:
+Partydata_length:
 	ds.b	4
 B_5b518:
 	ds.b	1
@@ -55366,7 +55376,7 @@ Magic_anim_counter:
 	ds.b	2
 Char_damage:
 	ds.b	12
-B_5bef2:
+Damage_timers:
 	ds.b	1
 B_5bef3:
 	ds.b	5
@@ -55460,7 +55470,7 @@ Map_nr:
 	ds.b	2
 Member_1_nr:
 	ds.b	2
-B_5c380:
+Member_2_nr:
 	ds.b	10
 B_5c38a:
 	ds.b	2
@@ -55486,11 +55496,11 @@ B_5ea14:
 	ds.b	1212
 B_5eed0:
 	ds.b	6
-B_5eed6:
+Basepage:
 	ds.b	4
-B_5eeda:
+Old_usp:
 	ds.b	4
-B_5eede:
+Old_ssp:
 	ds.b	4100
 B_5fee2:
 	ds.b	256
@@ -55542,7 +55552,7 @@ B_60124:
 	ds.b	2
 B_60126:
 	ds.b	4
-B_6012a:
+DTA_ptr:
 	ds.b	4
 B_6012e:
 	ds.b	4
@@ -55586,7 +55596,8 @@ HBL_list:
 	ds.b	1024
 B_60896:
 	ds.b	4
-B_6089a:
+; The vector $404 (etv_critic) before the start (new in the shipped program).
+Old_crit_vec:
 	ds.b	4
 Old_nvbls:
 	ds.b	2
@@ -55596,11 +55607,12 @@ Old_conterm:
 	ds.b	2
 Old_mouse_vec:
 	ds.b	4
-B_608aa:
+; The vector of timer D before the music was set up (new in the shipped program).
+Old_timer_D_vec:
 	ds.b	4
 Old_rez:
 	ds.b	2
-B_608b0:
+Old_pal:
 	ds.b	32
 Old_screen:
 	ds.b	2
@@ -55630,7 +55642,7 @@ Mouse_unclick_state:
 	ds.b	1
 Mouse_button_state:
 	ds.b	2
-B_60a36:
+Start_of_free_memory:
 	ds.b	4
 Size_of_free_memory:
 	ds.b	4

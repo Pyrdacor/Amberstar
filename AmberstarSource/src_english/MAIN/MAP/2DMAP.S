@@ -2,6 +2,52 @@
 
 	section	text
 
+
+; ---- M2_time_evaluate (original source: MAIN/MAP/2DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;M2_time_evaluate:
+;             movem.l   d0/d1/a0,-(sp)
+;             movea.l   Current_active_char_data,a0          ; Blind ?
+;             btst      #4,Mind_conditions(a0)
+;             sne       Stygian              ; Darkness !
+;             bne       .Exit
+;             movea.l   Mapd_ptr,a0          ; Get bits
+;             move.b    Map_special(a0),d0
+;             btst      #0,d0                ; Light bit on ?
+;             beq.s     .No_light
+;             move.w    #0,Current_radius    ; No circle
+;             move.w    #0,New_radius
+;             bra       .Exit
+;.No_light:   btst      #1,d0                ; Change bit on ?
+;             beq.s     .No_change
+;             move.w    Hour,d0              ; Get current hour
+;             moveq.l   #0,d1                ; Get radius
+;             move.b    .Radius(pc,d0.w),d1
+;             tst.w     Spell_1_duration     ; Any light spell active ?
+;             beq.s     .No
+;             move.w    Spell_1_data,d0      ; Add light spell's effect
+;             lsl.w     #3,d0
+;             add.w     d0,d1
+;.No:         move.w    d1,New_radius        ; Store
+;             bra       .Exit
+;.Radius:     .DC.b 16,16,16,16,16,16,40,64
+;             .DCB.b 9,200
+;             .DC.b 64,64,40,16,16,16,16,16
+;             .EVEN
+;.No_change:  btst      #2,d0                ; Dark bit on ?
+;             beq       .Exit
+;             cmpi.w    #6,Travel_mode       ; Superchicken mode ?
+;             beq       .Exit
+;             tst.w     Spell_1_duration     ; Any light spell active ?
+;             seq       Stygian
+;             beq.s     .Exit
+;             move.w    Spell_1_data,d1      ; Get light spell's effect
+;             lsl.w     #3,d1
+;             addi.w    #16,d1
+;             move.w    d1,New_radius        ; Store
+;             move.w    d1,Current_radius
+;.Exit:       movem.l   (sp)+,d0/d1/a0
+;             rts
+
 M2_time_evaluate:
 	movem.l	d0-d1/a0,-(a7)
 	movea.l	Current_active_char_data,a0

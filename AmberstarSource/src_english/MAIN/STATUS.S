@@ -2,6 +2,286 @@
 
 	section	text
 
+
+; ---- Help (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Help:
+;             DIAG_ON
+;             lea.l     Help_msg,a0          ; Print help message
+;             jsr       DI_Print
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts                            ; Return
+
+; ---- Status_F1 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F1:
+;             DIAG_ON
+;             PRINT     "[ AMBERSTAR STATUS SCREEN ]"        ; Header
+;             PRINTNR   "  Map number : ",Dec,w,Map_nr       ; Status display
+;             CR
+;             PRINTNR   "X coordinate : ",Dec,w,Map_Xcoord
+;             CR
+;             PRINTNR   "Y coordinate : ",Dec,w,Map_Ycoord
+;             CR
+;             CR
+;             PRINTNR   "View direction : ",Dec,w,View_direction
+;             CR
+;             PRINTNR   "   Travel mode : ",Dec,w,Travel_mode
+;             CR
+;             cmpi.b    #1,Current_map_type  ; Wilderness ?
+;             bne.s     .Skip
+;             CR
+;             PRINTNR   "World X : ",Dec,w,World_X
+;             CR
+;             PRINTNR   "World Y : ",Dec,w,World_Y
+;             CR
+;.Skip:       CR
+;             PRINTNR   "  Year : ",Dec,w,Year
+;             CR
+;             PRINTNR   " Month : ",Dec,w,Month
+;             CR
+;             PRINTNR   "   Day : ",Dec,w,Day
+;             CR
+;             PRINTNR   "  Hour : ",Dec,w,Hour
+;             CR
+;             PRINTNR   "Minute : ",Dec,w,Minute
+;             CR
+;             PRINTNR   " Frame : ",Dec,w,Frame
+;             CR
+;             CR
+;             PRINTNR   "Number of members in party : ",Dec,w,Nr_members
+;             CR
+;             CR
+;             PRINT     "[ Press any key to exit ]"          ; Footer
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts                            ; Return
+
+; ---- Status_F2 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F2:
+;             jmp       Show_memory
+
+; ---- Status_F3 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F3:
+;             DIAG_ON
+;             PRINT     "[ VIEW FREE MEMORY ]"     ; Header
+;             CR
+;             PRINTNR   "        Size of free memory : ",Dec,l,Size_of_free_memory
+;             CR
+;             move.l    Total_size,d0
+;             sub.l     Size_of_free_memory,d0
+;             move.l    d0,d1
+;             PRINTNR   "                Memory used : ",Dec,l,d0
+;             CR
+;             CR
+;             movea.l   Basepage,a1
+;             PRINTNR   "       Size of TEXT segment : ",Dec,l,P_tlen(a1)
+;             CR
+;             PRINTNR   "       Size of DATA segment : ",Dec,l,P_dlen(a1)
+;             CR
+;             PRINTNR   "       Size of  BSS segment : ",Dec,l,P_blen(a1)
+;             CR
+;             CR
+;             move.l    #256,d0
+;             add.l     P_tlen(a1),d0
+;             add.l     P_dlen(a1),d0
+;             add.l     P_blen(a1),d0
+;             PRINTNR   "      Total size of program : ",Dec,l,d0
+;             CR
+;             CR
+;             add.l     d1,d0
+;             PRINTNR   "Total amount of memory used : ",Dec,l,d0
+;             CR
+;             CR
+;             PRINT     "[ Press any key to exit ]"          ; Footer
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+
+; ---- Status_F4 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F4:
+;             DIAG_ON
+;             PRINT     "[ VIEW MODIFICATION INFO ]"         ; Header
+;             CR
+;             move.w    Nr_of_modifications,d7
+;             PRINTNR   "Number of modifications : ",Dec,w,d7
+;             CR
+;             CR
+;             movea.l   Modifications_ptr,a1
+;             bra.s     .Entry
+;.Loop:       PRINTNR   "> ",Dec,w,(a1)+
+;             PRINTNR   ",",Dec,b,(a1)+
+;             PRINTNR   ",",Dec,b,(a1)+
+;             PRINTNR   ",",Dec,w,(a1)+
+;             CR
+;.Entry:      dbra      d7,.Loop
+;             CR
+;             PRINT     "[ Press any key to exit ]"          ; Footer
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+
+; ---- Status_F5 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F5:
+;             DIAG_ON
+;             PRINT     "[ VIEW MODULE STACK ]"    ; Header
+;             CR
+;             lea.l     Module_stack,a1
+;             movea.l   Module_sp,a2
+;             bra.s     .Entry
+;.Loop:       movea.l   IDString_ptr(a1),a0  ; Print ID string
+;             jsr       DI_Print
+;             CR
+;             lea.l     ModuleDataSize(a1),a1      ; Next module
+;.Entry:      cmpa.l    a1,a2
+;             bhi.s     .Loop
+;             PRINT     .Blue
+;             movea.l   IDString_ptr(a1),a0  ; Print last ID string
+;             jsr       DI_Print
+;             PRINT     .White
+;             CR
+;             PRINT     "[ Press any key to exit ]"          ; Footer
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+;
+;.Blue:       .DC.b 3,2,0
+;.White:      .DC.b " <- ACTIVE.",3,1,13,0
+;             .EVEN
+
+; ---- Status_F6 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F6:
+;             DIAG_ON
+;             PRINT     "[ INCREASE EXPERIENCE POINTS ]"     ; Header
+;             CR
+;             movea.l   Current_active_char_data,a1
+;             PRINTNR   "Current experience points : ",Dec,l,Experience_points(a1)
+;             CR
+;.Again1:     INPUT     "Enter extra amount : "
+;             tst.l     d0                   ; Error check
+;             bmi.s     .Exit
+;             beq.s     .Again1
+;             add.l     d0,Experience_points(a1)   ; Store
+;.Exit:       DIAG_OFF
+;             rts                            ; Return
+
+; ---- Status_F7 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F7:
+;             jsr       Exit_display
+;             Push      Module,Minimap_Mod
+;             rts
+
+; ---- Status_F8 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F8:
+;             DIAG_ON
+;             PRINT     "[ CHANGE MAP ]"     ; Header
+;             CR
+;.Again:      INPUT     "Enter new map : "
+;             tst.l     d0                   ; Error check
+;             bmi.s     .Exit
+;             beq.s     .Again
+;             move.w    d0,New_map
+;             DIAG_OFF
+;             jsr       Exit_map             ; Change map
+;             move.w    New_map,Map_nr
+;             move.w    #7,Map_Xcoord
+;             move.w    #7,Map_Ycoord
+;             move.w    #0,View_direction
+;             jsr       Init_map
+;             rts
+;.Exit:       DIAG_OFF
+;             rts
+
+; ---- Status_F9 (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Status_F9:
+;             DIAG_ON
+;             PRINT     "[ SAVE NEO PICTURE ]"     ; Header
+;             CR
+;             INPUT     "Enter 4-digit identifier ('AMBR????.NEO') : "
+;             CR
+;             tst.w     d0
+;             bmi       .Exit
+;             move.w    #"0",d1              ; Insert number in filenames
+;             moveq.l   #4,d7
+;             lea.l     Picture_filename+4,a3
+;             jsr       RConvert_number
+;             lea.l     Raster_filename+4,a3
+;             jsr       RConvert_number
+;; ------------- Make & save picture file -----------------------------
+;             PRINT     "Creating picture..."
+;             CR
+;             move.l    #32128,d0            ; Make buffer
+;             jsr       Allocate_memory
+;             movea.l   a1,a2
+;             moveq.l   #32-1,d7             ; Clear first 128 bytes
+;.Loop1:      clr.l     (a1)+
+;             dbra      d7,.Loop1
+;             movea.l   User_HBL_list,a1     ; Copy palette
+;             addq.l    #2,a1
+;             movem.l   (a1),d0-d7
+;             movem.l   d0-d7,4(a2)
+;             move.l    #"NEO!",124(a2)      ; Insert magic longword
+;             moveq.l   #0,d0                ; Copy screen to file buffer
+;             moveq.l   #0,d1
+;             moveq.l   #20,d6
+;             move.w    #200,d7
+;             movea.l   On_screen,a0
+;             lea.l     128(a2),a1
+;             jsr       Duplicate_block
+;             move.l    #32128,d0            ; Save file
+;             lea.l     Picture_filename,a0
+;             movea.l   a2,a1
+;             jsr       Save_file
+;             PRINT     "Picture has been saved."
+;             CR
+;             movea.l   a2,a0                ; De-allocate file buffer
+;             jsr       Free_memory
+;; ------------- Make & save raster file ------------------------------
+;             PRINT     "Creating raster file..."
+;             CR
+;             move.l    #6800,d0             ; Make buffer
+;             jsr       Allocate_memory
+;             movea.l   a1,a2
+;             movea.l   a1,a0                ; Clear buffer
+;             move.w    #1700-1,d7
+;.Loop2:      clr.l     (a0)+
+;             dbra      d7,.Loop2
+;             movea.l   User_HBL_list,a0     ; Get pointer to HBL list
+;             addq.l    #2,a0
+;             move.w    #0,(a1)+             ; Write first Y-offset
+;             bra.s     .Entry
+;.Again:      tst.w     (a0)                 ; End of list ?
+;             beq.s     .End
+;             moveq.l   #0,d0                ; Write Y-offset
+;             move.b    (a0)+,d0
+;             move.w    d0,(a1)+
+;             tst.b     (a0)+                ; Palette or single colour ?
+;             bne.s     .Single
+;.Entry:      moveq.l   #8-1,d7              ; Write palette
+;.Loop3:      move.l    (a0)+,(a1)+
+;             dbra      d7,.Loop3
+;             bra.s     .Again
+;.Single:     movea.l   a1,a3                ; Copy previous palette
+;             moveq.l   #8-1,d7
+;.Loop4:      move.l    -34(a3),(a3)+
+;             dbra      d7,.Loop4
+;             move.w    (a0)+,d0             ; Write altered colour
+;             add.w     d0,d0
+;             move.w    (a0)+,0(a1,d0.w)
+;             lea.l     32(a1),a1
+;             bra.s     .Again
+;.End:        move.l    #6800,d0             ; Save file
+;             lea.l     Raster_filename,a0
+;             movea.l   a2,a1
+;             jsr       Save_file
+;             PRINT     "Raster-file has been saved."
+;             CR
+;             movea.l   a2,a0                ; De-allocate file buffer
+;             jsr       Free_memory
+;             PRINT     "[ Press any key to exit ]"          ; Footer
+;             jsr       Wait_4_key
+;.Exit:       DIAG_OFF
+;             rts
+
 ; ---- Status_F0 (original source: MAIN/STATUS.ASM)
 Status_F0:
 	move.w	Travel_mode,d0
@@ -14,6 +294,41 @@ Status_F0:
 .Exit:
 	bsr.w	Set_new_travel_mode
 	rts	
+
+; ---- Show_memory (original source: MAIN/STATUS.ASM) - only in the debug build, not assembled:
+;Show_memory::
+;             DIAG_ON
+;             PRINT     .White
+;             lea.l     Memory_list,a1       ; Ptr = Start
+;             movea.l   Memlist_end,a2
+;.Loop:       btst      #7,8(a1)             ; Free or allocated ?
+;             bne.s     .Next
+;.Continue:   PRINTNR   ,Hex,l,0(a1)         ; Print start & length
+;             PRINTNR   ,Dec,l,4(a1)
+;             lea.l     Memory_types,a3      ; Print type
+;             moveq.l   #$7f,d0
+;             and.b     8(a1),d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             movea.l   0(a3,d0.w),a3
+;             PRINT     (a3)
+;             tst.w     d0                   ; Memory block ?
+;             beq.s     .Skip
+;             move.w    10(a1),d0            ; Print subfile number
+;             addq.w    #1,d0
+;             PRINTNR   ,Dec,w,d0
+;.Skip:       CR
+;.Next:       lea.l     12(a1),a1            ; Increase Ptr
+;             cmpa.l    a2,a1                ; While Ptr < End
+;             bmi.s     .Loop
+;.Exit:       jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+;
+;.Blue:       .DC.b 3,2,0
+;.White:      .DC.b 3,1,0
+;             .EVEN
+
 T_019d6:
 	tst.b	D_1dc92
 	beq.w	.l_01af8

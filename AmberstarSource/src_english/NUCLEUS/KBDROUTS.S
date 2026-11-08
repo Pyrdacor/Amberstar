@@ -2,6 +2,26 @@
 
 	section	text
 
+
+; ---- Push_MA (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Push_MA:
+;             movem.l   d0-d2/a0/a1,-(sp)
+;             jsr       Mouse_off
+;             movea.l   MA_sp,a1             ; Increase MA sp
+;             addq.l    #4,a1
+;             move.l    Mouse_X,(a1)+        ; Store mouse coordinates (.l)
+;             cmpa.l    #End_of_MA_stack,a1
+;             bmi.s     .Not_full
+;             ERROR     "[ Push_MA ] : MA Stack overflow !!!"
+;             bra       .Exit
+;.Not_full:   move.l    a0,(a1)              ; Store new MA descriptor
+;             move.l    a1,MA_sp             ; Store new sp
+;             lea.l     Fake_packet,a0       ; Initialize new MA
+;             jsr       My_mouse
+;.Exit:       jsr       Mouse_on
+;             movem.l   (sp)+,d0-d2/a0/a1
+;             rts
+
 Push_MA:
 	movem.l	d0-d2/a0-a1,-(a7)
 	bsr.w	Mouse_off
@@ -49,6 +69,25 @@ T_1cd18:
 .l_1cd6c:
 	movem.l	(a7)+,d0-d1/a1
 	rts
+
+; ---- Pop_MA (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Pop_MA:
+;             movem.l   d0-d2/a0/a1,-(sp)
+;             jsr       Mouse_off
+;             movea.l   MA_sp,a1             ; Decrease MA sp
+;             cmpa.l    #MA_Stack,a1
+;             bhi.s     .Not_empty
+;             ERROR     "[ Pop_MA ] : MA Stack underflow !!!"
+;             bra       .Exit
+;.Not_empty:  move.l    -(a1),Mouse_X        ; Restore mouse coordinates
+;             subq.l    #4,a1
+;             move.l    a1,MA_sp             ; Store new sp
+;             lea.l     Fake_packet,a0       ; Initialize old MA
+;             jsr       My_mouse
+;.Exit:       jsr       Mouse_on
+;             movem.l   (sp)+,d0-d2/a0/a1
+;             rts
+
 Pop_MA:
 	movem.l	d0-d2/a0-a1,-(a7)
 	bsr.w	Mouse_off
@@ -67,6 +106,30 @@ Pop_MA:
 	bsr.w	Mouse_on
 	movem.l	(a7)+,d0-d2/a0-a1
 	rts
+
+; ---- Push_Mptr (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Push_Mptr:
+;             movem.l   d0/a0/a1,-(sp)
+;             jsr       Mouse_off
+;             cmpi.w    #Max_mouses+1,d0     ; Input too high ?
+;             bmi.s     .No_error1
+;             ERROR     "[ Push_Mptr ] : Illegal input !!!"
+;             bra.s     .Exit
+;.No_error1:  lea.l     Mouse_base,a0        ; Calculate graphics address
+;             mulu.w    #68,d0
+;             adda.w    d0,a0
+;             movea.l   Mptr_sp,a1           ; Get sp
+;             addq.l    #4,a1
+;             tst.l     (a1)                 ; Stack full ?
+;             beq.s     .No_error2
+;             ERROR     "[ Push_Mptr ] : Stack is full !!!"
+;             bra.s     .Exit
+;.No_error2:  move.l    a0,(a1)              ; Push on stack
+;             move.l    a1,Mptr_sp           ; Store sp
+;.Exit:       jsr       Mouse_on
+;             movem.l   (sp)+,d0/a0/a1
+;             rts
+
 Push_Mptr:
 	movem.l	d0/a0-a1,-(a7)
 	bsr.w	Mouse_off
@@ -93,6 +156,23 @@ Push_Mptr:
 	bsr.w	Mouse_on
 	movem.l	(a7)+,d0/a0-a1
 	rts
+
+; ---- Pop_Mptr (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Pop_Mptr:
+;             move.l    a1,-(sp)
+;             jsr       Mouse_off
+;             movea.l   Mptr_sp,a1           ; Get sp
+;             cmpa.l    #Mptr_stack,a1       ; Stack empty ?
+;             bhi.s     .No_error
+;             ERROR     "[ Pop_Mptr ] : Stack is empty !!!"
+;             bra.s     .Exit
+;.No_error:   clr.l     (a1)                 ; Pop from stack
+;             subq.l    #4,a1
+;             move.l    a1,Mptr_sp           ; Store sp
+;.Exit:       jsr       Mouse_on
+;             movea.l   (sp)+,a1
+;             rts
+
 Pop_Mptr:
 	move.l	a1,-(a7)
 	bsr.w	Mouse_off
@@ -109,6 +189,22 @@ Pop_Mptr:
 	bsr.w	Mouse_on
 	movea.l	(a7)+,a1
 	rts
+
+; ---- Change_Mptr (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Change_Mptr:
+;             movem.l   d0/a0/a1,-(sp)
+;             cmpi.w    #Max_mouses+1,d0     ; Input too high ?
+;             bmi.s     .No_error1
+;             ERROR     "[ Change_Mptr ] : Illegal input !!!"
+;             bra.s     .Exit
+;.No_error1:  lea.l     Mouse_base,a0        ; Calculate graphics address
+;             mulu.w    #68,d0
+;             adda.w    d0,a0
+;             movea.l   Mptr_sp,a1           ; Get sp
+;             move.l    a0,(a1)              ; Change
+;.Exit:       movem.l   (sp)+,d0/a0/a1
+;             rts
+
 Change_Mptr:
 	movem.l	d0/a0-a1,-(a7)
 	cmpi.w	#$1b,d0
@@ -125,7 +221,37 @@ Change_Mptr:
 .l_1ce68:
 	movem.l	(a7)+,d0/a0-a1
 	rts
-T_1ce6e:
+
+; ---- Read_key (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Read_key:
+;             movem.l   d1-d3/a0-a2,-(sp)
+;             C_CONIS   ; Check status of standard input
+;             tst.w     d0                   ; Is there a key available ?
+;             bne.s     .Read
+;             movea.l   _Sysbase,a0          ; Get pointer to TOS-header
+;             cmpi.w    #$102,2(a0)          ; Tos 1.2 or higher ?
+;             bmi.s     .Tos_10
+;             movea.l   $24(a0),a0           ; Get address of Kbshift
+;             move.b    $1e(a0),d1           ; Read previous scan-code
+;             bra.s     .Previous
+;.Tos_10:     move.b    $e39,d1              ; Read previous scan-code
+;.Previous:   cmp.b     Last_key+1,d1        ; Last key pressed ?
+;             bne.s     .Exit
+;             move.l    Last_key,d0          ; Last key still pressed
+;             bra.s     .Exit
+;.Read:       C_RAWCIN  ; Raw input from standard input
+;             move.l    d0,d3                ; Protect d0
+;.Repeat:     C_CONIS   ; Wait until there are no more keys
+;             tst.w     d0
+;             beq.s     .Done
+;             C_RAWCIN
+;             bra.s     .Repeat
+;.Done:       move.l    d3,d0                ; Copy to output register
+;             move.l    d0,Last_key          ; Store for next time
+;.Exit:       movem.l   (sp)+,d1-d3/a0-a2
+;             rts
+
+Read_key:
 	movem.l	d1-d3/a0-a2,-(a7)
 	move.w	#$b,-(a7)
 	trap	#$1
@@ -179,6 +305,63 @@ Init_kbd:
 	move.l	#MArea_0,MA_Stack
 	bsr.w	Draw_mouse
 	rts	
+
+; ---- My_mouse (original source: NUCLEUS/KBDROUTS.ASM) - the shipped program differs, its code follows, not assembled:
+;My_mouse:
+;             movea.l   MA_sp,a1             ; Get pointer to MA
+;             movea.l   (a1),a1
+;; ------------- Update mouse button state ----------------------------
+;             moveq.l   #3,d0                ; Load button state
+;             and.b     (a0),d0              ; Mask off rubbish
+;             move.b    Mouse_button_state,d1      ; Load old button state
+;             move.b    d1,d2                ; Duplicate
+;             not.b     d1                   ; Calculate click state
+;             and.b     d0,d1
+;             or.b      d1,Mouse_click_state ; Store new click state
+;             move.b    d0,Mouse_button_state      ; Store new button state
+;             not.b     d0                   ; Calculate unclick state
+;             and.b     d2,d0
+;             or.b      d0,Mouse_unclick_state
+;; ------------- Update X-coordinate ----------------------------------
+;             move.b    1(a0),d0             ; Load delta-X
+;             move.w    Mouse_X,d1           ; Load current X-coordinate
+;             ext.w     d0                   ; Update X-coordinate
+;             add.w     d0,Mouse_dX
+;             add.w     d0,d1
+;             move.w    d1,d2                ; Duplicate X-coordinate
+;             sub.w     (a1),d2              ; Check X against left
+;             bpl.s     .No_clip1            ; boundary
+;             move.w    (a1),Mouse_X         ; Set X to left boundary
+;             bra.s     .Skip_1
+;.No_clip1:   move.w    d1,d2                ; Duplicate X-coordinate
+;             sub.w     2(a1),d2             ; Check X against right
+;             blt.s     .No_clip2            ; boundary
+;             move.w    2(a1),Mouse_X        ; Set X to right boundary
+;             bra.s     .Skip_1
+;.No_clip2:   move.w    d1,Mouse_X           ; Store new X-coordinate
+;             moveq.l   #0,d2                ; No X-trespass
+;.Skip_1:     move.w    d2,X_trespass        ; Store X-trespass
+;; ------------- Update Y-coordinate ----------------------------------
+;             move.b    2(a0),d0             ; Load delta-Y
+;             move.w    Mouse_Y,d1           ; Load current Y-coordinate
+;             ext.w     d0                   ; Update Y-coordinate
+;             add.w     d0,Mouse_dY
+;             add.w     d0,d1
+;             move.w    d1,d2                ; Duplicate Y-coordinate
+;             sub.w     4(a1),d2             ; Check Y against top boundary
+;             bpl.s     .No_clip3
+;             move.w    4(a1),Mouse_Y        ; Set Y to top boundary
+;             bra.s     .Skip_2
+;.No_clip3:   move.w    d1,d2                ; Duplicate Y-coordinate
+;             sub.w     6(a1),d2             ; Check Y against bottom boundary
+;             blt.s     .No_clip4
+;             move.w    6(a1),Mouse_Y        ; Set Y to bottom boundary
+;             bra.s     .Skip_2
+;.No_clip4:   move.w    d1,Mouse_Y           ; Store new Y-coordinate
+;             moveq.l   #0,d2                ; No Y-trespass
+;.Skip_2:     move.w    d2,Y_trespass        ; Store Y-trespass
+;             rts
+
 My_mouse:
 	movea.l	MA_sp,a1
 	movea.l	(a1),a1
@@ -433,43 +616,6 @@ Mouse_erase_right:
 	lea.l	160-8(a3),a3
 	dbra	d7,.Loop
 	rts	
-T_1d190:
-	movem.l	d0-d1/a0,-(a7)
-	move.l	$18(a0),d0
-	add.l	$1c(a0),d0
-	move.l	d0,B_5da04
-	move.l	$4(a0),d1
-	sub.l	d0,d1
-	cmpi.l	#$4b000,d1
-	bpl.b	.l_1d210
-	movem.l	d0-d7/a0-a6,-(a7)
-	jsr	ON_Diag_screen
-	jsr	DI_Cursor_home
-	movea.l	Screen_base,a6
-	lea.l	D_524d2,a0
-	jsr	DI_Print
-	lea.l	D_52503,a0
-	jsr	DI_Print
-	lea.l	D_52534,a0
-	jsr	DI_Print
-	lea.l	D_52547,a0
-	jsr	DI_Print
-	jsr	Wait_4_key
-	jsr	OFF_Diag_screen
-	movem.l	(a7)+,d0-d7/a0-a6
-	movea.l	$4f2.w,a0
-	movea.l	$4(a0),a0
-	jmp	(a0)
-.l_1d210:
-	move.l	d1,Size_of_free_memory
-	move.l	d1,B_5da0c
-	lea.l	Memory_list,a0
-	move.l	d0,(a0)+
-	move.l	d1,(a0)+
-	move.l	#$80000000,(a0)+
-	move.l	a0,Memlist_end
-	movem.l	(a7)+,d0-d1/a0
-	rts
 
 	section	data
 
@@ -709,5 +855,3 @@ Mouse_unclick_state:
 	ds.b	1
 Mouse_button_state:
 	ds.b	2
-B_5da04:
-	ds.b	4

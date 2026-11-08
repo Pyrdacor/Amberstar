@@ -157,6 +157,7 @@ def scope_locals(lines):
         if re.search(r'\.LOCAL\b', l.split(';')[0], re.I): scope += 1
         out.append(code_part + sep + comment)
     return out
+raw_routine_lines = {nm: v[1] for nm, v in routine_lines.items()}   # for the comments of the routines which are not taken
 for nm in routine_lines:
     rel, lines = routine_lines[nm]
     routine_lines[nm] = (rel, scope_locals(lines))
@@ -581,6 +582,18 @@ for u in list(candidates):
         del sym[u]
 
 json.dump(results, open(out_json, 'w'), indent=1)
+# the routines of the original which are not in the merged source: they are written as comments at their place
+unplaced = []
+for k, nm in enumerate(order):
+    v = results.get(nm)
+    if v and v.get('state') == 'same': continue
+    rel, lines = routine_lines[nm][0], raw_routine_lines[nm]
+    # the comments behind the last instruction are the header of the next routine
+    while lines and (not lines[-1].strip() or lines[-1].lstrip().startswith(';')): lines = lines[:-1]
+    addr = v['addr'] if v else None
+    unplaced.append({'name': nm, 'file': rel, 'order': k, 'addr': addr, 'state': v['state'] if v else 'no address', 'lines': lines})
+json.dump({'order': order, 'files': {nm: routine_lines[nm][0] for nm in order}, 'unplaced': unplaced},
+          open(out_json + '.unplaced.json', 'w'), indent=1)
 with open(out_json + '.names.txt', 'w') as f:
     for u, (a, n) in sorted(added.items(), key=lambda x: x[1][0]):
         f.write('%05x\t%s\t%d\n' % (a, u, n))

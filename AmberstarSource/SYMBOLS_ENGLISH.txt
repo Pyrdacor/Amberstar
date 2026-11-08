@@ -1,5 +1,6 @@
 # Address	Label of the disassembly	Name in the original source	File	Votes	Comment
 0013e	T_0013e	Main_loop	MAIN/TEST.ASM	0	
+00162	T_00162	Exit_program	MAIN/TEST.ASM	R	
 002bc	T_002bc	Restore_game	MAIN/TEST.ASM	0	
 00312	T_00312	Load_party_data	MAIN/TEST.ASM	0	
 00370	T_00370	Init_modifications	MAIN/TEST.ASM	0	
@@ -19,13 +20,16 @@
 00968	T_00968	Options_DisExit	MAIN/EYE.ASM	0	
 009a8	T_009a8	Resurrection_sequence	MAIN/TEST.ASM	R	Shandra rescues the party once: song 19, next day 7:20, map 70 at 16,13, conditions cleared, hit points filled.
 00ba4	T_00ba4	Game_over_sequence	MAIN/TEST.ASM	R	Song 19, the message of the dead party, then the game restarts.
+00d26	T_00d26	Death_load_game	MAIN/TEST.ASM	R	Load game requester of the game over menu. (Not in the original source.)
 00d62	T_00d62	Req_ModInit	MAIN/TEST.ASM	0	
 00dde	T_00dde	Req_ModExit	MAIN/TEST.ASM	3	
+00e04	T_00e04	Restart_game	MAIN/TEST.ASM	R	Clears the party and the state of the game, resets the stacks and starts the game again. (Not in the original source.)
 00f12	T_00f12	Play_song	MAIN/TEST.ASM	R	Plays the song in d0 (1-19, 0 stops the music, 20 and more are ignored). The current song is in Current_song.
 019c0	T_019c0	Status_F0	MAIN/STATUS.ASM	0	
 01edc	T_01edc	Init_map	MAIN/MAP/MAP.ASM	5	
 01f66	T_01f66	Exit_map	MAIN/MAP/MAP.ASM	5	
 01f76	T_01f76	Init_maptexts	MAIN/WORDS.ASM	3	
+01f98	T_01f98	Restore_coords	MAIN/EVENTS.ASM	R	A macro in the original source, a subroutine in the shipped program.
 0210a	T_0210a	Reset_mouse	MAIN/MAP/MAP.ASM	0	
 02134	T_02134	Update_animation	MAIN/MAP/MAP.ASM	2	
 021ae	T_021ae	Recalc_random	MAIN/MAP/MAP.ASM	2	
@@ -164,6 +168,10 @@
 0661e	T_0661e	Every_hour	MAIN/TIME.ASM	0	
 06666	T_06666	Every_day	MAIN/TIME.ASM	0	
 06724	T_06724	Realtime_step	MAIN/TIME.ASM	0	
+06752	T_06752	AutoIcon_switch	LAYOUT/LAYOUT.ASM	R	
+06764	T_06764	DoAutoIcon	LAYOUT/LAYOUT.ASM	R	
+067f8	T_067f8	ExitAutoIcon	LAYOUT/LAYOUT.ASM	R	
+067fa	T_067fa	TimeAutoIcon	LAYOUT/LAYOUT.ASM	R	
 06802	T_06802	Show_updated_status_block	LAYOUT/LAYOUT.ASM	0	
 06850	T_06850	Force_char_update	LAYOUT/LAYOUT.ASM	2	
 0686a	T_0686a	Update_status_block	LAYOUT/LAYOUT.ASM	21	
@@ -221,6 +229,9 @@
 07fd2	T_07fd2	Door_ModInit	MAIN/EVENTS.ASM	4	
 07fe8	T_07fe8	Door_ModExit	MAIN/EVENTS.ASM	4	
 07ff6	T_07ff6	Door_DisInit	MAIN/EVENTS.ASM	0	
+08084	T_08084	Door_Exit	MAIN/EVENTS.ASM	R	
+0809a	T_0809a	Pick_lock_DOOR	MAIN/EVENTS.ASM	R	
+0813c	T_0813c	Use_item_DOOR	MAIN/EVENTS.ASM	R	
 08152	T_08152	UseItemDoor_DisUpd	MAIN/EVENTS.ASM	2	
 0815a	T_0815a	UseItemDoor_DisInit	MAIN/EVENTS.ASM	0	
 081a2	T_081a2	UseItemDoor_DisExit	MAIN/EVENTS.ASM	0	
@@ -233,7 +244,6 @@
 0844c	T_0844c	Upd5_objname_erase	MAIN/EYE.ASM	0	
 0844c	T_0844c	Upd2_objname_erase	MAIN/EVENTS.ASM	0	
 08482	T_08482	DoorCIL_evaluate	MAIN/EVENTS.ASM	2	
-084f4	T_084f4	AutoIcon_switch	LAYOUT/LAYOUT.ASM	2	
 084f4	T_084f4	Display2_quantities	MAIN/EVENTS.ASM	0	
 08650	T_08650	P80_ModInit	MAIN/EVENTS.ASM	0	
 08684	T_08684	P80_ModExit	MAIN/EVENTS.ASM	4	
@@ -261,6 +271,8 @@
 09234	T_09234	TGCHEST_Return	MAIN/EVENTS.ASM	0	
 0928a	T_0928a	Do_TGCHEST	MAIN/EVENTS.ASM	0	
 092e8	T_092e8	Trap_door	MAIN/EVENTS.ASM	0	
+0935a	T_0935a	Teleporter	MAIN/EVENTS.ASM	R	To another map: the map is changed inline instead of calling Map_exit.
+093f2	T_093f2	Wind_gate	MAIN/EVENTS.ASM	R	
 09404	T_09404	Spinner	MAIN/EVENTS.ASM	0	
 09436	T_09436	Damage_field	MAIN/EVENTS.ASM	0	
 095de	T_095de	RiddleM_DisUpd	MAIN/EVENTS.ASM	0	
@@ -452,19 +464,34 @@
 0f568	T_0f568	Display_automap_icon	MAIN/EYE.ASM	0	
 0f5dc	T_0f5dc	Init_automap	MAIN/EYE.ASM	0	
 0f5fe	T_0f5fe	Exit_automap	MAIN/EYE.ASM	2	
+0f614	T_0f614	Save_automap	MAIN/EYE.ASM	R	Saves the current automap with Save_subfile (also called by Exit_automap). (Not in the original source.)
 0f636	T_0f636	Update_automap	MAIN/EYE.ASM	5	
 0f67a	T_0f67a	Set_automap_bit	MAIN/EYE.ASM	0	
 0f6ae	T_0f6ae	Options_DisUpd	MAIN/EYE.ASM	4	
 0f6c6	T_0f6c6	Options_DisInit	MAIN/EYE.ASM	0	
 0f782	T_0f782	OptionsCIL_evaluate	MAIN/EYE.ASM	2	
+0f7a6	T_0f7a6	Exit_options	MAIN/EYE.ASM	R	
+0f7d2	T_0f7d2	Quit_game	MAIN/EYE.ASM	R	
+0f820	T_0f820	Save_game	MAIN/EYE.ASM	R	
 0f874	T_0f874	SaveGame_ModInit	MAIN/EYE.ASM	0	
 0f954	T_0f954	SaveGame_ModExit	MAIN/EYE.ASM	0	
+0f9a4	T_0f9a4	Exit_SaveGame	MAIN/EYE.ASM	R	
+0f9b6	T_0f9b6	Do_SaveGame	MAIN/EYE.ASM	R	The check of the active member was removed, it falls through into Really_save_game.
+0f9c4	T_0f9c4	Really_save_game	MAIN/EYE.ASM	R	Also saves the automap, writes a header, scrambles the data and saves it to PARTYDAT.SAV.
+0fb36	T_0fb36	Portrait_selected	MAIN/EYE.ASM	R	The active member can't be deselected (message 25).
+0fcc0	T_0fcc0	Load_game	MAIN/EYE.ASM	R	
+0fcf0	T_0fcf0	Really_load_game	MAIN/EYE.ASM	R	Rewritten: the game restarts through Restart_game.
+0fd02	T_0fd02	Camp	MAIN/EYE.ASM	R	
 0fd1a	T_0fd1a	Camp_DisUpd	MAIN/EYE.ASM	3	
 0fd36	T_0fd36	Camp_ModInit	MAIN/EYE.ASM	3	
 0fd60	T_0fd60	Camp_ModExit	MAIN/EYE.ASM	3	
 0fd76	T_0fd76	Camp_DisInit	MAIN/EYE.ASM	0	
 0fdd6	T_0fdd6	CampCIL_evaluate	MAIN/EYE.ASM	2	
+0fe0c	T_0fe0c	Exit_camp	MAIN/EYE.ASM	R	
+0fe5a	T_0fe5a	Learn_spell	MAIN/EYE.ASM	R	
 0fec0	T_0fec0	LearnSpell_DisExit	MAIN/EYE.ASM	0	
+10066	T_10066	Rest	MAIN/EYE.ASM	R	
+10296	T_10296	Inn	MAIN/EYE.ASM	R	
 103c2	T_103c2	Ear_action	MAIN/EYE.ASM	0	
 10468	T_10468	Try_2_hear	MAIN/EYE.ASM	0	
 104ba	T_104ba	Heard_it	MAIN/EYE.ASM	0	
@@ -477,12 +504,15 @@
 10b1e	T_10b1e	VblQ_handler	MAIN/MODCON.ASM	R	Calls the vertical blank routines of the module stack (the check of DangerZone was removed).
 10b46	T_10b46	Basic_DisUpd	MAIN/MODULES.ASM	2	
 10b4e	T_10b4e	Inv1_DisUpd	MAIN/INVENT.ASM	2	
+10b56	T_10b56	Inv1_Exit	MAIN/INVENT.ASM	R	
 10b68	T_10b68	Inv1_ModInit	MAIN/INVENT.ASM	2	
 10bb0	T_10bb0	Inv1_ModExit	MAIN/INVENT.ASM	2	
 10bce	T_10bce	Inv1_DisInit	MAIN/INVENT.ASM	2	
 10eae	T_10eae	Inv1_DisExit	MAIN/INVENT.ASM	2	
 10eee	T_10eee	Get_word	MAIN/INVENT.ASM	27	
 10f1a	T_10f1a	Go_Inv2	MAIN/INVENT.ASM	0	
+10f3a	T_10f3a	Inv21_Exit	MAIN/INVENT.ASM	R	
+10f4c	T_10f4c	Inv2_Exit	MAIN/INVENT.ASM	R	
 10f5e	T_10f5e	Inv2_DisUpd	MAIN/INVENT.ASM	3	
 10fac	T_10fac	Inv2_DisInit	MAIN/INVENT.ASM	4	
 110f6	T_110f6	Inv2_DisExit	MAIN/INVENT.ASM	2	
@@ -499,7 +529,7 @@
 11748	T_11748	Inv2_Mright	MAIN/INVENT.ASM	0	
 117a0	T_117a0	Show_object_name	MAIN/INVENT.ASM	0	
 117ec	T_117ec	Erase_object_name	MAIN/INVENT.ASM	0	
-118ba	T_118ba	TransferItem_DisInit	MAIN/INVENT.ASM	0	
+118a4	T_118a4	Drop_item	MAIN/INVENT.ASM	R	
 118ba	T_118ba	DropItem_DisInit	MAIN/INVENT.ASM	0	
 118ee	T_118ee	Transparent_DisExit	MAIN/INVENT.ASM	3	
 11918	T_11918	Exit_DropItem	MAIN/INVENT.ASM	2	
@@ -515,6 +545,7 @@
 11cf2	T_11cf2	ItemW_1Down	MAIN/INVENT.ASM	0	
 11d06	T_11d06	ItemW_Up	MAIN/INVENT.ASM	0	
 11d40	T_11d40	ItemW_Down	MAIN/INVENT.ASM	0	
+11d6c	T_11d6c	Use_item	MAIN/INVENT.ASM	R	
 11d82	T_11d82	UseItem_DisInit	MAIN/INVENT.ASM	0	
 11db8	T_11db8	Use_backpack_item	MAIN/INVENT.ASM	0	
 11dd4	T_11dd4	UseItem_entry	MAIN/INVENT.ASM	2	
@@ -522,20 +553,26 @@
 12000	T_12000	Destroy_used_item	MAIN/INVENT.ASM	2	
 12040	T_12040	Remove_used_magic_item	MAIN/INVENT.ASM	R	Removes a charge of a magic item or the item itself.
 12128	T_12128	Show_item_sparkle	MAIN/INVENT.ASM	R	The item sparkles in its slot (8 frames of 3 vertical blanks).
-121d6	T_121d6	Pool_gold_INV2	MAIN/INVENT.ASM	0	
+121be	T_121be	Pool_gold_INV2	MAIN/INVENT.ASM	R	
+12202	T_12202	View_item	MAIN/INVENT.ASM	R	
 12216	T_12216	ViewItem_DisInit	MAIN/INVENT.ASM	0	
 1226e	T_1226e	Exit_view_item	MAIN/INVENT.ASM	2	
+122b0	T_122b0	ItemViewW1_DisInit	MAIN/INVENT.ASM	R	
 1259c	T_1259c	ItemViewW2_DisInit	MAIN/INVENT.ASM	0	
 128ba	T_128ba	ItemViewW2_DisExit	MAIN/INVENT.ASM	3	
 128cc	T_128cc	Accursed_blink	MAIN/INVENT.ASM	0	
+12926	T_12926	Double_Pop	MAIN/INVENT.ASM	R	
+1292e	T_1292e	Window_DisExit	MAIN/INVENT.ASM	R	
+12940	T_12940	Transfer_item	MAIN/INVENT.ASM	R	
+12954	T_12954	TransferItem_DisInit	MAIN/INVENT.ASM	R	
 12988	T_12988	Exit_TransferItem	MAIN/INVENT.ASM	2	
 12aa6	T_12aa6	TransMItem_Return	MAIN/INVENT.ASM	0	
 12ad4	T_12ad4	Continue_transfer_item	MAIN/INVENT.ASM	0	
 12b34	T_12b34	Inv2_Do_TI	MAIN/INVENT.ASM	0	
-12c48	T_12c48	Transfer_gold	MAIN/INVENT.ASM	0	
+12c3e	T_12c3e	Transfer_gold	MAIN/INVENT.ASM	R	
 12e00	T_12e00	Do_TransferGold	MAIN/INVENT.ASM	0	
 12e00	T_12e00	Do_TransferFood	MAIN/INVENT.ASM	0	
-12e82	T_12e82	Transfer_food	MAIN/INVENT.ASM	0	
+12e78	T_12e78	Transfer_food	MAIN/INVENT.ASM	R	
 13374	T_13374	Positive_boni	MAIN/INVENT.ASM	3	
 133ca	T_133ca	Negative_boni	MAIN/INVENT.ASM	3	
 13420	T_13420	Update_quantity_colours	MAIN/INVENT.ASM	4	
@@ -548,13 +585,28 @@
 1365a	T_1365a	Build_object_mptr	MAIN/INVENT.ASM	0	
 1368e	T_1368e	Pool_gold	MAIN/INVENT.ASM	2	
 136f6	T_136f6	Remove_boni	MAIN/INVENT.ASM	0	
+13772	T_13772	Cast_spell	MAIN/MAGIC.ASM	R	
 137dc	T_137dc	Do_magic	MAIN/MAGIC.ASM	5	
+138bb	T_138bb	SpellClass_ptrs	MAIN/MAGIC.ASM	R	Pointers to the spell tables of the classes (the black class is 0).
 139fe	T_139fe	Handle_spell	MAIN/MAGIC.ASM	20	
+13afa	T_13afa	Heal_1	MAIN/MAGIC.ASM	R	
+13b0c	T_13b0c	Heal_2	MAIN/MAGIC.ASM	R	
+13b1e	T_13b1e	Heal_3	MAIN/MAGIC.ASM	R	
+13b30	T_13b30	Heal_4	MAIN/MAGIC.ASM	R	
+13b42	T_13b42	Heal_5	MAIN/MAGIC.ASM	R	
 13b52	T_13b52	Common_heal	MAIN/MAGIC.ASM	4	
-13d20	T_13d20	Resurrect	MAIN/MAGIC.ASM	0	
-13d20	T_13d20	Change_ashes	MAIN/MAGIC.ASM	0	
+13bd0	T_13bd0	Heal_all	MAIN/MAGIC.ASM	R	
+13c12	T_13c12	Resurrect	MAIN/MAGIC.ASM	R	
+13c96	T_13c96	Change_ashes	MAIN/MAGIC.ASM	R	
+13d20	T_13d20	Change_dust	MAIN/MAGIC.ASM	R	
+13d9a	T_13d9a	Heal_poisoned	MAIN/MAGIC.ASM	R	
+13da2	T_13da2	Heal_lamed	MAIN/MAGIC.ASM	R	
+13daa	T_13daa	Heal_diseased	MAIN/MAGIC.ASM	R	
+13db2	T_13db2	Heal_aged	MAIN/MAGIC.ASM	R	
+13dba	T_13dba	Heal_stoned	MAIN/MAGIC.ASM	R	
+13dc2	T_13dc2	Heal_blind	MAIN/MAGIC.ASM	R	
+13dca	T_13dca	Heal_mad	MAIN/MAGIC.ASM	R	
 13dce	T_13dce	Common_heal_condition	MAIN/MAGIC.ASM	0	
-13e44	T_13e44	Weapon_gunk	MAIN/MAGIC.ASM	0	
 13e44	T_13e44	Remove_curse	MAIN/MAGIC.ASM	0	
 13ea2	T_13ea2	RemCurse2_DisInit	MAIN/MAGIC.ASM	0	
 13ea2	T_13ea2	Lore_DisInit	MAIN/MAGIC.ASM	0	
@@ -565,7 +617,11 @@
 14240	T_14240	MagicComp_DisInit	MAIN/MAGIC.ASM	0	
 14290	T_14290	MagicComp_DisExit	MAIN/MAGIC.ASM	3	
 142a8	T_142a8	Identify	MAIN/MAGIC.ASM	0	
+14432	T_14432	Levitate	MAIN/MAGIC.ASM	R	
 144aa	T_144aa	Do_levitate	MAIN/MAGIC.ASM	0	
+144dc	T_144dc	MTeleport	MAIN/MAGIC.ASM	R	New code in the shipped program (only a label in the original).
+145e4	T_145e4	Look_through	MAIN/MAGIC.ASM	R	A real spell in the shipped program (only an rts in the original).
+1460e	T_1460e	Map_view	MAIN/MAGIC.ASM	R	
 1466c	T_1466c	Minimap_DisUpd	MAIN/MAGIC.ASM	5	
 14712	T_14712	Minimap_ModInit	MAIN/MAGIC.ASM	0	
 149bc	T_149bc	Minimap_ModExit	MAIN/MAGIC.ASM	5	
@@ -580,6 +636,7 @@
 14c50	T_14c50	Set2_minimap_element	MAIN/MAGIC.ASM	2	
 14ca8	T_14ca8	Spellpts1	MAIN/MAGIC.ASM	0	
 14d2a	T_14d2a	Spellpts2	MAIN/MAGIC.ASM	0	
+14d9a	T_14d9a	Weapon_gunk	MAIN/MAGIC.ASM	R	
 14ffc	T_14ffc	Youth	MAIN/MAGIC.ASM	0	
 15402	T_15402	SCSelW_DisInit	MAIN/MAGIC.ASM	0	
 1547e	T_1547e	SCSelW_DisExit	MAIN/MAGIC.ASM	4	
@@ -677,9 +734,13 @@
 1b534	T_1b534	Coso_mute	MAIN/COMBAT.ASM	R	If set, the YM2149 registers are not written (Coso_player+16).
 1b536	T_1b536	Coso_sample_mode	MAIN/COMBAT.ASM	R	$ff: no samples, otherwise the mode d0 of Coso_init_samples.
 1b538	T_1b538	Coso_period_table	MAIN/COMBAT.ASM	R	YM2149 periods of the notes.
+1b63c	T_1b63c	Init_file	NUCLEUS/AMBRFILE.ASM	R	Also checks the drive and masks an MFP interrupt.
+1b6e4	T_1b6e4	Check_disk	NUCLEUS/AMBRFILE.ASM	R	Checks the drive / disk change (new in the shipped program).
 1b892	T_1b892	Save_file	NUCLEUS/AMBRFILE.ASM	3	
+1b960	T_1b960	Exist_file	NUCLEUS/AMBRFILE.ASM	R	
 1ba1c	T_1ba1c	Load_subfile	NUCLEUS/AMBRFILE.ASM	19	
 1bc70	T_1bc70	Save_subfile	NUCLEUS/AMBRFILE.ASM	2	
+1bde2	T_1bde2	Decompress	NUCLEUS/AMBRFILE.ASM	R	
 1bedc	T_1bedc	Fade_pal	NUCLEUS/COLOFADE.ASM	21	
 1bf0a	T_1bf0a	List_fade	NUCLEUS/COLOFADE.ASM	2	
 1bf56	T_1bf56	Hbl_outfade	NUCLEUS/COLOFADE.ASM	0	
@@ -687,6 +748,9 @@
 1bfee	T_1bfee	Subfade1	NUCLEUS/COLOFADE.ASM	27	
 1c042	T_1c042	Subfade2	NUCLEUS/COLOFADE.ASM	0	
 1c09a	T_1c09a	DI_Error	NUCLEUS/DIAGNOST.ASM	32	
+1c0e8	T_1c0e8	ON_Diag_screen	NUCLEUS/DIAGNOST.ASM	R	
+1c15e	T_1c15e	OFF_Diag_screen	NUCLEUS/DIAGNOST.ASM	R	
+1c1aa	T_1c1aa	DI_Cursor_home	NUCLEUS/DIAGNOST.ASM	R	
 1c1b8	T_1c1b8	DI_Carriage_return	NUCLEUS/DIAGNOST.ASM	2	
 1c1ee	T_1c1ee	DI_Backspace	NUCLEUS/DIAGNOST.ASM	0	
 1c210	T_1c210	DI_Input	NUCLEUS/DIAGNOST.ASM	0	
@@ -715,6 +779,7 @@
 1c8ec	T_1c8ec	Palette_HBL	NUCLEUS/HBI.ASM	0	
 1c966	T_1c966	Update_HBL	NUCLEUS/HBI.ASM	53	
 1c974	T_1c974	Copy_HBL_list	NUCLEUS/HBI.ASM	0	
+1c9ae	T_1c9ae	Save_computer	NUCLEUS/INTROUTS.ASM	R	Also saves $404 and the vector and the registers of timer D (music).
 1ca6e	T_1ca6e	Restore_computer	NUCLEUS/INTROUTS.ASM	0	
 1cb2c	T_1cb2c	Init_computer	NUCLEUS/INTROUTS.ASM	R	The shipped program also sets the vector of timer D for the music (My_timer_D).
 1cbc6	T_1cbc6	Dummy	NUCLEUS/INTROUTS.ASM	R	
@@ -732,6 +797,7 @@
 1cdb2	T_1cdb2	Push_Mptr	NUCLEUS/KBDROUTS.ASM	2	
 1ce0a	T_1ce0a	Pop_Mptr	NUCLEUS/KBDROUTS.ASM	2	
 1ce3c	T_1ce3c	Change_Mptr	NUCLEUS/KBDROUTS.ASM	2	
+1ce6e	T_1ce6e	Read_key	NUCLEUS/KBDROUTS.ASM	R	
 1ced6	T_1ced6	Wait_4_key	NUCLEUS/KBDROUTS.ASM	2	
 1cef8	T_1cef8	My_mouse	NUCLEUS/KBDROUTS.ASM	R	
 1cf82	T_1cf82	Mouse_on	NUCLEUS/KBDROUTS.ASM	14	
@@ -740,6 +806,7 @@
 1cfea	T_1cfea	DrawM_entry	NUCLEUS/KBDROUTS.ASM	0	
 1d0c2	T_1d0c2	Mouse_draw_left	NUCLEUS/KBDROUTS.ASM	0	
 1d116	T_1d116	Mouse_draw_right	NUCLEUS/KBDROUTS.ASM	0	
+1d190	T_1d190	Init_memory	NUCLEUS/MEMORY.ASM	R	The ERROR is replaced by a diagnostic screen and a reset.
 1d238	T_1d238	Next_generation	NUCLEUS/MEMORY.ASM	4	
 1d2a6	T_1d2a6	Kill_memory	NUCLEUS/MEMORY.ASM	2	
 1d2f2	T_1d2f2	Free_memory	NUCLEUS/MEMORY.ASM	88	
@@ -747,6 +814,7 @@
 1d3a4	T_1d3a4	Reallocate_memory	NUCLEUS/MEMORY.ASM	0	
 1d3fc	T_1d3fc	File_allocate	NUCLEUS/MEMORY.ASM	0	
 1d4aa	T_1d4aa	Allocate_memory	NUCLEUS/MEMORY.ASM	20	
+1d4ec	T_1d4ec	Scan_memory	NUCLEUS/MEMORY.ASM	R	
 1d55a	T_1d55a	Find_free_memory	NUCLEUS/MEMORY.ASM	0	
 1d5be	T_1d5be	Connect_memory	NUCLEUS/MEMORY.ASM	0	
 1d63e	T_1d63e	Insert_memblock	NUCLEUS/MEMORY.ASM	0	
@@ -1149,6 +1217,7 @@
 2d09c	D_2d09c	Combat_Mod.ScrQ	MAIN/MODULES.ASM	2	
 2d0b0	D_2d0b0	Combat_Mod	MAIN/MODULES.ASM	2	
 2d0de	D_2d0de	Combat_Mod.ID	MAIN/MODULES.ASM	2	
+2da12	D_2da12	Inv2_CIL	MAIN/INVENT.ASM	R	
 2da90	D_2da90	Skills_name	MAIN/INVENT.ASM	2	
 2daaa	D_2daaa	Age_txt	MAIN/INVENT.ASM	2	
 2dadb	D_2dadb	Gold_txt	MAIN/INVENT.ASM	11	
@@ -1175,6 +1244,7 @@
 2f1ac	D_2f1ac	Icondata_filename	MAIN/MAP/2DMAP.ASM	2	
 2f20d	D_2f20d	Pics80_filename	MAIN/EVENTS.ASM	4	
 2f24e	D_2f24e	Automap_filename	MAIN/EYE.ASM	2	
+2f26a	D_2f26a	Partydata_filename	MAIN/EYE.ASM	R	
 2f278	D_2f278	Chard_filename	MAIN/TEST.ASM	3	
 2f286	D_2f286	Lay1_c1	MAIN/MAP/2DMAP.ASM	2	
 2f298	D_2f298	Lay5_c1	MAIN/MAP/3DMAP.ASM	2	
@@ -1229,6 +1299,7 @@
 49cbe	D_49cbe	Code0006Sys	MAIN/DATA.ASM	10	
 49e76	D_49e76	Code0007Sys	MAIN/DATA.ASM	11	
 49ff4	D_49ff4	Code0008Sys	MAIN/DATA.ASM	6	
+5193b	D_5193b	Amberfile_path	NUCLEUS/AMBRFILE.ASM	R	
 51ace	D_51ace	Diag_pal	NUCLEUS/DIAGNOST.ASM	2	
 51ad6	D_51ad6	Ink	NUCLEUS/DIAGNOST.ASM	2	
 51b34	D_51b34	Box_hl_comms	NUCLEUS/GFXROUTS.ASM	2	
@@ -1316,6 +1387,8 @@
 57d00	B_57d00	XActive_member	LAYOUT/LAYOUT.ASM	3	
 57d02	B_57d02	Shadow_data	LAYOUT/LAYOUT.ASM	2	
 57d56	B_57d56	Updated	LAYOUT/LAYOUT.ASM	7	
+57d58	B_57d58	AutoIcon_counters	LAYOUT/LAYOUT.ASM	R	
+57d64	B_57d64	AutoIcon_timer	LAYOUT/LAYOUT.ASM	R	
 57d98	B_57d98	Mesmin_X	MAIN/WORDS.ASM	13	
 57d9a	B_57d9a	Mesmin_Y	MAIN/WORDS.ASM	13	
 57d9c	B_57d9c	Mesmin_Wd	MAIN/WORDS.ASM	13	
@@ -1353,6 +1426,7 @@
 5824c	B_5824c	EVENT_bit	MAIN/EVENTS.ASM	3	
 58250	B_58250	Event_data_ptr	MAIN/EVENTS.ASM	20	
 58254	B_58254	WText_nr	MAIN/EVENTS.ASM	22	
+58256	B_58256	Window_handle	MAIN/INVENT.ASM	R	
 5825a	B_5825a	No_word_entered	MAIN/WSELW.ASM	3	
 5825c	B_5825c	Found_word	MAIN/WSELW.ASM	3	
 5825e	B_5825e	WSelW_handle	MAIN/WSELW.ASM	2	
@@ -1402,6 +1476,7 @@
 584d6	B_584d6	Hearing	MAIN/EYE.ASM	2	
 584d8	B_584d8	Hear_direction	MAIN/EYE.ASM	2	
 584e0	B_584e0	SaveGame_bitlist	MAIN/EYE.ASM	4	
+584e2	B_584e2	Partydata_length	MAIN/EYE.ASM	R	
 584f6	B_584f6	Abort_list	MAIN/MODCON.ASM	5	
 587d8	B_587d8	Current_inventory_chardat_ptr	MAIN/INVENT.ASM	35	
 587dc	B_587dc	Object_name_nr	MAIN/INVENT.ASM	17	
@@ -1449,6 +1524,7 @@
 58eb0	B_58eb0	Current_song	MAIN/TEST.ASM	R	The song which is played (see Play_song).
 58eb2	B_58eb2	Magic_anim_counter	MAIN/TEST.ASM	3	
 58eb4	B_58eb4	Char_damage	MAIN/TEST.ASM	2	
+58ec0	B_58ec0	Damage_timers	MAIN/TEST.ASM	R	
 58ec6	B_58ec6	Magic_timers	MAIN/TEST.ASM	2	
 58ecc	B_58ecc	Char_status_icons	MAIN/TEST.ASM	6	
 58ed2	B_58ed2	Current_active_char_data	MAIN/TEST.ASM	59	
@@ -1474,6 +1550,7 @@
 59346	B_59346	Spell_6_data	MAIN/TEST.ASM	4	
 5934a	B_5934a	Map_nr	MAIN/TEST.ASM	22	
 5934c	B_5934c	Member_1_nr	MAIN/TEST.ASM	3	
+5934e	B_5934e	Member_2_nr	MAIN/TEST.ASM	R	
 5935a	B_5935a	Time_data_year	MAIN/TEST.ASM	2	
 5935c	B_5935c	Trans_T	MAIN/TEST.ASM	7	
 593f2	B_593f2	Quest	MAIN/TEST.ASM	2	
@@ -1481,6 +1558,9 @@
 5a9d0	B_5a9d0	WD	MAIN/TEST.ASM	3	
 5ac42	B_5ac42	Chest	MAIN/TEST.ASM	2	
 5b21e	B_5b21e	Chest_gold	MAIN/TEST.ASM	2	
+5bea4	B_5bea4	Basepage	MAIN/TEST.ASM	R	
+5bea8	B_5bea8	Old_usp	MAIN/TEST.ASM	R	
+5beac	B_5beac	Old_ssp	MAIN/TEST.ASM	R	
 5cfb0	B_5cfb0	Icondata_ptr	MAIN/MAP/2DMAP.ASM	12	
 5cfb4	B_5cfb4	Labblock_ptrs	MAIN/MAP/3DMAP.ASM	4	
 5d07c	B_5d07c	Ceiling_ptr	MAIN/MAP/3DMAP.ASM	7	
@@ -1495,17 +1575,21 @@
 5d0ac	B_5d0ac	Codetxt_ptr	MAIN/INVENT.ASM	2	
 5d0b0	B_5d0b0	Chard_ptrs	MAIN/TEST.ASM	36	
 5d0e8	B_5d0e8	Window_list	LAYOUT/WINDOWS.ASM	3	
+5d0f8	B_5d0f8	DTA_ptr	NUCLEUS/AMBRFILE.ASM	R	
 5d448	B_5d448	Prev_screen	NUCLEUS/DIAGNOST.ASM	2	
 5d450	B_5d450	Inverse	NUCLEUS/DIAGNOST.ASM	2	
 5d458	B_5d458	New_HBL_list	NUCLEUS/HBI.ASM	3	
 5d45c	B_5d45c	User_HBL_list	NUCLEUS/HBI.ASM	2	
 5d460	B_5d460	HBL_list_ptr	NUCLEUS/HBI.ASM	4	
 5d464	B_5d464	HBL_list	NUCLEUS/HBI.ASM	2	
+5d868	B_5d868	Old_crit_vec	NUCLEUS/INTROUTS.ASM	R	The vector $404 (etv_critic) before the start (new in the shipped program).
 5d86c	B_5d86c	Old_nvbls	NUCLEUS/INTROUTS.ASM	2	
 5d86e	B_5d86e	Old_dump_vec	NUCLEUS/INTROUTS.ASM	2	
 5d872	B_5d872	Old_conterm	NUCLEUS/INTROUTS.ASM	2	
 5d874	B_5d874	Old_mouse_vec	NUCLEUS/INTROUTS.ASM	2	
+5d878	B_5d878	Old_timer_D_vec	NUCLEUS/INTROUTS.ASM	R	The vector of timer D before the music was set up (new in the shipped program).
 5d87c	B_5d87c	Old_rez	NUCLEUS/INTROUTS.ASM	2	
+5d87e	B_5d87e	Old_pal	NUCLEUS/INTROUTS.ASM	R	
 5d89e	B_5d89e	Old_screen	NUCLEUS/INTROUTS.ASM	3	
 5d8a0	B_5d8a0	Old_MFP	NUCLEUS/INTROUTS.ASM	2	
 5d8ac	B_5d8ac	KBD_vec	NUCLEUS/INTROUTS.ASM	3	
@@ -1517,6 +1601,7 @@
 5da00	B_5da00	Mouse_click_state	NUCLEUS/KBDROUTS.ASM	5	
 5da01	B_5da01	Mouse_unclick_state	NUCLEUS/KBDROUTS.ASM	2	
 5da02	B_5da02	Mouse_button_state	NUCLEUS/KBDROUTS.ASM	50	
+5da04	B_5da04	Start_of_free_memory	NUCLEUS/MEMORY.ASM	R	
 5da08	B_5da08	Size_of_free_memory	NUCLEUS/MEMORY.ASM	8	
 5da10	B_5da10	Memlist_end	NUCLEUS/MEMORY.ASM	13	
 5da14	B_5da14	Memory_list	NUCLEUS/MEMORY.ASM	8	

@@ -32,6 +32,21 @@ Copy_screen:
 	jsr	Mouse_on
 	movem.l	(sp)+,d0-d7/a0-a6
 	rts	
+
+; ---- Set_screen (original source: NUCLEUS/SCREEN.ASM) - the shipped program differs, its code follows, not assembled:
+;Set_screen:
+;             movem.l   d0/a0,-(sp)
+;             tst.b     d0                   ; Error check on input
+;             beq.s     .Ok
+;             ERROR     "[ Set_screen ] : Illegal input !!!"
+;             bra.s     .Exit
+;.Ok:         move.l    d0,Screen_base       ; Store screen base
+;             lea.l     Vbase_Hi-1,a0        ; Set screen base
+;             lsr.w     #8,d0                ; (Trick by M.Bittner)
+;             move.l    d0,(a0)
+;.Exit:       movem.l   (sp)+,d0/a0
+;             rts
+
 Set_screen:
 	movem.l	d0/a0,-(a7)
 	tst.b	d0
@@ -47,6 +62,13 @@ Set_screen:
 .l_1d836:
 	movem.l	(a7)+,d0/a0
 	rts
+
+; ---- IG_Cursor_home (original source: NUCLEUS/TEXTPUT.ASM) - the shipped program differs, its code follows, not assembled:
+;IG_Cursor_home:
+;             move.w    PArea,Print_X        ; Back to 1st column
+;             move.w    PArea+4,Print_Y      ; Back to 1st line
+;             rts
+
 ; ---- Switch_screen (original source: NUCLEUS/SCREEN.ASM)
 IG_Cursor_home:
 Switch_screen:
@@ -91,5 +113,5 @@ Screen:
 	ds.b	65280
 B_76734:
 	ds.b	2
-Print_Y:
+B_76736:
 	ds.b	2

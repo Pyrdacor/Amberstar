@@ -50,6 +50,102 @@ M3_Dark_check:
 .Exit:
 	movem.l	(sp)+,d0/a0
 	rts	
+
+; ---- Build_3D_map (original source: MAIN/MAP/3DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;Build_3D_map:
+;             movem.l   d0-d2/d6/d7/a0-a6,-(sp)
+;             jsr       M3_Dark_check
+;             tst.b     Stygian              ; Can we see ?
+;             beq.s     .I_can_see
+;             move.w    #Topleft_X,d0        ; Erase display window
+;             move.w    #Topleft_Y,d1
+;             move.w    d0,d2
+;             move.w    d1,d3
+;             addi.w    #144-1,d2
+;             addi.w    #144-1,d3
+;             moveq.l   #0,d6
+;             movea.l   Off_screen,a6
+;             jsr       Draw_box
+;             bra       .Go_on
+;.I_can_see:  lea.l     Map_buffer_3D,a1     ; Copy persons in map buffer
+;             lea.l     Persons_buf_3D,a2
+;             moveq.l   #12-1,d7
+;.Loop1:      tst.b     (a2)                 ; Any person there ?
+;             beq.s     .Next1
+;             cmpi.b    #1,(a1)              ; Something already there ?
+;             bne.s     .Next1
+;             move.b    (a2),(a1)            ; Copy
+;.Next1:      addq.l    #1,a1                ; Next
+;             addq.l    #1,a2
+;             dbra      d7,.Loop1
+;             lea.l     -12(a1),a1           ; Initialize registers
+;             movea.l   INB_ptr,a2
+;             lea.l     Labblock_ptrs,a3
+;             movea.l   Iconstats_ptr,a4
+;             movea.l   Off_screen,a6
+;             moveq.l   #1,d7                ; Start size
+;.Loop2:      moveq.l   #0,d0                ; Get byte from map buffer
+;             move.b    -1(a1,d7.w),d0
+;             jsr       Get_ptr_to_labblock
+;             cmpi.b    #1,Block_type(a0)    ; Is it an underlay ?
+;             bne.s     .Not_underlay
+;             jsr       Display_element
+;             bra.s     .Next2
+;.Not_underlay:
+;             cmpi.b    #2,Block_type(a0)    ; Is it an overlay ?
+;             bne.s     .Not_overlay
+;             movem.l   d0/a0,-(sp)          ; Protect
+;             movea.l   OUH_ptr,a0           ; Display underlay
+;             move.b    -1(a0,d0.w),d0
+;             jsr       Get_ptr_to_labblock
+;             jsr       Display_element
+;             movem.l   (sp)+,d0/a0          ; Restore
+;             jsr       Display_element      ; Display overlays
+;             move.w    d7,d6
+;             move.b    .Extra_overlay-1(pc,d7.w),d7         ;  Get extra size
+;             beq.s     .Zero
+;             jsr       Display_element
+;.Zero:       move.w    d6,d7
+;             bra.s     .Next2
+;.Extra_overlay:
+;             .DC.b 12,13,0,14,15,0,16,17,0,0,0,0
+;             .EVEN
+;.Not_overlay:
+;             jsr       Display_object       ; It's an object
+;.Next2:      addq.l    #1,d7                ; Next
+;             cmpi.w    #12,d7
+;             bmi       .Loop2
+;             moveq.l   #0,d0                ; Get last byte
+;             move.b    11(a1),d0
+;             jsr       Get_ptr_to_labblock
+;             cmpi.b    #3,Block_type(a0)    ; Is it an object ?
+;             bne       .Go_on
+;             cmpi.b    #1,Block_animation(a0)     ; Animated ?
+;             bne.s     .Special
+;             jsr       Display_object
+;             bra       .Go_on
+;.Special:    jsr       Display_special_object
+;; ------------- Display "OUCH!" when necessary -----------------------
+;.Go_on:      tst.b     Bumped               ; Ouch ?
+;             beq.s     .Exit
+;             move.w    #49,d1               ; Calculate random coordinate
+;             jsr       Random
+;             andi.w    #$3f,d0
+;             add.w     d0,d1
+;             move.w    #112,d0              ; Display "OUCH!"
+;             moveq.l   #2,d6
+;             moveq.l   #32,d7
+;             lea.l     Status_icn+3584,a0
+;             movea.l   Off_screen,a6
+;             jsr       Blot_masked_block
+;             sf        Bumped               ; Clear flag
+;.Exit:       jsr       Update_animation
+;             jsr       Update_status_block
+;             jsr       Show_special_items
+;             jsr       Show_spells
+;             movem.l   (sp)+,d0-d2/d6/d7/a0-a6
+;             rts
+
 Build_3D_map:
 	movem.l	d0-d2/d6-d7/a0-a6,-(a7)
 	bsr.w	M3_Dark_check
@@ -311,6 +407,41 @@ Display_special_object:
 	bsr.w	Blit
 	movem.l	(sp)+,d0-d2/d7/a0/a1
 	rts	
+
+; ---- Get_current_anim_frame (original source: MAIN/MAP/3DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;Get_current_anim_frame:
+;             movem.l   d0/a0/a1,-(sp)
+;             subq.w    #1,d1                ; BASE 0 correction
+;             beq.s     .No_anim             ; Any animation ?
+;             add.w     d0,d0                ; Get block stats
+;             add.w     d0,d0
+;             move.l    -4(a4,d0.w),d0
+;             lea.l     Circle_anim,a1       ; Circle or wave ?
+;             btst      #0,d0
+;             beq.s     .Circle
+;             lea.l     Wave_anim,a1         ; Wave
+;.Circle:     add.w     d1,d1                ; Add number of frames
+;             add.w     d1,d1
+;             adda.w    d1,a1
+;             btst      #4,d0                ; Random animation ?
+;             beq.s     .No_random
+;             move.b    1(a1),d0             ; Get random offset
+;             ext.w     d0
+;             lea.l     Hash_buffer_3D-2,a0  ; Get hash number
+;             adda.w    d7,a0
+;             adda.w    d7,a0
+;             add.w     (a0),d0
+;             andi.w    #$000f,d0            ; Random hash
+;             move.w    2(a1),d1             ; Test
+;             btst      d0,d1
+;             bne.s     .No_random
+;             moveq.l   #0,d1                ; No animation
+;             bra.s     .No_anim
+;.No_random:  move.b    (a1),d1              ; Get current frame
+;             ext.w     d1
+;.No_anim:    movem.l   (sp)+,d0/a0/a1
+;             rts
+
 Get_current_anim_frame:
 	movem.l	d0/a0-a1,-(a7)
 	subq.w	#$1,d1
@@ -679,6 +810,17 @@ Blit_right:
 	unlk	a4
 	movem.l	(sp)+,d0-d7/a0-a4
 	rts	
+
+; ---- D3_turnleft (original source: MAIN/MAP/3DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;D3_turnleft:
+;             move.l    d0,-(sp)
+;             move.w    View_direction,d0    ; Get view direction
+;             subq.w    #1,d0                ; Turn counter-clockwise
+;             andi.w    #3,d0
+;             move.w    d0,View_direction    ; Store
+;             move.l    (sp)+,d0
+;             rts
+
 D3_turnleft:
 	btst	#$1,Mouse_button_state
 	bne.b	D3_turnleft
@@ -723,6 +865,76 @@ D3_fullturnright:
 	bsr.w	T_0373a	; CHANGE: was "jsr D3_turnright"
 	movea.l	(sp)+,a0
 	rts	
+
+; ---- D3_left (original source: MAIN/MAP/3DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;D3_left:
+;             jsr       Before_move
+;             movem.l   d0/d1,-(sp)
+;             move.w    View_direction,d1    ; Get view direction
+;             add.w     d1,d1
+;             move.b    .Left(pc,d1.w),d0    ; Adapt X
+;             ext.w     d0
+;             add.w     Map_Xcoord,d0
+;             move.b    .Left+1(pc,d1.w),d1  ; Adapt Y
+;             ext.w     d1
+;             add.w     Map_Ycoord,d1
+;             jsr       Movement_check_3D
+;             sne       Bumped
+;             bne.s     .Exit
+;             move.w    d0,Map_Xcoord        ; Store new coordinates
+;             move.w    d1,Map_Ycoord
+;             jsr       Update_automap
+;             jsr       After_move
+;.Exit:       movem.l   (sp)+,d0/d1
+;             rts
+;.Left:       .DC.b -1,0,0,-1,1,0,0,1
+
+; ---- D3_right (original source: MAIN/MAP/3DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;D3_right:
+;             jsr       Before_move
+;             movem.l   d0/d1,-(sp)
+;             move.w    View_direction,d1    ; Get view direction
+;             add.w     d1,d1
+;             move.b    .Right(pc,d1.w),d0   ; Adapt X
+;             ext.w     d0
+;             add.w     Map_Xcoord,d0
+;             move.b    .Right+1(pc,d1.w),d1 ; Adapt Y
+;             ext.w     d1
+;             add.w     Map_Ycoord,d1
+;             jsr       Movement_check_3D
+;             sne       Bumped
+;             bne.s     .Exit
+;             move.w    d0,Map_Xcoord        ; Store new coordinates
+;             move.w    d1,Map_Ycoord
+;             jsr       Update_automap
+;             jsr       After_move
+;.Exit:       movem.l   (sp)+,d0/d1
+;             rts
+;.Right:      .DC.b 1,0,0,1,-1,0,0,-1
+
+; ---- D3_back (original source: MAIN/MAP/3DMAP.ASM) - the shipped program differs, its code follows, not assembled:
+;D3_back:
+;             jsr       Before_move
+;             movem.l   d0/d1,-(sp)
+;             move.w    View_direction,d1    ; Get view direction
+;             add.w     d1,d1
+;             move.b    .Back(pc,d1.w),d0    ; Adapt X
+;             ext.w     d0
+;             add.w     Map_Xcoord,d0
+;             move.b    .Back+1(pc,d1.w),d1  ; Adapt Y
+;             ext.w     d1
+;             add.w     Map_Ycoord,d1
+;             jsr       Movement_check_3D
+;             sne       Bumped
+;             bne.s     .Exit
+;             move.w    d0,Map_Xcoord        ; Store new coordinates
+;             move.w    d1,Map_Ycoord
+;             jsr       Update_automap
+;             jsr       After_move
+;.Exit:       movem.l   (sp)+,d0/d1
+;             rts
+;.Back:       .DC.b 0,1,-1,0,0,-1,1,0
+
 ; ---- D3_forward (original source: MAIN/MAP/3DMAP.ASM)
 D3_right:
 D3_left:

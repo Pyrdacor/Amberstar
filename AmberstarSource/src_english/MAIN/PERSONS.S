@@ -683,6 +683,22 @@ Check_line_of_sight:
 .Exit:
 	movem.l	(sp)+,d0-d7/a0-a2
 	rts	
+
+; ---- Battle_check (original source: MAIN/PERSONS.ASM) - the shipped program differs, its code follows, not assembled:
+;Battle_check:
+;             rts
+;
+;             cmpi.w    #5,Travel_mode       ; Bird mode ?
+;             bpl.w     .Exit
+;             cmp.w     Map_Xcoord,d0        ; X the same ?
+;             bne.s     .Exit
+;             cmp.w     Map_Ycoord,d1        ; Y the same ?
+;             bne.s     .Exit
+;             move.w    VChar_nr(a1),mongroup_nr   ; Set group number
+;             st        CombatReq            ; Activate requester
+;             st        Pause_Upd
+;.Exit:       rts
+
 Battle_check:
 	tst.b	B_57c4c
 	beq.b	.l_062aa
@@ -701,6 +717,66 @@ Battle_check:
 	st.b	Pause_Upd
 .l_062e0:
 	rts
+
+; ---- CombatReq_ModInit (original source: MAIN/PERSONS.ASM) - the shipped program differs, its code follows, not assembled:
+;CombatReq_ModInit:
+;             sf        CombatReq            ; Clear flags
+;             sf        Party_advantage
+;             sf        Monster_advantage
+;; ------------- Pause display if in 3D map ---------------------------
+;             cmpi.b    #2,Current_map_type  ; 3D map ?
+;             bmi.s     .Go_on
+;             tst.b     Stygian              ; Can anything be seen ?
+;             bne.s     .Go_on
+;             cmpi.b    #2,Current_map_type  ; Dungeon or city ?
+;             bne.s     .City
+;             lea.l     D3_DisUpd,a0
+;             bra.s     .Continue
+;.City:       lea.l     C3_DisUpd,a0
+;.Continue:   moveq.l   #10-1,d7
+;.Loop:       jsr       (a0)
+;             jsr       Switch_screen
+;             dbra      d7,.Loop
+;             sf        Pause_Upd            ; Clear flag
+;.Go_on:      .LOCAL
+;; ------------- Display combat requester -----------------------------
+;             moveq.l   #16,d0               ; Open a window
+;             moveq.l   #52,d1
+;             moveq.l   #18,d2
+;             moveq.l   #5,d3
+;             moveq.l   #1,d6
+;             lea.l     CombatReq_L1,a0
+;             jsr       Open_window
+;             move.w    d0,Window_handle
+;             Push      PA,CombatReq_PA
+;             moveq.l   #15,d0               ; Convert text
+;             move.w    Nr_of_chars,d2
+;             lea.l     Code0004Sys,a1
+;             jsr       Prepare_text_block
+;             movea.l   Off_screen,a6        ; Print text
+;             movea.l   Text_buffer,a0
+;             move.w    Nr_of_chars,d0
+;             move.w    Lines_in_text,d7
+;             subq.w    #1,d7
+;.Loop:       jsr       IG_Print
+;             jsr       IG_Carriage_return
+;             lea.l     1(a0,d0.w),a0
+;             dbra      d7,.Loop
+;             moveq.l   #2,d6                ; Display icons
+;             moveq.l   #16,d7
+;             move.w    #208,d0
+;             move.w    #52+48,d1
+;             lea.l     Control_icn+9216,a0
+;             jsr       Blot_unmasked_block
+;             move.w    #208+32,d0
+;             move.w    #52+48,d1
+;             lea.l     Control_icn+16896,a0
+;             jsr       Blot_unmasked_block
+;             Update_screen
+;             movea.l   Text_buffer,a0       ; Remove text buffer
+;             jsr       Free_memory
+;             rts
+
 CombatReq_ModInit:
 	sf.b	CombatReq
 	sf.b	Party_advantage
@@ -732,7 +808,7 @@ CombatReq_ModInit:
 	moveq	#1,d6
 	lea.l	D_2f2aa,a0
 	jsr	Open_window
-	move.w	d0,Window_handle
+	move.w	d0,B_57a60
 	lea.l	D_1e3b4,a0
 	bsr.w	Push_PA
 	moveq	#15,d0
@@ -766,7 +842,7 @@ CombatReq_ModInit:
 	rts
 ; ---- CombatReq_ModExit (original source: MAIN/PERSONS.ASM)
 CombatReq_ModExit:
-	move.w	Window_handle,d0
+	move.w	B_57a60,d0	; CHANGE: was "move.w Window_handle,d0"
 	jsr	Close_window
 	bsr.w	Pop_PA
 	rts	
@@ -815,6 +891,39 @@ CombatYes:
 	jsr	Exit_display	; CHANGE: added
 	lea.l	Combat_Mod,a0
 	jmp	Push_Module
+
+; ---- CombatNo (original source: MAIN/PERSONS.ASM) - the shipped program differs, its code follows, not assembled:
+;CombatNo:    tst.w     Spell_6_duration     ; Invisibility on ?
+;             bne.s     .Done
+;             cmpi.w    #6,Travel_mode       ; Superchicken mode ?
+;             bpl.s     .Exit
+;             movea.l   Current_active_char_data,a0
+;             move.w    Attr_3_normal(a0),d0
+;             add.w     Attr_3_normal_magic(a0),d0
+;             add.w     Attr_7_normal(a0),d0
+;             add.w     Attr_7_normal_magic(a0),d0
+;             tst.w     d0                   ; Boundary check
+;             bmi.s     .Exit
+;             cmpi.w    #150,d0
+;             bpl.s     .Exit
+;             move.w    d0,d1
+;             jsr       Random               ; Get {random} MOD 150
+;             lsr.w     #1,d0
+;             ext.l     d0
+;             divu.w    #150,d0
+;             swap.w    d0
+;             cmp.w     d0,d1                ; Probe
+;.Exit:       bmi.s     .Failed              ; Done it ?
+;.Done:       move.w    Old_Xcoord,Map_Xcoord      ; Restore coordinates
+;             move.w    Old_Ycoord,Map_Ycoord
+;             move.w    Old_mapbufX,Mapbuf_X
+;             move.w    Old_mapbufY,Mapbuf_Y
+;             Pop       Module
+;             bra.s     .Exit2
+;.Failed:     st        Monster_advantage    ; Monster advantage !!!
+;             jsr       CombatYes
+;.Exit2:      rts
+
 T_06494:
 	tst.w	Spell_6_duration
 	bne.b	.l_064dc
@@ -839,7 +948,7 @@ T_06494:
 .l_064da:
 	bmi.b	.l_064e8
 .l_064dc:
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	jsr	Pop_Module
 	bra.b	.l_064f2
 .l_064e8:

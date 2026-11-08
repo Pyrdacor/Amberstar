@@ -30,6 +30,64 @@ Hex_convert:
 	lea.l	Output_string,a0
 	movem.l	(sp)+,d0/d1/d7
 	rts	
+
+; ---- Dec_convert (original source: NUCLEUS/NUMERIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Dec_convert:
+;             movem.l   d0-d3/d7/a1,-(sp)
+;             cmpi.w    #10+1,d7             ; Legal input ?
+;             bmi.s     .Ok1
+;             ERROR     "[ Dec_convert ] : Number of digits too high !!!"
+;             bra       .Exit
+;.Ok1:        lea.l     Output_string,a0     ; Clear string
+;             move.l    #"    ",(a0)
+;             move.l    #"    ",4(a0)
+;             move.l    #"    ",8(a0)
+;             tst.l     d0                   ; Negative ?
+;             bpl.s     .Positive
+;             neg.l     d0
+;             move.b    #"-",(a0)+
+;             bra.s     .Go_on
+;.Positive:   move.b    #" ",(a0)+
+;.Go_on:      lea.l     Weights+40,a1        ; Weights table
+;             move.w    d7,d3
+;             add.w     d3,d3
+;             add.w     d3,d3
+;             suba.w    d3,a1
+;             cmp.l     -4(a1),d0            ; Not too big ?
+;             bmi.s     .Ok2
+;             subq.w    #1,d7                ; Make dummy number
+;.Loop1:      move.b    #"*",(a0)+
+;             dbra      d7,.Loop1
+;             bra       .Not_zero
+;.Ok2:        moveq.l   #0,d3
+;             subq.w    #1,d7
+;.Loop2:      move.l    (a1)+,d1             ; Load weight
+;             move.w    #"0",d2
+;.Weigh:      cmp.l     d1,d0                ; Weigh number
+;             bmi.s     .Skip
+;             sub.l     d1,d0                ; Reduce weight
+;             addq.w    #1,d2                ; Increase digit
+;             bra.s     .Weigh
+;.Skip:       cmpi.w    #"0",d2              ; Leading space ?
+;             bne.s     .No_leading_space
+;             tst.w     d3
+;             bne.s     .No_leading_space
+;             move.b    #" ",(a0)+
+;             bra.s     .Next_digit
+;.No_leading_space:
+;             st        d3
+;             move.b    d2,(a0)+             ; Insert in string
+;.Next_digit: dbra      d7,.Loop2
+;             tst.w     d3                   ; Number was zero ?
+;             bne.s     .Not_zero
+;             move.b    #"0",-1(a0)          ; Insert zero in string
+;.Not_zero:   move.b    #" ",(a0)+           ; Insert spaces + sentinel
+;             move.b    #" ",(a0)+
+;             move.b    #0,(a0)
+;             lea.l     Output_string,a0     ; Output
+;.Exit:       movem.l   (sp)+,d0-d3/d7/a1
+;             rts
+
 Dec_convert:
 	movem.l	d0-d3/d7/a1,-(a7)
 	cmpi.w	#$b,d7

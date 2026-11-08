@@ -41,6 +41,56 @@ Find_event:
 .Exit:
 	movem.l	(sp)+,d0/d1/a0
 	rts	
+
+; ---- Handle_event (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Handle_event:
+;             movem.l   d0-d7/a0-a6,-(sp)
+;             moveq.l   #0,d1                ; Get event save number
+;             move.b    5(a5),d1
+;             beq.s     .No_save             ; Event save on ?
+;             move.w    Map_nr,d6            ; Get map number x 65
+;             subq.w    #1,d6
+;             move.w    d6,d7
+;             lsl.w     #6,d6
+;             add.w     d7,d6
+;             add.w     d1,d6                ; Add event save number
+;             moveq.l   #$7,d7               ; Calculate bit & byte number
+;             and.w     d6,d7
+;             lsr.w     #3,d6
+;             lea.l     Event,a0             ; Get pointer to EVENT array
+;             adda.w    d6,a0
+;             cmpi.b    #4,(a5)              ; FUCKING EXCEPTION ONE ?
+;             beq.s     .Skip
+;             cmpi.b    #20,(a5)             ; FUCKING EXCEPTION TWO ?
+;             bne.s     .Go_on
+;             btst      d7,(a0)              ;    DOOR if not saved
+;             beq.s     .Skip
+;             jsr       Do_extra_event       ;    MAP EXIT if saved
+;             bra.s     .Exit
+;.Go_on:      btst      d7,(a0)              ; Check bit in EVENT array
+;             bne.s     .Exit
+;.Skip:       move.l    a0,EVENT_ptr         ; Store EVENT array pointers
+;             move.w    d7,EVENT_bit
+;.No_save:    moveq.l   #0,d1                ; Get event type
+;             move.b    (a5),d1
+;             cmpi.w    #Max_events+1,d1     ; Legal ?
+;             bmi.s     .Ok
+;             ERROR     "[ Handle_event ] : Illegal event number !!!"
+;             bra.s     .Exit
+;.Ok:         add.w     d1,d1                ; Get pointer to routine
+;             add.w     d1,d1
+;             movea.l   .Event_ptrs-4(pc,d1.w),a0
+;             jsr       (a0)
+;.Exit:       movem.l   (sp)+,d0-d7/a0-a6
+;             rts
+;
+;.Event_ptrs: .DC.l Map_exit,Door,Show_pictxt,Item_found
+;             .DC.l Trap_door,Teleporter,Wind_gate,Spinner
+;             .DC.l Damage_field,Anti_magic,Lp_regen,Sp_regen
+;             .DC.l ETrap,Riddle_mouth,Attr_change,Change_icon
+;             .DC.l Encounter,Places,Event_item,Door_exit
+;             .DC.l Travel_exit
+
 Handle_event:
 	movem.l	d0-d7/a0-a6,-(a7)
 	move.w	#$0,Draw_Cicon
@@ -93,8 +143,8 @@ T_07bf0:
 	dc.l	Show_pictxt
 	dc.l	T_08a34
 	dc.l	T_092d4
-	dc.l	T_0935a
-	dc.l	T_093f2
+	dc.l	Teleporter
+	dc.l	Wind_gate
 	dc.l	Spinner
 	dc.l	Damage_field
 	dc.l	Anti_magic
@@ -146,6 +196,77 @@ Probe:
 .Exit:
 	movem.l	(sp)+,d0/d1
 	rts	
+
+; ---- Execute_trap (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Execute_trap:
+;             movem.l   d0-d3/a0-a2/a5,-(sp)
+;             ext.w     d0                   ; Get trap parameters
+;             beq       .Exit
+;             lea.l     Trap_table,a5
+;             subq.w    #1,d0
+;             lsl.w     #3,d0
+;             adda.w    d0,a5
+;             movea.l   (a5),a1
+;             tst.w     4(a5)                ; Active or party ?
+;             bne.s     .Active
+;             lea.l     Chard_ptrs,a2        ; Party
+;             moveq.l   #1,d1
+;             moveq.l   #0,d2
+;.Loop:       tst.l     (a2)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a2),a0
+;             move.w    #$e400,d3            ; Alive and kicking ?
+;             and.w     Body_conditions(a0),d3
+;             bne.s     .Next
+;             move.w    Attr_7_normal(a0),d0 ; Probe luck
+;             add.w     Attr_7_normal_magic(a0),d0
+;             jsr       Probe
+;             bpl.s     .Next
+;             addq.w    #1,d3                ; Count
+;             move.w    d1,d0                ; Do bad stuff
+;             jsr       (a1)
+;.Next:       addq.l    #4,a2                ; Next character
+;             addq.w    #1,d1
+;             cmpi.w    #6+1,d1
+;             bmi.s     .Loop
+;             tst.w     d3                   ; Anyone hurt ?
+;             bne       .Go_on
+;             movea.l   Textfile_ptr,a1      ; Show text
+;             move.w    #1,WText_nr
+;             move.l    #Code0002Sys,Textfile_ptr
+;             Push      Module,TxtW_Mod
+;             move.l    a1,Textfile_ptr
+;             bra.s     .Exit
+;.Active:     movea.l   Current_active_char_data,a0
+;             move.w    Attr_7_normal(a0),d0 ; Probe luck
+;             add.w     Attr_7_normal_magic(a0),d0
+;             jsr       Probe
+;             bpl.s     .Exit
+;             move.w    Active_member,d0     ; Do bad stuff
+;             jsr       (a1)
+;.Go_on:      movea.l   Textfile_ptr,a1      ; Show text
+;             move.w    6(a5),WText_nr
+;             move.l    #Code0003Sys,Textfile_ptr
+;             Push      Module,TxtW_Mod
+;             move.l    a1,Textfile_ptr
+;.Exit:       movem.l   (sp)+,d0-d3/a0-a2/a5
+;             rts
+;
+;Trap_table:  .DC.l Damage_trap
+;             .DC.w 0,7
+;             .DC.l Poison_needle
+;             .DC.w 1,8
+;             .DC.l Poison_gas_cloud
+;             .DC.w 0,9
+;             .DC.l Blinding_flash
+;             .DC.w 0,10
+;             .DC.l Paralyzing_gas_cloud
+;             .DC.w 0,11
+;             .DC.l Stone_gaze
+;             .DC.w 1,12
+;             .DC.l Disease
+;             .DC.w 1,13
+
 Execute_trap:
 	movem.l	d0-d2/a0-a2/a5,-(a7)
 	ext.w	d0
@@ -396,6 +517,14 @@ Door_DisUpd:
 	jsr	Init_display
 .Exit:
 	rts	
+
+; ---- Door_ModInit (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Door_ModInit:
+;             moveq.l   #13,d0               ; Load door picture
+;             lea.l     Lay3_target_hbl+2,a0
+;             jsr       Load_80x80_picture
+;             rts
+
 Door_ModInit:
 	bsr.w	T_0025a
 	moveq	#13,d0
@@ -437,64 +566,76 @@ Door_DisInit:
 	lea.l	Hbl_Lay3_list,a0
 	jsr	Update_HBL
 	rts	
-T_08084:
-	bsr.w	T_01f98
+
+; ---- Door_Exit (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Door_Exit:
+;             Restore_coords                 ; Back to old position
+;             jsr       Exit_display
+;             Pop       Module
+;             jmp       Init_display
+
+Door_Exit:
+	bsr.w	Restore_coords
 	jsr	Exit_display
 	jsr	Pop_Module
 	jmp	Init_display
-T_0809a:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0809a
-	move.w	#$0,Draw_Cicon
-	jsr	My_vsync
+; ---- Pick_lock_DOOR (original source: MAIN/EVENTS.ASM)
+Pick_lock_DOOR:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+	move.w	#$0,Draw_Cicon	; CHANGE: was "Wait_4_unclick"
+	jsr	My_vsync	; CHANGE: added
 	movea.l	Current_active_char_data,a0
 	movea.l	Event_data_ptr,a5
-	cmpi.b	#$64,$1(a5)
-	beq.b	T_080f6
-	moveq	#0,d0
+	cmpi.b	#100,1(a5)
+	beq.s	.Mess
+	moveq.l	#0,d0
 	move.b	Skill_7(a0),d0
 	add.w	Skill_7_normal_magic(a0),d0
-	move.b	$1(a5),d1
+	move.b	1(a5),d1
 	ext.w	d1
 	sub.w	d1,d0
 	bsr.w	Probe
-	bpl.b	T_08128
-	addi.w	#$a,d1
-	cmpi.w	#$64,d1
-	bmi.b	.l_080ea
-	moveq	#99,d1
-.l_080ea:
-	move.b	d1,$1(a5)
+	bpl.s	.Picked_it
+	addi.w	#10,d1
+	cmpi.w	#100,d1
+	bmi.s	.Ok
+	moveq.l	#99,d1
+.Ok:
+	move.b	d1,1(a5)
+.Skip:
 	tst.b	Trap_disarmed
-	beq.b	T_08100
-T_080f6:
-	move.w	#$19,d0
+	beq.s	.Trap
+.Mess:
+	move.w	#25,d0
 	bsr.w	Plus_message
-	bra.b	T_0813a
-T_08100:
-	move.b	$2(a5),d0
-	beq.b	T_080f6
+	bra.s	.Exit
+.Trap:
+	move.b	2(a5),d0
+	beq.s	.Mess
 	move.w	Attr_3_normal(a0),d0
 	add.w	Attr_3_normal_magic(a0),d0
 	bsr.w	Probe
-	bpl.b	.l_0811e
-	move.b	$2(a5),d0
+	bpl.s	.No_trap
+	move.b	2(a5),d0
 	bsr.w	Execute_trap
-	bra.b	T_0813a
-.l_0811e:
-	move.w	#$1,d0
+	bra.s	.Exit
+.No_trap:
+	move.w	#1,d0
 	bsr.w	Plus_message
-	bra.b	T_0813a
-T_08128:
+	bra.s	.Exit
+.Picked_it:
 	bsr.w	Save_event
-	st.b	Door_opened
-	move.w	#$0,d0
+	st	Door_opened
+	move.w	#0,d0
 	bsr.w	Plus_message
-T_0813a:
-	rts
-T_0813c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0813c
+.Exit:
+	rts	
+; ---- Use_item_DOOR (original source: MAIN/EVENTS.ASM)
+Use_item_DOOR:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	lea.l	UseItemDoor_Mod,a0
 	jmp	Push_Module
 ; ---- UseItemDoor_DisUpd (original source: MAIN/EVENTS.ASM)
@@ -700,6 +841,57 @@ Erase2_object_name:
 	move.b	#2,Erase_objname_flag
 .Exit:
 	rts	
+
+; ---- Upd5_objname_print (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Upd5_objname_print:
+;             tst.b     Print_objname_flag   ; Print anything ?
+;             beq       .Exit
+;             lea.l     .Init_string(pc),a0  ; Set colours
+;             jsr       IG_Print
+;             move.w    Object_name_nr,d0    ; Get word
+;             beq       .Exit
+;             jsr       Get_word
+;             move.w    #16,d0               ; Erase previous text
+;             move.w    #72,d1
+;             move.w    #16+176-1,d2
+;             move.w    #72+6,d3
+;             move.w    #2,d6
+;             movea.l   Off_screen,a6
+;             jsr       Draw_box
+;             move.w    #176,d2              ; Print word
+;             lea.l     Line_buffer,a0
+;             jsr       Print_centered_string
+;             subq.b    #1,Print_objname_flag      ; Count down
+;.Exit:       rts
+;
+;.Init_string:          .DC.b 1,15,2,-1,0
+;             .EVEN
+
+; ---- Upd_objname_print (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Upd_objname_print:
+;             tst.b     Print_objname_flag   ; Print anything ?
+;             beq       .Exit
+;             lea.l     .Init_string(pc),a0  ; Set colours
+;             jsr       IG_Print
+;             move.w    Object_name_nr,d0    ; Get word
+;             beq       .Exit
+;             jsr       Get_word
+;             move.w    #16,d0               ; Erase previous text
+;             move.w    #58,d1
+;             move.w    #16+176-1,d2
+;             move.w    #58+7-1,d3
+;             move.w    #2,d6
+;             movea.l   Off_screen,a6
+;             jsr       Draw_box
+;             move.w    #176,d2              ; Print word
+;             lea.l     Line_buffer,a0
+;             jsr       Print_centered_string
+;             subq.b    #1,Print_objname_flag      ; Count down
+;.Exit:       rts
+;
+;.Init_string:          .DC.b 1,15,2,-1,0
+;             .EVEN
+
 ; ---- Upd2_objname_print (original source: MAIN/EVENTS.ASM)
 Upd_objname_print:
 Upd5_objname_print:
@@ -783,7 +975,6 @@ DoorCIL_evaluate:
 	movem.l	(sp)+,d0/d7/a2
 	rts	
 ; ---- Display2_quantities (original source: MAIN/EVENTS.ASM)
-AutoIcon_switch:
 Display2_quantities:
 	lea.l	Quant_init_string,a0
 	jsr	IG_Print
@@ -1001,7 +1192,7 @@ TxtW_ModInit:
 	moveq.l	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	move.w	d0,Window_handle
 	lsr.w	#1,d4
 	add.w	d4,d1
 	addi.w	#16,d1
@@ -1036,7 +1227,7 @@ TxtW_ModInit:
 	moveq.l	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	move.w	d0,Window_handle
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	bsr.w	Pop_PA
@@ -1053,7 +1244,7 @@ TxtW_ModInit:
 TxtW_ModExit:
 	movem.l	d0/a0,-(sp)
 	st.b	B_592de	; CHANGE: added
-	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
+	move.w	Window_handle,d0
 	jsr	Close_window
 	bsr.w	Pop_PA
 	btst	#1,Mouse_button_state
@@ -1061,6 +1252,42 @@ TxtW_ModExit:
 ; CHANGE: removed "Wait_4_unclick"
 	movem.l	(sp)+,d0/a0
 	rts	
+
+; ---- Item_found (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Item_found:
+;; ------------- Is the chest hidden ? --------------------------------
+;             tst.b     4(a5)                ; Well, is it ?
+;             beq.s     .Not_hidden
+;             movea.l   Current_active_char_data,a0          ; Probe {Searching}
+;             moveq.l   #0,d0
+;             move.b    Skill_8(a0),d0
+;             add.w     Skill_8_normal_magic(a0),d0
+;             jsr       Probe
+;             bmi       .Exit
+;; ------------- Is the chest already open ? --------------------------
+;.Not_hidden: movea.l   EVENT_ptr,a0         ; Event saved ?
+;             move.w    EVENT_bit,d0
+;             btst      d0,(a0)
+;             bne.s     .Opened
+;             tst.b     1(a5)                ; 0 % locked ?
+;             beq.s     .Opened
+;             move.w    Special_item_flags,d0      ; Amberstar on ?
+;             btst      #1,d0
+;             bne.s     .Opened
+;             jsr       Exit_display         ; Fade out
+;             sf        Door_opened          ; Clear flags
+;             sf        Trap_found
+;             sf        Trap_disarmed
+;             Push      Module,ClosedChest_Mod     ; Closed chest
+;             bra       .Exit
+;.Opened:     jsr       Init_chest
+;             bne.s     .Full                ; Is the chest empty ?
+;             tst.w     Current_chest_gold   ; What ? No gold either ?
+;             beq.s     .Exit
+;.Full:       jsr       Exit_display         ; Fade out
+;             Push      Module,OpenedChest_Mod     ; Opened chest
+;.Exit:       rts
+
 T_088e4:
 	movem.l	d0-d7/a0-a6,-(a7)
 	sf.b	B_592de
@@ -1127,7 +1354,7 @@ T_089be:
 	moveq	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256
+	move.w	d0,Window_handle
 	movea.l	Text_buffer,a0
 	jsr	Free_memory
 	bsr.w	Pop_PA
@@ -1188,10 +1415,18 @@ T_08a34:
 .l_08ab8:
 	rts
 T_08aba:
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bra.w	Init_display
+
+; ---- Chest_exit (original source: MAIN/EVENTS.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Chest_exit:
+;             Restore_coords
+;             jsr       Exit_display
+;             Pop       Module
+;             jmp       Init_display
+
 ; ---- Init_chest (original source: MAIN/EVENTS.ASM)
 Init_chest:
 	movem.l	d0-d2/d7/a0,-(sp)
@@ -1229,6 +1464,14 @@ Init_chest:
 	move.w	d2,Current_chest_slots
 	movem.l	(sp)+,d0-d2/d7/a0
 	rts	
+
+; ---- ClosedChest_ModInit (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;ClosedChest_ModInit:
+;             moveq.l   #12,d0               ; Load closed chest picture
+;             lea.l     Lay3_target_hbl+2,a0
+;             jsr       Load_80x80_picture
+;             jmp       Init_display
+
 ClosedChest_ModInit:
 	jsr	T_0025a
 	moveq	#12,d0
@@ -1491,6 +1734,27 @@ OpenedChest_DisUpd:
 	bsr.w	Print_centered_string
 .No_gold:
 	rts	
+
+; ---- OpenedChestCIL_evaluate (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;OpenedChestCIL_evaluate:
+;; ------------- Enable all icons -------------------------------------
+;             bclr      #7,5(a0)             ; Enable {Transfer item}
+;             bclr      #7,7(a0)             ;        {Transfer gold}
+;             bclr      #7,8(a0)             ;        {Divide gold}
+;; ------------- Any gold in chest ? ----------------------------------
+;             tst.w     Current_chest_gold   ; Well ?
+;             bne.s     .Gold_OK
+;             bset      #7,7(a0)             ; Disable {Transfer gold}
+;             bset      #7,8(a0)             ;         {Divide gold}
+;; ------------- Any items in chest ? ---------------------------------
+;.Gold_OK:    lea.l     Chest_slot_list,a1   ; Well ?
+;             move.l    (a1)+,d0
+;             or.l      (a1)+,d0
+;             or.l      (a1)+,d0
+;             bne.s     .Exit
+;             bset      #7,5(a0)             ; Disable {Transfer item}
+;.Exit:       rts
+
 OpenedChestCIL_evaluate:
 	bclr	#$7,$4(a0)
 	bclr	#$7,$5(a0)
@@ -1689,6 +1953,21 @@ Transfer_gold_CHEST:
 TransGold_DisInit:
 TGCHEST_DisInit:
 	movem.l	d0-d7/a0-a6,-(a7)
+
+; ---- Transfer_food (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Transfer_food:
+;             movea.l   Off_screen,a6        ; Print message {7,-}
+;             MesMin    7
+;             Update_screen
+;             Wait_4_unclick
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             moveq.l   #0,d0                ; Set parameters
+;             move.w    Food_rations(a0),d0
+;             move.l    d0,Original_number
+;             clr.l     ItemW_nr
+;             Push      Module,TransFood_Mod ; Requester
+;             rts
+
 ; ---- TransFood_DisInit (original source: MAIN/INVENT.ASM)
 TransFood_DisInit:
 	move.w	#First_add,Adding
@@ -1718,6 +1997,79 @@ TransFood_DisInit:
 	jsr	Copy_screen
 	movem.l	(a7)+,d0-d7/a0-a6	; CHANGE: added
 	rts	
+
+; ---- TransGold_Return (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;TransGold_Return:
+;             move.l    ItemW_nr,d0          ; Any coins ?
+;             beq       .Exit
+;             move.w    d0,d1                ; Calculate weight
+;             mulu.w    #Gold_weight,d0
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             jsr       Scan_4_gold_victims
+;             bne.s     .Go                  ; ANYONE interested ?
+;             PlusMes   5                    ; Print message {5,+}
+;             bra.s     .Exit
+;.Go:         jsr       Show_transfer_victims
+;             move.l    #Do_TransferGold,TIVS_Ptr  ; Select transfer victim
+;             lea.l     TIVS1_Mod,a0
+;             move.w    #25,Mouse_ptr(a0)
+;             jsr       Push_Module
+;.Exit:       Wait_4_unclick
+;             rts
+
+; ---- TransFood_Return (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;TransFood_Return:
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             move.l    ItemW_nr,d0          ; Any food ?
+;             beq       .Exit
+;             mulu.w    #Food_weight,d0      ; Calculate weight
+;; ------------- Scan characters for possible victims -----------------
+;             lea.l     Chard_ptrs,a1
+;             lea.l     Char_status_icons,a4
+;             moveq.l   #0,d6
+;             moveq.l   #1,d7
+;.Loop1:      tst.l     (a1)                 ; Any character there ?
+;             beq       .Next
+;             cmpa.l    (a1),a0              ; Current character ?
+;             bne.s     .Do_it
+;             move.w    d7,d5
+;             bra       .Next
+;.Do_it:      movea.l   (a1),a2              ; Get character data
+;; ------------- Check if character can carry the extra weight --------
+;             move.w    Attr_1_normal(a2),d1
+;             add.w     Attr_1_normal_magic(a2),d1
+;             mulu.w    #1000,d1
+;             sub.l     Weight_normal(a2),d1
+;             cmp.l     d0,d1                ; Not too heavy ?
+;             bmi       .Next
+;; ------------- Check if the character can carry the food ------------
+;             move.w    Food_rations(a2),d1
+;             add.w     d0,d1
+;             bvs       .Next
+;; ------------- Check if character is alive and kicking --------------
+;             move.w    #$e402,d1
+;             and.w     Body_conditions(a2),d1
+;             bne.s     .Next
+;             bset      d7,d6                ; Gimme! Gimme!
+;.Next:       addq.l    #4,a1                ; Next character
+;             addq.w    #1,d7
+;             cmpi.w    #6+1,d7
+;             bmi       .Loop1
+;             bmi       .Loop1
+;             move.w    d5,Transferring      ; Store results
+;             move.w    d6,Transfer_victims
+;             tst.w     d6                   ; ANYONE interested ?
+;             bne.s     .Go
+;             PlusMes   5                    ; Print message {5,+}
+;             bra.s     .Exit
+;.Go:         jsr       Show_transfer_victims
+;             move.l    #Do_TransferFood,TIVS_Ptr  ; Select transfer victim
+;             lea.l     TIVS1_Mod,a0
+;             move.w    #26,Mouse_ptr(a0)
+;             jsr       Push_Module
+;.Exit:       Wait_4_unclick
+;             rts
+
 ; ---- TGPLACES_Return (original source: MAIN/PLACES.ASM)
 TGCHEST_Return:
 TGPLACES_Return:
@@ -1773,6 +2125,45 @@ T_092d4:
 	movea.l	d0,a0
 	jsr	(a0)
 	jsr	Switch_screen
+
+; ---- Trap_door (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Trap_door:
+;             move.b    4(a5),d0             ; Show text ?
+;             jsr       Event_text
+;             tst.b     3(a5)                ; Floor or ceiling ?
+;             beq       .Exit
+;; ------------- Damage -----------------------------------------------
+;             lea.l     Chard_ptrs,a0        ; Damage the party
+;             moveq.l   #1,d7
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a0),a1
+;             move.w    #$e400,d2            ; Alive and kicking ?
+;             and.w     Body_conditions(a1),d2
+;             bne.s     .Next
+;             jsr       Random               ; Hurt person
+;             move.w    d0,d1
+;             mulu.w    8(a5),d1
+;             swap.w    d1
+;             addq.w    #1,d1
+;             move.w    d7,d0
+;             jsr       Do_damage
+;.Next:       addq.l    #4,a0                ; Next character
+;             addq.w    #1,d7
+;             cmpi.w    #6+1,d7
+;             bmi.s     .Loop
+;; ------------- Exit map ---------------------------------------------
+;             jsr       Exit_map             ; Exit current map
+;             moveq.l   #0,d0                ; Get new coordinates
+;             move.b    1(a5),d0             ;  & map number
+;             move.w    d0,Map_Xcoord
+;             move.b    2(a5),d0
+;             move.w    d0,Map_Ycoord
+;             move.w    6(a5),Map_nr
+;             jsr       Init_map             ; Initialize new map
+;             jsr       Save_event
+;.Exit:       rts
+
 Trap_door:
 	move.b	$4(a5),d0
 	bsr.w	Event_text
@@ -1810,7 +2201,37 @@ Trap_door:
 	bsr.w	Init_map
 .l_09358:
 	rts
-T_0935a:
+
+; ---- Teleporter (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Teleporter:
+;             move.b    4(a5),d0             ; Show text ?
+;             jsr       Event_text
+;; ------------- Teleport ! -------------------------------------------
+;             move.w    6(a5),d0             ; Same map ?
+;             cmp.w     Map_nr,d0
+;             beq.s     .Same
+;             jsr       Map_exit             ; Exit map
+;             bra.s     .Exit
+;.Same:       moveq.l   #0,d0                ; Set new coordinates
+;             move.b    1(a5),d0
+;             move.w    d0,Map_Xcoord
+;             move.b    2(a5),d0
+;             move.w    d0,Map_Ycoord
+;             cmpi.b    #2,Current_map_type  ; 3D map ?
+;             bmi.s     .No_3D
+;             jsr       Update_automap       ; Update !
+;.No_3D:      move.b    3(a5),d0             ; Set new view direction
+;             cmpi.w    #4,d0                ; Keep old ?
+;             beq.s     .Skip
+;             move.w    d0,View_direction    ; No! Set new
+;.Skip:       cmpi.b    #0,Current_map_type  ; 2D city ?
+;             bne.s     .Exit
+;             jsr       Recalc_mapbuf_coords ; Recalculate !
+;.Exit:       jsr       Save_event
+;             rts
+
+; To another map: the map is changed inline instead of calling Map_exit.
+Teleporter:
 	move.b	$4(a5),d0
 	bsr.w	Event_text
 	move.w	$6(a5),d0
@@ -1846,13 +2267,14 @@ T_0935a:
 .l_093ec:
 	bsr.w	Save_event
 	rts
-T_093f2:
+; ---- Wind_gate (original source: MAIN/EVENTS.ASM)
+Wind_gate:
 	move.w	Special_item_flags,d0
-	btst	#$3,d0
-	bne.b	.l_09400
-	rts
-.l_09400:
-	bra.w	T_0935a
+	btst	#3,d0
+	bne.s	.Do_it
+	rts	
+.Do_it:
+	bra.w	Teleporter
 ; ---- Spinner (original source: MAIN/EVENTS.ASM)
 Spinner:
 	move.b	4(a5),d0
@@ -2168,6 +2590,52 @@ Answer_riddleM:
 	bne.s	*-8
 ; CHANGE: removed "Wait_4_unclick"
 	rts	
+
+; ---- Check_answer_riddleM (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Check_answer_riddleM:
+;             tst.b     No_word_entered      ; Any word entered ?
+;             bne       .Exit
+;             movea.l   Event_data_ptr,a5    ; Is it the one ?
+;             move.w    Found_word,d0
+;             cmp.w     6(a5),d0
+;             bne.s     .Wrong
+;             moveq.l   #$7,d1               ; Calculate bit & byte number
+;             and.w     d0,d1
+;             lsr.w     #3,d0
+;             lea.l     WD,a0                ; Set bit in WD array
+;             bset      d1,0(a0,d0.w)
+;             move.w    8(a5),d2             ; Change icon
+;             beq.s     .No_icon
+;             moveq.l   #0,d0
+;             move.b    1(a5),d0
+;             moveq.l   #0,d1
+;             move.b    2(a5),d1
+;             movea.l   Mapd_ptr,a0
+;             jsr       Do_change_icon
+;             tst.b     5(a5)                ; Save event ?
+;             beq.s     .No_icon
+;             jsr       Enter_modification
+;.No_icon:    st        Door_opened          ; Set flag
+;             moveq.l   #0,d0                ; Any message ?
+;             move.b    4(a5),d0
+;             cmpi.w    #26,d0
+;             beq.s     .No_text
+;             move.w    d0,PlusMes_nr        ; Print message
+;             move.l    Maptext_ptr,Textfile_ptr
+;             Push      Module,RiddleMes_Mod
+;.No_text:    bra.s     .Exit
+;.Wrong:      moveq.l   #11,d0               ; Set plus message
+;             lea.l     Code0002Sys,a1
+;             move.w    d0,PlusMes_nr
+;             move.l    a1,Textfile_ptr
+;             jsr       Calc_textblock_address     ; Modify message
+;             move.w    Found_word,d0
+;             bne.s     .Yes                 ; Any word ?
+;             move.w    #ThatCode,d0
+;.Yes:        move.w    d0,(a1)
+;             Push      Module,RiddleMes_Mod ; Print message
+;.Exit:       rts
+
 Check_answer_riddleM:
 	tst.b	No_word_entered
 	bne.w	.l_09884
@@ -2380,6 +2848,17 @@ Change_icon:
 	bsr.w	Save_event
 .No_save:
 	rts	
+
+; ---- Event_item (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Event_item:
+;             Update_map_display
+;             moveq.l   #0,d0                ; Display text
+;             move.b    4(a5),d0
+;             move.w    d0,WText_nr
+;             move.l    Maptext_ptr,Textfile_ptr
+;             Push      Module,TxtW_Mod
+;.Exit:       rts
+
 T_09a8e:
 	movea.l	Module_sp,a0
 	move.l	(a0),d0
@@ -2393,6 +2872,23 @@ T_09a8e:
 	rts
 T_09aac:
 	movem.l	d0-d2/a0/a5,-(a7)
+
+; ---- Do_event_item (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_event_item:
+;             movea.l   Event_data_ptr,a5
+;             moveq.l   #0,d0                ; Change icon
+;             move.b    1(a5),d0
+;             moveq.l   #0,d1
+;             move.b    2(a5),d1
+;             move.w    8(a5),d2
+;             movea.l   Mapd_ptr,a0
+;             jsr       Do_change_icon
+;             tst.b     5(a5)                ; Modify map ?
+;             beq.s     .No_save
+;             jsr       Enter_modification
+;             jsr       Save_event
+;.No_save:    rts
+
 Do_event_item:
 	movea.l	Event_data_ptr,a5
 	moveq	#0,d0
@@ -2432,6 +2928,33 @@ ETrap:
 	bsr.w	Execute_trap
 	bsr.w	Save_event
 	rts	
+
+; ---- Encounter (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Encounter:
+;             move.b    1(a5),d0             ; Appear at all ?
+;             ext.w     d0
+;             jsr       Probe
+;             bmi       .Exit
+;             move.b    2(a5),d0             ; Quest required ?
+;             beq.s     .No_quest
+;             lea.l     Quest,a1             ; Quest solved ?
+;             ext.w     d0
+;             move.w    d0,d1
+;             andi.w    #7,d1
+;             lsr.w     #3,d0
+;             btst      d1,0(a1,d0.w)
+;             beq       .Exit                ; No !
+;             move.b    3(a5),d0             ; Show text ?
+;             jsr       Event_text
+;             bra.s     .Continue
+;.No_quest:   move.b    4(a5),d0             ; Show text ?
+;             jsr       Event_text
+;.Continue:   move.w    6(a5),mongroup_nr    ; Set group number
+;             st        CombatReq            ; Activate requester
+;             st        Pause_Upd
+;             jsr       Save_event
+;.Exit:       rts
+
 T_09b2c:
 	move.b	$1(a5),d0
 	ext.w	d0
@@ -2499,7 +3022,7 @@ T_09b2c:
 T_09c06:
 	btst	#$1,B_59339
 	beq.b	.l_09c18
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	bra.w	.l_09cb2
 .l_09c18:
 	lea.l	Chard_ptrs,a0
@@ -2545,7 +3068,7 @@ T_09c06:
 	jsr	Switch_screen
 	tst.b	B_592de
 	beq.b	.l_09c76
-	bsr.w	T_01f98
+	bsr.w	Restore_coords
 	bra.b	.l_09cb2
 .l_09ca4:
 	dc.b	$61,$00,$6c,$68,$41,$f9
@@ -2859,7 +3382,7 @@ T_0a00a:
 	moveq	#3,d0
 	bsr.w	T_0a220
 	bset	#$1,B_59339
-	jsr	T_01f98
+	jsr	Restore_coords
 	bsr.w	Pop_Module
 	bsr.w	Init_display
 	bra.b	.l_0a18e
@@ -2946,7 +3469,7 @@ T_0a220:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
 T_0a262:
-	movea.l	B_5bea4,a0
+	movea.l	Basepage,a0
 	lea.l	$80(a0),a0
 	lea.l	Chard_ptrs,a1
 	moveq	#5,d7
@@ -2976,7 +3499,7 @@ T_0a262:
 	jsr	Clear_screen
 	jsr	Switch_screen
 	jsr	Copy_screen
-	jmp	Exit_all
+	jmp	Exit_program
 ; ---- Fadein_lay3 (original source: MAIN/EVENTS.ASM)
 Fadein_lay3:
 	lea.l	Lay3_target_hbl,a1
@@ -3084,6 +3607,63 @@ Do_change_icon:
 	move.b	d2,(a0)
 	movem.l	(sp)+,d0/d1/a0/a1
 	rts	
+
+; ---- Do_WordIn (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_WordIn:
+;             movem.l   d0-d3/d6/d7/a0/a6,-(sp)
+;             jsr       Mouse_off            ; No mouse
+;             move.w    #48,d0               ; Open window
+;             move.w    #80,d1
+;             moveq.l   #10,d2
+;             moveq.l   #4,d3
+;             moveq.l   #1,d6
+;             suba.l    a0,a0
+;             jsr       Open_window
+;             move.w    d0,Window_handle
+;             movea.l   Screen_base,a6
+;             move.w    #48+16,d0            ; Print title string
+;             move.w    #80+16+7,d1
+;             jsr       IG_Set_cursor
+;             lea.l     .Title_string(pc),a0
+;             jsr       IG_Print
+;             lea.l     WordIn_PA,a0         ; Make PA
+;             addi.w    #7+3,d1
+;             move.w    d0,(a0)
+;             move.w    d1,PA_Y(a0)
+;             move.w    #21*6,PA_Wd(a0)
+;             jsr       Push_PA
+;             move.w    d0,d2                ; Clear input rectangle
+;             addi.w    #21*6,d2
+;             move.w    d1,d3
+;             addq.w    #6,d3
+;             subq.w    #1,d0
+;             subq.w    #1,d1
+;             moveq.l   #3,d6
+;             jsr       Draw_box
+;             move.w    d6,d0                ; Input word
+;             jsr       IG_Set_paper
+;             moveq.l   #20,d0
+;             jsr       Input_string
+;             move.w    Window_handle,d0     ; Close window
+;             jsr       Close_window
+;             Pop       PA                   ; Exit
+;             jsr       Mouse_on
+;             movem.l   (sp)+,d0-d3/d6/d7/a0/a6
+;             jmp       Pop_Module
+;
+;             .IF Language=1                 ; English
+;.Title_string:         .DC.b 1,15,2,2,"ENTER WORD :",0
+;             .EVEN
+;             .ENDIF
+;             .IF Language=2                 ; French
+;.Title_string:         .DC.b 1,15,2,2,"ENTER WORD :",0
+;             .EVEN
+;             .ENDIF
+;             .IF Language=3                 ; German
+;.Title_string:         .DC.b 1,15,2,2,"GEBE WORT EIN :",0
+;             .EVEN
+;             .ENDIF
+
 Do_WordIn:
 	movem.l	d0-d3/d6-d7/a0/a6,-(a7)
 	jsr	Mouse_off
@@ -3094,7 +3674,7 @@ Do_WordIn:
 	moveq	#1,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256
+	move.w	d0,Window_handle
 	movea.l	Screen_base,a6
 	move.w	#$40,d0
 	move.w	#$67,d1
@@ -3119,7 +3699,7 @@ Do_WordIn:
 	jsr	IG_Set_paper
 	moveq	#19,d0
 	bsr.w	Input_string
-	move.w	B_58256,d0
+	move.w	Window_handle,d0
 	jsr	Close_window
 	bsr.w	Pop_PA
 	jsr	Mouse_on
@@ -3291,16 +3871,16 @@ Door_object_pos_list:
 	dc.b	$00,$50,$00,$b1,$00,$70,$00,$b1,$00,$90,$00,$b1,$00,$b0,$00,$b1
 Door_CIL:
 	dc.b	$0f,$20,$1e,$0d,$38,$38,$0e,$38,$38,$00
-	dc.l	T_0809a
-	dc.l	T_0813c
-	dc.l	T_08084
+	dc.l	Pick_lock_DOOR
+	dc.l	Use_item_DOOR
+	dc.l	Door_Exit
 	dc.l	Find_trap_DOOR
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	T_08332
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 ClosedChest_CIL:
 	dc.b	$0f,$20,$1e,$0d,$a3,$a1,$0e,$92,$b2,$00
-	dc.l	T_0809a
+	dc.l	Pick_lock_DOOR
 	dc.l	Use_item_CHEST
 	dc.l	T_08aba
 	dc.l	Find_trap_DOOR
@@ -3382,7 +3962,7 @@ Event_data_ptr:
 	ds.b	4
 WText_nr:
 	ds.b	2
-B_58256:
+Window_handle:
 	ds.b	2
 B_58258:
 	ds.b	2

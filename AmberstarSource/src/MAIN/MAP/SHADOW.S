@@ -73,6 +73,35 @@ Do_shadow:
 .Exit:
 	movem.l	(sp)+,d0-d7
 	rts	
+
+; ---- Quadrant_0 (original source: MAIN/MAP/SHADOW.ASM) - the shipped program differs, its code follows, not assembled:
+;Quadrant_0:
+;.Again:      tst.w     (a4)                 ; End of shadow run ?
+;             beq.s     .Exit
+;             move.b    (a4),d0              ; Load X
+;             cmp.b     d2,d0                ; X too high ?
+;             bgt.s     .Next
+;             cmp.b     d3,d0                ; X too low ?
+;             blt.s     .Next
+;             move.b    1(a4),d1             ; Load Y
+;             neg.b     d1                   ; Y = -Y
+;             cmp.b     d4,d1                ; Y too high ?
+;             bgt.s     .Next
+;             cmp.b     d5,d1                ; Y too low ?
+;             blt.s     .Next
+;             ext.w     d0                   ; Extend to words
+;             ext.w     d1
+;             add.w     Mapbuf_Y,d1          ; Calculate map buffer offset
+;             mulu.w    #13,d1
+;             add.w     d0,d1
+;             add.w     Mapbuf_X,d1
+;             move.b    #1,14(a1,d1.w)       ; Hide underlay icon
+;             move.b    #0,14(a2,d1.w)       ; Hide overlay icon
+;             move.b    #0,14(a3,d1.w)       ; Hide person
+;.Next:       addq.l    #2,a4                ; Next
+;             bra.s     .Again
+;.Exit:       rts
+
 Quadrant_0:
 	tst.w	(a4)
 	beq.b	.l_059d0
@@ -102,6 +131,36 @@ Quadrant_0:
 	bra.b	Quadrant_0
 .l_059d0:
 	rts
+
+; ---- Quadrant_1 (original source: MAIN/MAP/SHADOW.ASM) - the shipped program differs, its code follows, not assembled:
+;Quadrant_1:
+;.Again:      tst.w     (a4)                 ; End of shadow run ?
+;             beq.s     .Exit
+;             move.b    (a4),d0              ; Load X
+;             neg.b     d0                   ; X = -X
+;             cmp.b     d2,d0                ; X too high ?
+;             bgt.s     .Next
+;             cmp.b     d3,d0                ; X too low ?
+;             blt.s     .Next
+;             move.b    1(a4),d1             ; Load Y
+;             neg.b     d1                   ; Y = -Y
+;             cmp.b     d4,d1                ; Y too high ?
+;             bgt.s     .Next
+;             cmp.b     d5,d1                ; Y too low ?
+;             blt.s     .Next
+;             ext.w     d0                   ; Extend to words
+;             ext.w     d1
+;             add.w     Mapbuf_Y,d1          ; Calculate map buffer offset
+;             mulu.w    #13,d1
+;             add.w     d0,d1
+;             add.w     Mapbuf_X,d1
+;             move.b    #1,14(a1,d1.w)       ; Hide underlay icon
+;             move.b    #0,14(a2,d1.w)       ; Hide overlay icon
+;             move.b    #0,14(a3,d1.w)       ; Hide person
+;.Next:       addq.l    #2,a4                ; Next
+;             bra.s     .Again
+;.Exit:       rts
+
 Quadrant_1:
 	tst.w	(a4)
 	beq.b	.l_05a22
@@ -132,6 +191,35 @@ Quadrant_1:
 	bra.b	Quadrant_1
 .l_05a22:
 	rts
+
+; ---- Quadrant_2 (original source: MAIN/MAP/SHADOW.ASM) - the shipped program differs, its code follows, not assembled:
+;Quadrant_2:
+;.Again:      tst.w     (a4)                 ; End of shadow run ?
+;             beq.s     .Exit
+;             move.b    (a4),d0              ; Load X
+;             neg.b     d0                   ; X = -X
+;             cmp.b     d2,d0                ; X too high ?
+;             bgt.s     .Next
+;             cmp.b     d3,d0                ; X too low ?
+;             blt.s     .Next
+;             move.b    1(a4),d1             ; Load Y
+;             cmp.b     d4,d1                ; Y too high ?
+;             bgt.s     .Next
+;             cmp.b     d5,d1                ; Y too low ?
+;             blt.s     .Next
+;             ext.w     d0                   ; Extend to words
+;             ext.w     d1
+;             add.w     Mapbuf_Y,d1          ; Calculate map buffer offset
+;             mulu.w    #13,d1
+;             add.w     d0,d1
+;             add.w     Mapbuf_X,d1
+;             move.b    #1,14(a1,d1.w)       ; Hide underlay icon
+;             move.b    #0,14(a2,d1.w)       ; Hide overlay icon
+;             move.b    #0,14(a3,d1.w)       ; Hide person
+;.Next:       addq.l    #2,a4                ; Next
+;             bra.s     .Again
+;.Exit:       rts
+
 Quadrant_2:
 	tst.w	(a4)
 	beq.b	.l_05a72
@@ -161,6 +249,34 @@ Quadrant_2:
 	bra.b	Quadrant_2
 .l_05a72:
 	rts
+
+; ---- Quadrant_3 (original source: MAIN/MAP/SHADOW.ASM) - the shipped program differs, its code follows, not assembled:
+;Quadrant_3:
+;.Again:      tst.w     (a4)                 ; End of shadow run ?
+;             beq.s     .Exit
+;             move.b    (a4),d0              ; Load X
+;             cmp.b     d2,d0                ; X too high ?
+;             bgt.s     .Next
+;             cmp.b     d3,d0                ; X too low ?
+;             blt.s     .Next
+;             move.b    1(a4),d1             ; Load Y
+;             cmp.b     d4,d1                ; Y too high ?
+;             bgt.s     .Next
+;             cmp.b     d5,d1                ; Y too low ?
+;             blt.s     .Next
+;             ext.w     d0                   ; Extend to words
+;             ext.w     d1
+;             add.w     Mapbuf_Y,d1          ; Calculate map buffer offset
+;             mulu.w    #13,d1
+;             add.w     d0,d1
+;             add.w     Mapbuf_X,d1
+;             move.b    #1,14(a1,d1.w)       ; Hide underlay icon
+;             move.b    #0,14(a2,d1.w)       ; Hide overlay icon
+;             move.b    #0,14(a3,d1.w)       ; Hide person
+;.Next:       addq.l    #2,a4                ; Next
+;             bra.s     .Again
+;.Exit:       rts
+
 Quadrant_3:
 	tst.w	(a4)
 	beq.b	.l_05ac0
@@ -229,8 +345,8 @@ Second_CIL:
 	dc.l	Ear_action
 	dc.l	T_0df02
 	dc.l	Change_travelmode
-	dc.l	T_13774
-	dc.l	T_0fd04
+	dc.l	Cast_spell
+	dc.l	Camp
 	dc.l	Automapper
 	dc.l	T_105e8
 	dc.l	Options_menu

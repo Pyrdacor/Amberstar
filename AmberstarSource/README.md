@@ -18,7 +18,7 @@ reconstructed from the disassembly, using the names the original code uses where
 |------|-------|
 | 1. Disassembly which assembles to a byte-identical program (German and English) | **done** (`disassembly/`) |
 | 2. Names of the original source for the routines and variables of the disassembly (`SYMBOLS.txt`) | **done for the matching code**: 1431 names for 1392 addresses |
-| 3. Original modules merged with the changes of the shipped program | **in progress**: 695 routines of the original source, 191 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
+| 3. Original modules merged with the changes of the shipped program | **in progress**: 712 routines of the original source, 194 of them with the changes of the shipped program, one file per module (`src/`, `CHANGES.md`) |
 | 4. Missing parts (combat, music, …) reconstructed with names and comments | **started**: 95 names with comments (`SYMBOLS_RECONSTRUCTED.txt`), among them the COSO music player; the accesses to the character data use the field names of `OFFSETS.ASM`, the code is still the disassembly |
 
 ## The program file
@@ -95,7 +95,11 @@ of the COSO music player by Jochen Hippel: `Coso_player`, `Coso_play`, `Coso_ini
 death of the party, the items in battles and about 55 routines of the combat (`Get_melee_targets`, `Flee`,
 `Execute_attacks`, `End_of_combat`, …). It also contains 8 names of the original source which the matching did not find
 because the shipped program differs there (e.g. `Init_computer`, which also sets the vector of timer D for the music).
-They come from the notes of the Amberstar.net project (its `Docs/Combat.md` and the comments of its code) and have a
+Many routines of the original which the matching could not find because the shipped program changed them were found by
+hand (e.g. `Rest`, `Inn`, `Really_save_game`, `Cast_spell`, `Pick_lock_DOOR`, `Teleporter`, `Init_memory`,
+`Save_computer`), together with the routines and variables next to them. Some names which the matching gave to a wrong
+address are corrected there (e.g. `Resurrect`, `Change_ashes` and `Change_dust` were all given to `$13d22`).
+The music and combat names come from the notes of the Amberstar.net project (its `Docs/Combat.md` and the comments of its code) and have a
 comment which is written in front of the label. The file also corrects names which were found at a wrong address
 (e.g. `Set_spell_area` was found at the start of `Set_map_music`, because the shipped program calls the new music
 routine where the original source calls `Set_spell_area`). `tools/overrides.py` applies it to a `SYMBOLS` file; for the
@@ -122,6 +126,12 @@ In the module files the routines of the original source replace the disassembled
 assemble to the same bytes. Each of them starts with a comment `; ---- <name> (original source: <file>)`. The other
 code of a module is still the disassembly. `MAIN/COMBAT.S` is the combat, which is only a stub in the original source,
 so it is completely disassembly for now (step 4).
+
+The routines of the original source which are not in the merged source are written as comments at their place:
+in front of the code of the program which replaces them, or in front of the next routine of their file which is in the
+program. Their header says why: `the shipped program differs, its code follows`, `not found in the shipped program,
+the original source is older` (e.g. the empty spell routines in `MAGIC.ASM`, which the combat module replaced) or
+`only in the debug build` (the diagnostic screen of `STATUS.ASM`). So all of the original code is in the merged source.
 
 In the disassembled code, the accesses to the character data use the field names of `OFFSETS.ASM` wherever the
 register is known to point to character data (`move.b Skill_1(a0),d0` instead of `move.b $6(a0),d0`), e.g. in the
@@ -182,9 +192,10 @@ python changes.py merged.s CHANGES.md
 * The boundaries of the modules are chosen so that as few known routines as possible are in another module than
   their file (a few names of the original are used in several modules).
 
-So far 695 routines of the original source are in the merged source (German version), 191 of them with changes.
-`CHANGES.md` lists these changes. About 90 routines of the original could not be found in the program yet, the
-others could not be aligned or assembled.
+So far 712 routines of the original source are in the merged source (German version), 194 of them with changes.
+`CHANGES.md` lists these changes. About 55 routines of the original are not in the program (most of them are the empty spell routines which the combat
+module replaced, and the diagnostic screen of the debug build), the others could not be aligned or assembled. All of
+them are in the module files as comments.
 ## Known differences between the original source and the shipped program
 
 Found so far by the Amberstar.net project (addresses of the German version):

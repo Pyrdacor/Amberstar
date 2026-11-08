@@ -104,3 +104,99 @@
 5bee2	Current_song	MAIN/TEST.ASM	The song which is played (see Play_song).
 316dc	Song_table	MAIN/TEST.ASM	Pointers to the music modules of the songs 1-19 (several songs use the same module).
 313c4	Spell_damage_table	MAIN/COMBAT.ASM	Black spells: 6 bytes per spell (minimum, maximum, animation) behind an unused entry with the immunity bits of the elements.
+# ---- routines and variables of the original found by hand in the shipped program (it is newer than the source),
+#      and new routines next to them
+0f822	Save_game	MAIN/EYE.ASM
+0f9a6	Exit_SaveGame	MAIN/EYE.ASM
+0f9b8	Do_SaveGame	MAIN/EYE.ASM	The check of the active member was removed, it falls through into Really_save_game.
+0f9c6	Really_save_game	MAIN/EYE.ASM	Also saves the automap, writes a header, scrambles the data and saves it to PARTYDAT.SAV.
+0fb38	Portrait_selected	MAIN/EYE.ASM	The active member can't be deselected (message 25).
+0fcc2	Load_game	MAIN/EYE.ASM
+0fcf2	Really_load_game	MAIN/EYE.ASM	Rewritten: the game restarts through Restart_game.
+0fd04	Camp	MAIN/EYE.ASM
+0fe0e	Exit_camp	MAIN/EYE.ASM
+0fe5c	Learn_spell	MAIN/EYE.ASM
+10068	Rest	MAIN/EYE.ASM
+10298	Inn	MAIN/EYE.ASM
+0f7a8	Exit_options	MAIN/EYE.ASM
+0f7d4	Quit_game	MAIN/EYE.ASM
+0f616	Save_automap	MAIN/EYE.ASM	Saves the current automap with Save_subfile (also called by Exit_automap). (Not in the original source.)
+00e04	Restart_game	MAIN/TEST.ASM	Clears the party and the state of the game, resets the stacks and starts the game again. (Not in the original source.)
+00d26	Death_load_game	MAIN/TEST.ASM	Load game requester of the game over menu. (Not in the original source.)
+5c380	Member_2_nr	MAIN/TEST.ASM
+5bef2	Damage_timers	MAIN/TEST.ASM
+5b514	Partydata_length	MAIN/EYE.ASM
+321f4	Partydata_filename	MAIN/EYE.ASM
+13774	Cast_spell	MAIN/MAGIC.ASM
+13c14	Resurrect	MAIN/MAGIC.ASM
+13c98	Change_ashes	MAIN/MAGIC.ASM
+13d22	Change_dust	MAIN/MAGIC.ASM
+13d9c	Heal_poisoned	MAIN/MAGIC.ASM
+13afc	Heal_1	MAIN/MAGIC.ASM
+13b0e	Heal_2	MAIN/MAGIC.ASM
+13b20	Heal_3	MAIN/MAGIC.ASM
+13b32	Heal_4	MAIN/MAGIC.ASM
+13b44	Heal_5	MAIN/MAGIC.ASM
+13bd2	Heal_all	MAIN/MAGIC.ASM
+13da4	Heal_lamed	MAIN/MAGIC.ASM
+13dac	Heal_diseased	MAIN/MAGIC.ASM
+13db4	Heal_aged	MAIN/MAGIC.ASM
+13dbc	Heal_stoned	MAIN/MAGIC.ASM
+13dc4	Heal_blind	MAIN/MAGIC.ASM
+13dcc	Heal_mad	MAIN/MAGIC.ASM
+14434	Levitate	MAIN/MAGIC.ASM
+144de	MTeleport	MAIN/MAGIC.ASM	New code in the shipped program (only a label in the original).
+145e6	Look_through	MAIN/MAGIC.ASM	A real spell in the shipped program (only an rts in the original).
+14610	Map_view	MAIN/MAGIC.ASM
+14d9c	Weapon_gunk	MAIN/MAGIC.ASM
+138bc	SpellClass_ptrs	MAIN/MAGIC.ASM	Pointers to the spell tables of the classes (the black class is 0).
+0809a	Pick_lock_DOOR	MAIN/EVENTS.ASM
+08084	Door_Exit	MAIN/EVENTS.ASM
+0813c	Use_item_DOOR	MAIN/EVENTS.ASM
+08aba	Chest_exit	MAIN/EVENTS.ASM
+0935a	Teleporter	MAIN/EVENTS.ASM	To another map: the map is changed inline instead of calling Map_exit.
+093f2	Wind_gate	MAIN/EVENTS.ASM
+01f98	Restore_coords	MAIN/EVENTS.ASM	A macro in the original source, a subroutine in the shipped program.
+10f4e	Inv2_Exit	MAIN/INVENT.ASM
+10f3c	Inv21_Exit	MAIN/INVENT.ASM
+10b58	Inv1_Exit	MAIN/INVENT.ASM
+12928	Double_Pop	MAIN/INVENT.ASM
+12930	Window_DisExit	MAIN/INVENT.ASM
+30980	Inv2_CIL	MAIN/INVENT.ASM
+5b288	Window_handle	MAIN/INVENT.ASM
+118a6	Drop_item	MAIN/INVENT.ASM
+11d6e	Use_item	MAIN/INVENT.ASM
+121c0	Pool_gold_INV2	MAIN/INVENT.ASM
+12204	View_item	MAIN/INVENT.ASM
+12942	Transfer_item	MAIN/INVENT.ASM
+12956	TransferItem_DisInit	MAIN/INVENT.ASM
+12c40	Transfer_gold	MAIN/INVENT.ASM
+12e7a	Transfer_food	MAIN/INVENT.ASM
+122b2	ItemViewW1_DisInit	MAIN/INVENT.ASM
+06752	AutoIcon_switch	LAYOUT/LAYOUT.ASM
+06764	DoAutoIcon	LAYOUT/LAYOUT.ASM
+067f8	ExitAutoIcon	LAYOUT/LAYOUT.ASM
+067fa	TimeAutoIcon	LAYOUT/LAYOUT.ASM
+5ad96	AutoIcon_timer	LAYOUT/LAYOUT.ASM
+5ad8a	AutoIcon_counters	LAYOUT/LAYOUT.ASM
+00162	Exit_program	MAIN/TEST.ASM
+1b63e	Init_file	NUCLEUS/AMBRFILE.ASM	Also checks the drive and masks an MFP interrupt.
+1b962	Exist_file	NUCLEUS/AMBRFILE.ASM
+1bde4	Decompress	NUCLEUS/AMBRFILE.ASM
+1b6e6	Check_disk	NUCLEUS/AMBRFILE.ASM	Checks the drive / disk change (new in the shipped program).
+1ce70	Read_key	NUCLEUS/KBDROUTS.ASM
+1d192	Init_memory	NUCLEUS/MEMORY.ASM	The ERROR is replaced by a diagnostic screen and a reset.
+1d4ee	Scan_memory	NUCLEUS/MEMORY.ASM
+1c9b0	Save_computer	NUCLEUS/INTROUTS.ASM	Also saves $404 and the vector and the registers of timer D (music).
+1c0ea	ON_Diag_screen	NUCLEUS/DIAGNOST.ASM
+1c160	OFF_Diag_screen	NUCLEUS/DIAGNOST.ASM
+1c1ac	DI_Cursor_home	NUCLEUS/DIAGNOST.ASM
+5496d	Amberfile_path	NUCLEUS/AMBRFILE.ASM
+6012a	DTA_ptr	NUCLEUS/AMBRFILE.ASM
+60a36	Start_of_free_memory	NUCLEUS/MEMORY.ASM
+5eed6	Basepage	MAIN/TEST.ASM
+5eeda	Old_usp	MAIN/TEST.ASM
+5eede	Old_ssp	MAIN/TEST.ASM
+608b0	Old_pal	NUCLEUS/INTROUTS.ASM
+608aa	Old_timer_D_vec	NUCLEUS/INTROUTS.ASM	The vector of timer D before the music was set up (new in the shipped program).
+6089a	Old_crit_vec	NUCLEUS/INTROUTS.ASM	The vector $404 (etv_critic) before the start (new in the shipped program).

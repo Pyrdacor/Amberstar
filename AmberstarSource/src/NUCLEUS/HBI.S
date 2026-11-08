@@ -43,6 +43,24 @@ HBL_handler:
 .End:
 	move.w	(a0),(a1)+
 	clr.l	New_HBL_list
+
+; ---- No_new_list (original source: NUCLEUS/HBI.ASM) - the shipped program differs, its code follows, not assembled:
+;No_new_list: lea.l     HBL_list,a0          ; Start of list
+;             movem.l   (a0)+,d0-d7          ; Set main palette
+;             movem.l   d0-d7,Colour_0
+;             tst.w     (a0)                 ; End of list ?
+;             beq.s     No_HBLs
+;             move.b    (a0)+,MFP_Tbdr       ; Set TBDR
+;             tst.b     (a0)+                ; Palette or single colour ?
+;             beq.s     .Zero
+;             move.l    #Single_HBL,Timer_B_vec    ; Install HBL-routine
+;             move.w    (a0)+,Single_HBL+4   ; MODIFY INSTRUCTION
+;             move.w    (a0)+,Single_HBL+2
+;             bra.s     .Continue
+;.Zero:       move.l    #Palette_HBL,Timer_B_vec   ; Install HBL-routine
+;.Continue:   move.b    #8,MFP_Tbcr          ; Start Timer B
+;             move.l    a0,HBL_list_ptr      ; Store pointer to HBL list
+
 No_new_list:
 	lea.l	HBL_list,a0
 	movem.l	(a0)+,d0-d7
@@ -67,6 +85,28 @@ No_new_list:
 No_HBLs:
 	movem.l	(sp)+,d0-d7/a0-a2
 	rts	
+
+; ---- Single_HBL (original source: NUCLEUS/HBI.ASM) - the shipped program differs, its code follows, not assembled:
+;Single_HBL:
+;             move.w    #$0000,Colour_0      ; SELF-MODIFYING CODE
+;             move.l    a0,-(sp)
+;             clr.b     MFP_Tbcr             ; Stop Timer B
+;             movea.l   HBL_list_ptr,a0
+;             tst.w     (a0)                 ; End of list ?
+;             beq.s     .Exit
+;             move.b    (a0)+,MFP_Tbdr       ; Set TBDR
+;             tst.b     (a0)+                ; Palette or single colour ?
+;             bne.s     .Single
+;             move.l    #Palette_HBL,Timer_B_vec   ; Palette change
+;             bra.s     .Continue
+;.Single:     move.w    (a0)+,Single_HBL+4   ; MODIFY INSTRUCTION
+;             move.w    (a0)+,Single_HBL+2
+;.Continue:   move.l    a0,HBL_list_ptr
+;             move.b    #8,MFP_Tbcr          ; Start Timer B
+;.Exit:       movea.l   (sp)+,a0
+;             bclr.b    #0,MFP_Isra
+;             rte
+
 Single_HBL:
 	move.w	#$0,$ffff8240.w
 	move.l	a0,-(a7)
@@ -91,6 +131,35 @@ Single_HBL:
 	movea.l	(a7)+,a0
 	bclr	#$0,$fffffa0f.w
 	rte
+
+; ---- Palette_HBL (original source: NUCLEUS/HBI.ASM) - the shipped program differs, its code follows, not assembled:
+;Palette_HBL:
+;             movem.l   d0-d7/a0-a2,-(sp)
+;             movea.l   HBL_list_ptr,a0      ; Load pointer to HBL list
+;             movem.l   (a0)+,d1-d7/a1       ; Load palette
+;             lea.l     Colour_0,a2
+;             clr.b     MFP_Tbcr             ; Stop Timer B
+;             moveq.l   #8,d0                ; Dummy TBDR value
+;             move.b    d0,MFP_Tbdr
+;             move.b    #8,MFP_Tbcr          ; Start Timer B
+;.Wait:       cmp.b     MFP_Tbdr,d0          ; Wait for right border
+;             beq.s     .Wait
+;             movem.l   d1-d7/a1,(a2)        ; Set palette
+;             move.b    #0,MFP_Tbcr          ; Stop Timer B
+;             tst.w     (a0)                 ; End of list ?
+;             beq.s     .Exit
+;             move.b    (a0)+,MFP_Tbdr       ; Set TBDR
+;             tst.b     (a0)+                ; Palette or single colour ?
+;             beq.s     .Continue
+;             move.l    #Single_HBL,Timer_B_vec    ; Install HBL-routine
+;             move.w    (a0)+,Single_HBL+4   ; MODIFY INSTRUCTION
+;             move.w    (a0)+,Single_HBL+2
+;.Continue:   move.l    a0,HBL_list_ptr      ; Store pointer to HBL list
+;             move.b    #8,MFP_Tbcr          ; Start Timer B
+;.Exit:       movem.l   (sp)+,d0-d7/a0-a2
+;             bclr.b    #0,MFP_Isra
+;             rte
+
 Palette_HBL:
 	movem.l	d0-d7/a0-a2,-(a7)
 	movea.l	HBL_list_ptr,a0
@@ -157,45 +226,6 @@ Copy_HBL_list:
 	move.w	#0,(a1)+
 	movem.l	(sp)+,d0-d7/a0/a1
 	rts	
-T_1c9b0:
-	movem.l	d0-d7/a0,-(a7)
-	move.l	$404.w,B_6089a
-	movem.l	$ffff8240.w,d0-d7
-	movem.l	d0-d7,B_608b0
-	move.b	$ffff8260.w,Old_rez
-	lea.l	$ffff8201.w,a0
-	movep.w	$0(a0),d0
-	move.w	d0,Old_screen
-	move.w	sr,-(a7)
-	ori.w	#$700,sr
-	lea.l	Old_MFP,a0
-	move.b	$fffffa07.w,(a0)+
-	move.b	$fffffa09.w,(a0)+
-	move.b	$fffffa0b.w,(a0)+
-	move.b	$fffffa0d.w,(a0)+
-	move.b	$fffffa13.w,(a0)+
-	move.b	$fffffa15.w,(a0)+
-	move.b	$fffffa17.w,(a0)+
-	move.b	$fffffa1b.w,(a0)+
-	move.b	$fffffa21.w,(a0)+
-	move.b	$fffffa1d.w,(a0)+
-	move.b	$fffffa25.w,(a0)+
-	move.l	$114.w,T_1cbda
-	move.l	$110.w,B_608aa
-	move.l	$118.w,T_1cbd0
-	move.l	$70.w,T_1cc22
-	move.w	$454.w,Old_nvbls
-	move.l	$502.w,Old_dump_vec
-	move.b	$484.w,Old_conterm
-	move.w	#$22,-(a7)
-	trap	#$e
-	addq.l	#$2,a7
-	movea.l	d0,a0
-	move.l	a0,KBD_vec
-	move.l	$10(a0),Old_mouse_vec
-	move.w	(a7)+,sr
-	movem.l	(a7)+,d0-d7/a0
-	rts
 
 	section	bss
 
@@ -208,6 +238,4 @@ HBL_list_ptr:
 HBL_list:
 	ds.b	1024
 B_60896:
-	ds.b	4
-B_6089a:
 	ds.b	4

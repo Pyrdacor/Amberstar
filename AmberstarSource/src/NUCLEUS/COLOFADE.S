@@ -130,6 +130,43 @@ Hbl_fade:
 	tst.w	d3
 	movem.l	(sp)+,d0-d3/d5/a0/a1
 	rts	
+
+; ---- Subfade1 (original source: NUCLEUS/COLOFADE.ASM) - the shipped program differs, its code follows, not assembled:
+;Subfade1:
+;             movem.l   d2/d3,-(sp)
+;             move.w    #$0700,d2            ; Isolate RED nibble
+;             move.w    d2,d3
+;             and.w     d0,d2
+;             and.w     d1,d3
+;             cmp.w     d2,d3                ; Compare
+;             beq.s     .Green
+;             bpl.s     .Red_up
+;             subi.w    #$0100,d0            ; Fade RED down
+;             bra.s     .Green
+;.Red_up:     addi.w    #$0100,d0            ; Fade RED up
+;.Green:      move.w    #$0070,d2            ; Isolate GREEN nibble
+;             move.w    d2,d3
+;             and.w     d0,d2
+;             and.w     d1,d3
+;             cmp.w     d2,d3                ; Compare
+;             beq.s     .Blue
+;             bpl.s     .Green_up
+;             subi.w    #$0010,d0            ; Fade GREEN down
+;             bra.s     .Blue
+;.Green_up:   addi.w    #$0010,d0            ; Fade GREEN up
+;.Blue:       move.w    #$0007,d2            ; Isolate BLUE nibble
+;             move.w    d2,d3
+;             and.w     d0,d2
+;             and.w     d1,d3
+;             cmp.w     d2,d3                ; Compare
+;             beq.s     .Exit
+;             bpl.s     .Blue_up
+;             subi.w    #$0001,d0            ; Fade BLUE down
+;             bra.s     .Exit
+;.Blue_up:    addi.w    #$0001,d0            ; Fade BLUE up
+;.Exit:       movem.l   (sp)+,d2/d3
+;             rts
+
 Subfade1:
 	movem.l	d2-d3,-(a7)
 	move.w	#$700,d2
@@ -170,6 +207,47 @@ Subfade1:
 .l_1c03e:
 	movem.l	(a7)+,d2-d3
 	rts
+
+; ---- Subfade2 (original source: NUCLEUS/COLOFADE.ASM) - the shipped program differs, its code follows, not assembled:
+;Subfade2:
+;             movem.l   d2/d3,-(sp)
+;             move.w    #$0700,d2            ; Isolate RED nibble
+;             move.w    d2,d3
+;             and.w     d0,d2
+;             and.w     d1,d3
+;             cmp.w     d2,d3                ; Compare
+;             beq.s     .Green
+;             bpl.s     .Red_up
+;             subi.w    #$0100,d0            ; Fade RED down
+;             bra.s     .Exit
+;.Red_up:     addi.w    #$0100,d0            ; Fade RED up
+;             bra.s     .Exit
+;.Green:      move.w    #$0070,d2            ; Isolate GREEN nibble
+;             move.w    d2,d3
+;             and.w     d0,d2
+;             and.w     d1,d3
+;             cmp.w     d2,d3                ; Compare
+;             beq.s     .Blue
+;             bpl.s     .Green_up
+;             subi.w    #$0010,d0            ; Fade GREEN down
+;             bra.s     .Exit
+;.Green_up:   addi.w    #$0010,d0            ; Fade GREEN up
+;             bra.s     .Exit
+;.Blue:       move.w    #$0007,d2            ; Isolate BLUE nibble
+;             move.w    d2,d3
+;             and.w     d0,d2
+;             and.w     d1,d3
+;             cmp.w     d2,d3                ; Compare
+;             beq.s     .Exit
+;             bpl.s     .Blue_up
+;             subi.w    #$0001,d0            ; Fade BLUE down
+;             bra.s     .Exit
+;.Blue_up:    addi.w    #$0001,d0            ; Fade BLUE up
+;.Exit:       movem.l   (sp)+,d2/d3
+;             rts
+;
+;             .END
+
 Subfade2:
 	movem.l	d2-d3,-(a7)
 	move.w	#$700,d2

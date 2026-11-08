@@ -2,6 +2,67 @@
 
 	section	text
 
+
+; ---- Init_memory (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Init_memory:
+;             movem.l   d0/d1/a0,-(sp)
+;             move.l    P_bbase(a0),d0       ; Calculate start of TPA
+;             add.l     P_blen(a0),d0
+;             move.l    d0,Start_of_free_memory
+;             move.l    P_hitpa(a0),d1       ; Calculate size of memory
+;             sub.l     d0,d1
+;             cmpi.l    #Minimum_mem,d1      ; Is it enough ?
+;             bpl.s     .Enough
+;             ERROR     "[ Init_memory ] : Not enough memory !!!"
+;             bra.s     .Exit
+;.Enough:     move.l    d1,Size_of_free_memory
+;             lea.l     Memory_list,a0       ; Initialize the memory list
+;             move.l    d0,(a0)+
+;             move.l    d1,(a0)+
+;             move.w    #$8000,(a0)
+;             addq.l    #4,a0
+;             move.l    a0,Memlist_end
+;.Exit:       movem.l   (sp)+,d0/d1/a0
+;             rts
+
+; The ERROR is replaced by a diagnostic screen and a reset.
+Init_memory:
+	movem.l	d0-d1/a0,-(a7)
+	move.l	$18(a0),d0
+	add.l	$1c(a0),d0
+	move.l	d0,Start_of_free_memory
+	move.l	$4(a0),d1
+	sub.l	d0,d1
+	cmpi.l	#$4b000,d1
+	bpl.b	.l_1d210
+	movem.l	d0-d7/a0-a6,-(a7)
+	jsr	ON_Diag_screen
+	jsr	DI_Cursor_home
+	movea.l	Screen_base,a6
+	lea.l	D_524d2,a0
+	jsr	DI_Print
+	lea.l	D_52503,a0
+	jsr	DI_Print
+	lea.l	D_52534,a0
+	jsr	DI_Print
+	lea.l	D_52547,a0
+	jsr	DI_Print
+	jsr	Wait_4_key
+	jsr	OFF_Diag_screen
+	movem.l	(a7)+,d0-d7/a0-a6
+	movea.l	$4f2.w,a0
+	movea.l	$4(a0),a0
+	jmp	(a0)
+.l_1d210:
+	move.l	d1,Size_of_free_memory
+	move.l	d1,B_5da0c
+	lea.l	Memory_list,a0
+	move.l	d0,(a0)+
+	move.l	d1,(a0)+
+	move.l	#$80000000,(a0)+
+	move.l	a0,Memlist_end
+	movem.l	(a7)+,d0-d1/a0
+	rts
 ; ---- Next_generation (original source: NUCLEUS/MEMORY.ASM)
 Next_generation:
 	movem.l	d0/d1/a0/a1,-(sp)
@@ -31,13 +92,35 @@ Next_generation:
 T_1d278:
 	move.l	a0,-(a7)
 	lea.l	Memory_list,a0
-	move.l	B_5da04,(a0)+
+	move.l	Start_of_free_memory,(a0)+
 	move.l	B_5da0c,(a0)+
 	move.l	#$80000000,(a0)+
 	move.l	a0,Memlist_end
 	move.l	B_5da0c,Size_of_free_memory
 	movea.l	(a7)+,a0
 	rts
+
+; ---- Kill_memory (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Kill_memory:
+;             movem.l   d0/a1/a2,-(sp)
+;             lea.l     Memory_list,a1       ; Ptr = Start
+;             movea.l   Memlist_end,a2
+;             bra.s     .Entry
+;.Loop:       btst      #7,8(a1)             ; Allocated ?
+;             bne.s     .Next
+;             cmpa.l    (a1),a0              ; Found ?
+;             bne.s     .Next
+;             move.l    #$80000000,8(a1)     ; De-allocated memory block
+;             move.l    4(a1),d0             ; Update
+;             add.l     d0,Size_of_free_memory
+;             bra.s     .Exit
+;.Next:       lea.l     12(a1),a1            ; Increase Ptr
+;.Entry:      cmpa.l    a2,a1                ; While Ptr < End
+;             bmi.s     .Loop
+;             ERROR     "[ Kill_memory ] : Memory wasn't allocated !!!"
+;.Exit:       movem.l   (sp)+,d0/a1/a2
+;             rts
+
 Kill_memory:
 	movem.l	d0/a1-a2,-(a7)
 	lea.l	Memory_list,a1
@@ -62,6 +145,28 @@ T_1d2dc:
 T_1d2ec:
 	movem.l	(a7)+,d0/a1-a2
 	rts
+
+; ---- Free_memory (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Free_memory:
+;             movem.l   d0/a1/a2,-(sp)
+;             lea.l     Memory_list,a1       ; Ptr = Start
+;             movea.l   Memlist_end,a2
+;             bra.s     .Entry
+;.Loop:       btst      #7,8(a1)             ; Allocated ?
+;             bne.s     .Next
+;             cmpa.l    (a1),a0              ; Found ?
+;             bne.s     .Next
+;             bset      #7,8(a1)             ; De-allocate
+;             move.l    4(a1),d0             ; Update
+;             add.l     d0,Size_of_free_memory
+;             bra.s     .Exit
+;.Next:       lea.l     12(a1),a1            ; Increase Ptr
+;.Entry:      cmpa.l    a2,a1                ; While Ptr < End
+;             bmi.s     .Loop
+;             ERROR     "[ Free_memory ] : Memory wasn't allocated !!!"
+;.Exit:       movem.l   (sp)+,d0/a1/a2
+;             rts
+
 Free_memory:
 	movem.l	d0/a1-a2,-(a7)
 	lea.l	Memory_list,a1
@@ -86,6 +191,33 @@ T_1d326:
 T_1d336:
 	movem.l	(a7)+,d0/a1-a2
 	rts
+
+; ---- Shrink_memory (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Shrink_memory:
+;             movem.l   d0/a1/a2,-(sp)
+;             addq.l    #1,d0                ; Force word boundary
+;             andi.b    #$fe,d0
+;             lea.l     Memory_list,a1       ; Ptr = Start
+;             movea.l   Memlist_end,a2
+;             bra.s     .Entry
+;.Loop:       btst      #7,8(a1)             ; Allocated ?
+;             bne.s     .Next
+;             cmpa.l    (a1),a0              ; Found ?
+;             bne.s     .Next
+;             move.l    d0,d1                ; Split memory block
+;             lea.l     (a1),a0
+;             jsr       Split_memory_block
+;             move.l    d0,4(a0)             ; Set size of first block
+;             move.l    12+4(a0),d0          ; Update
+;             add.l     d0,Size_of_free_memory
+;             bra.s     .Exit
+;.Next:       lea.l     12(a1),a1            ; Increase Ptr
+;.Entry:      cmpa.l    a2,a1                ; While Ptr < End
+;             bmi.s     .Loop
+;             ERROR     "[ Shrink_memory ] : Memory wasn't allocated !!!"
+;.Exit:       movem.l   (sp)+,d0/a1/a2
+;             rts
+
 Shrink_memory:
 	movem.l	d0-d1/a0-a2,-(a7)
 	addq.l	#$1,d0
@@ -152,6 +284,49 @@ Reallocate_memory:
 .Exit:
 	movem.l	(sp)+,d0-d2/a1
 	rts	
+
+; ---- File_allocate (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;File_allocate:
+;             movem.l   d0-d3/d7/a0,-(sp)
+;             addq.l    #1,d1                ; Force word boundary
+;             andi.b    #$fe,d1
+;             cmp.l     Size_of_free_memory,d1     ; Enough memory ?
+;             bls       .Ok
+;             ERROR     "[ File_allocate ] : Out of memory !!!"
+;             bra       .Exit
+;
+;; Priorities 0-7 !!!
+;.Priority:   .DC.b 0,0,7,1,4,0,3,3,1,0,4,2,1,1,7,2
+;             .DC.b 3,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0
+;             .DC.b 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+;             .DC.b 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+;             .EVEN
+;.Ok:         swap.w    d2                   ; Create identifier
+;             move.b    d0,d2
+;             lsl.w     #8,d2
+;             ext.w     d0
+;             move.b    .Priority(pc,d0.w),d0
+;             ori.b     #7*8,d0              ; Top generation
+;             move.b    d0,d2
+;             swap.w    d2
+;             ext.w     d0
+;
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;  d0 - Priority (.w)
+;;  d1 - Size of requested memory block (.l)
+;;  d2 - Identifier (.l)
+;
+;             jsr       Scan_memory
+;             cmp.l     4(a0),d1             ; Perfect fit ?
+;             beq.s     .Continue
+;             jsr       Split_memory_block
+;.Continue:   move.l    d1,4(a0)             ; Set block length
+;             move.l    d2,8(a0)             ; Set file type & priority
+;             sub.l     d1,Size_of_free_memory     ; Adapt size
+;             movea.l   (a0),a1              ; Get pointer to actual memory
+;.Exit:       movem.l   (sp)+,d0-d3/d7/a0
+;             rts
+
 File_allocate:
 	movem.l	d0-d3/d7/a0,-(a7)
 	addq.l	#$1,d1
@@ -193,6 +368,28 @@ T_1d45e:
 T_1d4a4:
 	movem.l	(a7)+,d0-d3/d7/a0
 	rts
+
+; ---- Allocate_memory (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Allocate_memory:
+;             movem.l   d0/d1/d7/a0,-(sp)
+;             move.l    d0,d1
+;             addq.l    #1,d1                ; Force word boundary
+;             andi.b    #$fe,d1
+;             cmp.l     Size_of_free_memory,d1     ; Enough memory ?
+;             bls.s     .Ok
+;             ERROR     "[ Allocate_memory ] : Out of memory !!!"
+;             bra       .Exit
+;.Ok:         jsr       Scan_memory
+;             cmp.l     4(a0),d1             ; Perfect fit ?
+;             beq.s     .Continue
+;             jsr       Split_memory_block
+;.Continue:   move.l    d1,4(a0)             ; Set block length
+;             clr.w     8(a0)                ; Set file type & priority
+;             sub.l     d1,Size_of_free_memory     ; Adapt size
+;             movea.l   (a0),a1              ; Get pointer to actual memory
+;.Exit:       movem.l   (sp)+,d0/d1/d7/a0
+;             rts
+
 Allocate_memory:
 	movem.l	d0-d1/d7/a0,-(a7)
 	move.l	d0,d1
@@ -204,7 +401,7 @@ Allocate_memory:
 	jsr	DI_Error
 	bra.b	T_1d4e6
 .l_1d4cc:
-	bsr.w	T_1d4ec
+	bsr.w	Scan_memory
 	cmp.l	$4(a0),d1
 	beq.b	.l_1d4da
 	bsr.w	T_1d530
@@ -216,7 +413,22 @@ T_1d4de:
 T_1d4e6:
 	movem.l	(a7)+,d0-d1/d7/a0
 	rts
-T_1d4ec:
+
+; ---- Scan_memory (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Scan_memory:
+;             move.l    d0,-(sp)
+;             moveq.l   #0,d0                ; Initial priority
+;.Loop:       jsr       Connect_memory       ; Connect
+;             jsr       Find_free_memory     ; Find
+;             cmpa.l    #0,a0                ; Success ?
+;             bne.s     .Exit
+;             addq.b    #1,d0                ; Increase maximum priority
+;             bne.s     .Loop
+;             ERROR     "[ Scan_memory ] : Garbage collection required !!!"
+;.Exit:       move.l    (sp)+,d0
+;             rts
+
+Scan_memory:
 	move.l	d0,-(a7)
 	moveq	#0,d0
 .l_1d4f0:
@@ -383,6 +595,8 @@ Delete_memblocks:
 
 	section	bss
 
+Start_of_free_memory:
+	ds.b	4
 Size_of_free_memory:
 	ds.b	4
 B_5da0c:

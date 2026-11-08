@@ -10,11 +10,11 @@ of the later development (bugfixes and other changes).
 * `removed "…"` – an instruction of the original source which is not in the program
 
 Some changes may also come from the assembler which built the program (e.g. other encodings of the same
-instruction). 695 routines are taken from the original source, 191 of them have changes.
+instruction). 712 routines are taken from the original source, 194 of them have changes.
 
 ## LAYOUT/LAYOUT.ASM
 
-17 routines taken, 6 with changes.
+20 routines taken, 6 with changes.
 
 ### Show_updated_status_block
 
@@ -63,7 +63,7 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ## MAIN/EVENTS.ASM
 
-83 routines taken, 19 with changes.
+86 routines taken, 21 with changes.
 
 ### Damage_trap
 
@@ -95,6 +95,15 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `tst.b B_5c310` – added
 * `beq.b .c_07eac` – added
 
+### Pick_lock_DOOR
+
+* `move.w #$0,Draw_Cicon` – was "Wait_4_unclick"
+* `jsr My_vsync` – added
+
+### Use_item_DOOR
+
+* removed "Wait_4_unclick"
+
 ### UseItemDoor_DisInit
 
 * removed "Wait_4_unclick"
@@ -123,13 +132,10 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 ### TxtW_ModInit
 
 * `sf.b B_5c310` – added
-* `move.w d0,B_5b288` – was "move.w d0,Window_handle"
-* `move.w d0,B_5b288` – was "move.w d0,Window_handle"
 
 ### TxtW_ModExit
 
 * `st.b B_5c310` – added
-* `move.w B_5b288,d0` – was "move.w Window_handle,d0"
 * removed "Wait_4_unclick"
 
 ### Init_chest
@@ -177,7 +183,7 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ## MAIN/EYE.ASM
 
-78 routines taken, 26 with changes.
+85 routines taken, 33 with changes.
 
 ### HearTxtW_ModInit
 
@@ -298,9 +304,42 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 ### Quit_game
 
 * removed "Wait_4_unclick"
-* `move.l #T_0f804,ReqDo_ptr` – was "move.l #Exit_all,ReqDo_ptr"
+
+### Save_game
+
+* removed "Wait_4_unclick"
 
 ### Exit_SaveGame
+
+* removed "Wait_4_unclick"
+
+### Portrait_selected
+
+* removed "Wait_4_unclick"
+* `move.w Active_member,d1` – added
+* `subq.w #$1,d1` – added
+* `cmp.w d0,d1` – added
+* `bne.b .c_0fb64` – added
+* `move.w #$19,d0` – added
+* `jsr Plus_message` – added
+* `bra.w .Exit` – added
+* removed "movea.l Off_screen,a6"
+* `jsr T_0707a` – was "jsr Erase_text_window"
+* removed "jsr IG_Cursor_home"
+* removed "movea.l RText_ptr,a0"
+* removed "move.w Nr_of_chars,d0"
+* removed "move.w Lines_in_text,d1"
+* removed "bra.s .Entry"
+* removed ".Loop: jsr IG_Print"
+* removed "jsr IG_Carriage_return"
+* removed "lea.l 1(a0,d0.w),a0"
+* removed ".Entry: dbra d1,.Loop"
+
+### Load_game
+
+* removed "Wait_4_unclick"
+
+### Camp
 
 * removed "Wait_4_unclick"
 
@@ -320,9 +359,114 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 * removed "Wait_4_unclick"
 
+### Rest
+
+* `move.l #Code0005Sys,Textfile_ptr` – was "Wait_4_unclick"
+* removed "move.l a0,-(sp)"
+* removed "Push Module,ActSel_Mod"
+* `jsr Check_party_alive` – was "Push Module,ActSel_Mod"
+* removed "movea.l (sp)+,a0"
+* `cmp.w $86(a4),d0` – added
+* `bpl.b .c_101c4` – added
+* `moveq #0,d0` – added
+* `move.w $86(a4),d2` – added
+* `bra.b .c_101e0` – added
+* `move.w d0,d1` – added
+* `divu.w #$a,d0` – added
+* `bne.b .c_101ce` – added
+* `moveq #1,d0` – added
+* `move.w d0,d2` – added
+* `add.w $86(a4),d2` – added
+* `cmp.w d2,d1` – added
+* `bpl.b .c_101e0` – added
+* `move.w d1,d2` – added
+* `move.w d1,d0` – added
+* `sub.w $86(a4),d0` – added
+* `move.w d2,$86(a4)` – added
+* `lea.l Number_buffer,a0` – added
+* `movea.l a0,a3` – added
+* `bsr.w LConvert_number` – added
+* `moveq #0,d0` – added
+* `move.w $8c(a4),d0` – added
+* `add.w $9a(a4),d0` – added
+* `cmp.w $8a(a4),d0` – added
+* `bpl.b .c_10208` – added
+* `moveq #0,d0` – added
+* `move.w $8a(a4),d2` – added
+* `bra.b .Ok1` – added
+* `add.w $8a(a4),d2` – was "add.w Life_points_normal(a4),d2"
+* `move.w d1,d0` – added
+* `sub.w $8a(a4),d0` – added
+* `move.w d2,$8a(a4)` – was ".Ok1: move.w d2,Life_points_normal(a4)"
+* `move.b #$4c,(a3)+` – was "lea.l Number_buffer,a0"
+* `move.b #$50,(a3)+` – was "movea.l a0,a3"
+* `move.b #$2c,(a3)+` – added
+* `move.b #$20,(a3)+` – added
+* `move.b #$50,(a3)+` – was "moveq.l #0,d0"
+* `move.b #$50,(a3)+` – was "move.w Power_points_max(a4),d0"
+* `move.b #$20,(a3)+` – was "add.w Power_points_max_magic(a4),d0"
+* removed "move.w d0,d1"
+* removed "divu.w #10,d0"
+* removed "move.w d0,d2"
+* removed "add.w Power_points_normal(a4),d2"
+* removed "cmp.w d2,d1"
+* removed "bpl.s .Ok2"
+* removed "move.w d1,d2"
+* removed ".Ok2: move.w d2,Power_points_normal(a4)"
+* removed "move.b #"L",(a3)+"
+* removed "move.b #"P",(a3)+"
+* removed "move.b #",",(a3)+"
+* removed "move.b #" ",(a3)+"
+* removed "jsr LConvert_number"
+* removed "move.b #"P",(a3)+"
+* removed "move.b #"P",(a3)+"
+* removed "move.b #" ",(a3)+"
+* removed ".Continue: movea.l Off_screen,a6"
+* `jsr T_0707a` – was "jsr Erase_text_window"
+* removed "movea.l RText_ptr,a0"
+* removed "move.w Nr_of_chars,d0"
+* removed "move.w Lines_in_text,d1"
+* removed "bra.s .Entry2"
+* removed ".Loop2: jsr IG_Print"
+* removed "jsr IG_Carriage_return"
+* removed "lea.l 1(a0,d0.w),a0"
+* removed ".Entry2: dbra d1,.Loop2"
+* `jsr Copy_screen` – was "jsr Switch_screen"
+* removed "Wait_4_unclick"
+
+### Inn
+
+* `move.b #$4c,(a3)+` – was "move.b #"L",(a3)+"
+* `move.b #$50,(a3)+` – was "move.b #"P",(a3)+"
+* `move.b #$2c,(a3)+` – was "move.b #",",(a3)+"
+* `move.b #$20,(a3)+` – was "move.b #" ",(a3)+"
+* `move.b #$50,(a3)+` – was "move.b #"P",(a3)+"
+* `move.b #$50,(a3)+` – was "move.b #"P",(a3)+"
+* `move.b #$20,(a3)+` – was "move.b #" ",(a3)+"
+* removed "movea.l Off_screen,a6"
+* `jsr T_0707a` – was "jsr Erase_text_window"
+* removed "movea.l RText_ptr,a0"
+* removed "move.w Nr_of_chars,d0"
+* removed "move.w Lines_in_text,d1"
+* removed "bra.s .Entry2"
+* removed ".Loop2: jsr IG_Print"
+* removed "jsr IG_Carriage_return"
+* removed "lea.l 1(a0,d0.w),a0"
+* removed ".Entry2: dbra d1,.Loop2"
+* `jsr Copy_screen` – was "jsr Switch_screen"
+* removed "Wait_4_unclick"
+
+### Exit_rest
+
+* `clr.l (a0)+` – was "clr.w (a0)"
+* `clr.l (a0)` – added
+* `clr.l (a0)+` – was "clr.w (a0)"
+* `clr.l (a0)` – added
+* removed "Wait_4_unclick"
+
 ## MAIN/INVENT.ASM
 
-72 routines taken, 27 with changes.
+73 routines taken, 27 with changes.
 
 ### TransFood_DisInit
 
@@ -363,6 +507,10 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * removed "cmpi.b #17,Item_type(a0)"
 * removed "beq.s .Exit"
 
+### DropItem_DisInit
+
+* removed "Wait_4_unclick"
+
 ### Transparent_DisExit
 
 * removed "Wait_4_unclick"
@@ -387,13 +535,8 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `jsr IG_Set_paper` – added
 * `moveq #32,d1` – was "moveq.l #" ",d1"
 
-### ItemW_DisInit
-
-* `move.w d0,B_5b288` – was "move.w d0,Window_handle"
-
 ### ItemW_DisExit
 
-* `move.w B_5b288,d0` – was "move.w Window_handle,d0"
 * removed "Wait_4_unclick"
 
 ### UseItem_DisInit
@@ -420,7 +563,6 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * removed "jsr IG_Set_ink"
 * removed "moveq.l #2,d0"
 * removed "jsr IG_Set_paper"
-* `move.w d0,B_5b288` – was "move.w d0,Window_handle"
 * `jsr Put_masked_block` – added
 * `moveq #15,d0` – added
 * `jsr IG_Set_ink` – added
@@ -428,6 +570,10 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `jsr IG_Set_paper` – was "jsr Put_masked_block"
 
 ### Open_ExtraW
+
+* removed "Wait_4_unclick"
+
+### TransferItem_DisInit
 
 * removed "Wait_4_unclick"
 
@@ -439,64 +585,135 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 * `move.l #T_12b2c,TIVS_Ptr` – was "move.l #Inv2_Do_TI,TIVS_Ptr"
 
-### Transfer_gold
+### Equip_item
 
-* removed "Wait_4_unclick"
+* `tst.l ItemW_nr` – was "Wait_4_unclick"
+* `beq.b .c_12e5c` – added
+* `move.l #Code0001Sys,Textfile_ptr` – added
+* `move.w #$18,ReqText_nr` – added
+* `move.l #.c_12e5e,ReqDo_ptr` – added
+* `lea.l Req_Mod,a0` – added
+* `bsr.w Push_Module` – added
+* `rts` – added
+* `movea.l Current_inventory_chardat_ptr,a1` – added
+* `move.l ItemW_nr,d0` – added
+* `sub.w d0,$90(a1)` – added
+* `mulu.w #$a,d0` – added
+* `sub.l d0,$ec(a1)` – added
+* `bra.w Pop_Module` – added
+* `btst #$1,Mouse_button_state` – added
+* `bne.b Transfer_food` – added
+* `movea.l Off_screen,a6` – added
+* `move.w #$7,d0` – added
+* `jsr Minus_message` – added
+* `jsr Switch_screen` – added
+* `jsr Copy_screen` – added
+* `btst #$1,Mouse_button_state` – added
+* `bne.b .c_12ea0` – added
+* `movea.l Current_inventory_chardat_ptr,a0` – added
+* `moveq #0,d0` – added
+* `move.w $92(a0),d0` – added
+* `move.l d0,Original_number` – added
+* `clr.l ItemW_nr` – added
 * `st.b B_5b82b` – added
-* `lea.l TransGold_Mod,a0` – added
+* `lea.l TransFood_Mod,a0` – added
 * `bsr.w Push_Module` – added
 * `sf.b B_5b82b` – added
 * `rts` – added
-* `moveq #15,d0` – added
-* `jsr IG_Set_ink` – added
-* `moveq #2,d0` – added
-* `jsr IG_Set_paper` – added
-* `moveq #32,d0` – added
-* `moveq #112,d1` – added
-* `moveq #10,d2` – added
-* `moveq #6,d3` – added
-* `moveq #1,d6` – added
-* `lea.l D_32894,a0` – added
-* `jsr Open_window` – added
-* `move.w d0,B_5b288` – added
+* `move.w #$60,Adding` – added
+* `bsr.w T_12ca0` – added
 * `movea.l Off_screen,a6` – added
-* `moveq #2,d6` – added
-* `moveq #16,d7` – added
-* `move.w #$30,d0` – added
-* `move.w #$a0,d1` – added
-* `lea.l D_3afea,a0` – added
-* `jsr Blot_unmasked_block` – added
-* `move.w #$30,d0` – added
-* `move.w #$b0,d1` – added
-* `lea.l D_3b0ea,a0` – added
-* `jsr Blot_unmasked_block` – added
-* `move.w #$80,d0` – added
-* `move.w #$b0,d1` – added
-* `lea.l D_3ccea,a0` – added
-* `jsr Blot_unmasked_block` – added
-* `bsr.w ItemW_DisUpd` – added
-* `tst.b B_5b82b` – added
-* `beq.b .c_12d36` – added
-* `move.w #$80,d0` – added
-* `move.w #$a0,d1` – added
-* `moveq #2,d6` – added
-* `moveq #16,d7` – added
-* `lea.l D_3d0ea,a0` – added
-* `jsr Blot_unmasked_block` – added
-* `move.w #$31,d0` – added
-* `move.w #$96,d1` – added
+* `move.w #$6d,d0` – added
+* `moveq #0,d1` – added
+* `bsr.w INV2_Show_object` – added
+* `move.w #$43,d0` – added
+* `move.w #$82,d1` – added
 * `jsr IG_Set_cursor` – added
-* `moveq #14,d0` – added
-* `lea.l Code0001Sys,a1` – added
-* `jsr Convert_text_line` – added
-* `lea.l Line_buffer,a0` – was "Push Module,TransGold_Mod"
-* `jsr IG_Print` – was "Push Module,TransGold_Mod"
-
-### Transfer_food
-
-* removed "Wait_4_unclick"
-* `st.b B_5b82b` – added
-* `sf.b B_5b82b` – added
+* `lea.l Food_txt,a0` – added
+* `jsr IG_Print` – added
+* `jsr Switch_screen` – added
+* `jsr Copy_screen` – added
+* `rts` – added
+* `btst #$1,Mouse_button_state` – added
+* `bne.b .c_12f1e` – added
+* `bsr.w Pop_Module` – added
+* `move.l ItemW_nr,d0` – added
+* `beq.w .c_12fcc` – added
+* `movea.l Current_inventory_chardat_ptr,a0` – added
+* `mulu.w #$fa,d0` – added
+* `lea.l Chard_ptrs,a1` – added
+* `lea.l Char_status_icons,a4` – added
+* `moveq #0,d6` – added
+* `moveq #1,d7` – added
+* `tst.l (a1)` – added
+* `beq.b .c_12f86` – added
+* `cmpa.l (a1),a0` – added
+* `bne.b .c_12f5c` – added
+* `move.w d7,d5` – added
+* `bra.b .c_12f86` – added
+* `movea.l (a1),a2` – added
+* `move.w $48(a2),d1` – added
+* `add.w $9c(a2),d1` – added
+* `mulu.w #$3e8,d1` – added
+* `sub.l $ec(a2),d1` – added
+* `cmp.l d0,d1` – added
+* `bmi.b .c_12f86` – added
+* `move.w $92(a2),d1` – added
+* `add.w d0,d1` – added
+* `bvs.b .c_12f86` – added
+* `move.w #$e402,d1` – added
+* `and.w $3a(a2),d1` – added
+* `bne.b .c_12f86` – added
+* `bset d7,d6` – added
+* `addq.l #$4,a1` – added
+* `addq.w #$1,d7` – added
+* `cmpi.w #$7,d7` – added
+* `bmi.b .c_12f50` – added
+* `bmi.b .c_12f50` – added
+* `move.w d5,Transferring` – added
+* `move.w d6,Transfer_victims` – added
+* `tst.w d6` – added
+* `bne.b .c_12fae` – added
+* `move.w #$5,d0` – added
+* `jsr Plus_message` – added
+* `bra.b .c_12fcc` – added
+* `bsr.w Show_transfer_victims` – added
+* `move.l #.c_12fce,TIVS_Ptr` – added
+* `lea.l TIVS1_Mod,a0` – added
+* `move.w #$1a,$2c(a0)` – added
+* `bsr.w Push_Module` – added
+* `rts` – added
+* `btst #$1,Mouse_button_state` – added
+* `bne.b .c_12fce` – added
+* `movea.l Current_inventory_chardat_ptr,a1` – added
+* `move.l ItemW_nr,d0` – added
+* `add.w d0,$92(a0)` – added
+* `sub.w d0,$92(a1)` – added
+* `mulu.w #$fa,d0` – added
+* `add.l d0,$ec(a0)` – added
+* `sub.l d0,$ec(a1)` – added
+* `rts` – added
+* `btst #$1,Mouse_button_state` – added
+* `bne.b .c_12ffa` – added
+* `tst.l ItemW_nr` – added
+* `beq.b .c_13032` – added
+* `move.l #Code0001Sys,Textfile_ptr` – added
+* `move.w #$19,ReqText_nr` – added
+* `move.l #.c_13034,ReqDo_ptr` – added
+* `lea.l Req_Mod,a0` – added
+* `bsr.w Push_Module` – added
+* `rts` – added
+* `movea.l Current_inventory_chardat_ptr,a1` – added
+* `move.l ItemW_nr,d0` – added
+* `sub.w d0,$92(a1)` – added
+* `mulu.w #$fa,d0` – added
+* `sub.l d0,$ec(a1)` – added
+* `bra.w Pop_Module` – added
+* `btst #$1,Mouse_button_state` – added
+* `bne.b .c_13050` – added
+* removed "cmpi.b #17,Item_type(a2)"
+* removed "beq .Exit"
+* `beq.w .Exit` – was "bne .Exit"
 
 ### Unequip_item
 
@@ -523,32 +740,16 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ## MAIN/MAGIC.ASM
 
-79 routines taken, 22 with changes.
+80 routines taken, 18 with changes.
 
-### Heal_diseased
+### Cast_spell
 
-* `moveq #5,d0` – was "moveq.l #7,d0"
-* `moveq #9,d1` – was "moveq.l #11,d1"
+* removed "Wait_4_unclick"
+* removed "sf No_spell_selected"
 
-### Heal_aged
+### Remove_curse
 
-* `moveq #6,d0` – was "moveq.l #8,d0"
-* `moveq #8,d1` – was "moveq.l #12,d1"
-
-### Heal_stoned
-
-* `moveq #7,d0` – was "moveq.l #9,d0"
-* `moveq #11,d1` – was "moveq.l #10,d1"
-
-### Heal_panic
-
-* `moveq #8,d0` – was "moveq.l #10,d0"
-* `moveq #12,d1` – was "moveq.l #3,d1"
-
-### Heal_irritated
-
-* `moveq #9,d0` – was "moveq.l #11,d0"
-* `moveq #10,d1` – was "moveq.l #0,d1"
+* `move.w #$18,WText_nr` – was "move.w #21,WText_nr"
 
 ### Create_food
 
@@ -559,14 +760,9 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `add.l d1,$ec(a1)` – was "add.l d1,Weight_normal(a0)"
 * `bsr.w Do_sparkle` – added
 
-### MagicComp_DisInit
-
-* `move.w d0,B_5b288` – was "move.w d0,Window_handle"
-
 ### MagicComp_DisExit
 
 * removed "Wait_4_unclick"
-* `move.w B_5b288,d0` – was "move.w Window_handle,d0"
 
 ### Identify
 
@@ -808,7 +1004,7 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ## MAIN/PERSONS.ASM
 
-12 routines taken, 3 with changes.
+12 routines taken, 4 with changes.
 
 ### ThreeD_char_handler
 
@@ -820,6 +1016,10 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `exg.l d3,d2` – was "exg.l d2,d3"
 * `exg.l d5,d4` – was "exg.l d4,d5"
 
+### CombatReq_ModExit
+
+* `move.w B_5aa92,d0` – was "move.w Window_handle,d0"
+
 ### CombatYes
 
 * `move.w Active_member,B_5aa94` – added
@@ -828,7 +1028,7 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ## MAIN/PLACES.ASM
 
-114 routines taken, 43 with changes.
+114 routines taken, 42 with changes.
 
 ### Divide_gold_PLACES
 
@@ -869,7 +1069,6 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ### SkillW_ModInit
 
-* `move.w d0,B_5b288` – was "move.w d0,Window_handle"
 * removed "lea.l Control_icn+7680,a0"
 * removed "jsr Blot_unmasked_block"
 * `lea.l D_3ccea,a0` – was "lea.l Chequered,a0"
@@ -905,10 +1104,6 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `jsr Blot_masked_block` – added
 * `jsr Switch_screen` – added
 * `jsr Copy_screen` – added
-
-### SkillW_ModExit
-
-* `move.w B_5b288,d0` – was "move.w Window_handle,d0"
 
 ### Inc_skill
 
@@ -1100,7 +1295,7 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 ## MAIN/TEST.ASM
 
-22 routines taken, 5 with changes.
+23 routines taken, 5 with changes.
 
 ### Load_party_data
 
@@ -1232,13 +1427,17 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 
 * removed "Wait_4_unclick"
 
+## NUCLEUS/AMBRFILE.ASM
+
+1 routines taken, 0 with changes.
+
 ## NUCLEUS/COLOFADE.ASM
 
 4 routines taken, 0 with changes.
 
 ## NUCLEUS/DIAGNOST.ASM
 
-12 routines taken, 5 with changes.
+12 routines taken, 3 with changes.
 
 ### DI_Error
 
@@ -1251,17 +1450,11 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `movea.l $4(a0),a0` – added
 * `jmp (a0)` – added
 
-### DI_Cursor_home
-
-* `clr.w B_60480` – was "clr.w Print_Y"
-
 ### DI_Carriage_return
 
-* `move.w B_60480,d0` – was "move.w Print_Y,d0"
 * `jsr Wait_4_key` – added
 * `movea.l Screen_base,a6` – added
 * `jsr Clear_screen` – added
-* `move.w d0,B_60480` – was ".Exit: move.w d0,Print_Y"
 
 ### DI_Input
 
@@ -1272,10 +1465,6 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 * `cmpi.b #$39,d0` – was "cmpi.b #"9",d0"
 * `subi.b #$30,d0` – was "subi.b #"0",d0"
 * `lea.l D_54b62,a0` – was "lea.l Output_string,a0"
-
-### DI_Pchar
-
-* `adda.w B_60480,a6` – was "adda.w Print_Y,a6"
 
 ## NUCLEUS/GFXROUTS.ASM
 
@@ -1371,10 +1560,13 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 ### IG_Carriage_return
 
 * `move.w (a0),B_76734` – was "move.w (a0),Print_X"
+* `move.w B_76736,d0` – was "move.w Print_Y,d0"
+* `move.w d0,B_76736` – was ".Skip: move.w d0,Print_Y"
 
 ### IG_Set_cursor
 
 * `move.w d0,B_76734` – was "move.w d0,Print_X"
+* `move.w d1,B_76736` – was "move.w d1,Print_Y"
 
 ### IG_Print
 
@@ -1383,6 +1575,7 @@ instruction). 695 routines are taken from the original source, 191 of them have 
 ### IG_Pchar_TRANS
 
 * `move.w B_76734,d0` – was "move.w Print_X,d0"
+* `move.w B_76736,d1` – was "move.w Print_Y,d1"
 * `move.w B_76734,d0` – was "move.w Print_X,d0"
 * `move.w d0,B_76734` – was ".Skip: move.w d0,Print_X"
 

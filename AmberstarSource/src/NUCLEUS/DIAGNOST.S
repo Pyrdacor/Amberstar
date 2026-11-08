@@ -26,6 +26,28 @@ DI_Error:
 	bsr.w	OFF_Diag_screen
 	movem.l	(sp)+,d0-d2/a0-a2/a6
 	rts	
+
+; ---- ON_Diag_screen (original source: NUCLEUS/DIAGNOST.ASM) - the shipped program differs, its code follows, not assembled:
+;ON_Diag_screen:
+;             movem.l   d0/a0/a6,-(sp)
+;             jsr       Mouse_off            ; Mouse off
+;             move.l    Colour_0,Old_pal     ; Save palette
+;             move.l    Colour_2,Old_pal+4
+;             move.l    Screen_base,Prev_screen
+;             jsr       HBL_off              ; HBL's off
+;             jsr       My_vsync
+;             move.b    #1,Shift_mode        ; Med rez
+;             moveq.l   #0,d0                ; Set new screen base
+;             move.w    Old_screen,d0
+;             lsl.l     #8,d0
+;             jsr       Set_screen
+;             movea.l   Screen_base,a6       ; Clear the screen
+;             jsr       Clear_screen
+;             move.l    Diag_pal,Colour_0    ; Set palette
+;             move.l    Diag_pal+4,Colour_2
+;             movem.l   (sp)+,d0/a0/a6
+;             rts
+
 ON_Diag_screen:
 	movem.l	d0/a0/a6,-(a7)
 	tst.b	B_6046c
@@ -49,6 +71,21 @@ ON_Diag_screen:
 .l_1c15a:
 	movem.l	(a7)+,d0/a0/a6
 	rts
+
+; ---- OFF_Diag_screen (original source: NUCLEUS/DIAGNOST.ASM) - the shipped program differs, its code follows, not assembled:
+;OFF_Diag_screen:
+;             move.l    a0,-(sp)
+;             jsr       My_vsync
+;             move.b    #0,Shift_mode        ; Low rez
+;             move.l    Old_pal,Colour_0     ; Restore palette
+;             move.l    Old_pal+4,Colour_2
+;             move.l    Prev_screen,d0       ; Restore screen base
+;             jsr       Set_screen
+;             jsr       HBL_on               ; HBL's off
+;             jsr       Mouse_on             ; Mouse on
+;             movea.l   (sp)+,a0
+;             rts
+
 OFF_Diag_screen:
 	move.l	a0,-(a7)
 	sf.b	B_6046c
@@ -70,13 +107,13 @@ Init_DI_print:
 ; ---- DI_Cursor_home (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Cursor_home:
 	clr.w	Print_X
-	clr.w	B_60480	; CHANGE: was "clr.w Print_Y"
+	clr.w	Print_Y
 	rts	
 ; ---- DI_Carriage_return (original source: NUCLEUS/DIAGNOST.ASM)
 DI_Carriage_return:
 	move.l	d0,-(sp)
 	clr.w	Print_X
-	move.w	B_60480,d0	; CHANGE: was "move.w Print_Y,d0"
+	move.w	Print_Y,d0
 	addi.w	#8*160,d0
 	cmpi.w	#32000,d0
 	bmi.s	.Exit
@@ -85,7 +122,7 @@ DI_Carriage_return:
 	jsr	Clear_screen	; CHANGE: added
 	moveq.l	#0,d0
 .Exit:
-	move.w	d0,B_60480	; CHANGE: was ".Exit: move.w d0,Print_Y"
+	move.w	d0,Print_Y
 	move.l	(sp)+,d0
 	rts	
 ; ---- DI_Backspace (original source: NUCLEUS/DIAGNOST.ASM)
@@ -256,7 +293,7 @@ DI_Print:
 DI_Pchar:
 	movem.l	d0-d2/d7/a1/a6,-(sp)
 	adda.w	Print_X,a6
-	adda.w	B_60480,a6	; CHANGE: was "adda.w Print_Y,a6"
+	adda.w	Print_Y,a6
 	adda.w	d0,a1
 	move.b	Ink,d0
 	move.w	Inverse,d2
@@ -322,7 +359,7 @@ Prev_screen:
 	ds.b	4
 Print_X:
 	ds.b	2
-B_60480:
+Print_Y:
 	ds.b	2
 Inverse:
 	ds.b	2

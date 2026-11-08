@@ -2,6 +2,52 @@
 
 	section	text
 
+
+; ---- Places (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Places:
+;             moveq.l   #0,d0                ; Get opening time
+;             move.b    1(a5),d0
+;             beq.s     .Open                ; Open 24 hours ?
+;             move.w    Hour,d1
+;             cmp.w     d1,d0                ; Too early ?
+;             ble.s     .Not_early
+;.Closed:     Restore_coords                 ; Back, sinister fiend !
+;             moveq.l   #0,d0                ; Closed text ?
+;             move.b    4(a5),d0
+;             cmpi.w    #26,d0
+;             beq       .Exit
+;             move.w    d0,WText_nr          ; Show text
+;             move.l    Maptext_ptr,Textfile_ptr
+;             Push      Module,TxtW_Mod
+;             bra       .Exit
+;.Not_early:  move.b    2(a5),d0             ; Get closing time
+;             cmp.w     d0,d1                ; Too late ?
+;             bge.s     .Closed
+;.Open:       lea.l     Place_dat-22,a0      ; Get address of place data
+;             move.w    6(a5),d0
+;             mulu.w    #24,d0
+;             adda.w    d0,a0
+;             move.l    a0,Placedat_ptr
+;             moveq.l   #0,d0                ; Get place type
+;             move.b    3(a5),d0
+;             add.w     d0,d0                ; Get pointer to module
+;             add.w     d0,d0
+;             move.l    .Place_mods-4(pc,d0.w),d0
+;             bne.s     .Ok
+;             ERROR     "[ Places ] : Illegal place type !!!"
+;             bra.s     .Exit
+;.Ok:         jsr       Exit_display
+;             movea.l   d0,a0                ; Do it
+;             jsr       Push_Module
+;.Exit:       rts
+;
+;.Place_mods: .REPT 8
+;             .DC.l Guild_Mod
+;             .ENDR
+;             .DC.l MerchOBJC_Mod,MerchFOOD_Mod
+;             .DC.l 0,MerchHORSE_Mod,Healer_Mod,Sage_Mod
+;             .DC.l MerchRAFT_Mod,MerchSHIP_Mod,Inn_Mod,MerchMAGIC_Mod,0,0
+
 Places:
 	moveq	#0,d0
 	move.b	$1(a5),d0
@@ -10,7 +56,7 @@ Places:
 	cmp.w	d1,d0
 	ble.b	T_0aaae
 T_0aa80:
-	jsr	T_01f98
+	jsr	Restore_coords
 	moveq	#0,d0
 	move.b	$4(a5),d0
 	cmpi.w	#$1a,d0
@@ -66,6 +112,39 @@ T_0aaf4:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 T_0ab46:
 	jsr	T_0025a
+
+; ---- Places_ModInit (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Places_ModInit:
+;             clr.w     Places_gold          ; No gold here
+;             movea.l   Event_data_ptr,a0    ; Get picture number
+;             moveq.l   #0,d0
+;             move.b    3(a0),d0
+;             move.w    d0,Place_nr
+;             move.b    .Place_pix-1(pc,d0.w),d0
+;             lea.l     Lay3_target_hbl+2,a0 ; Load picture
+;             jsr       Load_80x80_picture
+;             cmpi.w    #9,Place_nr          ; Object merchant ?
+;             beq.s     .Yes
+;             cmpi.w    #18,Place_nr         ; Magic merchant ?
+;             bne.s     .No
+;.Yes:        movea.l   Event_data_ptr,a0    ; Load merchant data
+;             move.w    8(a0),d0
+;             lea.l     Waredat_filename,a0
+;             jsr       Load_subfile
+;             move.l    a0,Waredat_ptr
+;             lea.l     Ware_count-12,a0     ; Calculate pointer to slot
+;             mulu.w    #12,d0               ; list
+;             adda.w    d0,a0
+;             move.l    a0,Warecount_ptr
+;             lea.l     Sold_slots,a0        ; Clear slots
+;             clr.l     (a0)+
+;             clr.l     (a0)+
+;             clr.l     (a0)
+;.No:         jmp       Init_display
+;
+;.Place_pix:  .DC.b 3,3,3,3,3,3,3,3,4,4,6,7,8,10,14,14,15,23,0,0
+;             .EVEN
+
 Places_ModInit:
 	clr.w	Places_gold
 	movea.l	Event_data_ptr,a0
@@ -171,8 +250,21 @@ Exit_PLACES:
 .Exit_txts:
 	dc.b	8,8,8,8,8,8,8,8,17,17,-1,18,21,18,18,18,5,17,-1,-1
 	even	
+
+; ---- Do_PlacesExit (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_PlacesExit:
+;             Restore_coords                 ; Exit !
+;             jsr       Exit_display
+;             Pop       Module
+;             cmpi.w    #17,Place_nr         ; Inn ?
+;             bne.s     .Exit
+;             tst.b     Inn_flag             ; Gonna camp ?
+;             beq.s     .Exit
+;             Push      Module,Camp_Mod
+;.Exit:       jmp       Init_display
+
 Do_PlacesExit:
-	jsr	T_01f98
+	jsr	Restore_coords
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	cmpi.w	#$11,Place_nr
@@ -333,6 +425,25 @@ Guild_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Display_gold
 	rts	
+
+; ---- Guild_DisInit (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Guild_DisInit:
+;             move.l    #Lay3_PlusMes,PlusMes_info ; Set message parameters
+;             movea.l   Off_screen,a6
+;             moveq.l   #3,d0                ; Show layout 3
+;             jsr       Show_layout
+;             jsr       Display_80x80_picture      ; Show picture
+;             jsr       Places_DisInit       ; Print headline & "GOLD"
+;             lea.l     Guild_CIL,a0         ; Show control icons
+;             jsr       GuildCIL_evaluate
+;             move.l    a0,Control_list_ptr
+;             jsr       Show_control_icons
+;             jsr       Update_guild_messages
+;             Update_screen
+;             lea.l     Lay3_L2,a0           ; Set object branch
+;             jsr       Set_layout_data
+;             jmp       Fadein_lay3          ; Fade in
+
 Guild_DisInit:
 	move.l	#Lay3_PlusMes,PlusMes_info
 	movea.l	Off_screen,a6
@@ -349,6 +460,123 @@ Guild_DisInit:
 	lea.l	Lay3_L2,a0
 	jsr	Set_layout_data
 	bra.w	Fadein_lay3
+
+; ---- Update_guild_messages (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Update_guild_messages:
+;             movem.l   d0/d1/d7/a0-a6,-(sp)
+;             Push      PA,Lay3_PlusMes+8    ; Start message
+;             jsr       Init_RText
+;             movea.l   Current_active_char_data,a2          ; Initialize registers
+;             movea.l   Placedat_ptr,a4
+;             lea.l     Class_dat+10,a5
+;             move.w    Place_nr,d0
+;             mulu.w    #394,d0
+;             adda.w    d0,a5
+;             moveq.l   #0,d0
+;             move.b    Level_nr(a2),d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a5
+;             movea.l   Off_screen,a6
+;             jsr       Erase_text_window    ; Clear text area
+;; ------------- Print price of joining -------------------------------
+;             tst.b     Character_class(a2)  ; Any class ?
+;             bne       .Skip1
+;             move.w    Place_nr,d0          ; Possible ?
+;             move.w    Possible_class(a2),d1
+;             btst      d0,d1
+;             beq       .Skip1
+;             move.l    (a5),d0              ; Enough experience ?
+;             cmp.l     Experience_points(a2),d0
+;             bgt.s     .Skip1
+;             lea.l     Code0003Sys,a1       ; Add message
+;             move.w    #19,d0
+;             jsr       Add_encoded_2_RText
+;             lea.l     Number_buffer,a0     ; Add price of joining
+;             movea.l   a0,a3
+;             moveq.l   #0,d0
+;             move.w    (a4),d0
+;             moveq.l   #4,d7
+;             jsr       LConvert_number
+;             move.b    #" ",(a3)+
+;             clr.b     (a3)
+;             jsr       Add_ASCII_2_RText
+;             lea.l     Gold_txt,a0          ; Add "GOLD"
+;             jsr       Add_ASCII_2_RText
+;             lea.l     Return,a0            ; Add 2 carriage returns
+;             jsr       Add_ASCII_2_RText
+;             jsr       Add_ASCII_2_RText
+;; ------------- Print price of making a level ------------------------
+;.Skip1:      move.w    Place_nr,d0          ; Right guild ?
+;             cmp.b     Character_class(a2),d0
+;             bne.s     .Skip2
+;             cmpi.b    #MaxLevel,Level_nr(a2)     ; Maximum level ?
+;             bpl.s     .Skip2
+;             move.l    (a5),d0              ; Enough experience ?
+;             cmp.l     Experience_points(a2),d0
+;             bgt.s     .Skip2
+;             lea.l     Code0003Sys,a1       ; Add message
+;             move.w    #20,d0
+;             jsr       Add_encoded_2_RText
+;             lea.l     Number_buffer,a0     ; Add price of making
+;             movea.l   a0,a3
+;             move.w    2(a4),d0
+;             moveq.l   #4,d7
+;             jsr       LConvert_number
+;             move.b    #" ",(a3)+
+;             clr.b     (a3)
+;             jsr       Add_ASCII_2_RText
+;             lea.l     Gold_txt,a0          ; Add "GOLD"
+;             jsr       Add_ASCII_2_RText
+;             lea.l     Return,a0            ; Add 2 carriage returns
+;             jsr       Add_ASCII_2_RText
+;             jsr       Add_ASCII_2_RText
+;; ------------- Print amount of experience points needed -------------
+;.Skip2:      tst.b     Character_class(a2)  ; Any class ?
+;             bne       .Class
+;             move.w    Place_nr,d0          ; Possible to join ?
+;             move.w    Possible_class(a2),d1
+;             btst      d0,d1
+;             bne       .Ok3
+;             bra       .Skip3
+;.Class:      move.w    Place_nr,d0          ; Right guild ?
+;             cmp.b     Character_class(a2),d0
+;             bne.s     .Skip3
+;             cmpi.b    #MaxLevel,Level_nr(a2)     ; Maximum level ?
+;             bpl.s     .Skip3
+;.Ok3:        move.l    (a5),d1              ; Get needed experience points
+;             sub.l     Experience_points(a2),d1
+;             ble.s     .Skip3
+;             lea.l     Char_name(a2),a0     ; Add name of active character
+;             jsr       Add_ASCII_2_RText
+;             lea.l     Space,a0             ; Add space
+;             jsr       Add_ASCII_2_RText
+;             lea.l     Code0004Sys,a1       ; Add message
+;             move.w    #17,d0
+;             jsr       Add_encoded_2_RText
+;             lea.l     Number_buffer,a0     ; Add number of experience
+;             movea.l   a0,a3                ; points
+;             move.l    d1,d0
+;             moveq.l   #4,d7
+;             jsr       LConvert_number
+;             jsr       Add_ASCII_2_RText
+;; ------------- Print message & exit ---------------------------------
+;.Skip3:      jsr       Erase_text_window    ; Clear window
+;             jsr       IG_Cursor_home
+;             movea.l   RText_ptr,a0         ; Print text
+;             move.w    Nr_of_chars,d0
+;             move.w    Lines_in_text,d7
+;             bra.s     .Entry
+;.Loop:       jsr       IG_Print
+;             jsr       IG_Carriage_return
+;             lea.l     1(a0,d0.w),a0
+;.Entry:      dbra      d7,.Loop
+;             Update_screen
+;             jsr       Exit_RText
+;             Pop       PA
+;             movem.l   (sp)+,d0/d1/d7/a0-a6
+;             rts
+
 Update_guild_messages:
 	movem.l	d0-d1/d7/a0-a5,-(a7)
 	lea.l	Lay3_PA,a0
@@ -615,7 +843,7 @@ SkillW_ModInit:
 	moveq.l	#1,d6
 	lea.l	SkillW_L1,a0
 	jsr	Open_window
-	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	move.w	d0,Window_handle
 	movea.l	Off_screen,a6
 	move.w	#32+16,d0
 	move.w	#37+16+7,d1
@@ -734,7 +962,7 @@ SkillW_ModInit:
 	rts	
 ; ---- SkillW_ModExit (original source: MAIN/PLACES.ASM)
 SkillW_ModExit:
-	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
+	move.w	Window_handle,d0
 	jsr	Close_window
 	rts	
 ; ---- SkillW_DisUpd (original source: MAIN/PLACES.ASM)
@@ -1145,6 +1373,46 @@ SellItem_DisExit:
 	bsr.w	Pop_PA
 	jsr	Pop_MA
 	rts	
+
+; ---- BuyItem_objselect (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;BuyItem_objselect:
+;             Wait_4_unclick
+;             tst.b     d0                   ; Any slot selected ?
+;             beq       .Exit
+;             move.b    d0,Object_slot_number
+;             ext.w     d0                   ; Calculate pointers to item
+;             subq.w    #1,d0                ; data
+;             movea.l   Itemslots_ptr,a1
+;             movea.l   Itemdata_ptr,a2
+;             adda.w    d0,a1
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;             tst.b     (a1)                 ; Any object in this slot ?
+;             beq.s     .Exit
+;             move.w    Total_price,d1       ; Enough dough ?
+;             cmp.w     Places_gold,d1
+;             bgt.s     .Exit
+;             btst      #2,Item_stat_bits(a2)      ; Multiple item ?
+;             beq.s     .One
+;             cmpi.b    #1,(a1)              ; Only one item ?
+;             bne.s     .Multiple
+;.One:        move.l    #1,ItemW_nr          ; One item
+;             Push      Module,BuyReq_Mod
+;             rts
+;.Multiple:   moveq.l   #0,d1                ; How many can you buy ?
+;             move.w    Places_gold,d1
+;             divu.w    Total_price,d1
+;             cmpi.w    #1,d1                ; Only one ?
+;             beq.s     .One
+;             cmpi.w    #100,d1              ; Too much ?
+;             bmi.s     .Not2much
+;             moveq.l   #99,d1
+;.Not2much:   ext.l     d1                   ; How many do you want ?
+;             move.l    d1,Original_number
+;             clr.l     ItemW_nr
+;             Push      Module,BuyMItem_Mod
+;.Exit:       rts
+
 ; ---- SellItem_DisUpd (original source: MAIN/PLACES.ASM)
 SellItem_DisUpd:
 	bsr.w	Update_status_block
@@ -1592,6 +1860,79 @@ BuyReq_ModExit:
 	bsr.w	Pop_Module
 .Exit:
 	rts	
+
+; ---- BuyYes (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;BuyYes:
+;             Wait_4_unclick
+;             movea.l   Itemslots_ptr,a0     ; Get pointer to item slot
+;             movea.l   Itemdata_ptr,a1      ; & item data
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             subq.w    #1,d0
+;             adda.w    d0,a0
+;             mulu.w    #40,d0
+;             adda.w    d0,a1
+;             moveq.l   #1,d1
+;             btst      #2,Item_stat_bits(a1)      ; Multiple item ?
+;             beq       .Continue
+;             cmpi.b    #1,(a0)              ; More as one in slot ?
+;             bhi.s     .Multiple
+;             move.l    d1,ItemW_nr
+;; ------------- Search for a slot already containing this item -------
+;.Multiple:   lea.l     Sold_slots,a4
+;             lea.l     Sold_data,a5
+;             move.w    Item_ID(a1),d0
+;             move.l    ItemW_nr,d1
+;             moveq.l   #12-1,d7
+;.Loop1:      tst.b     (a4)                 ; Anything there ?
+;             beq.s     .Next1
+;             cmp.w     Item_ID(a5),d0       ; Same item ?
+;             bne.s     .Next1
+;             cmpi.b    #99,(a4)             ; Not full ?
+;             bmi.s     .Found1
+;.Next1:      addq.l    #1,a4
+;             lea.l     40(a5),a5
+;             dbra      d7,.Loop1
+;             bra       .Continue
+;.Found1:     moveq.l   #0,d0                ; Does it fit in the slot ?
+;             move.b    (a4),d0
+;             add.w     d1,d0
+;             cmpi.w    #99,d0
+;             bls       .Do_it
+;             moveq.l   #99,d2               ; Calculate number that will
+;             sub.b     (a4),d2              ; fit
+;             sub.l     d2,ItemW_nr
+;             move.b    #99,(a4)             ; Fill slot
+;             cmpi.b    #-1,(a0)             ; Infinite slot ?
+;             beq       .Multiple
+;             sub.b     d2,(a0)              ; Remove item(s)
+;             bra       .Multiple
+;; ------------- Search for a free slot then transfer the item --------
+;.Continue:   lea.l     Sold_slots,a4
+;             lea.l     Sold_data,a5
+;             moveq.l   #12-1,d7
+;.Loop2:      tst.b     (a4)                 ; Free slot ?
+;             beq.s     .Do_it
+;             addq.l    #1,a4                ; Next slot
+;             lea.l     40(a5),a5
+;             dbra      d7,.Loop2
+;             bra       .Exit
+;.Do_it:      add.b     d1,(a4)              ; Fill slot
+;             moveq.l   #20-1,d7             ; Copy item data
+;.Loop3:      move.w    (a1)+,(a5)+
+;             dbra      d7,.Loop3
+;             lea.l     -40(a1),a1
+;             cmpi.b    #-1,(a0)             ; Infinite slot ?
+;             beq.s     .Infinity
+;             sub.b     d1,(a0)              ; Remove item(s)
+;.Infinity:   move.l    ItemW_nr,d0          ; Pay the price
+;             mulu.w    Total_price,d0
+;             sub.w     d0,Places_gold
+;             movea.l   Off_screen,a6        ; Redraw objects
+;             jsr       Show_objects_LAY3
+;             Update_screen
+;.Exit:       jmp       Pop_Module
+
 T_0c136:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0c136
@@ -1668,6 +2009,13 @@ T_0c136:
 	sub.w	d0,Places_gold
 	movea.l	Off_screen,a6
 	bsr.w	Show_objects_LAY3
+
+; ---- Transfer_item_CHEST (original source: MAIN/EVENTS.ASM) - the shipped program differs, its code follows, not assembled:
+;Transfer_item_CHEST:
+;             Wait_4_unclick
+;             lea.l     TIChest_Mod,a0
+;             jmp       Push_Module
+
 	jsr	Switch_screen
 	jsr	Copy_screen
 .l_0c228:
@@ -1812,6 +2160,121 @@ MOBJC_TI_2:
 	bsr.w	Push_Module
 .Exit:
 	rts	
+
+; ---- MOBJC_TI_3 (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;MOBJC_TI_3:
+;             lea.l     Sold_slots-1,a2      ; Initialize registers
+;             lea.l     Sold_data-40,a3
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             adda.w    d0,a2
+;             mulu.w    #40,d0
+;             adda.w    d0,a3
+;
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;  a0 - Pointer to victim's character data (.l)
+;;  a2 - Pointer to transferred object's slot (.l)
+;;  a3 - Pointer to transferred object's data (.l)
+;
+;             moveq.l   #1,d1
+;             btst      #2,Item_stat_bits(a3)      ; Multiple item ?
+;             beq       .Continue
+;             cmpi.b    #1,(a2)              ; More as one in slot ?
+;             bhi.s     .Multiple
+;             move.l    d1,ItemW_nr
+;; ------------- Search for a slot already containing this item -------
+;.Multiple:   lea.l     Inventory_1_place_counter(a0),a4
+;             lea.l     Inv_data+360(a0),a5
+;             move.w    Item_ID(a3),d0
+;             move.l    ItemW_nr,d1
+;             moveq.l   #12-1,d7
+;.Loop1:      tst.b     (a4)                 ; Anything there ?
+;             beq.s     .Next1
+;             cmp.w     Item_ID(a5),d0       ; Same item ?
+;             bne.s     .Next1
+;             cmpi.b    #99,(a4)             ; Not full ?
+;             bmi.s     .Found1
+;.Next1:      addq.l    #1,a4
+;             lea.l     40(a5),a5
+;             dbra      d7,.Loop1
+;             bra       .Continue
+;.Found1:     moveq.l   #0,d0                ; Does it fit in the slot ?
+;             move.b    (a4),d0
+;             add.w     d1,d0
+;             cmpi.w    #99,d0
+;             bls       .Do_it
+;             moveq.l   #99,d2               ; Calculate number that will
+;             sub.b     (a4),d2              ; fit
+;             sub.l     d2,ItemW_nr
+;             move.b    #99,(a4)             ; Fill slot
+;             sub.b     d2,(a2)              ; Remove item(s)
+;             mulu.w    Weight(a3),d2        ; Adjust weight
+;             add.l     d2,Weight_normal(a0)
+;             bra       .Multiple
+;; ------------- Search for a free slot then transfer the item --------
+;.Continue:   lea.l     Inventory_1_place_counter(a0),a4
+;             lea.l     Inv_data+360(a0),a5
+;             moveq.l   #12-1,d7
+;.Loop2:      tst.b     (a4)                 ; Free slot ?
+;             beq.s     .Do_it
+;             addq.l    #1,a4
+;             lea.l     40(a5),a5
+;             dbra      d7,.Loop2
+;             bra       .Exit
+;.Do_it:      moveq.l   #0,d2                ; Adjust weight
+;             move.b    d1,d2
+;             mulu.w    Weight(a3),d2
+;             add.l     d2,Weight_normal(a0)
+;             add.b     d1,(a4)              ; Fill slot
+;             moveq.l   #20-1,d7             ; Copy item data
+;.Loop3:      move.w    (a3)+,(a5)+
+;             dbra      d7,.Loop3
+;             lea.l     -40(a3),a3
+;             sub.b     d1,(a2)              ; Remove item(s)
+;             bne.s     .Skip
+;             lea.l     Door_object_pos_list-4,a0  ; Erase object icon
+;             moveq.l   #0,d0
+;             move.b    Object_slot_number,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a0
+;             move.w    (a0)+,d0
+;             move.w    (a0)+,d1
+;             lea.l     Layout_icn+9856,a0
+;             movea.l   Off_screen,a6
+;             jsr       Put_unmasked_block
+;             Update_screen
+;             bra.s     .Go_on
+;.Skip:       cmpi.b    #1,(a2)              ; Remove quantity ?
+;             bne.s     .Go_on
+;             lea.l     Door_object_pos_list-4,a0  ; Erase object icon
+;             moveq.l   #0,d0
+;             move.b    Object_slot_number,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a0
+;             move.w    (a0)+,d0
+;             move.w    (a0)+,d1
+;             lea.l     Layout_icn+9856,a0
+;             movea.l   Off_screen,a6
+;             jsr       Put_unmasked_block
+;             lea.l     Objects_icn,a0       ; Redraw object icon
+;             moveq.l   #0,d2
+;             move.b    (a3),d2
+;             lsl.w     #7,d2
+;             adda.w    d2,a0
+;             jsr       Put_masked_block
+;             Update_screen
+;.Go_on:      lea.l     Sold_slots,a0        ; All transferred ?
+;             tst.l     (a0)+
+;             bne.s     .Exit
+;             tst.l     (a0)+
+;             bne.s     .Exit
+;             tst.l     (a0)+
+;             bne.s     .Exit
+;             Pop       Module
+;.Exit:       rts
+
 MOBJC_TI_3:
 	movea.l	Itemslots_ptr,a2
 	movea.l	Itemdata_ptr,a3
@@ -2226,6 +2689,15 @@ Do_TFMFOOD:
 	mulu.w	#Food_weight,d0
 	add.l	d0,Weight_normal(a0)
 	rts	
+
+; ---- MFOOD_Divide_food (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;MFOOD_Divide_food:
+;             moveq.l   #0,d0                ; Get food
+;             move.w    Places_food,d0
+;             jsr       Divide_food          ; Divide it
+;             move.w    d0,Places_food       ; Store remaining food
+;             rts
+
 T_0c9d4:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0c9d4
@@ -2875,6 +3347,42 @@ Healer_Remove_curse:
 	bsr.w	Push_Module
 .Exit:
 	rts	
+
+; ---- Heal_condition (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Heal_condition:
+;             tst.b     d0                   ; Any slot ?
+;             beq       .Exit
+;             move.b    d0,Object_slot_number      ; Store slot number
+;             lea.l     Sold_slots,a0        ; Calculate pointers
+;             lea.l     Sold_data,a1
+;             ext.w     d0
+;             subq.w    #1,d0
+;             adda.w    d0,a0
+;             mulu.w    #40,d0
+;             adda.w    d0,a1
+;             tst.b     (a0)                 ; Slot filled ?
+;             beq       .Exit
+;             Wait_4_unclick
+;             movea.l   Placedat_ptr,a0      ; Get price
+;             moveq.l   #0,d0
+;             move.b    1(a1),d0
+;             move.b    .Price_indices(pc,d0.w),d0
+;             move.w    0(a0,d0.w),d0
+;             cmp.w     Places_gold,d0       ; Enough dough ?
+;             ble.s     .Ok
+;             move.l    #Lay3_PlusMes,PlusMes_info ; Print message {22,+}
+;             move.l    #Code0002Sys,Textfile_ptr
+;             PlusMes   22
+;             bra       .Exit
+;.Ok:         move.w    d0,Total_price       ; Store price
+;             Push      Module,HealCondReq_Mod
+;.Exit:       rts
+;
+;.Price_indices:
+;             .DC.b -1,10,-1,-1,12,-1,-1,-1
+;             .DC.b 0,2,4,6,8,14,16,18
+;             .EVEN
+
 Heal_condition:
 	tst.b	d0
 	beq.b	.l_0d392
@@ -3173,6 +3681,29 @@ Display_Ankh:
 	movea.l	Off_screen,a6
 	jsr	Blot_masked_block
 	rts	
+
+; ---- Resurrection (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Resurrection:
+;             movem.l   d0/d4/d5/a0/a6,-(sp)
+;             move.w    #1,Life_points_normal(a0)  ; ONE hitpoint
+;
+;             DIAG_ON
+;             PRINT     .Text
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;
+;             lea.l     Char_status_icons,a0 ; Remove cross icon
+;             clr.b     -1(a0,d0.w)
+;             jsr       Force_char_update    ; Update
+;             movem.l   (sp)+,d0/d4/d5/a0/a6
+;             rts
+;
+;.Text:       .DC.b "The healer puts his hand on the dead persons's forehead.",13
+;             .DC.b "White light pulses down his arm and all watch in awe",13
+;             .DC.b "as life returns to the once cold body. The resurrected",13
+;             .DC.b "person opens his eyes and asks 'What's for dinner ?'",0
+;             .EVEN
+
 Resurrection:
 	movem.l	d0/d4-d5/d7/a0-a2/a6,-(a7)
 	lea.l	$f0(a0),a2

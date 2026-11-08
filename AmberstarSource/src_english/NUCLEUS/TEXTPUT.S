@@ -15,22 +15,35 @@ IG_Backspace:
 	rts	
 T_1d8b4:
 	move.w	PArea,B_73702
-	move.w	D_526ea,Print_Y
+	move.w	D_526ea,B_73704
 	rts
 ; ---- IG_Carriage_return (original source: NUCLEUS/TEXTPUT.ASM)
 IG_Carriage_return:
 	movem.l	d0/a0,-(sp)
 	lea.l	PArea,a0
 	move.w	(a0),B_73702	; CHANGE: was "move.w (a0),Print_X"
-	move.w	Print_Y,d0
+	move.w	B_73704,d0	; CHANGE: was "move.w Print_Y,d0"
 	addq.w	#7,d0
 	cmp.w	6(a0),d0
 	bmi.s	.Skip
 	move.w	4(a0),d0
 .Skip:
-	move.w	d0,Print_Y
+	move.w	d0,B_73704	; CHANGE: was ".Skip: move.w d0,Print_Y"
 	movem.l	(sp)+,d0/a0
 	rts	
+
+; ---- IG_Set_ink (original source: NUCLEUS/TEXTPUT.ASM) - the shipped program differs, its code follows, not assembled:
+;IG_Set_ink:
+;             move.l    d0,-(sp)
+;             cmpi.w    #16,d0               ; Legal input ?
+;             bmi.s     .Skip
+;             ERROR     "[ IG_Set_ink ] : Illegal input !!!"
+;             bra.s     .Exit
+;.Skip:       lsl.w     #3,d0                ; Multiply by 8
+;             move.w    d0,IG_Ink            ; Store
+;.Exit:       move.l    (sp)+,d0
+;             rts
+
 IG_Set_ink:
 	move.l	d0,-(a7)
 	cmpi.w	#$10,d0
@@ -44,6 +57,25 @@ IG_Set_ink:
 .l_1d916:
 	move.l	(a7)+,d0
 	rts
+
+; ---- IG_Set_paper (original source: NUCLEUS/TEXTPUT.ASM) - the shipped program differs, its code follows, not assembled:
+;IG_Set_paper:
+;             move.l    d0,-(sp)
+;             tst.w     d0                   ; Transparent ?
+;             bpl.s     .Opaque
+;             move.w    d0,IG_Paper          ; Store
+;             move.l    #IG_Pchar_TRANS,Pchar_ptr
+;             bra.s     .Exit
+;.Opaque:     cmpi.w    #16,d0               ; Legal input ?
+;             bmi.s     .Skip
+;             ERROR     "[ IG_Set_paper ] : Illegal input !!!"
+;             bra.s     .Exit
+;.Skip:       lsl.w     #3,d0                ; Multiply by 8
+;             move.w    d0,IG_Paper          ; Store
+;             move.l    #IG_Pchar_OPAQUE,Pchar_ptr
+;.Exit:       move.l    (sp)+,d0
+;             rts
+
 IG_Set_paper:
 	move.l	d0,-(a7)
 	tst.w	d0
@@ -67,7 +99,7 @@ IG_Set_paper:
 ; ---- IG_Set_cursor (original source: NUCLEUS/TEXTPUT.ASM)
 IG_Set_cursor:
 	move.w	d0,B_73702	; CHANGE: was "move.w d0,Print_X"
-	move.w	d1,Print_Y
+	move.w	d1,B_73704	; CHANGE: was "move.w d1,Print_Y"
 	rts	
 ; ---- IG_Print (original source: NUCLEUS/TEXTPUT.ASM)
 IG_Print:
@@ -128,7 +160,7 @@ IG_Pchar_TRANS:
 	lsl.w	#2,d0
 	adda.w	d0,a0
 	move.w	B_73702,d0	; CHANGE: was "move.w Print_X,d0"
-	move.w	Print_Y,d1
+	move.w	B_73704,d1	; CHANGE: was "move.w Print_Y,d1"
 	jsr	Coord_convert
 	lea.l	0(a6,d2.w),a1
 	move.w	d3,d6
@@ -256,12 +288,136 @@ IG_Pchar_TRANS:
 .Exit:
 	movem.l	(sp)+,d0-d7/a0-a2
 	rts	
+
+; ---- IG_Pchar_OPAQUE (original source: NUCLEUS/TEXTPUT.ASM) - the shipped program differs, its code follows, not assembled:
+;IG_Pchar_OPAQUE:
+;             movem.l   d0-d7/a0-a2,-(sp)
+;             andi.w    #$00ff,d0
+;             move.w    d0,d6
+;; ------------- Clear character area ---------------------------------
+;             move.w    Print_X,d0           ; Calculate screen address
+;             move.w    Print_Y,d1
+;             jsr       Coord_convert
+;             lea.l     0(a6,d2.w),a0
+;             move.l    #$ffff03ff,d0        ; Get mask
+;             ror.l     d3,d0
+;             move.l    d0,d1
+;             swap.w    d1
+;             moveq.l   #6-1,d7
+;.Loop1:      and.w     d0,(a0)+             ; Clear first 16 pixels
+;             and.w     d0,(a0)+
+;             and.w     d0,(a0)+
+;             and.w     d0,(a0)+
+;             and.w     d1,(a0)+             ; Clear second 16 pixels
+;             and.w     d1,(a0)+
+;             and.w     d1,(a0)+
+;             and.w     d1,(a0)+
+;             lea.l     160-16(a0),a0        ; Next line
+;             dbra      d7,.Loop1
+;; ------------- Fill character buffer with paper colour --------------
+;             lea.l     Colour_table,a0      ; Get pointer to colour
+;             move.w    IG_Paper,d0
+;             adda.w    d0,a0
+;             move.l    (a0)+,d0
+;             move.l    (a0)+,d1
+;             lea.l     Char_buffer,a0
+;             moveq.l   #6-1,d7              ; Fill character buffer
+;.Loop2:      move.l    d0,(a0)+
+;             move.l    d1,(a0)+
+;             dbra      d7,.Loop2
+;; ------------- Put character in buffer ------------------------------
+;             lea.l     Text_conversion_tab-32,a0  ; Convert character
+;             tst.b     Rune_flag
+;             beq.s     .No_runes
+;             lea.l     Rune_conversion_tab-32,a0
+;.No_runes:   move.b    0(a0,d6.w),d0
+;             bmi       .Exit
+;             lea.l     Little_font,a0       ; Calculate font address
+;             ext.w     d0
+;             adda.w    d0,a0
+;             lsl.w     #2,d0
+;             adda.w    d0,a0
+;             lea.l     Colour_table,a1      ; Get pointer to colour
+;             adda.w    IG_Ink,a1
+;             lea.l     Char_buffer,a2
+;             moveq.l   #5-1,d7
+;.Loop3:      move.b    (a0)+,d0             ; Get line and duplicate twice
+;             lsl.w     #8,d0
+;             move.w    d0,d1
+;             swap.w    d0
+;             move.w    d1,d0
+;             move.l    d0,d1                ; Duplicate & invert
+;             not.l     d0
+;             move.l    d0,d2                ; Do shadow line
+;             ror.l     #1,d2
+;             and.l     d2,8(a2)
+;             and.l     d2,12(a2)
+;             move.l    d0,d2                ; Duplicate
+;             move.l    d1,d3
+;             or.l      (a1),d0              ; Colour masking
+;             and.l     (a1),d1
+;             or.l      4(a1),d2
+;             and.l     4(a1),d3
+;             move.l    (a2),d4              ; Write line to buffer
+;             and.l     d0,d4
+;             or.l      d1,d4
+;             move.l    d4,(a2)+
+;             move.l    (a2),d4
+;             and.l     d2,d4
+;             or.l      d3,d4
+;             move.l    d4,(a2)+
+;             dbra      d7,.Loop3            ; Next line
+;; ------------- Put character buffer on screen -----------------------
+;             lea.l     Char_buffer,a0
+;             move.w    Print_X,d0           ; Calculate screen address
+;             move.w    Print_Y,d1
+;             jsr       Coord_convert
+;             lea.l     0(a6,d2.w),a1
+;             move.w    d3,d6
+;             moveq.l   #6-1,d7
+;.Loop4:      moveq.l   #0,d0                ; Clear registers
+;             moveq.l   #0,d1
+;             moveq.l   #0,d2
+;             moveq.l   #0,d3
+;             move.w    (a0)+,d0             ; Load one line
+;             move.w    (a0)+,d1
+;             move.w    (a0)+,d2
+;             move.w    (a0)+,d3
+;             ror.l     d6,d0                ; Rotate
+;             ror.l     d6,d1
+;             ror.l     d6,d2
+;             ror.l     d6,d3
+;             or.w      d0,(a1)+             ; Display first half
+;             or.w      d1,(a1)+
+;             or.w      d2,(a1)+
+;             or.w      d3,(a1)+
+;             swap.w    d0                   ; Swap to second half
+;             swap.w    d1
+;             swap.w    d2
+;             swap.w    d3
+;             or.w      d0,(a1)+             ; Display second half
+;             or.w      d1,(a1)+
+;             or.w      d2,(a1)+
+;             or.w      d3,(a1)+
+;             lea.l     160-16(a1),a1        ; Next line
+;             dbra      d7,.Loop4
+;; ------------- Update cursor position -------------------------------
+;             move.w    Print_X,d0           ; Load X-coordinate
+;             addq.w    #6,d0                ; Cursor forward
+;             cmp.w     PArea+2,d0           ; Check for end of line
+;             bmi.s     .Skip
+;             jsr       IG_Carriage_return
+;             bra.s     .Exit
+;.Skip:       move.w    d0,Print_X           ; Store new X-coordinate
+;.Exit:       movem.l   (sp)+,d0-d7/a0-a2
+;             rts
+
 IG_Pchar_OPAQUE:
 	movem.l	d0-d7/a0-a2,-(a7)
 	andi.w	#$ff,d0
 	move.w	d0,d6
 	move.w	B_73702,d0
-	move.w	Print_Y,d1
+	move.w	B_73704,d1
 	jsr	Coord_convert
 	lea.l	(a6,d2.w),a0
 	move.l	#$ffff03ff,d0
@@ -336,7 +492,7 @@ IG_Pchar_OPAQUE:
 	dbra	d7,.l_1dbd8
 	lea.l	Char_buffer,a0
 	move.w	B_73702,d0
-	move.w	Print_Y,d1
+	move.w	B_73704,d1
 	jsr	Coord_convert
 	lea.l	(a6,d2.w),a1
 	move.w	d3,d6
@@ -380,6 +536,144 @@ IG_Pchar_OPAQUE:
 .l_1dc8c:
 	movem.l	(a7)+,d0-d7/a0-a2
 	rts
+
+; ---- Move_mouse (original source: MAIN/MAP/MAP.ASM) - the shipped program differs, its code follows, not assembled:
+;Move_mouse:
+;             tst.b     Overweight           ; Possible ?
+;             bne.s     .Exit
+;             move.w    Mouse_direction,d0   ; Get routine address
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             movea.l   Mousemove_ptr,a0
+;             movea.l   0(a0,d0.w),a0
+;             jsr       (a0)                 ; Execute
+;.Exit:       rts
+
+
+; ---- Buy_food (original source: MAIN/PLACES.ASM) - the shipped program differs, its code follows, not assembled:
+;Buy_food:
+;             Wait_4_unclick
+;             moveq.l   #0,d1                ; How many can you buy ?
+;             move.w    Places_gold,d1
+;             divu.w    Total_price,d1
+;             cmpi.w    #99,d1               ; Too much ?
+;             bmi.s     .Not2much
+;             moveq.l   #99,d1
+;.Not2much:   ext.l     d1                   ; Store
+;             move.l    d1,Original_number
+;             clr.l     ItemW_nr
+;             lea.l     BuyFood_Mod,a0       ; How many do you want ?
+;             jmp       Push_Module
+
+
+; ---- DIA_Show_item (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;DIA_Show_item:
+;             Wait_4_unclick
+;             lea.l     ShowItem_Mod,a0
+;             jmp       Push_Module
+
+
+; ---- SpellClass_ptrs (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;SpellClass_ptrs:
+;             .DC.l WhiteM_ptrs,GreyM_ptrs,BlackM_ptrs
+;             .DC.l 0,0,0,MonsterM_ptrs
+;
+;WhiteM_ptrs: .DC.l Heal_1,Heal_2,Heal_3,Heal_4,Heal_5,Heal_all
+;             .DC.l Resurrect,Change_ashes,Change_dust
+;             .DC.l Heal_poisoned,Heal_lamed,Heal_diseased,Heal_aged
+;             .DC.l Heal_stoned,Heal_sleep,Heal_panic,Heal_irritated
+;             .DC.l Heal_blind,Heal_mad
+;             .DC.l Make_lamed,Make_sleep,Make_panic,Make_irritated
+;             .DC.l Make_blind
+;             .DC.l Kill_undead,Holy_word,Remove_curse,Create_food
+;
+;GreyM_ptrs:  .DC.l Light_1,Light_2,Light_3
+;             .DC.l Armour_1,Armour_2,Armour_3
+;             .DC.l Weapon_1,Weapon_2,Weapon_3
+;             .DC.l AntiMagic_1,AntiMagic_2,AntiMagic_3
+;             .DC.l ClearV_1,ClearV_2,ClearV_3
+;             .DC.l Invisible_1,Invisible_2,Invisible_3
+;             .DC.l Magic_sphere,Magic_compass,Identify
+;             .DC.l Levitate,Hurry,Mega_hurry,MTeleport
+;             .DC.l Look_through
+;
+;BlackM_ptrs: .DC.l Fire_beam,Fire_push,Fire_ball,Fire_storm,Fire_waltz
+;             .DC.l Water_hole,Waterfall,Ice_ball,Ice_shower
+;             .DC.l Hail_storm,Dirt_sling,Stone_storm,Swamp_field
+;             .DC.l Earth_slide,Earthquake,Wind_push,Wind_devil
+;             .DC.l Wind_howler,Thunderstrike,Whirlwind
+;             .DC.l Dissolve,Magic_arrows
+
+
+; ---- Do_RemCurse (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_RemCurse:
+;             Wait_4_unclick
+;             tst.b     d0                   ; Any slot selected ?
+;             beq       .Exit
+;             move.b    d0,Object_slot_number      ; Store
+;             ext.w     d0
+;             subq.w    #1,d0
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             lea.l     Neck_place_counter(a0),a1
+;             adda.w    d0,a1
+;             tst.b     (a1)                 ; Any object in this slot ?
+;             beq       .Exit
+;             lea.l     Inv_data(a0),a2
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;             btst      #0,Item_stat_bits(a2)      ; Actually cursed ?
+;             beq       .Exit
+;
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;  a0 - Pointer to character data (.l)
+;;  a1 - Pointer to object slot (.l)
+;;  a2 - Pointer to object data (.l)
+;
+;             jsr       Handle_spell         ; Try
+;             bmi       .Leave
+;             jsr       Mouse_off
+;             moveq.l   #50,d0               ; Wait 1 second
+;             jsr       Delay
+;             clr.b     (a1)                 ; Remove object
+;             moveq.l   #0,d2
+;             move.w    Weight(a2),d2
+;             sub.l     d2,Weight_normal(a0)
+;             moveq.l   #0,d2                ; Get icon numbers
+;             moveq.l   #0,d3
+;             move.b    (a2),d2
+;             lea.l     Erase_icon,a3
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             move.b    -1(a3,d0.w),d3
+;             lea.l     Object_pos_list-4,a3 ; Get coordinates
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             move.w    2(a3,d0.w),d1
+;             move.w    0(a3,d0.w),d0
+;             jsr       Show_item_destruction      ; Destroy
+;             moveq.l   #50,d0               ; Wait 1 second
+;             jsr       Delay
+;.Leave:      Pop       Module               ; Exit
+;             jsr       Mouse_on
+;             tst.b     Magic_object_flag    ; Already in Inventory 2 ?
+;             bne.s     .Exit
+;             jsr       Init_display
+;.Exit:       rts
+
+
+; ---- Split_memory_block (original source: NUCLEUS/MEMORY.ASM) - the shipped program differs, its code follows, not assembled:
+;Split_memory_block:
+;             move.l    a0,-(sp)
+;             lea.l     12(a0),a0            ; Increase Ptr
+;             jsr       Insert_memblock      ; Insert
+;             move.l    -12(a0),(a0)         ; Initialize 2nd block
+;             move.l    4-12(a0),4(a0)
+;             move.w    #$8000,8(a0)
+;             add.l     d1,(a0)
+;             sub.l     d1,4(a0)
+;             movea.l   (sp)+,a0
+;             rts
+
 
 	section	data
 

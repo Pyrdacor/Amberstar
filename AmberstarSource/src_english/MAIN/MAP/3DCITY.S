@@ -56,6 +56,40 @@ C3_ModInit:
 	bsr.w	Event_handler	; CHANGE: added
 .Exit:
 	rts	
+
+; ---- C3_DisInit (original source: MAIN/MAP/3DCITY.ASM) - the shipped program differs, its code follows, not assembled:
+;C3_DisInit:
+;             movea.l   Mapd_ptr,a5          ; Get pointer to map data
+;             jsr       Set_spell_area
+;; ------------- Initialize display -----------------------------------
+;             movea.l   Off_screen,a6        ; Get screen base
+;             moveq.l   #5,d0                ; Show 2D map layout
+;             jsr       Show_layout
+;             jsr       Print_headline
+;             move.l    #M3_CIL,First_CIL_ptr      ; Display control icons
+;             jsr       Handle_CIL
+;             jsr       Show_control_icons
+;             jsr       C3_DisUpd            ; Display 3D map
+;             Update_screen
+;; ------------- Various installations --------------------------------
+;             sf        Time_lock
+;             lea.l     Lay5_c1,a0           ; Object branch
+;             jsr       Set_layout_data
+;             move.l    #M3_CIL+10,Mousemove_ptr   ; Mouse actions
+;; ------------- Fade-in display --------------------------------------
+;             lea.l     Skypal_buffer,a1     ; Fade in
+;             lea.l     Subfade1,a2
+;.Again:      lea.l     Hbl_C3_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             jsr       My_vsync             ; Wait 2 Vbl's
+;             jsr       My_vsync
+;             lea.l     Below_pal_C3,a0      ; Fade
+;             jsr       List_fade
+;             bne.s     .Again
+;             lea.l     Hbl_C3_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             rts
+
 C3_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
@@ -238,6 +272,46 @@ C3_time_evaluate:
 .Exit:
 	movem.l	(sp)+,d0/a0-a2
 	rts	
+
+; ---- Shadow_handler (original source: MAIN/MAP/SHADOW.ASM) - the shipped program differs, its code follows, not assembled:
+;Shadow_handler:
+;             movem.l   d0-d5/d7/a0-a4,-(sp)
+;             tst.b     Shadow_flag          ; Display shadow ?
+;             beq       .Exit
+;             lea.l     Spiral_table,a0      ; Initialize registers
+;             lea.l     Underlay_buf,a1
+;             lea.l     Overlay_buf,a2
+;             lea.l     Persons_buf,a3
+;             movea.l   Iconstats_ptr,a5
+;             moveq.l   #10,d2               ; Calculate boundaries
+;             moveq.l   #0,d3
+;             moveq.l   #8,d4
+;             moveq.l   #0,d5
+;             sub.w     Mapbuf_X,d2
+;             sub.w     Mapbuf_X,d3
+;             sub.w     Mapbuf_Y,d4
+;             sub.w     Mapbuf_Y,d5
+;             add.w     Half_X,d2
+;             add.w     Half_X,d3
+;             add.w     Half_Y,d4
+;             add.w     Half_Y,d5
+;             move.w    #219,d7              ; 220 entries in spiral
+;.Loop:       move.b    (a0),d0              ; Load X
+;             cmp.b     d2,d0                ; X too high ?
+;             bgt.s     .Next
+;             cmp.b     d3,d0                ; X too low ?
+;             blt.s     .Next
+;             move.b    1(a0),d1             ; Load Y
+;             cmp.b     d4,d1                ; Y too high ?
+;             bgt.s     .Next
+;             cmp.b     d5,d1                ; Y too low ?
+;             blt.s     .Next
+;             jsr       Do_shadow            ; Yay!
+;.Next:       addq.l    #2,a0                ; Next
+;             dbra      d7,.Loop
+;.Exit:       movem.l   (sp)+,d0-d5/d7/a0-a4
+;             rts
+
 Shadow_handler:
 	movem.l	d0-d5/d7/a0-a6,-(a7)
 	tst.b	D_1e1fa
@@ -294,7 +368,7 @@ B_579b8:
 	ds.b	166
 Old_11:
 	ds.b	2
-Window_handle:
+B_57a60:
 	ds.b	2
 B_57a62:
 	ds.b	2

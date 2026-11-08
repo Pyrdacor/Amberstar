@@ -13,7 +13,8 @@ constants_include = None
 for x in sys.argv[3:]:
     if x.endswith('.json'):
         for nm, v in json.load(open(x)).items():
-            if v.get('state') == 'same' and v.get('source'):
+            # (routines without code, e.g. a label of the original, stay labels)
+            if v.get('state') == 'same' and v.get('source') and v.get('size'):
                 merge[v['addr']] = (nm, v['size'], v['source'], v['file'])
     if x.endswith('.i'):
         constants_include = x
@@ -138,7 +139,7 @@ def try_path(a, limit=600):
         if pos >= tlen or pos in code_bytes: return None
         i = decode(pos)
         if i is None or isinstance(i, Pseudo) or i.mnemonic in ('illegal',): return None
-        if any(pos < x < pos + i.size for x in code): return None
+        if any(x in code for x in range(pos + 1, pos + i.size)): return None
         # data which decodes as code mostly contains absolute addresses which are not relocated
         if re.search(r'\$[0-9a-f]{5,}\.l', i.op_str) and not any(r in relocs for r in range(pos + 2, pos + i.size)):
             return None
@@ -404,9 +405,55 @@ data_segments, bss_segments = [], []
 def module_boundary(p):
     if p in boundaries:
         segments.append((len(lines), boundaries[p]))
+# routines of the original which are not in the merged source (merge.json.unplaced.json): written as comments in front
+# of their code in the program, or in front of the next routine of their file which is in the program
+unplaced_blocks = collections.defaultdict(list)
+for x in sys.argv[3:]:
+    if x.endswith('.json') and os.path.exists(x + '.unplaced.json'):
+        up = json.load(open(x + '.unplaced.json'))
+        order, files = up['order'], up['files']
+        placed = {nm: (a, a + size) for a, (nm, size, _, _) in merge.items()}
+        for u in up['unplaced']:
+            if u['addr'] is not None and u['addr'] < tlen: placed.setdefault(u['name'], (u['addr'], None))
+        import bisect
+        merged_ranges = sorted((a, a + v[1]) for a, v in merge.items())
+        merged_starts = [s for s, _ in merged_ranges]
+        def inside_merged(a):
+            k = bisect.bisect_left(merged_starts, a) - 1
+            return k >= 0 and merged_ranges[k][0] < a < merged_ranges[k][1]
+        first_in_file = {}
+        for a, fl in file_of_addr.items():
+            if a < tlen and not inside_merged(a) and (fl not in first_in_file or a < first_in_file[fl]): first_in_file[fl] = a
+        for u in up['unplaced']:
+            nm, f, k = u['name'], u['file'], u['order']
+            pos_u = u['addr'] if u['addr'] is not None and u['addr'] < tlen and not inside_merged(u['addr']) else None
+            if pos_u is None:
+                for nxt in order[k + 1:]:
+                    if files[nxt] != f: break
+                    if nxt in placed and not inside_merged(placed[nxt][0]): pos_u = placed[nxt][0]; break
+            if pos_u is None:
+                for prv in reversed(order[:k]):
+                    if files[prv] != f: break
+                    if prv in placed and placed[prv][1] is not None: pos_u = placed[prv][1]; break
+            if pos_u is None:
+                pos_u = first_in_file.get(f, tlen)
+            if f == 'MAIN/STATUS.ASM': why = 'only in the debug build'
+            elif u['state'] == 'no address': why = 'not found in the shipped program, the original source is older'
+            else: why = 'the shipped program differs, its code follows'
+            block = ['', '; ---- %s (original source: %s) - %s, not assembled:' % (nm, f, why)]
+            block += [(';' + l.rstrip()) if l.strip() else ';' for l in u['lines']]
+            unplaced_blocks[pos_u].append((k, block))
+unplaced_emitted = set()
+def emit_unplaced(p):
+    if p in unplaced_blocks and p not in unplaced_emitted:
+        unplaced_emitted.add(p)
+        for _, block in sorted(unplaced_blocks[p]): lines.extend(block)
+        lines.append('')
+
 text_start = len(lines)
 while pos < tlen:
     if split_dir: module_boundary(pos)
+    emit_unplaced(pos)
     if pos in merge:
         nm, size, src, f = merge[pos]
         own = nm
@@ -450,6 +497,10 @@ while pos < tlen:
         while nxt < tlen and nxt not in code and nxt not in labels: nxt += 1
         emit_bytes(lines, pos, nxt)
         pos = nxt
+
+# comments whose place was not reached (e.g. inside data) are written at the end of the text
+for p in sorted(unplaced_blocks):
+    emit_unplaced(p)
 
 # names of addresses inside an instruction (or a relocated longword) are defined relative to its start
 for t in sorted(inside):

@@ -70,6 +70,43 @@ Recalc_mapbuf_coords:
 .Go_2:
 	movem.l	(sp)+,d0/d1
 	rts	
+
+; ---- C2_DisInit (original source: MAIN/MAP/2DCITY.ASM) - the shipped program differs, its code follows, not assembled:
+;C2_DisInit:
+;             movea.l   Mapd_ptr,a5          ; Get pointer to map data
+;             jsr       Set_spell_area
+;; ------------- Initialize display -----------------------------------
+;             movea.l   Off_screen,a6        ; Get screen base
+;             moveq.l   #1,d0                ; Show 2D map layout
+;             jsr       Show_layout
+;             jsr       Print_headline
+;             move.l    #C2_CIL,First_CIL_ptr      ; Display control icons
+;             jsr       Handle_CIL
+;             jsr       Show_control_icons
+;             jsr       C2_DisUpd            ; Display 2D map
+;             Update_screen
+;; ------------- Various installations --------------------------------
+;             sf        Time_lock
+;             lea.l     Lay1_c1,a0           ; Object branch
+;             jsr       Set_layout_data
+;             move.l    #C2_CIL+10,Mousemove_ptr   ; Mouse actions
+;; ------------- Fade-in display --------------------------------------
+;             movea.l   Icondata_ptr,a0      ; Convert IFF-palette
+;             lea.l     Icon_palette(a0),a0
+;             lea.l     Pal_buffer,a1
+;             jsr       IFF_pal_convert
+;             lea.l     Subfade1,a2          ; Fade in
+;.Again:      lea.l     Hbl_2D_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             jsr       My_vsync             ; Wait 2 Vbl's
+;             jsr       My_vsync
+;             lea.l     Below_pal_2D,a0      ; Fade
+;             jsr       Fade_pal
+;             bne.s     .Again
+;             lea.l     Hbl_2D_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             rts
+
 C2_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
@@ -335,6 +372,54 @@ C2_left:
 	tst.w	d2
 	movem.l	(sp)+,d0-d2
 	rts	
+
+; ---- C2_DisUpd (original source: MAIN/MAP/2DCITY.ASM) - the shipped program differs, its code follows, not assembled:
+;C2_DisUpd:
+;             movem.l   d0/d1/d6/d7/a0-a4,-(sp)
+;             movea.l   Map_pointer,a1       ; Calculate map address
+;             move.w    Map_Xcoord,d0
+;             sub.w     Mapbuf_X,d0
+;             subq.w    #2,d0
+;             adda.w    d0,a1
+;             move.w    Map_Ycoord,d0
+;             sub.w     Mapbuf_Y,d0
+;             subq.w    #2,d0
+;             move.w    Width_of_map,d1
+;             mulu.w    d1,d0
+;             adda.w    d0,a1
+;             subi.w    #13,d1               ; Get map width - 13
+;             movea.l   a1,a2                ; Copy maps to buffer
+;             adda.w    Size_of_map,a2
+;             lea.l     Underlay_buf,a3
+;             lea.l     Overlay_buf,a4
+;             moveq.l   #10,d7
+;.Loop_1:     moveq.l   #12,d6
+;.Loop_2:     move.b    (a1)+,(a3)+          ; Copy underlay & overlay
+;             move.b    (a2)+,(a4)+
+;             dbra      d6,.Loop_2
+;             adda.w    d1,a1
+;             adda.w    d1,a2
+;             dbra      d7,.Loop_1
+;             move.w    Map_Xcoord,d0        ; Get map coordinates
+;             move.w    Map_Ycoord,d1
+;             jsr       Get_2D_icon_status   ; Get icon status
+;             btst.l    #3,d1                ; Overlay icon change ?
+;             sne       Party_invisible
+;             beq.s     .Skip
+;             lea.l     Overlay_buf+14,a0    ; Change icon
+;             move.w    Mapbuf_Y,d0
+;             mulu.w    #13,d0
+;             add.w     Mapbuf_X,d0
+;             addq.b    #1,0(a0,d0.w)
+;.Skip:       jsr       TwoD_char_handler    ; Handle persons
+;             jsr       Build_2D_map         ; Build 2D map
+;             jsr       Update_map_CIL
+;             tst.b     CombatReq            ; Start combat ?
+;             beq.s     .Exit
+;             Push      Module,CombatReq_Mod
+;.Exit:       movem.l   (sp)+,d0/d1/d6/d7/a0-a4
+;             rts
+
 C2_DisUpd:
 	movem.l	d0-d1/d6-d7/a0-a4,-(a7)
 	movea.l	Map_pointer,a1

@@ -2,6 +2,71 @@
 
 	section	text
 
+; ---- Cast_spell (original source: MAIN/MAGIC.ASM)
+Cast_spell:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+; CHANGE: removed "sf No_spell_selected"
+	sf	Magic_object_flag
+	movea.l	Current_active_char_data,a0
+	move.b	Spell_class_counter(a0),d0
+	moveq.l	#0,d1
+	moveq.l	#1,d2
+	moveq.l	#7-1,d7
+.Loop:
+	btst	d2,d0
+	beq.s	.Next
+	move.w	d2,Selected_class
+	addq.w	#1,d1
+.Next:
+	addq.w	#1,d2
+	dbra	d7,.Loop
+	move.w	d1,Nr_of_spell_classes
+	lea.l	Spells_class_1(a0),a0
+	move.w	Selected_class,d0
+	add.w	d0,d0
+	add.w	d0,d0
+	tst.l	-4(a0,d0.w)
+	beq.s	.Exit
+	cmpi.w	#1,d1
+	bne.s	.More
+	lea.l	SpSelW_Mod,a0
+	bsr.w	Push_Module
+	bra.s	.Exit
+.More:
+	lea.l	SCSelW_Mod,a0
+	bsr.w	Push_Module
+.Exit:
+	rts	
+
+; ---- Do_magic (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_magic:
+;             movem.l   d0-d7/a0-a6,-(sp)
+;             tst.b     No_spell_selected    ; Any spell selected ?
+;             bne       .Exit
+;             lea.l     Spell_dat-124,a0     ; Get pointer to spell data
+;             move.w    Selected_class,d0
+;             mulu.w    #120,d0
+;             adda.w    d0,a0
+;             move.w    Selected_spell,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a0
+;             move.l    a0,Spelldat_ptr
+;             lea.l     SpellClass_ptrs,a0   ; Get class
+;             move.w    Selected_class,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             movea.l   -4(a0,d0.w),a0
+;             move.w    Selected_spell,d0    ; Get spell address
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             movea.l   -4(a0,d0.w),a0
+;             jsr       (a0)                 ; Execute
+;.Exit:       movem.l   (sp)+,d0-d7/a0-a6
+;             rts
+
 Do_magic:
 	tst.b	Battling
 	bne.b	.l_137ea
@@ -52,7 +117,7 @@ Do_magic:
 	add.w	d0,d0
 	adda.w	d0,a0
 	move.l	a0,B_58824
-	lea.l	.l_138ba,a0
+	lea.l	T_138ba,a0
 	move.w	Selected_class,d0
 	add.w	d0,d0
 	add.w	d0,d0
@@ -69,7 +134,7 @@ Do_magic:
 .l_138b4:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
-.l_138ba:
+T_138ba:
 	dc.l	.l_138d6
 	dc.l	.l_13946
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -80,21 +145,21 @@ Do_magic:
 	dc.l	Heal_3
 	dc.l	Heal_4
 	dc.l	Heal_5
-	dc.l	T_13bd0
-	dc.l	T_13c12
-	dc.l	T_13c96
+	dc.l	Heal_all
 	dc.l	Resurrect
+	dc.l	Change_ashes
+	dc.l	Change_dust
+	dc.l	Heal_poisoned
+	dc.l	Heal_lamed
 	dc.l	Heal_diseased
 	dc.l	Heal_aged
 	dc.l	Heal_stoned
-	dc.l	Heal_panic
-	dc.l	Heal_irritated
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Heal_blind
 	dc.l	Heal_mad
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	Weapon_gunk
+	dc.l	Remove_curse
 	dc.l	Create_food
 .l_13946:
 	dc.l	Light_1
@@ -118,10 +183,10 @@ Do_magic:
 	dc.l	Magic_sphere
 	dc.l	Magic_compass
 	dc.l	Identify
-	dc.l	T_14432
+	dc.l	Levitate
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_144dc
-	dc.l	T_145e4
+	dc.l	MTeleport
+	dc.l	Look_through
 .l_139ae:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -130,11 +195,40 @@ Do_magic:
 	dc.b	$00,$00,$00,$00
 	dc.l	Spellpts1
 	dc.l	Spellpts2
-	dc.l	T_14d9a
+	dc.l	Weapon_gunk
 	dc.l	Youth
 	dc.b	$00,$00,$00,$00
 	dc.l	T_150a8
 	dc.l	T_152fc
+
+; ---- MonsterM_ptrs (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;MonsterM_ptrs:
+;             .DC.l Lame_it,Poison_it,Stone_it,Disease_it,Age_it
+;             .DC.l Irritate_it,Madden_it,Sleep_it,Panic_it,Blind_it
+;             .DC.l Stone_monster,Map_view,Banish_demon,Spellpts1,Spellpts2
+;             .DC.l Weapon_gunk,Youth,0,Call_eagle
+
+; ---- Handle_spell (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Handle_spell:
+;             movem.l   d0/a0/a1,-(sp)
+;             tst.b     Magic_object_flag    ; Magical object ?
+;             beq.s     .No_object
+;             jsr       Remove_used_magic_item     ; Remove item
+;             moveq.l   #0,d0                ; Force pl
+;             bra.s     .Exit
+;.No_object:  movea.l   Spelldat_ptr,a0      ; Remove spell points
+;             movea.l   Current_active_char_data,a1
+;             move.b    1(a0),d0
+;             ext.w     d0
+;             sub.w     d0,Power_points_normal(a1)
+;             moveq.l   #0,d0                ; Probe magic using skill
+;             move.b    Skill_10(a1),d0
+;             add.w     Skill_10_normal_magic(a1),d0
+;             jsr       Probe
+;             smi       Spell_failed         ; Set flag
+;.Exit:       movem.l   (sp)+,d0/a0/a1
+;             rts
+
 Handle_spell:
 	movem.l	d0-d1/a0-a1,-(a7)
 	tst.b	Magic_object_flag
@@ -267,7 +361,32 @@ Common_heal:
 	bsr.w	Do_sparkle
 .Exit:
 	rts	
-T_13bd0:
+
+; ---- Heal_all (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Heal_all:
+;             jsr       Handle_spell         ; Try
+;             bmi       .Exit
+;             lea.l     Chard_ptrs,a0        ; All healing
+;             moveq.l   #1,d0
+;             moveq.l   #6-1,d7
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a0),a1              ; Get pointer to data
+;             move.w    #$e000,d1            ; Alive and kicking ?
+;             and.w     Body_conditions(a1),d1
+;             bne.s     .Next
+;             move.w    Life_points_max(a1),d2     ; Fill it up !
+;             add.w     Life_points_max_magic(a1),d2
+;             cmp.w     Life_points_normal(a1),d2  ; Less than normal ?
+;             bmi.s     .Next
+;             move.w    d2,Life_points_normal(a1)
+;             jsr       Do_sparkle           ; Sparkle!
+;.Next:       addq.w    #1,d0                ; Next character
+;             addq.l    #4,a0
+;             dbra      d7,.Loop
+;.Exit:       rts
+
+Heal_all:
 	bsr.w	Handle_spell
 	bmi.b	.l_13c10
 	lea.l	Chard_ptrs,a1
@@ -293,7 +412,37 @@ T_13bd0:
 	bmi.b	.l_13bde
 .l_13c10:
 	rts
-T_13c12:
+
+; ---- Resurrect (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Resurrect:
+;             movea.l   Textfile_ptr,a0      ; Print text
+;             move.l    #Code0007Sys,Textfile_ptr
+;             move.w    #2,WText_nr
+;             Push      Module,TxtW_Mod
+;             move.l    a0,Textfile_ptr
+;             lea.l     VictimSel_Mod,a0     ; Select a victim
+;             move.l    #.Continue,Return_ptr(a0)
+;             jmp       Push_Module
+;.Continue:
+;             Pop       Module               ; Remove text
+;             tst.b     Victim_selected      ; Any selected ?
+;             beq.s     .Exit
+;             movea.l   Victim_ptr,a0        ; Actually dead ?
+;             move.b    Body_conditions(a0),d0
+;             btst      #5,d0
+;             beq.s     .Exit
+;             jsr       Handle_spell         ; Try
+;             bmi.s     .Failed
+;             bclr      #5,d0                ; Resurrect !
+;             bra.s     .End
+;.Failed:     bset      #6,d0                ; Change to ashes
+;.End:        move.b    d0,Body_conditions(a0)     ; Store
+;             move.w    Victim_nr,d0         ; Show
+;             jsr       Do_sparkle
+;             jsr       Resurrection         ; Resurrect !
+;.Exit:       rts
+
+Resurrect:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$2,WText_nr
@@ -325,7 +474,37 @@ T_13c12:
 	bsr.w	Do_sparkle
 .l_13c94:
 	rts
-T_13c96:
+
+; ---- Change_ashes (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Change_ashes:
+;             movea.l   Textfile_ptr,a0      ; Print text
+;             move.l    #Code0007Sys,Textfile_ptr
+;             move.w    #3,WText_nr
+;             Push      Module,TxtW_Mod
+;             move.l    a0,Textfile_ptr
+;             lea.l     VictimSel_Mod,a0     ; Select a victim
+;             move.l    #.Continue,Return_ptr(a0)
+;             jmp       Push_Module
+;.Continue:
+;             Pop       Module               ; Remove text
+;             tst.b     Victim_selected      ; Any selected ?
+;             beq.s     .Exit
+;             movea.l   Victim_ptr,a0        ; Actually ashes ?
+;             move.b    Body_conditions(a0),d0
+;             btst      #6,d0
+;             beq.s     .Exit
+;             jsr       Handle_spell         ; Try
+;             bmi.s     .Failed
+;             bclr      #6,d0                ; Ashes to dead !
+;             bra.s     .End
+;.Failed:     bset      #7,d0                ; Change to dust
+;.End:        move.b    d0,Body_conditions(a0)     ; Store
+;             move.w    Victim_nr,d0         ; Show
+;             jsr       Do_sparkle
+;             jsr       Force_char_update
+;.Exit:       rts
+
+Change_ashes:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$3,WText_nr
@@ -358,8 +537,43 @@ T_13c96:
 	jsr	Force_char_update
 .l_13d1e:
 	rts
-Resurrect:
-Change_ashes:
+
+; ---- Change_dust (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Change_dust:
+;             movea.l   Textfile_ptr,a0      ; Print text
+;             move.l    #Code0007Sys,Textfile_ptr
+;             move.w    #4,WText_nr
+;             Push      Module,TxtW_Mod
+;             move.l    a0,Textfile_ptr
+;             lea.l     VictimSel_Mod,a0     ; Select a victim
+;             move.l    #.Continue,Return_ptr(a0)
+;             jmp       Push_Module
+;.Continue:
+;             Pop       Module               ; Remove text
+;             tst.b     Victim_selected      ; Any selected ?
+;             beq.s     .Exit
+;             movea.l   Victim_ptr,a0        ; Actually dust ?
+;             move.b    Body_conditions(a0),d0
+;             btst      #7,d0
+;             beq.s     .Exit
+;             jsr       Handle_spell         ; Try
+;             bmi.s     .Failed
+;             bclr      #7,d0                ; Dust to ashes !
+;             bra.s     .End
+;.Failed:
+;; KILL FOREVER !!!
+;             DIAG_ON
+;             PRINT     "He's dead forever !!!"
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;
+;.End:        move.b    d0,Body_conditions(a0)     ; Store
+;             move.w    Victim_nr,d0         ; Show
+;             jsr       Do_sparkle
+;             jsr       Force_char_update
+;.Exit:       rts
+
+Change_dust:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$4,WText_nr
@@ -387,31 +601,39 @@ Change_ashes:
 	jsr	Force_char_update
 .l_13d98:
 	rts
+; ---- Heal_poisoned (original source: MAIN/MAGIC.ASM)
+Heal_poisoned:
+	moveq.l	#5,d0
+	moveq.l	#9,d1
+	bra.w	Common_heal_condition
+; ---- Heal_lamed (original source: MAIN/MAGIC.ASM)
+Heal_lamed:
+	moveq.l	#6,d0
+	moveq.l	#8,d1
+	bra.w	Common_heal_condition
 ; ---- Heal_diseased (original source: MAIN/MAGIC.ASM)
 Heal_diseased:
-	moveq	#5,d0	; CHANGE: was "moveq.l #7,d0"
-	moveq	#9,d1	; CHANGE: was "moveq.l #11,d1"
+	moveq.l	#7,d0
+	moveq.l	#11,d1
 	bra.w	Common_heal_condition
 ; ---- Heal_aged (original source: MAIN/MAGIC.ASM)
 Heal_aged:
-	moveq	#6,d0	; CHANGE: was "moveq.l #8,d0"
-	moveq	#8,d1	; CHANGE: was "moveq.l #12,d1"
+	moveq.l	#8,d0
+	moveq.l	#12,d1
 	bra.w	Common_heal_condition
 ; ---- Heal_stoned (original source: MAIN/MAGIC.ASM)
-Heal_stoned:
-	moveq	#7,d0	; CHANGE: was "moveq.l #9,d0"
-	moveq	#11,d1	; CHANGE: was "moveq.l #10,d1"
-	bra.w	Common_heal_condition
-; ---- Heal_panic (original source: MAIN/MAGIC.ASM)
-Heal_panic:
-	moveq	#8,d0	; CHANGE: was "moveq.l #10,d0"
-	moveq	#12,d1	; CHANGE: was "moveq.l #3,d1"
-	bra.w	Common_heal_condition
-; ---- Heal_irritated (original source: MAIN/MAGIC.ASM)
 Heal_irritated:
-	moveq	#9,d0	; CHANGE: was "moveq.l #11,d0"
-	moveq	#10,d1	; CHANGE: was "moveq.l #0,d1"
+Heal_stoned:
+	moveq.l	#9,d0
+	moveq.l	#10,d1
 	bra.w	Common_heal_condition
+
+; ---- Heal_panic (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Heal_panic:
+;             moveq.l   #10,d0               ; Heal panic
+;             moveq.l   #3,d1
+;             jmp       Common_heal_condition
+
 ; ---- Heal_blind (original source: MAIN/MAGIC.ASM)
 Heal_blind:
 	moveq.l	#12,d0
@@ -450,9 +672,54 @@ Common_heal_condition:
 	bsr.w	Do_sparkle
 .Exit:
 	rts	
-; ---- Weapon_gunk (original source: MAIN/MAGIC.ASM)
+
+; ---- Heal_sleep (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Heal_sleep:
+;             jsr       Handle_spell         ; Try
+;             bmi       .Exit
+;             lea.l     Chard_ptrs,a0        ; Do !
+;             moveq.l   #1,d0
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             move.w    Body_conditions(a0),d1     ; Alive and kicking ?
+;             andi.w    #$e000,d1
+;             bne.s     .Next
+;             bclr      #2,Mind_conditions(a0)     ; Wake up !!
+;             jsr       Do_sparkle           ; Show
+;.Next:       addq.l    #4,a0                ; Next member
+;             addq.w    #1,d0
+;             cmpi.w    #6+1,d0
+;             bmi.s     .Loop
+;.Exit:       rts
+
+; ---- Make_lamed (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Make_lamed:
+
+; ---- Make_sleep (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Make_sleep:
+
+; ---- Make_panic (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Make_panic:
+
+; ---- Make_irritated (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Make_irritated:
+
+; ---- Make_blind (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Make_blind:
+
+; ---- Kill_undead (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Kill_undead:
+
+; ---- Holy_word (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Holy_word:
+;             DIAG_ON
+;             PRINT     "This is a combat spell !!!"
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+
+; ---- Remove_curse (original source: MAIN/MAGIC.ASM)
 Remove_curse:
-Weapon_gunk:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0007Sys,Textfile_ptr
 	move.w	#$18,WText_nr	; CHANGE: was "move.w #21,WText_nr"
@@ -470,7 +737,7 @@ Weapon_gunk:
 	bne.s	.Already
 	bsr.w	Exit_display
 .Already:
-	lea.l	RemCurse2_Mod,a0	; CHANGE: was ".Already: Push Module,Gunk_Mod"
+	lea.l	RemCurse2_Mod,a0
 	bsr.w	Push_Module
 .Exit:
 	rts	
@@ -491,6 +758,85 @@ RemCurse2_DisInit:
 	lea.l	RemCurse_MA,a0
 	jsr	Push_MA
 	rts	
+
+; ---- RemCurse2_DisExit (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;RemCurse2_DisExit:
+;             Pop       MA
+;             tst.b     Magic_object_flag    ; Already in Inventory 2 ?
+;             bne.s     .Already
+;             jsr       Inv2_DisExit         ; Remove Inventory II
+;.Already:    rts
+
+; ---- Do_Lore (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_Lore:
+;             Wait_4_unclick
+;             tst.b     d0                   ; Any slot selected ?
+;             beq       .Exit2
+;             move.b    d0,Object_slot_number      ; Store
+;             ext.w     d0
+;             subq.w    #1,d0
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             lea.l     Neck_place_counter(a0),a1
+;             adda.w    d0,a1
+;             tst.b     (a1)                 ; Any object in this slot ?
+;             beq       .Exit2
+;             lea.l     Inv_data(a0),a2
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;             btst      #7,Item_stat_bits(a2)      ; Already lored ?
+;             bne       .Exit
+;             jsr       Handle_spell         ; Try
+;             bmi       .Exit
+;             bset      #7,Item_stat_bits(a2)      ; Lore item
+;             lea.l     ItemView1_Mod,a0     ; Show
+;             move.l    #.Dirty,Return_ptr(a0)
+;             jmp       Push_Module
+;.Dirty:      clr.l     ItemView1_Mod+Return_ptr   ; Clear pointer
+;.Exit:       Pop       Module               ; Exit
+;             tst.b     Magic_object_flag    ; Already in Inventory 2 ?
+;             bne.s     .Exit2
+;             jsr       Init_display
+;.Exit2:      rts
+
+; ---- Do_Gunk (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_Gunk:
+;             Wait_4_unclick
+;             tst.b     d0                   ; Any slot selected ?
+;             beq       .Exit
+;             move.b    d0,Object_slot_number      ; Store
+;             ext.w     d0
+;             subq.w    #1,d0
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             lea.l     Neck_place_counter(a0),a1
+;             adda.w    d0,a1
+;             tst.b     (a1)                 ; Any object in this slot ?
+;             beq       .Exit
+;             lea.l     Inv_data(a0),a2
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;             cmpi.b    #4,Item_type(a2)     ; Short-range weapon ?
+;             beq.s     .Ok
+;             cmpi.b    #5,Item_type(a2)     ; Long-range weapon ?
+;             bne       .Exit
+;.Ok:         jsr       Handle_spell         ; Try
+;             bmi       .Leave
+;             jsr       Random               ; Do
+;             lsl.w     #2,d0
+;             swap.w    d0
+;             addq.w    #1,d0
+;             moveq.l   #0,d1
+;             move.b    Damage_pts(a2),d1
+;             add.w     d0,d1
+;             cmpi.w    #128,d1
+;             bmi.s     .Not2much
+;             moveq.l   #127,d1
+;.Not2much:   move.b    d1,Damage_pts(a2)
+;.Leave:      Pop       Module               ; Exit
+;             tst.b     Magic_object_flag    ; Already in Inventory 2 ?
+;             bne.s     .Exit
+;             jsr       Init_display
+;.Exit:       rts
+
 RemCurse2_DisExit:
 	jsr	Pop_MA
 	movea.l	Off_screen,a6
@@ -763,7 +1109,7 @@ MagicComp_DisInit:
 	moveq.l	#1,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	move.w	d0,Window_handle
 	lea.l	Daynight_icn+2048,a0
 	move.w	View_direction,d0
 	lsl.w	#8,d0
@@ -783,7 +1129,7 @@ MagicComp_DisExit:
 	btst	#1,Mouse_button_state
 	bne.s	*-8
 ; CHANGE: removed "Wait_4_unclick"
-	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
+	move.w	Window_handle,d0
 	jsr	Close_window
 	rts	
 ; ---- Identify (original source: MAIN/MAGIC.ASM)
@@ -887,7 +1233,43 @@ T_14396:
 	bsr.w	Init_display
 T_14430:
 	rts
-T_14432:
+
+; ---- Levitate (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Levitate:
+;; ------------- Going up ? --------------------------------
+;             move.w    Map_Xcoord,d0        ; Find event
+;             move.w    Map_Ycoord,d1
+;             jsr       Find_event
+;             beq       .No_event            ; Any event ?
+;             cmpi.b    #5,(a5)              ; Trapdoor event ?
+;             bne       .No_event
+;             tst.b     3(a5)                ; Up ?
+;             bne       .No_event
+;             jsr       Handle_spell         ; Try
+;             bmi       Exit_levitate
+;             bra       Do_levitate
+;.No_event:   .LOCAL
+;; ------------- Going down ? ------------------------------
+;             lea.l     Dir_offset,a0        ; Get coordinates in front
+;             move.w    View_direction,d0    ; of party
+;             add.w     d0,d0
+;             adda.w    d0,a0
+;             move.b    (a0)+,d0
+;             ext.w     d0
+;             add.w     Map_Xcoord,d0
+;             move.b    (a0),d1
+;             ext.w     d1
+;             add.w     Map_Ycoord,d1
+;             jsr       Find_event           ; Find event
+;             beq       Exit_levitate        ; Any event ?
+;             cmpi.b    #5,(a5)              ; Trapdoor event ?
+;             bne       Exit_levitate
+;             tst.b     3(a5)                ; Down ?
+;             beq       Exit_levitate
+;             jsr       Handle_spell         ; Try
+;             bmi       Exit_levitate
+
+Levitate:
 	move.w	Map_Xcoord,d0
 	move.w	Map_Ycoord,d1
 	jsr	Find_event
@@ -916,7 +1298,7 @@ T_14432:
 	tst.b	Magic_object_flag
 	beq.b	Do_levitate
 	bsr.w	Pop_Module
-	bsr.w	T_10f3a
+	bsr.w	Inv21_Exit
 ; ---- Do_levitate (original source: MAIN/MAGIC.ASM)
 Do_levitate:
 	jsr	Exit_map
@@ -931,7 +1313,39 @@ Do_levitate:
 ; ---- Exit_levitate (original source: MAIN/MAGIC.ASM)
 Exit_levitate:
 	rts	
-T_144dc:
+
+; ---- Hurry (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Hurry:
+;             movea.l   Textfile_ptr,a0      ; Print text
+;             move.l    #Code0007Sys,Textfile_ptr
+;             move.w    #23,WText_nr
+;             Push      Module,TxtW_Mod
+;             move.l    a0,Textfile_ptr
+;             lea.l     VictimSel_Mod,a0     ; Select a victim
+;             move.l    #.Continue,Return_ptr(a0)
+;             jmp       Push_Module
+;.Continue:
+;             Pop       Module               ; Remove text
+;             tst.b     Victim_selected      ; Any selected ?
+;             beq.s     .Exit
+;             move.w    Victim_nr,d0         ; Already set ?
+;             move.w    Hurry_bitlist,d1
+;             btst      d0,d1
+;             bne.s     .Exit
+;             jsr       Handle_spell         ; Try
+;             bmi.s     .Exit
+;             bset      d0,d1                ; Indicate
+;             move.w    d1,Hurry_bitlist
+;             movea.l   Victim_ptr,a0        ; Double attacks per round
+;             move.b    Attacks_per_round(a0),d0
+;             add.b     d0,d0
+;             move.b    d0,Attacks_per_round(a0)
+;             move.w    Victim_nr,d0         ; Show
+;             jsr       Do_sparkle
+;.Exit:       rts
+
+; New code in the shipped program (only a label in the original).
+MTeleport:
 	cmpi.b	#$1,Current_map_type
 	bne.b	.l_14526
 	bsr.w	Handle_spell
@@ -1027,7 +1441,44 @@ T_144dc:
 	rts
 .l_145dc:
 	dc.b	$02,$03,$12,$13,$14,$15,$23,$00
-T_145e4:
+
+; ---- Mega_hurry (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Mega_hurry:
+;             move.w    Hurry_bitlist,d0     ; All hurried ?
+;             not.w     d0
+;             andi.w    #$007e,d0
+;             beq       .Exit
+;             jsr       Handle_spell         ; Try
+;             bmi       .Exit
+;             lea.l     Chard_ptrs,a0        ; All hurry
+;             moveq.l   #1,d0
+;             move.w    Hurry_bitlist,d1
+;             moveq.l   #6-1,d7
+;.Loop:       tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a0),a1              ; Get pointer to data
+;             move.w    #$e000,d2            ; Alive and kicking ?
+;             and.w     Body_conditions(a1),d2
+;             bne.s     .Next
+;             btst      d0,d1                ; Already set ?
+;             bne.s     .Next
+;             bset      d0,d1                ; Indicate
+;             move.b    Attacks_per_round(a1),d2   ; Double attacks per round
+;             add.b     d2,d2
+;             move.b    d2,Attacks_per_round(a1)
+;             jsr       Do_sparkle           ; Sparkle!
+;.Next:       addq.w    #1,d0                ; Next character
+;             addq.l    #4,a0
+;             dbra      d7,.Loop
+;             move.w    d1,Hurry_bitlist
+;.Exit:       rts
+
+; ---- Look_through (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Look_through:
+;             rts
+
+; A real spell in the shipped program (only an rts in the original).
+Look_through:
 	cmpi.b	#$2,Current_map_type
 	bpl.b	.l_1460c
 	bsr.w	Handle_spell
@@ -1039,6 +1490,115 @@ T_145e4:
 	sf.b	D_1e1fa
 .l_1460c:
 	rts
+
+; ---- Fire_beam (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Fire_beam:
+
+; ---- Fire_push (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Fire_push:
+
+; ---- Fire_ball (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Fire_ball:
+
+; ---- Fire_storm (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Fire_storm:
+
+; ---- Fire_waltz (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Fire_waltz:
+
+; ---- Water_hole (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Water_hole:
+
+; ---- Waterfall (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Waterfall:
+
+; ---- Ice_ball (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Ice_ball:
+
+; ---- Ice_shower (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Ice_shower:
+
+; ---- Hail_storm (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Hail_storm:
+
+; ---- Dirt_sling (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Dirt_sling:
+
+; ---- Stone_storm (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Stone_storm:
+
+; ---- Swamp_field (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Swamp_field:
+
+; ---- Earth_slide (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Earth_slide:
+
+; ---- Earthquake (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Earthquake:
+
+; ---- Wind_push (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Wind_push:
+
+; ---- Wind_devil (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Wind_devil:
+
+; ---- Wind_howler (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Wind_howler:
+
+; ---- Thunderstrike (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Thunderstrike:
+
+; ---- Whirlwind (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Whirlwind:
+
+; ---- Dissolve (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Dissolve:
+
+; ---- Magic_arrows (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Magic_arrows:
+;             rts
+
+; ---- Lame_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Lame_it:
+
+; ---- Poison_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Poison_it:
+
+; ---- Stone_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Stone_it:
+
+; ---- Disease_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Disease_it:
+
+; ---- Age_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Age_it:
+
+; ---- Irritate_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Irritate_it:
+
+; ---- Madden_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Madden_it:
+
+; ---- Sleep_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Sleep_it:
+
+; ---- Panic_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Panic_it:
+
+; ---- Blind_it (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Blind_it:
+
+; ---- Stone_monster (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Stone_monster:
+
+; ---- Banish_demon (original source: MAIN/MAGIC.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Banish_demon:
+;             DIAG_ON
+;             PRINT     "This is a combat spell !!!"
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+
 ; ---- Map_view (original source: MAIN/MAGIC.ASM)
 Map_view:
 	bsr.w	Handle_spell
@@ -1325,6 +1885,47 @@ Minimap_ModExit:
 	movea.l	Minimap_ptr,a0
 	jsr	Free_memory
 	bra.w	Minimap_DisExit
+
+; ---- Minimap_DisInit (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Minimap_DisInit:
+;             Push      MA,Standard_MA
+;             movea.l   Off_screen,a6        ; Get screen base
+;             moveq.l   #11,d0               ; Show automapper layout
+;             jsr       Show_layout
+;             move.w    #16,d0               ; Clear minimap area
+;             move.w    #49,d1
+;             move.w    #16+176-1,d2
+;             move.w    #49+144-1,d3
+;             moveq.l   #0,d6
+;             jsr       Draw_box
+;             movea.l   Mapd_ptr,a5          ; Print headline
+;             jsr       Print_headline
+;             move.b    #2,Minimap_update    ; Display minimap
+;             move.l    #Minimap_CIL,Control_list_ptr        ; Display control icons
+;             jsr       Show_control_icons
+;             Update_screen
+;             lea.l     Control_area,a0      ; Set object branch
+;             jsr       Set_layout_data
+;             cmpi.b    #2,Current_map_type  ; 2D or 3D map ?
+;             bpl.s     .3D_map
+;             movea.l   Icondata_ptr,a0      ; Select palette
+;             lea.l     Icon_palette(a0),a0
+;             bra.s     .Go_on
+;.3D_map:     movea.l   Colpall_ptrs,a0
+;.Go_on:      lea.l     Pal_buffer,a1        ; Convert IFF-palette
+;             jsr       IFF_pal_convert
+;             lea.l     Subfade1,a2          ; Fade in
+;.Again:      lea.l     Hbl_2D_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             jsr       My_vsync             ; Wait 2 Vbl's
+;             jsr       My_vsync
+;             lea.l     Below_pal_2D,a0      ; Fade
+;             jsr       Fade_pal
+;             bne.s     .Again
+;             lea.l     Hbl_2D_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             rts
+
 Minimap_DisInit:
 	lea.l	D_2e7a6,a0
 	jsr	Push_MA
@@ -1618,7 +2219,28 @@ Spellpts2:
 	bsr.w	Do_sparkle
 .Exit:
 	rts	
-T_14d9a:
+
+; ---- Weapon_gunk (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Weapon_gunk:
+;             movea.l   Textfile_ptr,a0      ; Print text
+;             move.l    #Code0007Sys,Textfile_ptr
+;             move.w    #21,WText_nr         ; !!! CHANGE LATER !!!
+;             Push      Module,TxtW_Mod
+;             move.l    a0,Textfile_ptr
+;             lea.l     VictimSel_Mod,a0     ; Select a victim
+;             move.l    #.Continue,Return_ptr(a0)
+;             jmp       Push_Module
+;.Continue:
+;             Pop       Module               ; Remove text
+;             tst.b     Victim_selected      ; Any selected ?
+;             beq.s     .Exit
+;             tst.b     Magic_object_flag    ; Already in Inventory 2 ?
+;             bne.s     .Already
+;             jsr       Exit_display
+;.Already:    Push      Module,Gunk_Mod      ; Do it
+;.Exit:       rts
+
+Weapon_gunk:
 	movea.l	Textfile_ptr,a0
 	move.l	#Code0006Sys,Textfile_ptr
 	move.w	#$19,WText_nr
@@ -1833,6 +2455,11 @@ Youth:
 	jsr	Copy_screen	; CHANGE: added
 .Exit:
 	rts	
+
+; ---- Call_eagle (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;Call_eagle:
+;             rts
+
 T_150a8:
 	tst.w	Travel_mode
 	bne.b	.l_150d8
@@ -1841,7 +2468,7 @@ T_150a8:
 	tst.b	Magic_object_flag
 	beq.b	.l_150c6
 	bsr.w	Pop_Module
-	bsr.w	T_10f3a
+	bsr.w	Inv21_Exit
 .l_150c6:
 	lea.l	D_2d4f4,a0
 	bsr.w	Push_Module
@@ -2071,6 +2698,37 @@ T_15370:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts
+
+; ---- SCSelW_DisInit (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;SCSelW_DisInit:
+;             move.w    #16,d0               ; Open window
+;             move.w    #64,d1
+;             move.w    #10,d2
+;             move.w    #5,d3
+;             moveq.l   #1,d6
+;             lea.l     SCSelW_L1,a0
+;             jsr       Open_window
+;             move.w    d0,SCSelW_handle
+;             Push      PA,SCSelW_PA
+;             movea.l   Off_screen,a6        ; Print class names
+;             moveq.l   #1,d1
+;             movea.l   Current_active_char_data,a0
+;             move.b    Spell_class_counter(a0),d2
+;             lea.l     Spell_dat+Spellclass_names,a1
+;             moveq.l   #7-1,d7
+;.Loop:       btst      d1,d2                ; Class known ?
+;             beq.s     .Next
+;             move.w    (a1),d0              ; Get class name
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0       ; Print it
+;             jsr       IG_Print
+;.Next:       jsr       IG_Carriage_return   ; Next class
+;             addq.w    #1,d1
+;             addq.l    #2,a1
+;             dbra      d7,.Loop
+;             Update_screen
+;             rts
+
 SCSelW_DisInit:
 	move.w	#$10,d0
 	move.w	#$40,d1
@@ -2136,6 +2794,202 @@ ClassSelected:
 Exit_SCSelW:
 	st	No_spell_selected
 	bra.w	Pop_Module
+
+; ---- SpSelW_ModInit (original source: MAIN/MAGIC.ASM) - the shipped program differs, its code follows, not assembled:
+;SpSelW_ModInit:
+;             sf        No_spell_selected
+;             clr.w     Spell_list_pos
+;; ------------- Make list of spells & status -------------------------
+;             movea.l   Current_active_char_data,a0
+;             moveq.l   #0,d1                ; Initialize registers
+;             moveq.l   #1,d2
+;             move.w    Spell_area_type,d4
+;             move.w    Power_points_normal(a0),d6
+;             lea.l     Spell_dat,a1         ; Get pointer to spell data
+;             move.w    Selected_class,d0
+;             subq.w    #1,d0
+;             mulu.w    #120,d0
+;             adda.w    d0,a1
+;             lea.l     Spells_class_1(a0),a0      ; Get known spells bit-list
+;             move.w    Selected_class,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             move.l    -4(a0,d0.w),d3
+;             lea.l     Spells_per_class,a0  ; Get number of spells
+;             move.w    Selected_class,d7
+;             add.w     d7,d7
+;             move.w    -2(a0,d7.w),d7
+;             lea.l     Spell_dat+Spell_names,a2   ; Get pointer to spell names
+;             move.w    Selected_class,d0
+;             subq.w    #1,d0
+;             mulu.w    #60,d0
+;             adda.w    d0,a2
+;             lea.l     Spell_table,a0
+;             bra       .Entry
+;
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;  d1 - Possible spell counter (.w)
+;;  d2 - Bit index (.w)
+;;  d3 - Known spells bit-list (.l)
+;;  d4 - Spell area type (.w)
+;;  d6 - Number of spell points (.w)
+;;  d7 - Spell counter (.w)
+;;  a0 - Pointer to spell table (.l)
+;;  a1 - Pointer to spell data (.l)
+;;  a2 - Pointer to spell names (.l)
+;
+;.Loop:       btst      d2,d3                ; Spell known ?
+;             beq       .Next
+;             addq.w    #1,d1                ; Count
+;             moveq.l   #0,d5
+;             move.b    (a1),d0              ; Right area ?
+;             btst      d4,d0
+;             bne.s     .Right
+;             moveq.l   #1,d0                ; -> Wrong area
+;             bra.s     .Do
+;.Right:      move.b    1(a1),d0             ; Enough spell points ?
+;             ext.w     d0
+;             cmp.w     d0,d6
+;             bpl.s     .Enough
+;             moveq.l   #2,d0                ; -> Not enough PP
+;             bra.s     .Do
+;.Enough:     moveq.l   #0,d5                ; How many times ?
+;             move.w    d6,d5
+;             divu.w    d0,d5
+;             cmpi.w    #100,d5
+;             bmi.s     .Ok
+;             moveq.l   #99,d5
+;.Ok:         moveq.l   #15,d0               ; -> Possible spell
+;.Do:         move.b    d0,(a0)+             ; Store spell data
+;             move.b    d2,(a0)+
+;             move.w    d5,(a0)+
+;             move.w    (a2),(a0)+
+;.Next:       addq.w    #1,d2                ; Next spell
+;             addq.l    #4,a1
+;             addq.l    #2,a2
+;.Entry:      dbra      d7,.Loop
+;             move.w    d1,Nr_of_spells      ; Store number
+;             .LOCAL
+;; ------------- Convert list to text ---------------------------------
+;             moveq.l   #28,d0               ; Make text buffer
+;             mulu.w    d1,d0
+;             jsr       Allocate_memory
+;             move.l    a1,Text_buffer
+;             movea.l   a1,a0                ; Clear text buffer
+;             lsr.w     #2,d0
+;             subq.w    #1,d0
+;             move.l    #"    ",d1
+;.Loop:       move.l    d1,(a0)+
+;             dbra      d0,.Loop
+;             .LOCAL
+;             lea.l     Spell_table,a2       ; Initialize registers
+;             moveq.l   #" ",d1
+;             moveq.l   #2,d7
+;             move.w    Nr_of_spells,d6
+;             bra       .Entry
+;.Loop1:      movea.l   a1,a3                ; Duplicate text pointer
+;             move.b    #1,(a3)+             ; Set ink
+;             move.b    (a2),(a3)+
+;             move.w    4(a2),d0             ; Get pointer to word
+;             jsr       Find_word
+;             moveq.l   #0,d0                ; Get length of word
+;             move.b    (a0)+,d0
+;             subq.w    #1,d0
+;             bra.s     .Entry2
+;.Loop2:      move.b    (a0)+,(a3)+          ; Copy word
+;.Entry2:     dbra      d0,.Loop2
+;             move.w    2(a2),d0             ; Possible spell ?
+;             beq.s     .Next
+;             lea.l     23(a1),a3            ; Convert counter
+;             move.b    #"(",(a3)+
+;             jsr       RConvert_number
+;             move.b    #")",(a3)
+;.Next:       lea.l     27(a1),a1            ; Next spell
+;             clr.b     (a1)+
+;             addq.l    #6,a2
+;.Entry:      dbra      d6,.Loop1
+;             .LOCAL
+;; ------------- Make graphics buffer ---------------------------------
+;             moveq.l   #-1,d0               ; Set paper
+;             jsr       IG_Set_paper
+;             move.w    #560,d0              ; Make graphics buffer
+;             mulu.w    Nr_of_spells,d0
+;             jsr       Allocate_memory
+;             move.l    a1,Text_graphics_buffer
+;             move.l    #7*160,d0            ; Make line graphics buffer
+;             jsr       Allocate_memory
+;             movea.l   a1,a6
+;             moveq.l   #0,d0                ; Initialize registers
+;             moveq.l   #0,d1
+;             move.w    #160-1,d2
+;             moveq.l   #7-1,d3
+;             moveq.l   #3,d4
+;             move.w    Nr_of_spells,d5
+;             moveq.l   #10,d6
+;             moveq.l   #7,d7
+;             movea.l   Text_buffer,a0
+;             movea.l   Text_graphics_buffer,a1
+;             lea.l     5,a2
+;             bra.s     .Entry
+;.Loop:       exg.l     d4,d6                ; Clear line graphics buffer
+;             jsr       Draw_box
+;             exg.l     d4,d6
+;             exg.l     d0,a2                ; Set cursor at (5,0)
+;             jsr       IG_Set_cursor
+;             exg.l     d0,a2
+;             jsr       IG_Print             ; Print text on fake screen
+;             exg.l     a0,a1                ; Copy line to graphics buffer
+;             jsr       Get2_block
+;             exg.l     a0,a1
+;             lea.l     28(a0),a0            ; Next line
+;             lea.l     560(a1),a1
+;.Entry:      dbra      d5,.Loop
+;             .LOCAL
+;; ------------- Do stuff ---------------------------------------------
+;             move.w    Nr_of_spells,d0      ; Store height of buffer
+;             mulu.w    #7,d0
+;             move.w    d0,Height_of_buffer
+;             move.w    #80,Width_of_buffer  ; Store width of buffer
+;             movea.l   a6,a0                ; Free memory
+;             jsr       Free_memory
+;             movea.l   Text_buffer,a0
+;             jsr       Free_memory
+;             Push      PA,SpSelW_PA
+;             move.w    #First_add,Adding    ; Reset
+;; ------------- Open a window ----------------------------------------
+;             moveq.l   #32,d0
+;             moveq.l   #40,d1
+;             moveq.l   #12,d2
+;             moveq.l   #10,d3
+;             moveq.l   #2,d4
+;             moveq.l   #1,d6
+;             lea.l     SpSelW_L1,a0
+;             jsr       Open_window
+;             move.w    d0,SpSelW_handle
+;; ------------- Fill window ------------------------------------------
+;             movea.l   Off_screen,a6
+;             moveq.l   #32+16,d0            ; Clear word area
+;             moveq.l   #40+16,d1
+;             move.w    d0,d2
+;             addi.w    #159,d2
+;             move.w    d1,d3
+;             addi.w    #111,d3
+;             moveq.l   #3,d6
+;             jsr       Draw_box
+;             moveq.l   #2,d6                ; Display icons
+;             moveq.l   #16,d7
+;             move.w    #32+16,d0            ; Up
+;             move.w    #40+16+112,d1
+;             lea.l     Control_icn+256,a0
+;             jsr       Blot_unmasked_block
+;             addi.w    #32,d0               ; Down
+;             lea.l     Control_icn+512,a0
+;             jsr       Blot_unmasked_block
+;             addi.w    #96,d0               ; Exit
+;             lea.l     Control_icn+7680,a0
+;             jsr       Blot_unmasked_block
+;             Update_screen
+
 SpSelW_ModInit:
 	sf.b	No_spell_selected
 	clr.w	Spell_list_pos
@@ -2809,7 +3663,7 @@ Map_nr:
 	ds.b	2
 Member_1_nr:
 	ds.b	2
-B_5934e:
+Member_2_nr:
 	ds.b	10
 Nr_travelled_days:
 	ds.b	2
@@ -2835,11 +3689,11 @@ B_5b9e2:
 	ds.b	1212
 B_5be9e:
 	ds.b	6
-B_5bea4:
+Basepage:
 	ds.b	4
-B_5bea8:
+Old_usp:
 	ds.b	4
-B_5beac:
+Old_ssp:
 	ds.b	4100
 B_5ceb0:
 	ds.b	256

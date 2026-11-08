@@ -109,6 +109,51 @@ Make_area_MOUTH:
 	subq.l	#8,a0
 	jsr	Push_MA
 	rts	
+
+; ---- Handle_visible_events (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Handle_visible_events:
+;             movem.l   d0/d1/a0/a5,-(sp)
+;             jsr       Find_event           ; Find event
+;             beq       .Exit                ; Any there ?
+;             moveq.l   #0,d0                ; Get event type
+;             move.b    (a5),d0
+;             cmpi.w    #3,d0                ; [ Show_pictxt ] ?
+;             bne.s     .No_showpictxt
+;             st        Eye_flag             ; Handle it
+;             jsr       Handle_event
+;             sf        Eye_flag
+;             bra       .Exit
+;.No_showpictxt:
+;             cmpi.w    #4,d0                ; [ Item_found ] ?
+;             bne.s     .No_itemfound
+;             move.w    Map_Xcoord,Old_Xcoord      ; Save old coordinates
+;             move.w    Map_Ycoord,Old_Ycoord
+;             move.w    Mapbuf_X,Old_mapbufX
+;             move.w    Mapbuf_Y,Old_mapbufY
+;             jsr       Handle_event         ; Handle it
+;             bra       .Exit
+;.No_itemfound:
+;             cmpi.b    #14,d0               ; [ Riddle_mouth ]
+;             bne.s     .No_riddlemouth
+;             jsr       Handle_event         ; Handle it
+;.No_riddlemouth:
+;             move.b    .Mess_tab-1(pc,d0.w),d1    ; Visible event ?
+;             bmi.s     .Exit
+;             movea.l   Current_active_char_data,a0          ; Found ?
+;             moveq.l   #0,d0
+;             move.b    Skill_8(a0),d0
+;             add.w     Skill_8_normal_magic(a0),d0
+;             jsr       Probe
+;             bmi.s     .Exit
+;             move.w    d1,WText_nr          ; Print text
+;             move.l    #Code0003Sys,Textfile_ptr
+;             Push      Module,TxtW_Mod
+;.Exit:       movem.l   (sp)+,d0/d1/a0/a5
+;             rts
+;
+;.Mess_tab:   .DC.b -1,-1,-1,-1,14,-1,-1,15,16,17,17,17,18,-1,-1,-1,-1,-1,-1,-1
+;             .EVEN
+
 Handle_visible_events:
 	movem.l	d0-d3/a0/a5,-(a7)
 	move.w	d0,d2
@@ -157,6 +202,25 @@ Handle_visible_events:
 	move.w	Active_member,d0
 	lsl.w	#$8,d0
 	jsr	T_004ce
+
+; ---- Mouth_action (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Mouth_action:
+;             movem.l   d0/d1/a0,-(sp)
+;             cmpi.b    #2,Current_map_type  ; Check current map type
+;             bpl       .3D_map
+;             jsr       Make_area_MOUTH      ; 2D map
+;             Wait_4_unclick
+;             lea.l     Mouth2D_Mod,a0       ; Copy display vector
+;             movea.l   Module_sp,a1
+;             move.l    (a1),(a0)
+;             jsr       Push_Module
+;             bra       .Exit
+;.3D_map:     move.w    Map_Xcoord,d0        ; 3D map
+;             move.w    Map_Ycoord,d1
+;             jsr       Talk
+;.Exit:       movem.l   (sp)+,d0/d1/a0
+;             rts
+
 .l_0defa:
 	movem.l	(a7)+,d0-d3/a0/a5
 	rts
@@ -689,6 +753,29 @@ DIA_Ask_word:
 	move.l	#DIA_Check_answer,Return_ptr(a0)
 	bsr.w	Push_Module
 	rts	
+
+; ---- DIA_Check_answer (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;DIA_Check_answer:
+;             tst.b     No_word_entered      ; Any word entered ?
+;             bne       .Exit
+;             movea.l   Action_ptr,a0        ; Search for reaction
+;             movea.l   Act_dat_ptr,a1
+;             moveq.l   #0,d0
+;             move.w    Found_word,d1
+;             moveq.l   #10-1,d7
+;.Loop:       cmpi.b    #1,(a0)+             ; {Ask word} action ?
+;             bne.s     .Next
+;             cmp.w     (a1),d1              ; Right word ?
+;             bne.s     .Next
+;             jsr       Do_results           ; Yay! Do it!
+;             bra.s     .Exit
+;.Next:       addq.l    #1,d0                ; Next action
+;             addq.l    #2,a1
+;             dbra      d7,.Loop
+;             PlusMes   3                    ; Print message {3,+}
+;.Exit:       Wait_4_unclick
+;             rts
+
 DIA_Check_answer:
 	btst	#$1,Mouse_button_state
 	bne.b	DIA_Check_answer
@@ -738,6 +825,47 @@ ShowItem_DisInit:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	rts	
+
+; ---- GiveItem_objselect (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;GiveItem_objselect:
+;             Wait_4_unclick
+;             tst.b     d0                   ; Any slot selected ?
+;             beq       .Exit
+;             move.b    d0,Object_slot_number
+;             ext.w     d0                   ; Calculate pointers to item
+;             subq.w    #1,d0                ; data
+;             movea.l   Itemslots_ptr,a3
+;             movea.l   Itemdata_ptr,a4
+;             adda.w    d0,a3
+;             mulu.w    #40,d0
+;             adda.w    d0,a4
+;             tst.b     (a3)                 ; Any item in this slot ?
+;             beq       .Exit
+;             move.w    Item_ID(a4),d1       ; Get ID
+;             movea.l   Action_ptr,a0        ; Search for reaction
+;             movea.l   Act_dat_ptr,a1
+;             moveq.l   #0,d0
+;             moveq.l   #10-1,d7
+;.Loop:       cmpi.b    #3,(a0)+             ; {Give item} action ?
+;             bne.s     .Next
+;             cmp.w     (a1),d1              ; Right item ?
+;             bne.s     .Next
+;             movea.l   Current_active_char_data,a0          ; Remove item
+;             subq.b    #1,(a3)
+;             move.w    Weight(a4),d2
+;             ext.l     d2
+;             sub.l     d2,Weight_normal(a0)
+;             movea.l   Off_screen,a6        ; Show items
+;             jsr       Show_objects_LAY3
+;             Update_screen
+;             jsr       Do_results           ; Yay! Do it!
+;             bra.s     .Exit
+;.Next:       addq.l    #1,d0                ; Next action
+;             addq.l    #2,a1
+;             dbra      d7,.Loop
+;             PlusMes   5                    ; Print message {5,+}
+;.Exit:       jmp       Pop_Module
+
 ; ---- ShowItem_DisExit (original source: MAIN/EYE.ASM)
 ShowItem_DisExit:
 	move.l	#Sold_data,Itemdata_ptr
@@ -848,6 +976,64 @@ DIATG_Return:
 	bne.s	*-8
 ; CHANGE: removed "Wait_4_unclick"
 	rts	
+
+; ---- DIA_Join_party (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;DIA_Join_party:
+;             Wait_4_unclick
+;             movea.l   Dialogue_chard_ptr,a0
+;             moveq.l   #0,d0                ; Load chance
+;             move.b    Join_percentage_chance(a0),d0
+;             beq.s     .No                  ; At all ?
+;             cmpi.w    #100,d0              ; Absolutely ?
+;             beq.s     .Yes
+;             jsr       Probe
+;             bpl.s     .Yes
+;.No:         PlusMes   9                    ; Print message {9,+}
+;             rts
+;.Yes:        lea.l     Chard_ptrs,a1        ; Find free slot
+;             moveq.l   #0,d0
+;             moveq.l   #6-1,d7
+;.Loop1:      tst.l     (a1)
+;             beq.s     .Found
+;             addq.l    #4,a1
+;             addq.w    #1,d0
+;             dbra      d7,.Loop1
+;             bra       .Exit
+;.Found:      move.l    a0,(a1)              ; Insert character
+;             move.w    Map_nr,d7            ; Store CD index
+;             subq.w    #1,d7
+;             mulu.w    #24,d7
+;             add.w     Dialogue_VChar_index,d7
+;             addq.w    #1,d7
+;             move.w    d7,Person_save_bit_pos(a0)
+;             lea.l     Member_1_nr,a0       ; Insert character in party data
+;             add.w     d0,d0
+;             move.w    Dialogue_char_nr,0(a0,d0.w)
+;             move.l    CD_value,d0          ; Set bit in internal CD bitlist
+;             move.w    Dialogue_VChar_index,d1
+;             bset      d1,d0
+;             move.l    d0,CD_value
+;             lea.l     CD,a0                ; Set bit in CD array
+;             move.w    d7,d0
+;             lsr.w     #3,d0
+;             adda.w    d0,a0
+;             andi.w    #7,d7
+;             bset      d7,(a0)
+;             addq.w    #1,Nr_members        ; Increase
+;             st        Joined               ; Set flag
+;             movea.l   Action_ptr,a0        ; Search for reaction
+;             movea.l   Act_dat_ptr,a1
+;             moveq.l   #0,d0
+;             moveq.l   #10-1,d7
+;.Loop2:      cmpi.b    #6,(a0)+             ; {Join} action ?
+;             bne.s     .Next2
+;             jsr       Do_results           ; Yay! Do it!
+;             bra.s     .Exit
+;.Next2:      addq.l    #1,d0                ; Next action
+;             addq.l    #2,a1
+;             dbra      d7,.Loop2
+;.Exit:       rts
+
 ; ---- DIA_Transfer_item (original source: MAIN/EYE.ASM)
 DIA_Transfer_item:
 	lea.l	TIDIA_Mod,a0
@@ -1291,6 +1477,89 @@ Quest_res:
 	bset	d1,0(a0,d0.w)
 	bsr.w	Set_interaction_ptrs
 	rts	
+
+; ---- Data_res (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Data_res:
+;             movea.l   Current_active_char_data,a0          ; Get address of
+;             move.b    (a1),d0              ; modified data
+;             ext.w     d0
+;             adda.w    d0,a0
+;             moveq.l   #0,d1                ; Get pointer to modifying
+;             move.b    (a2),d1              ; routine
+;             add.w     d1,d1
+;             add.w     d1,d1
+;             movea.l   .Modify_ptrs-4(pc,d1.w),a4
+;             jmp       (a4)                 ; Modify!
+;
+;.Modify_ptrs:          .DC.l .Increase,.Decrease,.Bitclear,.Bitset,.Bitchange
+;
+;.Increase:   move.w    (a3),d1              ; Increase
+;             ext.l     d1
+;             cmpi.w    #70,d0               ; Byte ?
+;             bpl.s     .No_byteI
+;             moveq.l   #0,d0                ; Modify byte
+;             move.b    (a0),d0
+;             add.w     d1,d0
+;             cmpi.w    #256,d0              ; Range check
+;             bmi.s     .Ok1I
+;             move.w    #255,d0
+;.Ok1I:       move.b    d0,(a0)
+;             bra       .ExitI
+;.No_byteI:   cmpi.w    #204,d0              ; Word ?
+;             bpl.s     .LongwordI
+;             moveq.l   #0,d0                ; Modify word
+;             move.w    (a0),d0
+;             add.w     d1,d0
+;             bvc.s     .Ok2I                ; Range check
+;             move.w    #$7fff,d0
+;.Ok2I:       move.w    d0,(a0)
+;             bra       .ExitI
+;.LongwordI:  move.l    (a0),d0              ; Modify longword
+;             add.l     d1,d0
+;             bvc.s     .Ok3I                ; Range check
+;             move.l    #$7fffffff,d0
+;.Ok3I:       move.l    d0,(a0)
+;.ExitI:      rts
+;
+;.Decrease:   move.w    (a3),d1              ; Decrease
+;             ext.l     d1
+;             cmpi.w    #70,d0               ; Byte ?
+;             bpl.s     .No_byteD
+;             moveq.l   #0,d0                ; Modify byte
+;             move.b    (a0),d0
+;             sub.b     d1,d0
+;             bpl.s     .Ok1D                ; Range check
+;             moveq.l   #0,d0
+;.Ok1D:       move.b    d0,(a0)
+;             bra       .ExitD
+;.No_byteD:   cmpi.w    #204,d0              ; Word ?
+;             bpl.s     .LongwordD
+;             moveq.l   #0,d0                ; Modify word
+;             move.w    (a0),d0
+;             sub.w     d1,d0
+;             bpl.s     .Ok2D                ; Range check
+;             moveq.l   #0,d0
+;.Ok2D:       move.w    d0,(a0)
+;             bra       .ExitD
+;.LongwordD:  move.l    (a0),d0              ; Modify longword
+;             sub.l     d1,d0
+;             bpl.s     .Ok3D                ; Range check
+;             moveq.l   #0,d0
+;.Ok3D:       move.l    d0,(a0)
+;.ExitD:      rts
+;
+;.Bitclear:   move.w    (a3),d1              ; Clear bit
+;             bclr      d1,(a0)
+;             rts
+;
+;.Bitset:     move.w    (a3),d1              ; Set bit
+;             bset      d1,(a0)
+;             rts
+;
+;.Bitchange:  move.w    (a3),d1              ; Change bit
+;             bchg      d1,(a0)
+;             rts
+
 Data_res:
 	movea.l	Current_active_char_data,a0
 	moveq	#0,d0
@@ -1414,6 +1683,45 @@ T_0efe4:
 	clr.w	Object_name_nr
 .l_0f018:
 	rts
+
+; ---- Change_travelmode (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Change_travelmode:
+;             movem.l   d0/d1/a0,-(sp)
+;             tst.w     Travel_mode          ; On foot now ?
+;             beq.s     .Up
+;             cmpi.w    #4,Travel_mode       ; Magic disk ?
+;             beq.s     .Skip
+;             cmpi.w    #6,Travel_mode       ; Super chicken ?
+;             beq.s     .Skip
+;             lea.l     Trans_T,a0           ; Seek free slot
+;             moveq.l   #30-1,d1
+;.Loop:       tst.b     0(a0,d1.w)           ; Any there ?
+;             bne.s     .Next
+;             move.w    Travel_mode,d0       ; Set travelmode
+;             move.b    d0,0(a0,d1.w)
+;             move.w    Map_Xcoord,d0        ; Set coordinates
+;             move.b    d0,30(a0,d1.w)
+;             move.w    Map_Ycoord,d0
+;             move.b    d0,60(a0,d1.w)
+;             lea.l     90(a0,d1.w),a0       ; Set map number
+;             move.w    Map_nr,0(a0,d1.w)
+;             bra.s     .Skip
+;.Next:       subq.w    #1,d1                ; Next
+;             bpl.s     .Loop
+;             ERROR     "[ Change_travel_mode ] : No slot free !!!"
+;             bra.s     .Exit
+;.Skip:       moveq.l   #0,d0                ; Back on foot
+;             jsr       Set_new_travel_mode
+;; Maybe new event
+;             beq.s     .Exit
+;.Up:         jsr       Seek_transport       ; Get on what ?
+;             lea.l     Trans_T,a0           ; Remove transport
+;             clr.b     0(a0,d1.w)
+;             jsr       Set_new_travel_mode  ; Do it !
+;.Exit:       Wait_4_unclick
+;             movem.l   (sp)+,d0/d1/a0
+;             rts
+
 Change_travelmode:
 	movem.l	d0-d1/a0,-(a7)
 	tst.w	Travel_mode
@@ -1504,6 +1812,135 @@ Automap_DisUpd:
 	adda.w	d5,a0
 	dbra	d7,.Loop1
 	rts	
+
+; ---- Automap_ModInit (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Automap_ModInit:
+;             lea.l     Automap_CIL,a0       ; Enable all icons
+;             moveq.l   #9-1,d7
+;.Loop:       bclr      #7,(a0)+
+;             dbra      d7,.Loop
+;             lea.l     -9(a0),a0
+;             move.w    #6,Automap_X         ; Set coordinates
+;             move.w    #6,Automap_Y
+;             move.w    #22,Automap_width    ; Set width & height
+;             move.w    #18,Automap_height
+;             move.w    Width_of_map,d0      ; Check width
+;             subi.w    #10,d0
+;             cmpi.w    #22,d0
+;             bpl.s     .Ok1
+;             move.w    d0,Automap_width
+;             bset      #7,(a0)              ; Disable horizontal icons
+;             bset      #7,2(a0)
+;             bset      #7,3(a0)
+;             bset      #7,5(a0)
+;             bset      #7,6(a0)
+;             bset      #7,8(a0)
+;             bra.s     .Go_on1
+;.Ok1:        move.w    Map_Xcoord,d0        ; Set X-coordinate
+;             subi.w    #10,d0
+;             cmpi.w    #6,d0
+;             bmi.s     .Go_on1
+;             moveq.l   #22+5,d1
+;             add.w     d0,d1
+;             cmp.w     Width_of_map,d1
+;             bmi.s     .Ok2
+;             move.w    Width_of_map,d0
+;             subi.w    #21+5,d0
+;.Ok2:        move.w    d0,Automap_X
+;.Go_on1:     move.w    Height_of_map,d0     ; Check height
+;             subi.w    #10,d0
+;             cmpi.w    #18,d0
+;             bpl.s     .Ok3
+;             move.w    d0,Automap_height
+;             bset      #7,0(a0)             ; Disable vertical icons
+;             bset      #7,1(a0)
+;             bset      #7,2(a0)
+;             bset      #7,6(a0)
+;             bset      #7,7(a0)
+;             bset      #7,8(a0)
+;             bra.s     .Go_on2
+;.Ok3:        move.w    Map_Ycoord,d0        ; Set Y-coordinate
+;             subi.w    #8,d0
+;             cmpi.w    #6,d0
+;             bmi.s     .Go_on2
+;             moveq.l   #18+5,d1
+;             add.w     d0,d1
+;             cmp.w     Height_of_map,d1
+;             bmi.s     .Ok4
+;             move.w    Height_of_map,d0
+;             subi.w    #17+5,d0
+;.Ok4:        move.w    d0,Automap_Y
+;.Go_on2:     .LOCAL
+;             move.w    Size_of_map,d0       ; Make icon buffer
+;             ext.l     d0
+;             jsr       Allocate_memory
+;             move.l    a1,Automapicon_ptr
+;             movea.l   Automap_ptr,a0       ; Convert bitlist
+;             movea.l   Map_pointer,a2
+;             movea.l   Iconstats_ptr,a3
+;             movea.l   Mapd_ptr,a4
+;             lea.l     Event_data-10(a4),a4
+;             moveq.l   #0,d4
+;             moveq.l   #0,d5
+;             move.w    Size_of_map,d6
+;             move.w    d6,d7
+;             subq.w    #1,d7
+;.Loop:       moveq.l   #0,d0
+;             btst      d4,0(a0,d5.w)        ; Automapped ?
+;             beq       .Insert
+;             moveq.l   #0,d0                ; Any event here ?
+;             move.b    0(a2,d6.w),d0
+;             beq.s     .No_event
+;             mulu.w    #10,d0               ; Get event type
+;             move.b    0(a4,d0.w),d0
+;             ext.w     d0                   ; Icon for this one ?
+;             move.b    .EventIcon-1(pc,d0.w),d0
+;             bmi.s     .No_event
+;             ext.w     d0                   ; Yes!
+;             bra.s     .Insert
+;.EventIcon:  .DC.b 4,3,-1,5,-1,8,-1,-1,-1,-1
+;             .DC.b -1,-1,-1,6,-1,-1,-1,7,-1,3
+;             .EVEN
+;.No_event:   moveq.l   #0,d0                ; Get block number
+;             move.b    (a2),d0
+;             beq       .Insert
+;             subq.w    #1,d0                ; Get icon status
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             move.l    0(a3,d0.w),d0
+;             btst      #5,d0                ; Reverse effect ?
+;             beq.s     .No_rev
+;             bchg      #7,d0                ; Reverse !
+;.No_rev:     btst      #7,d0                ; Way blocked ?
+;             bne.s     .Blocked
+;.Empty:      moveq.l   #2,d0
+;             bra.s     .Insert
+;.Blocked:    moveq.l   #1,d0
+;.Insert:     move.b    d0,(a1)              ; Insert icon number
+;.Next:       addq.w    #1,d4                ; Next
+;             cmpi.w    #8,d4
+;             bmi.s     .Ok
+;             moveq.l   #0,d4
+;             addq.w    #1,d5
+;.Ok:         addq.l    #1,a1
+;             addq.l    #1,a2
+;             dbra      d7,.Loop
+;             movea.l   Automapicon_ptr,a0   ; Insert party
+;             move.w    Map_Ycoord,d0
+;             subq.w    #1,d0
+;             mulu.w    Width_of_map,d0
+;             add.w     Map_Xcoord,d0
+;             subq.w    #1,d0
+;             btst      #0,Special_item_flags+1    ; Compass present ?
+;             beq.s     .No_compass
+;             moveq.l   #10,d1
+;             add.w     View_direction,d1
+;             bra.s     .Go
+;.No_compass: moveq.l   #9,d1
+;.Go:         move.b    d1,0(a0,d0.w)
+;             move.w    d1,Party_automap_icon      ; Store
+;             jmp       Init_display
+
 Automap_ModInit:
 	lea.l	Automap_CIL,a0
 	moveq	#8,d7
@@ -1850,14 +2287,28 @@ Init_automap:
 	move.l	a0,Automap_ptr
 	movem.l	(sp)+,d0/a0
 	rts	
+
+; ---- Exit_automap (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Exit_automap:
+;             movem.l   d0/a0/a1,-(sp)
+;             lea.l     Automap_filename,a0
+;             movea.l   Automap_ptr,a1
+;             move.w    Map_nr,d0
+;             jsr       Save_subfile
+;             movea.l   a1,a0
+;             jsr       Free_memory
+;             movem.l   (sp)+,d0/a0/a1
+;             rts
+
 Exit_automap:
 	move.l	a0,-(a7)
-	bsr.w	T_0f614
+	bsr.w	Save_automap
 	movea.l	Automap_ptr,a0
 	jsr	Free_memory
 	movea.l	(a7)+,a0
 	rts
-T_0f614:
+; Saves the current automap with Save_subfile (also called by Exit_automap). (Not in the original source.)
+Save_automap:
 	movem.l	d0/a0-a1,-(a7)
 	lea.l	Automap_filename,a0
 	movea.l	Automap_ptr,a1
@@ -1990,38 +2441,94 @@ Quit_game:
 ; CHANGE: removed "Wait_4_unclick"
 	move.l	#Code0008Sys,Textfile_ptr
 	move.w	#8,ReqText_nr
-	move.l	#T_0f802,ReqDo_ptr	; CHANGE: was "move.l #Exit_all,ReqDo_ptr"
+	move.l	#Exit_all,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bra.w	Push_Module
-T_0f802:
+; ---- Exit_all (original source: MAIN/TEST.ASM)
+Exit_all:
 	bsr.w	Exit_display
 	cmpi.b	#$2,Current_map_type
 	bmi.b	.l_0f81a
 	jsr	T_0025a
-	bsr.w	T_0f614
+	bsr.w	Save_automap
 .l_0f81a:
-	jmp	Exit_all
-T_0f820:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0f820
+	jmp	Exit_program
+; ---- Save_game (original source: MAIN/EYE.ASM)
+Save_game:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	clr.w	SaveGame_bitlist
-	lea.l	B_5d0b4,a0
-	moveq	#4,d7
-.l_0f838:
+	lea.l	Chard_ptrs+4,a0
+	moveq.l	#5-1,d7
+.Loop:
 	tst.l	(a0)+
-	bne.b	.l_0f868
-	dbra	d7,.l_0f838
+	bne.s	.Select
+	dbra	d7,.Loop
 	move.l	#Code0004Sys,Textfile_ptr
-	move.w	#$18,ReqText_nr
-	move.l	#T_0f9c4,ReqDo_ptr
+	move.w	#24,ReqText_nr
+	move.l	#Really_save_game,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bsr.w	Push_Module
-	bra.b	.l_0f872
-.l_0f868:
+	bra.s	.Exit
+.Select:
 	lea.l	SaveGame_Mod,a0
 	bsr.w	Push_Module
-.l_0f872:
-	rts
+.Exit:
+	rts	
+
+; ---- SaveGame_ModInit (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;SaveGame_ModInit:
+;             move.l    #Lay6_PlusMes,PlusMes_info ; Install
+;             move.l    #Code0005Sys,Textfile_ptr
+;             Push      MA,SaveGame_MA
+;             moveq.l   #-1,d0               ; Set paper colour
+;             jsr       IG_Set_paper
+;; ------------- Display character portraits --------------------------
+;             lea.l     Chard_ptrs+4,a1      ; Initialize registers
+;             lea.l     Portrait_pos_list,a2
+;             movea.l   Off_screen,a6
+;             moveq.l   #2,d5
+;             moveq.l   #2,d6
+;             moveq.l   #34,d7
+;.Loop:       tst.l     (a1)                 ; Anyone there ?
+;             beq.s     .Next
+;             move.w    (a2)+,d0             ; Display portrait
+;             move.w    (a2)+,d1
+;             movea.l   (a1),a3
+;             lea.l     Portrait+6(a3),a0
+;             jsr       Blot_unmasked_block
+;             move.w    (a2)+,d0             ; Set cursor
+;             move.w    (a2)+,d1
+;             jsr       IG_Set_cursor
+;             moveq.l   #9,d0                ; Set ink
+;             cmp.w     Active_member,d5     ; Active character ?
+;             bne.s     .Snarl
+;             moveq.l   #8,d0
+;.Snarl:      jsr       IG_Set_ink
+;             lea.l     Char_name(a3),a0     ; Print name
+;             jsr       IG_Print
+;.Next:       addq.l    #4,a1                ; Next member
+;             addq.w    #1,d5
+;             cmpi.w    #6+1,d5
+;             bmi.s     .Loop
+;             move.w    #160-32,d0           ; Display OK icon
+;             move.w    #176,d1
+;             moveq.l   #2,d6
+;             moveq.l   #16,d7
+;             lea.l     Control_icn+15104,a0
+;             jsr       Blot_unmasked_block
+;             move.w    #160,d0              ; Display Exit icon
+;             move.w    #176,d1
+;             moveq.l   #2,d6
+;             moveq.l   #16,d7
+;             lea.l     Control_icn+7680,a0
+;             jsr       Blot_unmasked_block
+;             HashMes   20                   ; Print message {20,#}
+;             Update_screen
+;             Push      Root,SaveGame_L1
+;             rts
+
 SaveGame_ModInit:
 	move.l	#Lay6_PlusMes,PlusMes_info
 	move.l	#Code0005Sys,Textfile_ptr
@@ -2104,14 +2611,120 @@ Exit_SaveGame:
 ; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Pop_Module
 	bra.w	Init_display
-T_0f9b6:
+
+; ---- Do_SaveGame (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_SaveGame:
+;             Wait_4_unclick
+;             move.w    Active_member,d0     ; Active character deactivated ?
+;             move.w    SaveGame_bitlist,d1
+;             btst      d0,d1
+;             beq.s     .Exit
+;; Select new active character
+;             nop
+;.Exit:       Pop       Module
+;             jmp       Really_save_game
+
+; The check of the active member was removed, it falls through into Really_save_game.
+Do_SaveGame:
 	btst	#$1,Mouse_button_state
-	bne.b	T_0f9b6
+	bne.b	Do_SaveGame
 	bsr.w	Pop_Module
-T_0f9c4:
+
+; ---- Really_save_game (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Really_save_game:
+;; ------------- Save character data ----------------------------------
+;             lea.l     Chard_filename,a0
+;             lea.l     Chard_ptrs,a2
+;             lea.l     Member_1_nr,a3
+;             moveq.l   #6-1,d7
+;.Loop:       tst.l     (a2)                 ; Anyone there ?
+;             beq.s     .Next
+;             move.w    (a3),d0              ; Save datafile
+;             movea.l   (a2),a1
+;             jsr       Save_subfile
+;.Next:       addq.l    #4,a2                ; Next member
+;             addq.l    #2,a3
+;             dbra      d7,.Loop
+;             .LOCAL
+;; ------------- Remove unwanted characters ---------------------------
+;             lea.l     Chard_ptrs+4,a1
+;             lea.l     Member_2_nr,a2
+;             lea.l     Damage_timers,a3
+;             move.w    SaveGame_bitlist,d0
+;             moveq.l   #0,d1
+;             moveq.l   #1,d7
+;.Loop:       btst      d7,d0                ; Remove ?
+;             beq.s     .Next
+;             movea.l   (a1),a0              ; Clear bit in CD array
+;             move.w    Person_save_bit_pos(a0),d2
+;             lea.l     CD,a0
+;             move.w    d2,d3
+;             move.w    d2,d4
+;             lsr.w     #3,d3
+;             adda.w    d3,a0
+;             andi.w    #7,d4
+;             bset      d4,(a0)
+;             move.l    CD_value,d3          ; Set bit in internal CD bitlist
+;             ext.l     d2
+;             divu.w    #24,d2
+;             swap.w    d2
+;             bset      d2,d3
+;             move.l    d3,CD_value
+;             movea.l   (a1),a0              ; Free memory
+;             jsr       Kill_memory
+;             clr.l     (a1)                 ; Clear pointers
+;             clr.w     (a2)
+;             clr.b     (a3)                 ; Clear counters
+;             clr.b     6(a3)
+;             clr.b     12(a3)
+;             addq.w    #1,d1                ; Count
+;.Next:       addq.l    #4,a1                ; Next member
+;             addq.l    #2,a2
+;             addq.l    #1,a3
+;             addq.w    #1,d7
+;             cmpi.w    #6+1,d7
+;             bmi       .Loop
+;             sub.w     d1,Nr_members        ; Update
+;             jsr       Update_status_block  ; Redraw status block
+;             Update_screen
+;             .LOCAL
+;; ------------- Compile & save party data ----------------------------
+;             moveq.l   #0,d0                ; Make buffer
+;             move.w    Nr_of_modifications,d0
+;             mulu.w    #6,d0
+;             addi.l    #Default_length,d0
+;             move.l    d0,Partydata_length
+;             jsr       Allocate_memory
+;             move.l    a1,-(sp)             ; Store pointer
+;             lea.l     Party_data,a0
+;             moveq.l   #0,d0
+;             moveq.l   #24-1,d7             ; Copy 24 bytes
+;.Loop1:      move.w    (a0)+,d0
+;             move.b    d0,(a1)+
+;             dbra      d7,.Loop1
+;             move.w    #5550-1,d7           ; Copy 5550 words
+;.Loop2:      move.w    (a0)+,(a1)+
+;             dbra      d7,.Loop2
+;             movea.l   Modifications_ptr,a0 ; Copy modification list
+;             move.w    Nr_of_modifications,d7
+;             bra.s     .Entry3
+;.Loop3:      move.l    (a0)+,(a1)+
+;             move.w    (a0)+,(a1)+
+;.Entry3:     dbra      d7,.Loop3
+;             clr.w     (a1)+                ; Write modification sentinel
+;             lea.l     Partydata_filename+1,a0    ; Save party data
+;             movea.l   (sp)+,a1
+;             move.l    Partydata_length,d0
+;             jsr       Save_file
+;             movea.l   a1,a0                ; Free memory
+;             jsr       Free_memory
+;             rts
+
+; Also saves the automap, writes a header, scrambles the data and saves it to PARTYDAT.SAV.
+Really_save_game:
 	cmpi.b	#$2,Current_map_type
 	bne.b	.l_0f9d2
-	bsr.w	T_0f614
+	bsr.w	Save_automap
 .l_0f9d2:
 	lea.l	Chard_filename,a0
 	lea.l	Chard_ptrs,a2
@@ -2128,7 +2741,7 @@ T_0f9c4:
 	addq.l	#$2,a3
 	dbra	d7,.l_0f9e6
 	lea.l	B_5d0b4,a1
-	lea.l	B_5934e,a2
+	lea.l	Member_2_nr,a2
 	lea.l	B_58ec1,a3
 	move.w	SaveGame_bitlist,d0
 	moveq	#1,d7
@@ -2179,7 +2792,7 @@ T_0f9c4:
 	move.w	Nr_of_modifications,d0
 	mulu.w	#$6,d0
 	addi.l	#$2b7e,d0
-	move.l	d0,B_584e2
+	move.l	d0,Partydata_length
 	jsr	Allocate_memory
 	move.l	a1,-(a7)
 	move.l	#$59415921,(a1)+
@@ -2205,7 +2818,7 @@ T_0fafa:
 	dbra	d7,T_0faf6
 	clr.w	(a1)+
 	jsr	Random
-	move.l	B_584e2,d7
+	move.l	Partydata_length,d7
 	movea.l	(a7)+,a0
 	addq.l	#$4,a0
 	subq.l	#$4,d7
@@ -2219,50 +2832,65 @@ T_0fafa:
 	movea.l	a1,a0
 	jsr	Free_memory
 	rts
-T_0fb36:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0fb36
-	lsr.w	#$8,d0
+; ---- Portrait_selected (original source: MAIN/EYE.ASM)
+; The active member can't be deselected (message 25).
+Portrait_selected:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	lsr.w	#8,d0
 	tst.w	d0
-	beq.w	.l_0fcbe
-	move.w	Active_member,d1
-	subq.w	#$1,d1
-	cmp.w	d0,d1
-	bne.b	.l_0fb62
-	move.w	#$19,d0
-	jsr	Plus_message
-	bra.w	.l_0fcbe
-.l_0fb62:
+	beq.w	.Exit
+	move.w	Active_member,d1	; CHANGE: added
+	subq.w	#$1,d1	; CHANGE: added
+	cmp.w	d0,d1	; CHANGE: added
+	bne.b	.c_0fb62	; CHANGE: added
+	move.w	#$19,d0	; CHANGE: added
+	jsr	Plus_message	; CHANGE: added
+	bra.w	.Exit	; CHANGE: added
+.c_0fb62:
 	lea.l	Chard_ptrs,a0
 	move.w	d0,d1
 	add.w	d1,d1
 	add.w	d1,d1
-	tst.l	(a0,d1.w)
-	beq.w	.l_0fcbe
-	movea.l	(a0,d1.w),a2
+	tst.l	0(a0,d1.w)
+	beq.w	.Exit
+	movea.l	0(a0,d1.w),a2
 	move.w	Body_conditions(a2),d1
 	move.w	#$e000,d2
 	and.w	d1,d2
-	beq.b	.l_0fb94
-	move.w	#$15,d0
+	beq.s	.Alive
+	move.w	#21,d0
 	jsr	Plus_message
-	bra.w	.l_0fcbe
-.l_0fb94:
-	btst	#$1,d1
-	beq.w	.l_0fc28
+	bra.w	.Exit
+.Alive:
+	btst	#1,d1
+	beq.w	.Sane
 	lea.l	Lay6_PlusMes,a0
 	jsr	Push_MA
-	addq.l	#$8,a0
+	addq.l	#8,a0
 	jsr	Push_PA
 	jsr	Init_RText
-	lea.l	$f0(a2),a0
+	lea.l	Char_name(a2),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
-	move.w	#$16,d0
+	move.w	#22,d0
 	lea.l	Code0005Sys,a1
 	jsr	Add_encoded_2_RText
-	jsr	T_0707a
+; CHANGE: removed "movea.l Off_screen,a6"
+	jsr	T_0707a	; CHANGE: was "jsr Erase_text_window"
+; CHANGE: removed "jsr IG_Cursor_home"
+; CHANGE: removed "movea.l RText_ptr,a0"
+; CHANGE: removed "move.w Nr_of_chars,d0"
+; CHANGE: removed "move.w Lines_in_text,d1"
+; CHANGE: removed "bra.s .Entry"
+; CHANGE: removed ".Loop: jsr IG_Print"
+; CHANGE: removed "jsr IG_Carriage_return"
+; CHANGE: removed "lea.l 1(a0,d0.w),a0"
+; CHANGE: removed ".Entry: dbra d1,.Loop"
+.Entry:
+.Loop:
 	jsr	Switch_screen
 	jsr	Copy_screen
 	jsr	Exit_RText
@@ -2274,68 +2902,98 @@ T_0fb36:
 	jsr	Pop_PA
 	jsr	Pop_MA
 	clr.b	Mouse_click_state
-	bra.w	.l_0fcbe
-.l_0fc28:
-	btst	#$a,d1
-	beq.b	.l_0fc3c
-	move.w	#$17,d0
+	bra.w	.Exit
+.Sane:
+	btst	#10,d1
+	beq.s	.Clean
+	move.w	#23,d0
 	jsr	Plus_message
-	bra.w	.l_0fcbe
-.l_0fc3c:
+	bra.w	.Exit
+.Clean:
 	lea.l	Portrait_pos_list,a1
 	move.w	d0,d1
-	subq.w	#$1,d1
-	lsl.w	#$3,d1
+	subq.w	#1,d1
+	lsl.w	#3,d1
 	adda.w	d1,a1
 	movea.l	Off_screen,a6
 	move.w	SaveGame_bitlist,d1
 	bchg	d0,d1
 	move.w	d1,SaveGame_bitlist
 	btst	d0,d1
-	bne.b	.l_0fc82
+	bne.s	.Clear
 	move.w	(a1)+,d0
 	move.w	(a1)+,d1
-	moveq	#2,d6
-	moveq	#34,d7
-	lea.l	$6b0(a2),a0
+	moveq.l	#2,d6
+	moveq.l	#34,d7
+	lea.l	Portrait+6(a2),a0
 	jsr	Blot_unmasked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-	bra.b	.l_0fcbe
-.l_0fc82:
+	bra.s	.Exit
+.Clear:
 	move.w	(a1)+,d0
 	move.w	(a1)+,d1
-	moveq	#2,d6
-	moveq	#16,d7
+	moveq.l	#2,d6
+	moveq.l	#16,d7
 	lea.l	Chequered,a0
 	jsr	Blot_masked_block
-	addi.w	#$10,d1
+	addi.w	#16,d1
 	lea.l	Chequered,a0
 	jsr	Blot_masked_block
-	addi.w	#$10,d1
-	moveq	#2,d7
+	addi.w	#16,d1
+	moveq.l	#2,d7
 	jsr	Blot_masked_block
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_0fcbe:
-	rts
-T_0fcc0:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0fcc0
+.Exit:
+	rts	
+; ---- Load_game (original source: MAIN/EYE.ASM)
+Load_game:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	move.l	#Code0004Sys,Textfile_ptr
-	move.w	#$19,ReqText_nr
-	move.l	#.l_0fcf0,ReqDo_ptr
+	move.w	#25,ReqText_nr
+	move.l	#Really_load_game,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bra.w	Push_Module
-.l_0fcf0:
+
+; ---- Really_load_game (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Really_load_game:
+;             Pop       Module               ; Leave options & map
+;             jsr       Exit_map
+;             lea.l     Chard_ptrs,a1        ; Remove character data files
+;             moveq.l   #6-1,d7
+;.Loop1:      tst.l     (a1)                 ; Anyone there ?
+;             beq.s     .Next
+;             movea.l   (a1),a0              ; Remove memory
+;             jsr       Kill_memory
+;.Next:       addq.l    #4,a1                ; Next member
+;             dbra      d7,.Loop1
+;             lea.l     Chard_ptrs,a0        ; Clear variables
+;             moveq.l   #6-1,d7
+;.Loop2:      clr.l     (a0)+
+;             dbra      d7,.Loop2
+;             lea.l     Damage_timers,a0
+;             moveq.l   #15-1,d7
+;.Loop3:      clr.w     (a0)+
+;             dbra      d7,.Loop3
+;             sf        Which_CIL
+;             jsr       Restore_game         ; Load new data
+;             jsr       Init_map             ; Re-initialize
+;             jmp       Init_time
+
+; Rewritten: the game restarts through Restart_game.
+Really_load_game:
 	bsr.w	Exit_display
 	bsr.w	Pop_Module
 	bsr.w	Pop_Module
+	jmp	Restart_game
+; ---- Camp (original source: MAIN/EYE.ASM)
 Camp:
-	jmp	T_00e04
-T_0fd02:
-	btst	#$1,Mouse_button_state
-	bne.b	T_0fd02
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	bsr.w	Exit_display
 	lea.l	Camp_Mod,a0
 	bra.w	Push_Module
@@ -2347,6 +3005,15 @@ Camp_DisUpd:
 	bsr.w	Update_control_icons
 	bsr.w	Update_quantity_colours	; CHANGE: added
 	rts	
+
+; ---- Camp_ModInit (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;Camp_ModInit:
+;             sf        Slept                ; Clear flag
+;             moveq.l   #1,d0                ; Load picture
+;             lea.l     Lay3_target_hbl+2,a0
+;             jsr       Load_80x80_picture
+;             jmp       Camp_DisInit
+
 Camp_ModInit:
 	jsr	T_0025a
 	moveq	#17,d0
@@ -2451,6 +3118,92 @@ LearnSpell_DisExit:
 	jsr	Pop_PA
 	jsr	Pop_MA
 	rts	
+
+; ---- LearnSpell_objselect (original source: MAIN/EYE.ASM) - the shipped program differs, its code follows, not assembled:
+;LearnSpell_objselect:
+;             Wait_4_unclick
+;             tst.b     d0                   ; Any slot selected ?
+;             beq       .Exit
+;             move.b    d0,Object_slot_number
+;             ext.w     d0                   ; Calculate pointers to item
+;             subq.w    #1,d0                ; data
+;             movea.l   Itemslots_ptr,a0
+;             movea.l   Itemdata_ptr,a1
+;             adda.w    d0,a0
+;             mulu.w    #40,d0
+;             adda.w    d0,a1
+;             tst.b     (a0)                 ; Any item in this slot ?
+;             beq       .Exit
+;             cmpi.b    #8,Item_type(a1)     ; Is it a spell scroll ?
+;             beq.s     .Scroll
+;             PlusMes   12                   ; Print message {12,+}
+;             bra       .Exit
+;.Scroll:     movea.l   Current_active_char_data,a2
+;             move.b    Spell_class(a1),d0   ; Correct spell class ?
+;             btst      d0,Spell_class_counter(a2)
+;             bne.s     .Class
+;             PlusMes   13                   ; Print message {13,+}
+;             bra       .Exit
+;.Class:      lea.l     Spell_data,a3        ; Get pointer to spell data
+;             ext.w     d0
+;             subq.w    #1,d0
+;             mulu.w    #120,d0
+;             adda.w    d0,a3
+;             move.b    Spell_number(a1),d0
+;             ext.w     d0
+;             subq.w    #1,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a3
+;             moveq.l   #0,d0                ; Enough spell learn points ?
+;             move.b    2(a3),d0
+;             cmp.w     Nr_spell_learn_points(a2),d0
+;             bls.s     .Points
+;             PlusMes   24                   ; Print message {24,+}
+;             bra       .Exit
+;.Points:     moveq.l   #0,d0                ; Probe {Learn Spell}-skill
+;             move.b    Skill_9(a2),d0
+;             add.w     Skill_9_normal_magic(a2),d0
+;             jsr       Probe
+;             bpl.s     .Probed
+;             PlusMes   15                   ; Print message {15,+}
+;             bra       .Destroy
+;.Probed:     moveq.l   #0,d0                ; Remove spell learn points
+;             move.b    2(a3),d0
+;             sub.w     d0,Nr_spell_learn_points(a2)
+;             lea.l     Spells_class_1(a2),a3      ; Learn spell
+;             move.b    Spell_class(a1),d0
+;             ext.w     d0
+;             subq.w    #1,d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a3
+;             move.b    Spell_number(a1),d0
+;             move.l    (a3),d1
+;             bset      d0,d1
+;             move.l    d1,(a3)
+;             PlusMes   14                   ; Print message {14,+}
+;.Destroy:    clr.b     (a0)                 ; Remove object
+;             move.w    Weight(a1),d0
+;             ext.l     d0
+;             sub.l     d0,Weight_normal(a2)
+;             lea.l     Door_object_pos_list-4,a4  ; Show item destruction
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             move.w    2(a4,d0.w),d1
+;             move.w    0(a4,d0.w),d0
+;             moveq.l   #0,d2
+;             move.b    (a1),d2
+;             moveq.l   #78,d3
+;             jsr       Show_item_destruction
+;             movea.l   Off_screen,a6        ; Reprint message
+;             HashMes   11
+;             Update_screen
+;             rts
+;.Exit:       jmp       Pop_Module
+
 T_0ff00:
 	btst	#$1,Mouse_button_state
 	bne.b	T_0ff00
@@ -2561,245 +3314,290 @@ T_0ff00:
 	rts
 .l_10062:
 	bra.w	Pop_Module
-T_10066:
-	btst	#$1,Mouse_button_state
-	bne.b	T_10066
-	move.l	#Code0005Sys,Textfile_ptr
-	st.b	Slept
-	move.w	#$10,d0
+; ---- Rest (original source: MAIN/EYE.ASM)
+Rest:
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+	move.l	#Code0005Sys,Textfile_ptr	; CHANGE: was "Wait_4_unclick"
+	st	Slept
+	move.w	#16,d0
 	jsr	Plus_message
 	lea.l	Lay3_PA,a0
 	jsr	Push_PA
 	lea.l	Lay3_PlusMes,a0
 	jsr	Push_MA
 	movea.l	Mapd_ptr,a0
-	moveq	#0,d6
-	move.b	$ac2(a0),d6
-	moveq	#0,d7
-	move.b	$ac1(a0),d7
-	lsl.w	#$3,d7
+	moveq.l	#0,d6
+	move.b	Time_step_len(a0),d6
+	moveq.l	#0,d7
+	move.b	Time_hour_len(a0),d7
+	lsl.w	#3,d7
 	divu.w	d6,d7
-	subq.w	#$1,d7
-.l_100ba:
+	subq.w	#1,d7
+.Wait:
 	jsr	Update_time
-	dbra	d7,.l_100ba
-	cmpi.b	#$2,Current_map_type
-	bpl.b	.l_100de
+	dbra	d7,.Wait
+	cmpi.b	#2,Current_map_type
+	bpl.s	.Go_on
 	jsr	M2_time_evaluate
 	move.w	New_radius,Current_radius
-.l_100de:
+.Go_on:
 	tst.b	Inn_flag
-	bne.w	.l_10296
+	bne.w	Inn
 	lea.l	Chard_ptrs,a0
-	moveq	#1,d7
-.l_100f0:
+	moveq.l	#1,d7
+.Loop:
 	tst.l	(a0)
-	beq.b	.l_10146
+	beq.s	.Next
 	movea.l	(a0),a1
 	move.w	#$e400,d0
 	and.w	Body_conditions(a1),d0
-	bne.b	.l_10146
-	btst	#$4,Body_conditions(a1)
-	beq.b	.l_10146
-	addq.w	#$1,Birth_year(a1)
+	bne.s	.Next
+	btst	#4,Body_conditions(a1)
+	beq.s	.Next
+	addq.w	#1,Birth_year(a1)
 	move.w	Attr_9_normal(a1),d0
-	addq.w	#$1,d0
+	addq.w	#1,d0
 	move.w	d0,Attr_9_normal(a1)
 	add.w	Attr_9_normal_magic(a1),d0
 	add.w	Time_data_year,d0
 	move.w	Attr_9_max(a1),d1
 	cmp.w	d0,d1
-	bpl.b	.l_10146
+	bpl.s	.Next
 	ori.w	#$2000,Body_conditions(a1)
 	cmp.w	Active_member,d7
-	bne.b	.l_10146
+	bne.s	.Next
 	clr.w	Active_member
 	bsr.w	Exit_display
-	jsr	Check_party_alive
-.l_10146:
-	addq.l	#$4,a0
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	.l_100f0
-	moveq	#4,d7
+; CHANGE: removed "move.l a0,-(sp)"
+; CHANGE: removed "Push Module,ActSel_Mod"
+	jsr	Check_party_alive	; CHANGE: was "Push Module,ActSel_Mod"
+; CHANGE: removed "movea.l (sp)+,a0"
+.Next:
+	addq.l	#4,a0
+	addq.w	#1,d7
+	cmpi.w	#6+1,d7
+	bmi.s	.Loop
+	moveq.l	#4,d7
 	lea.l	Code0005Sys,a1
 	lea.l	Chard_ptrs,a2
-	moveq	#5,d6
-.l_10160:
+	moveq.l	#6-1,d6
+.Loop1:
 	tst.l	(a2)
-	beq.w	.l_1028c
+	beq.w	.Next1
 	movea.l	(a2),a4
-	move.w	$3a(a4),d0
+	move.w	Body_conditions(a4),d0
 	andi.w	#$e400,d0
-	bne.w	.l_1028c
+	bne.w	.Next1
 	jsr	Init_RText
-	lea.l	$f0(a4),a0
+	lea.l	Char_name(a4),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
-	tst.w	$92(a4)
-	bne.b	.l_101a2
-	moveq	#17,d0
+	tst.w	Food_rations(a4)
+	bne.s	.Enough
+	moveq.l	#17,d0
 	jsr	Add_encoded_2_RText
-	bra.w	.l_10264
-.l_101a2:
-	moveq	#18,d0
+	bra.w	.Continue
+.Enough:
+	moveq.l	#18,d0
 	jsr	Add_encoded_2_RText
-	moveq	#0,d0
-	move.w	$88(a4),d0
-	add.w	$98(a4),d0
-	cmp.w	$86(a4),d0
-	bpl.b	.l_101c2
-	moveq	#0,d0
-	move.w	$86(a4),d2
-	bra.b	.l_101de
-.l_101c2:
+	moveq.l	#0,d0
+	move.w	Life_points_max(a4),d0
+	add.w	Life_points_max_magic(a4),d0
+	cmp.w	$86(a4),d0	; CHANGE: added
+	bpl.b	.c_101c2	; CHANGE: added
+	moveq	#0,d0	; CHANGE: added
+	move.w	$86(a4),d2	; CHANGE: added
+	bra.b	.c_101de	; CHANGE: added
+.c_101c2:
+	move.w	d0,d1	; CHANGE: added
+	divu.w	#$a,d0	; CHANGE: added
+	bne.b	.c_101cc	; CHANGE: added
+	moveq	#1,d0	; CHANGE: added
+.c_101cc:
+	move.w	d0,d2	; CHANGE: added
+	add.w	$86(a4),d2	; CHANGE: added
+	cmp.w	d2,d1	; CHANGE: added
+	bpl.b	.c_101de	; CHANGE: added
+	move.w	d1,d2	; CHANGE: added
+	move.w	d1,d0	; CHANGE: added
+	sub.w	$86(a4),d0	; CHANGE: added
+.c_101de:
+	move.w	d2,$86(a4)	; CHANGE: added
+	lea.l	Number_buffer,a0	; CHANGE: added
+	movea.l	a0,a3	; CHANGE: added
+	bsr.w	LConvert_number	; CHANGE: added
+	moveq	#0,d0	; CHANGE: added
+	move.w	$8c(a4),d0	; CHANGE: added
+	add.w	$9a(a4),d0	; CHANGE: added
+	cmp.w	$8a(a4),d0	; CHANGE: added
+	bpl.b	.c_10206	; CHANGE: added
+	moveq	#0,d0	; CHANGE: added
+	move.w	$8a(a4),d2	; CHANGE: added
+	bra.b	.Ok1	; CHANGE: added
+.c_10206:
 	move.w	d0,d1
-	divu.w	#$a,d0
-	bne.b	.l_101cc
-	moveq	#1,d0
-.l_101cc:
+	divu.w	#10,d0
 	move.w	d0,d2
-	add.w	$86(a4),d2
+	add.w	$8a(a4),d2	; CHANGE: was "add.w Life_points_normal(a4),d2"
 	cmp.w	d2,d1
-	bpl.b	.l_101de
+	bpl.s	.Ok1
 	move.w	d1,d2
-	move.w	d1,d0
-	sub.w	$86(a4),d0
-.l_101de:
-	move.w	d2,$86(a4)
-	lea.l	Number_buffer,a0
-	movea.l	a0,a3
+	move.w	d1,d0	; CHANGE: added
+	sub.w	$8a(a4),d0	; CHANGE: added
+.Ok1:
+	move.w	d2,$8a(a4)	; CHANGE: was ".Ok1: move.w d2,Life_points_normal(a4)"
+	move.b	#$4c,(a3)+	; CHANGE: was "lea.l Number_buffer,a0"
+	move.b	#$50,(a3)+	; CHANGE: was "movea.l a0,a3"
+	move.b	#$2c,(a3)+	; CHANGE: added
+	move.b	#$20,(a3)+	; CHANGE: added
 	bsr.w	LConvert_number
-	moveq	#0,d0
-	move.w	$8c(a4),d0
-	add.w	$9a(a4),d0
-	cmp.w	$8a(a4),d0
-	bpl.b	.l_10206
-	moveq	#0,d0
-	move.w	$8a(a4),d2
-	bra.b	.l_1021e
-.l_10206:
-	move.w	d0,d1
-	divu.w	#$a,d0
-	move.w	d0,d2
-	add.w	$8a(a4),d2
-	cmp.w	d2,d1
-	bpl.b	.l_1021e
-	move.w	d1,d2
-	move.w	d1,d0
-	sub.w	$8a(a4),d0
-.l_1021e:
-	move.w	d2,$8a(a4)
-	move.b	#$4c,(a3)+
-	move.b	#$50,(a3)+
-	move.b	#$2c,(a3)+
-	move.b	#$20,(a3)+
-	bsr.w	LConvert_number
-	move.b	#$50,(a3)+
-	move.b	#$50,(a3)+
-	move.b	#$20,(a3)+
+	move.b	#$50,(a3)+	; CHANGE: was "moveq.l #0,d0"
+	move.b	#$50,(a3)+	; CHANGE: was "move.w Power_points_max(a4),d0"
+	move.b	#$20,(a3)+	; CHANGE: was "add.w Power_points_max_magic(a4),d0"
+; CHANGE: removed "move.w d0,d1"
+; CHANGE: removed "divu.w #10,d0"
+; CHANGE: removed "move.w d0,d2"
+; CHANGE: removed "add.w Power_points_normal(a4),d2"
+; CHANGE: removed "cmp.w d2,d1"
+; CHANGE: removed "bpl.s .Ok2"
+; CHANGE: removed "move.w d1,d2"
+; CHANGE: removed ".Ok2: move.w d2,Power_points_normal(a4)"
+; CHANGE: removed "move.b #"L",(a3)+"
+; CHANGE: removed "move.b #"P",(a3)+"
+; CHANGE: removed "move.b #",",(a3)+"
+; CHANGE: removed "move.b #" ",(a3)+"
+; CHANGE: removed "jsr LConvert_number"
+; CHANGE: removed "move.b #"P",(a3)+"
+; CHANGE: removed "move.b #"P",(a3)+"
+; CHANGE: removed "move.b #" ",(a3)+"
+.Ok2:
 	clr.b	(a3)
 	lea.l	Number_buffer,a0
 	jsr	Add_ASCII_2_RText
-	moveq	#19,d0
+	moveq.l	#19,d0
 	jsr	Add_encoded_2_RText
-	subq.w	#$1,$92(a4)
-	subi.l	#$fa,$ec(a4)
-.l_10264:
-	jsr	T_0707a
-	jsr	Switch_screen
-	jsr	Copy_screen
+	subq.w	#1,Food_rations(a4)
+	subi.l	#Food_weight,Weight_normal(a4)
+; CHANGE: removed ".Continue: movea.l Off_screen,a6"
+.Continue:
+	jsr	T_0707a	; CHANGE: was "jsr Erase_text_window"
+	jsr	IG_Cursor_home
+; CHANGE: removed "movea.l RText_ptr,a0"
+; CHANGE: removed "move.w Nr_of_chars,d0"
+; CHANGE: removed "move.w Lines_in_text,d1"
+; CHANGE: removed "bra.s .Entry2"
+; CHANGE: removed ".Loop2: jsr IG_Print"
+; CHANGE: removed "jsr IG_Carriage_return"
+; CHANGE: removed "lea.l 1(a0,d0.w),a0"
+; CHANGE: removed ".Entry2: dbra d1,.Loop2"
+.Entry2:
+.Loop2:
+	jsr	Copy_screen	; CHANGE: was "jsr Switch_screen"
 	jsr	Exit_RText
-.l_1027c:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_1027c
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	jsr	Wait_4_user
-.l_1028c:
-	addq.l	#$4,a2
-	dbra	d6,.l_10160
-	bra.w	.l_1037a
-.l_10296:
-	moveq	#4,d7
+.Next1:
+	addq.l	#4,a2
+	dbra	d6,.Loop1
+	bra.w	Exit_rest
+; ---- Inn (original source: MAIN/EYE.ASM)
+Inn:
+	moveq.l	#4,d7
 	lea.l	Code0005Sys,a1
 	lea.l	Chard_ptrs,a2
-	moveq	#5,d6
-.l_102a6:
+	moveq.l	#6-1,d6
+.Loop1:
 	tst.l	(a2)
-	beq.w	.l_10374
+	beq.w	.Next1
 	movea.l	(a2),a4
-	move.w	$3a(a4),d0
+	move.w	Body_conditions(a4),d0
 	andi.w	#$e400,d0
-	bne.w	.l_10374
+	bne.w	.Next1
 	jsr	Init_RText
-	lea.l	$f0(a4),a0
+	lea.l	Char_name(a4),a0
 	jsr	Add_ASCII_2_RText
 	lea.l	Space,a0
 	jsr	Add_ASCII_2_RText
-	moveq	#18,d0
+	moveq.l	#18,d0
 	jsr	Add_encoded_2_RText
-	moveq	#0,d0
-	move.w	$88(a4),d0
-	add.w	$98(a4),d0
-	sub.w	$86(a4),d0
-	bpl.b	.l_102f0
-	moveq	#0,d0
-.l_102f0:
-	add.w	d0,$86(a4)
+	moveq.l	#0,d0
+	move.w	Life_points_max(a4),d0
+	add.w	Life_points_max_magic(a4),d0
+	sub.w	Life_points_normal(a4),d0
+	bpl.s	.Ok1
+	moveq.l	#0,d0
+.Ok1:
+	add.w	d0,Life_points_normal(a4)
 	lea.l	Number_buffer,a0
 	movea.l	a0,a3
 	bsr.w	LConvert_number
-	moveq	#0,d0
-	move.w	$8c(a4),d0
-	add.w	$9a(a4),d0
-	sub.w	$8a(a4),d0
-	bpl.b	.l_10312
-	moveq	#0,d0
-.l_10312:
-	add.w	d0,$8a(a4)
-	move.b	#$4c,(a3)+
-	move.b	#$50,(a3)+
-	move.b	#$2c,(a3)+
-	move.b	#$20,(a3)+
+	moveq.l	#0,d0
+	move.w	Power_points_max(a4),d0
+	add.w	Power_points_max_magic(a4),d0
+	sub.w	Power_points_normal(a4),d0
+	bpl.s	.Ok2
+	moveq.l	#0,d0
+.Ok2:
+	add.w	d0,Power_points_normal(a4)
+	move.b	#$4c,(a3)+	; CHANGE: was "move.b #"L",(a3)+"
+	move.b	#$50,(a3)+	; CHANGE: was "move.b #"P",(a3)+"
+	move.b	#$2c,(a3)+	; CHANGE: was "move.b #",",(a3)+"
+	move.b	#$20,(a3)+	; CHANGE: was "move.b #" ",(a3)+"
 	bsr.w	LConvert_number
-	move.b	#$50,(a3)+
-	move.b	#$50,(a3)+
-	move.b	#$20,(a3)+
+	move.b	#$50,(a3)+	; CHANGE: was "move.b #"P",(a3)+"
+	move.b	#$50,(a3)+	; CHANGE: was "move.b #"P",(a3)+"
+	move.b	#$20,(a3)+	; CHANGE: was "move.b #" ",(a3)+"
 	clr.b	(a3)
 	lea.l	Number_buffer,a0
 	jsr	Add_ASCII_2_RText
-	moveq	#19,d0
+	moveq.l	#19,d0
 	jsr	Add_encoded_2_RText
-	jsr	T_0707a
-	jsr	Switch_screen
-	jsr	Copy_screen
+; CHANGE: removed "movea.l Off_screen,a6"
+	jsr	T_0707a	; CHANGE: was "jsr Erase_text_window"
+	jsr	IG_Cursor_home
+; CHANGE: removed "movea.l RText_ptr,a0"
+; CHANGE: removed "move.w Nr_of_chars,d0"
+; CHANGE: removed "move.w Lines_in_text,d1"
+; CHANGE: removed "bra.s .Entry2"
+; CHANGE: removed ".Loop2: jsr IG_Print"
+; CHANGE: removed "jsr IG_Carriage_return"
+; CHANGE: removed "lea.l 1(a0,d0.w),a0"
+; CHANGE: removed ".Entry2: dbra d1,.Loop2"
+.Entry2:
+.Loop2:
+	jsr	Copy_screen	; CHANGE: was "jsr Switch_screen"
 	jsr	Exit_RText
-.l_10364:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_10364
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
 	jsr	Wait_4_user
-.l_10374:
-	addq.l	#$4,a2
-	dbra	d6,.l_102a6
-.l_1037a:
+.Next1:
+	addq.l	#4,a2
+	dbra	d6,.Loop1
+; ---- Exit_rest (original source: MAIN/EYE.ASM)
+Exit_rest:
 	lea.l	Spell_1_data,a0
 	clr.l	(a0)+
-	clr.l	(a0)+
-	clr.l	(a0)
+	clr.l	(a0)+	; CHANGE: was "clr.w (a0)"
+	clr.l	(a0)	; CHANGE: added
 	lea.l	Spell_1_duration,a0
 	clr.l	(a0)+
-	clr.l	(a0)+
-	clr.l	(a0)
+	clr.l	(a0)+	; CHANGE: was "clr.w (a0)"
+	clr.l	(a0)	; CHANGE: added
 	movea.l	Off_screen,a6
 	jsr	Erase_text_window
 	jsr	Switch_screen
 	jsr	Copy_screen
 	jsr	Pop_MA
 	jsr	Pop_PA
-.l_103b6:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_103b6
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Ear_action (original source: MAIN/EYE.ASM)
 Ear_action:
 	move.l	#Code0005Sys,Textfile_ptr
@@ -2953,7 +3751,7 @@ T_1056e:
 	moveq	#0,d6
 	suba.l	a0,a0
 	jsr	Open_window
-	move.w	d0,B_58256
+	move.w	d0,Window_handle
 	lsr.w	#$1,d4
 	add.w	d4,d1
 	addi.w	#$10,d1
@@ -3249,8 +4047,8 @@ Options_CIL:
 	dc.l	Music_on
 	dc.l	Music_off
 	dc.b	$00,$00,$00,$00
-	dc.l	T_0f820
-	dc.l	T_0fcc0
+	dc.l	Save_game
+	dc.l	Load_game
 	dc.b	$00,$00,$00,$00
 D_264a0:
 	dc.b	$38,$38,$1e,$38,$38,$38,$38,$38,$38,$00,$00,$00,$00,$00,$00,$00
@@ -3263,12 +4061,12 @@ Lay6_target:
 	dc.b	$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10,$07,$65
 Camp_CIL:
 	dc.b	$0c,$38,$1e,$3a,$38,$38,$07,$38,$38,$00
-	dc.l	T_13772
+	dc.l	Cast_spell
 	dc.b	$00,$00,$00,$00
 	dc.l	Exit_camp
 	dc.l	Learn_spell
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-	dc.l	T_10066
+	dc.l	Rest
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 Spiral_lengths:
 	dc.b	$00,$08,$00,$10,$00,$18,$00,$20,$00,$28
@@ -3342,7 +4140,7 @@ Hearing_txt:
 	ds.b	6
 SaveGame_bitlist:
 	ds.b	2
-B_584e2:
+Partydata_length:
 	ds.b	4
 B_584e6:
 	ds.b	1

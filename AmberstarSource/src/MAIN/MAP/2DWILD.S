@@ -2,6 +2,90 @@
 
 	section	text
 
+
+; ---- W2_ModInit (original source: MAIN/MAP/2DWILD.ASM) - the shipped program differs, its code follows, not assembled:
+;W2_ModInit:
+;             Pop       MA
+;             move.l    a5,Mapd_ptr          ; Store pointer to map data
+;             jsr       M2_time_evaluate     ; Set light parameters
+;             move.w    New_radius,Current_radius
+;; ------------- Load data --------------------------------------------
+;             move.w    Iconfile_nr(a5),d0   ; Icon data
+;             lea.l     Icondata_filename,a0
+;             jsr       Load_subfile
+;             move.l    a0,Icondata_ptr
+;             jsr       Init_maptexts
+;; ------------- Calculate variables ----------------------------------
+;             lea.l     Iconstats(a0),a0     ; Get & store pointer
+;             move.l    a0,Iconstats_ptr     ;  to icon status array
+;             moveq.l   #0,d0                ; Get & store map's width
+;             move.b    Map_width(a5),d0
+;             move.w    d0,Width_of_map
+;             moveq.l   #0,d1                ; Get & store map's height
+;             move.b    Map_height(a5),d1
+;             move.w    d1,Height_of_map
+;             mulu.w    d0,d1                ; Calculate & store map's size
+;             move.w    d1,Size_of_map
+;             lea.l     Map_data(a5),a0      ; Get & store pointer
+;             move.l    a0,Map_pointer       ;  to actual map data
+;             move.b    #W2_animspeed,Anim_speed   ; Set animation speed
+;             move.b    #W2_animspeed,Anim_count
+;             move.w    #6,Anim_bias
+;             move.w    #Def_mapbuf_X,Mapbuf_X     ; Set window coordinates
+;             move.w    #Def_mapbuf_Y,Mapbuf_Y
+;             move.w    Map_nr,d7            ; Modify map
+;             movea.l   Mapd_ptr,a0
+;             jsr       Make_modifications
+;; ------------- Wilderness initialization ----------------------------
+;             moveq.l   #0,d2                ; Get current map number
+;             move.w    Map_nr,d2
+;             subq.l    #1,d2                ; Subtract number of first map
+;             divu.w    #World_width,d2      ; Calculate world coordinates
+;             move.w    d2,World_Y           ; Store
+;             swap.w    d2
+;             move.w    d2,World_X
+;             move.w    Map_Xcoord,d0        ; Load party coordinates
+;             move.w    Map_Ycoord,d1
+;             moveq.l   #0,d2                ; Calculate quad-index
+;             cmpi.w    #Submap_width/2+1,d0 ; & quad-coordinates
+;             bpl.s     .Skip_X
+;             addi.w    #Submap_width,d0
+;             bset      #0,d2
+;.Skip_X:     cmpi.w    #Submap_height/2+1,d1
+;             bpl.s     .Skip_Y
+;             addi.w    #Submap_height,d1
+;             bset      #1,d2
+;.Skip_Y:     move.w    d0,Quad_X            ; Store
+;             move.w    d1,Quad_Y
+;             move.w    d2,Quad_index
+;             move.w    World_X,d0           ; Initialize registers
+;             move.w    World_Y,d1
+;             lea.l     Quad_map,a1
+;             lea.l     Load_table,a2
+;             add.w     d2,d2                ; Set map & text pointer
+;             add.w     d2,d2
+;             move.l    a5,0(a1,d2.w)
+;             move.l    Maptext_ptr,16(a1,d2.w)
+;             move.w    Map_nr,34(a1,d2.w)
+;             move.l    -16(a2,d2.w),d2      ; Get altered quad-index
+;             movea.l   0(a2,d2.w),a0        ; Execute routine
+;             jsr       (a0)
+;             addq.w    #4,d2                ; Next routine
+;             andi.w    #$000f,d2
+;             movea.l   0(a2,d2.w),a0        ; Execute routine
+;             jsr       (a0)
+;             addq.w    #4,d2                ; Next routine
+;             andi.w    #$000f,d2
+;             movea.l   0(a2,d2.w),a0        ; Execute routine
+;             jsr       (a0)
+;             .LOCAL
+;             jsr       W2_DisInit
+;             jsr       Event_handler        ; Handle first event
+;             rts
+;
+;             .DC.l 4,8,0,12
+;Load_table:  .DC.l Load_0,Load_1,Load_3,Load_2
+
 W2_ModInit:
 	move.l	a5,Mapd_ptr
 	bsr.w	M2_time_evaluate
@@ -132,6 +216,43 @@ Load_2:
 	bsr.w	Make_modifications
 	movem.l	(sp)+,d2/d7/a2
 	rts	
+
+; ---- W2_DisInit (original source: MAIN/MAP/2DWILD.ASM) - the shipped program differs, its code follows, not assembled:
+;W2_DisInit:
+;             movea.l   Mapd_ptr,a5          ; Get pointer to map dta
+;             jsr       Set_spell_area
+;; ------------- Initialize display -----------------------------------
+;             movea.l   Off_screen,a6        ; Get screen base
+;             moveq.l   #1,d0                ; Show 2D map layout
+;             jsr       Show_layout
+;             jsr       Print_headline
+;             move.l    #W2_CIL,First_CIL_ptr      ; Display control icons
+;             jsr       Handle_CIL
+;             jsr       Show_control_icons
+;             jsr       W2_DisUpd            ; Display 2D map
+;             Update_screen
+;; ------------- Various installations --------------------------------
+;             sf        Time_lock
+;             lea.l     Lay1_c1,a0           ; Object branch
+;             jsr       Set_layout_data
+;             move.l    #W2_CIL+10,Mousemove_ptr   ; Mouse actions
+;; ------------- Fade-in display --------------------------------------
+;             movea.l   Icondata_ptr,a0      ; Convert IFF-palette
+;             lea.l     Icon_palette(a0),a0
+;             lea.l     Pal_buffer,a1
+;             jsr       IFF_pal_convert
+;             lea.l     Subfade1,a2          ; Fade in
+;.Again:      lea.l     Hbl_2D_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             jsr       My_vsync             ; Wait 2 Vbl's
+;             jsr       My_vsync
+;             lea.l     Below_pal_2D,a0      ; Fade
+;             jsr       Fade_pal
+;             bne.s     .Again
+;             lea.l     Hbl_2D_map,a0        ; Update palettes
+;             jsr       Update_HBL
+;             rts
+
 W2_DisInit:
 	sf.b	Time_lock
 	movea.l	Mapd_ptr,a5
@@ -589,6 +710,36 @@ Shift_DR:
 	subi.w	#Submap_height,Quad_Y
 	move.w	#0,d2
 	rts	
+
+; ---- Load_submap (original source: MAIN/MAP/2DWILD.ASM) - the shipped program differs, its code follows, not assembled:
+;Load_submap:
+;             movem.l   d0/d1,-(sp)
+;             tst.w     d0                   ; Wrap X
+;             bpl.s     .Skip_1
+;             addi.w    #World_width,d0
+;             bra.s     .Check_Y
+;.Skip_1:     cmpi.w    #World_width,d0
+;             bmi.s     .Check_Y
+;             subi.w    #World_width,d0
+;.Check_Y:    tst.w     d1                   ; Wrap Y
+;             bpl.s     .Skip_2
+;             addi.w    #World_height,d1
+;             bra.s     .Cont
+;.Skip_2:     cmpi.w    #World_height,d1
+;             bmi.s     .Cont
+;             subi.w    #World_height,d1
+;.Cont:       mulu.w    #World_width,d1
+;             add.w     d1,d0
+;             addq.w    #1,d0                ; Add number of first map
+;             lea.l     Maptext_filename,a0  ; Load text
+;             jsr       Load_subfile
+;             movea.l   a0,a2
+;             lea.l     Mapd_filename,a0     ; Load map
+;             jsr       Load_subfile
+;             move.w    d0,d2                ; Copy
+;             movem.l   (sp)+,d0/d1
+;             rts
+
 Load_submap:
 	movem.l	d0-d1/d7,-(a7)
 	tst.w	d0
@@ -854,6 +1005,47 @@ W2_left:
 	tst.w	d2
 	movem.l	(sp)+,d0-d2
 	rts	
+
+; ---- W2_DisUpd (original source: MAIN/MAP/2DWILD.ASM) - the shipped program differs, its code follows, not assembled:
+;W2_DisUpd:
+;             movem.l   d0-d2/a0/a1,-(sp)
+;             lea.l     Trans_buf,a0         ; Clear transport buffer
+;             moveq.l   #0,d0
+;             move.b    d0,(a0)+
+;             move.w    d0,(a0)+
+;             moveq.l   #35-1,d1
+;.Loop:       move.l    d0,(a0)+
+;             dbra      d1,.Loop
+;             move.w    Quad_X,d0            ; Get quad-map coordinates
+;             move.w    Quad_Y,d1
+;             subi.w    #Def_mapbuf_X+2,d0   ; Adjust coordinates
+;             subi.w    #Def_mapbuf_Y+2,d1
+;             move.w    Quad_index,d2        ; Calculate multi-map index
+;             add.w     d2,d2
+;             add.w     d2,d2
+;             cmpi.w    #Submap_width-12,d0
+;             bmi.s     .Check_Y
+;             cmpi.w    #Submap_width,d0
+;             bpl.s     .Check_Y
+;             bset      #4,d2
+;.Check_Y:    cmpi.w    #Submap_height-10,d1
+;             bmi.s     .Cont
+;             cmpi.w    #Submap_height,d1
+;             bpl.s     .Cont
+;             bset      #5,d2
+;.Cont:       lea.l     Quad_map,a1          ; Pointer to quad-map
+;             lea.l     Multimap_table,a0    ; Get routine address
+;             movea.l   0(a0,d2.w),a0
+;             jsr       (a0)                 ; Execute routine
+;             .LOCAL
+;             jsr       Build_2D_map         ; Build 2D map
+;             jsr       Update_map_CIL
+;             tst.b     CombatReq            ; Start combat ?
+;             beq.s     .Exit
+;             Push      Module,CombatReq_Mod
+;.Exit:       movem.l   (sp)+,d0-d2/a0/a1
+;             rts
+
 W2_DisUpd:
 	movem.l	d0-d2/a0-a1,-(a7)
 	lea.l	Trans_buf,a0
@@ -912,6 +1104,23 @@ W2_DisUpd:
 	dc.l	Cut_F	; ori.b #$d8, d0
 	dc.l	Cut_F	; ori.b #$d8, d0
 	dc.l	Cut_F	; ori.b #$d8, d0
+
+; ---- Multimap_table (original source: MAIN/MAP/2DWILD.ASM) - not found in the shipped program, the original source is older, not assembled:
+;Multimap_table:
+;             .DC.l Cut_A,Cut_A,Cut_A,Cut_A
+;             .DC.l Cut_B,Cut_B,Cut_E,Cut_E
+;             .DC.l Cut_C,Cut_D,Cut_C,Cut_D
+;             .DC.l Cut_F,Cut_F,Cut_F,Cut_F
+
+; ---- Cut_A (original source: MAIN/MAP/2DWILD.ASM) - the shipped program differs, its code follows, not assembled:
+;Cut_A:       move.w    Map_Xcoord,d0        ; Get party coordinates
+;             move.w    Map_Ycoord,d1
+;             subi.w    #Def_mapbuf_X+2,d0   ; Adjust coordinates
+;             subi.w    #Def_mapbuf_Y+2,d1
+;             movea.l   Mapd_ptr,a0          ; Cut from normal map
+;             move.w    Map_nr,d2
+;             jmp       Copy_map_part
+
 	dc.l	Cut_F	; ori.b #$d8, d0
 .l_04a44:
 	move.w	Map_Xcoord,d0

@@ -6,11 +6,28 @@
 Inv1_DisUpd:
 	jsr	Update_status_block
 	rts	
-T_10b56:
+
+; ---- Inv1_Exit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv1_Exit:
+;             Pop       Module
+;             jmp       Init_display
+
+Inv1_Exit:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10b56
+	bne.b	Inv1_Exit
 	bsr.w	Pop_Module
 	bra.w	Init_display
+
+; ---- Inv1_ModInit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv1_ModInit:
+;             movea.l   Current_inventory_chardat_ptr,a0     ; Install object data
+;             lea.l     Neck_place_counter(a0),a1
+;             lea.l     Inv_data(a0),a0
+;             move.l    a0,Itemdata_ptr
+;             move.l    a1,Itemslots_ptr
+;             Push      MA,Standard_MA
+;             jmp       Inv1_DisInit
+
 Inv1_ModInit:
 	lea.l	D_2e7ae,a0
 	jsr	Push_PA
@@ -29,6 +46,12 @@ Inv1_ModInit:
 	bsr.w	Inv1_DisInit
 .l_10bae:
 	rts
+
+; ---- Inv1_ModExit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv1_ModExit:
+;             Pop       MA
+;             jmp       Inv1_DisExit
+
 Inv1_ModExit:
 	jsr	Pop_MA
 	jsr	Pop_PA
@@ -38,6 +61,213 @@ Inv1_ModExit:
 	bsr.w	T_16b64
 .l_10bcc:
 	rts
+
+; ---- Inv1_DisInit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv1_DisInit:
+;             movem.l   d0-d7/a0-a6,-(sp)
+;             movea.l   Off_screen,a6        ; Get screen base
+;             moveq.l   #6,d0                ; New layout
+;             jsr       Show_layout
+;             moveq.l   #34,d7
+;             movea.l   Current_inventory_chardat_ptr,a1
+;             jsr       Display_character
+;; ------------- Print character skills -------------------------------
+;             move.w    #16+6,d0             ; Print "SKILLS"
+;             move.w    #50+65,d1
+;             move.w    #12*6,d2
+;             jsr       IG_Set_cursor
+;             lea.l     Skills_name,a0
+;             jsr       Print_centered_string
+;             move.w    #16+6,d2
+;             move.w    #50+72,d3
+;             moveq.l   #0,d6
+;             moveq.l   #2,d7
+;             lea.l     Class_dat+Class_names+22,a2          ; Get pointer to words
+;             lea.l     Skill_1(a1),a4
+;             lea.l     Skill_1_normal_magic(a1),a5
+;.Loop:       move.w    d2,d0                ; Set cursor
+;             move.w    d3,d1
+;             jsr       IG_Set_cursor
+;             move.w    d6,d0                ; Find skill word
+;             add.w     d0,d0
+;             move.w    0(a2,d0.w),d0
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0       ; Print skill name
+;             clr.b     3(a0)                ; First 3 characters
+;             jsr       IG_Print
+;             move.w    #6*5,d0              ; Set cursor
+;             add.w     d2,d0
+;             move.w    d3,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Skill_txt,a3
+;             moveq.l   #"0",d1
+;             moveq.l   #0,d0                ; Convert normal skill
+;             move.b    (a4)+,d0
+;             add.w     (a5)+,d0
+;             jsr       RConvert_number
+;             addq.l    #2,a3
+;             moveq.l   #0,d0                ; Convert maximum skill
+;             move.b    10-1(a4),d0
+;             jsr       RConvert_number
+;             lea.l     Skill_txt,a0         ; Print skill levels
+;             jsr       IG_Print
+;             addi.w    #7,d3                ; Next skill
+;             addq.w    #1,d6
+;             cmpi.w    #10,d6
+;             bmi.s     .Loop
+;             .LOCAL
+;; ------------- Print character attributes ---------------------------
+;             move.w    #16+6,d0             ; Print "ATTRIBUTES"
+;             move.w    #50,d1
+;             move.w    #12*6,d2
+;             lea.l     Attrs_name,a0
+;             jsr       Print_centered_string
+;             lea.l     Race_dat+Race_names+30,a2  ; Get pointer to words
+;             move.w    #16+6,d2
+;             move.w    #50+7,d3
+;             moveq.l   #0,d6
+;             moveq.l   #3,d7
+;             lea.l     Attr_1_normal(a1),a4
+;             lea.l     Attr_1_normal_magic(a1),a5
+;.Loop:       move.w    d2,d0                ; Set cursor
+;             move.w    d3,d1
+;             jsr       IG_Set_cursor
+;             move.w    d6,d0                ; Find attribute word
+;             add.w     d0,d0
+;             move.w    0(a2,d0.w),d0
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0       ; Print attribute name
+;             clr.b     3(a0)                ; First 3 characters
+;             jsr       IG_Print
+;             move.w    #6*5,d0              ; Set cursor
+;             add.w     d2,d0
+;             move.w    d3,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Attr_txt,a3
+;             moveq.l   #"0",d1
+;             move.w    (a4)+,d0             ; Convert normal attribute
+;             add.w     (a5)+,d0
+;             jsr       RConvert_number
+;             addq.l    #1,a3
+;             move.w    20-2(a4),d0          ; Convert maximum attribute
+;             jsr       RConvert_number
+;             lea.l     Attr_txt,a0          ; Print attribute levels
+;             jsr       IG_Print
+;             addi.w    #7,d3                ; Next attribute
+;             addq.w    #1,d6
+;             cmpi.w    #8,d6                ; !!!
+;             bmi.s     .Loop
+;             .LOCAL
+;; ------------- Print known languages --------------------------------
+;             move.w    #16+15*6,d0          ; Set cursor
+;             move.w    #50,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Language_txt,a0      ; Print "LANGUAGES"
+;             jsr       IG_Print
+;             lea.l     Misc_dat,a2          ; Get pointer to words
+;             move.w    #50+7,d1
+;             move.w    #16+15*6,d2
+;             move.b    Learned_languages(a1),d6
+;             moveq.l   #0,d7
+;.Loop:       move.w    d2,d0                ; Set cursor
+;             jsr       IG_Set_cursor
+;             btst      d7,d6                ; Language known ?
+;             beq.s     .Next
+;             move.w    (a2),d0              ; Find language word
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0       ; Print language
+;             jsr       IG_Print
+;             addq.w    #7,d1
+;.Next:       addq.l    #2,a2                ; Next language
+;             addq.w    #1,d7
+;             cmpi.b    #8,d7
+;             bmi.s     .Loop
+;             .LOCAL
+;; ------------- Display body conditions ------------------------------
+;             move.w    #16+15*6,d0          ; Set cursor
+;             move.w    #50+65,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Body_txt,a0          ; Print "BODY"
+;             jsr       IG_Print
+;             move.w    #16+15*6,d2          ; Initialize registers
+;             move.w    #52+72,d3
+;             lea.l     Status_icn,a0
+;             lea.l     Bodymind_relpos_list,a2
+;             move.b    Body_conditions(a1),d6     ; Member dead ?
+;             move.b    #$e0,d7
+;             and.b     d6,d7
+;             beq.s     .Not_dead
+;             move.w    d2,d0                ; Display cross
+;             move.w    d3,d1
+;             jsr       Blit_masked_block
+;             bra.s     .Dead
+;.Not_dead:   lea.l     9*128(a0),a0
+;             moveq.l   #0,d7
+;.Loop:       btst      d7,d6                ; Body condition ?
+;             beq.s     .Next
+;             move.w    d2,d0                ; Get coordinates
+;             move.w    d3,d1
+;             add.w     (a2)+,d0
+;             add.w     (a2)+,d1
+;             jsr       Blit_masked_block    ; Display icon
+;.Next:       lea.l     128(a0),a0           ; Next body condition
+;             addq.w    #1,d7
+;             cmpi.w    #6,d7                ; !!!
+;             bmi.s     .Loop
+;.Dead:       .LOCAL
+;; ------------- Display mind conditions ------------------------------
+;             move.w    #16+23*6,d0          ; Set cursor
+;             move.w    #50+65,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Mind_txt,a0          ; Print "MIND"
+;             jsr       IG_Print
+;             move.w    #16+23*6,d2          ; Initialize registers
+;             move.w    #52+72,d3
+;             lea.l     Status_icn,a0
+;             lea.l     Bodymind_relpos_list,a2
+;             move.b    Mind_conditions(a1),d6     ; Member dead ?
+;             move.b    #$e0,d7
+;             and.b     d6,d7
+;             bne.s     .Dead
+;             lea.l     14*128(a0),a0
+;             moveq.l   #0,d7
+;.Loop:       btst      d7,d6                ; Mind condition ?
+;             beq.s     .Next
+;             move.w    d2,d0                ; Get coordinates
+;             move.w    d3,d1
+;             add.w     (a2)+,d0
+;             add.w     (a2)+,d1
+;             jsr       Blit_masked_block    ; Display icon
+;.Next:       lea.l     128(a0),a0           ; Next mind condition
+;             addq.w    #1,d7
+;             cmpi.w    #6,d7                ; !!!
+;             bmi.s     .Loop
+;.Dead:       .LOCAL
+;; ------------- Rest of display --------------------------------------
+;             move.l    #Inv1_CIL,Control_list_ptr ; Display control icons
+;             jsr       Show_control_icons
+;             Update_screen
+;             lea.l     Control_area,a0      ; Object branch
+;             jsr       Set_layout_data
+;; ------------- Fade in ----------------------------------------------
+;             tst.b     Fade_block           ; Fade ?
+;             beq.s     .Skip
+;             sf        Fade_block
+;             bra.s     .Continue
+;.Skip:       lea.l     Inv1_pal,a1          ; Fade in
+;             lea.l     Subfade1,a2
+;.Again:      lea.l     Hbl_Inv1_list,a0     ; Update palettes
+;             jsr       Update_HBL
+;             jsr       My_vsync             ; Wait 2 Vbl's
+;             jsr       My_vsync
+;             lea.l     Inv1_below,a0        ; Fade
+;             jsr       Fade_pal
+;             bne.s     .Again
+;.Continue:   lea.l     Hbl_Inv1_list,a0     ; Update palettes
+;             jsr       Update_HBL
+;             movem.l   (sp)+,d0-d7/a0-a6
+;             rts
+
 Inv1_DisInit:
 	movea.l	Off_screen,a6
 	moveq	#6,d0
@@ -287,19 +517,54 @@ Go_Inv2:
 	bsr.w	Push_Module
 .Exit:
 	rts	
-T_10f3a:
+
+; ---- Inv21_Exit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv21_Exit:
+;             Pop       Module
+;             jmp       Inv1_Exit
+
+Inv21_Exit:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10f3a
+	bne.b	Inv21_Exit
 	bsr.w	Pop_Module
-	bra.w	T_10b56
-T_10f4c:
+	bra.w	Inv1_Exit
+
+; ---- Inv2_Exit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv2_Exit:
+;             Pop       Module
+;             jmp       Init_display
+
+Inv2_Exit:
 	btst	#$1,Mouse_button_state
-	bne.b	T_10f4c
+	bne.b	Inv2_Exit
 	bsr.w	Pop_Module
 	bra.w	Init_display
+
+; ---- Inv2_DisUpd (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv2_DisUpd:
+;             jsr       Update_status_block
+;             lea.l     Inv2_CIL,a0          ; Update control icons
+;             lea.l     Inv2CIL_evaluate,a1
+;             jsr       Update_control_icons
+;             movea.l   Current_inventory_chardat_ptr,a1     ; Update weight
+;             move.l    Weight_normal(a1),d0
+;             moveq.l   #0,d1
+;             move.w    Attr_1_normal(a1),d1
+;             add.w     Attr_1_normal_magic(a1),d1
+;             cmp.l     XWeight,d0           ; Change ?
+;             bne.s     .Update
+;             cmp.l     XStrength,d1         ; Change ?
+;             beq.s     .No_change
+;.Update:     move.l    d0,XWeight           ; Update
+;             move.l    d1,XStrength
+;             move.b    #2,Weight_update
+;.No_change:  .LOCAL
+;             jsr       Update_quantity_colours
+;             rts
+
 Inv2_DisUpd:
 	jsr	Update_status_block
-	lea.l	D_2da12,a0
+	lea.l	Inv2_CIL,a0
 	lea.l	Inv2CIL_evaluate,a1
 	bsr.w	Update_control_icons
 	bsr.w	Update_quantity_colours
@@ -315,6 +580,82 @@ T_10f96:
 	jsr	Pop_MA
 	jsr	Pop_PA
 	bra.w	Inv2_DisExit
+
+; ---- Inv2_DisInit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Inv2_DisInit:
+;             SetMesMin                      16,49+1,176,Code0001Sys
+;             move.l    #Inv2_PlusMes,PlusMes_info
+;             movea.l   Off_screen,a6        ; Get screen base
+;             moveq.l   #2,d0                ; New layout
+;             jsr       Show_layout
+;             moveq.l   #33,d7
+;             movea.l   Current_inventory_chardat_ptr,a1
+;             jsr       Display_character
+;; ------------- Display objects --------------------------------------
+;             lea.l     Neck_place_counter(a1),a2
+;             lea.l     Inv_data(a1),a4
+;             moveq.l   #1,d1
+;             moveq.l   #21-1,d7
+;             cmpi.b    #14,Character_race(a1)     ; Special or monster ?
+;             bmi.s     .Loop
+;             lea.l     9(a2),a2             ; Skip body items
+;             lea.l     9*40(a4),a4
+;             addi.w    #9,d1
+;             subi.w    #9,d7
+;.Loop:       tst.b     (a2)+                ; Any object there ?
+;             beq.s     .Next
+;             cmpi.b    #17,Item_type(a4)    ; Is it a monster item ?
+;             beq.s     .Next
+;             move.b    (a4),d0              ; Display object
+;             jsr       INV2_Show_object
+;.Next:       addq.l    #1,d1                ; Next object
+;             lea.l     40(a4),a4
+;             dbra      d7,.Loop
+;; ------------- FUCKING EXCEPTION ------------------------------------
+;             lea.l     Right_hand_place_counter(a1),a2
+;             tst.b     (a2)                 ; Double-handed
+;             beq.s     .Skip                ; object in right hand ?
+;             lea.l     Inv_data+3*40(a1),a3
+;             cmpi.b    #2,Hand_use(a3)
+;             bne.s     .Skip
+;             moveq.l   #0,d0                ; Display cross over left hand
+;             moveq.l   #6,d1
+;             jsr       INV2_Show_object
+;.Skip:       .LOCAL
+;; ------------- Print weight -----------------------------------------
+;             move.w    #16,d0               ; Print "WEIGHT"
+;             move.w    #178,d1
+;             move.w    #80,d2
+;             lea.l     Weight_name,a0
+;             jsr       Print_centered_string
+;             clr.l     XWeight              ; Force a update
+;             clr.l     XStrength
+;; ------------- Rest of display --------------------------------------
+;             lea.l     Inv2_CIL,a0          ; Display control icons
+;             jsr       Inv2CIL_evaluate
+;             move.l    a0,Control_list_ptr
+;             jsr       Show_control_icons
+;             Update_screen
+;             lea.l     Inv2_L2,a0           ; Object branch
+;             jsr       Set_layout_data
+;; ------------- Fade in ----------------------------------------------
+;             tst.b     Fade_block           ; Fade ?
+;             beq.s     .Skip
+;             sf        Fade_block
+;             bra.s     .Continue
+;.Skip:       lea.l     Inv2_target_hbl,a1   ; Fade in
+;             lea.l     Subfade1,a2
+;.Again:      lea.l     Hbl_Inv2_list,a0     ; Update palettes
+;             jsr       Update_HBL
+;             jsr       My_vsync             ; Wait 2 Vbl's
+;             jsr       My_vsync
+;             lea.l     Inv2_below,a0        ; Fade
+;             jsr       Hbl_fade
+;             bne.s     .Again
+;.Continue:   lea.l     Hbl_Inv2_list,a0     ; Update palettes
+;             jsr       Update_HBL
+;.Exit:       rts
+
 Inv2_DisInit:
 	move.w	#$10,Mesmin_X
 	move.w	#$32,Mesmin_Y
@@ -366,7 +707,7 @@ Inv2_DisInit:
 	move.w	#$50,d2
 	lea.l	D_2dad0,a0
 	jsr	Print_centered_string
-	lea.l	D_2da12,a0
+	lea.l	Inv2_CIL,a0
 	bsr.w	Inv2CIL_evaluate
 	move.l	a0,Control_list_ptr
 	jsr	Show_control_icons
@@ -497,6 +838,37 @@ Display_quantities:
 	lea.l	40(a3),a3
 	dbra	d6,.Loop2
 	rts	
+
+; ---- Update_weight (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Update_weight:
+;             tst.b     Weight_update        ; Update ?
+;             beq       .Exit
+;             moveq.l   #15,d0               ; Set print colours
+;             tst.b     Overweight
+;             beq.s     .Skip
+;             moveq.l   #1,d0
+;.Skip::      jsr       IG_Set_ink
+;             moveq.l   #2,d0
+;             jsr       IG_Set_paper
+;             moveq.l   #"0",d1              ; Initialize registers
+;             moveq.l   #3,d7
+;             lea.l     Weight_txt,a0
+;             movea.l   Off_screen,a6
+;             move.l    XWeight,d0           ; Convert weight
+;             divu.w    #1000,d0
+;             ext.l     d0
+;             lea.l     (a0),a3
+;             jsr       RConvert_number
+;             lea.l     7(a0),a3             ; Convert maximum weight
+;             move.l    XStrength,d0
+;             jsr       RConvert_number
+;             move.w    #16,d0               ; Print weight
+;             move.w    #178+8,d1
+;             move.w    #80,d2
+;             jsr       Print_centered_string
+;             subq.b    #1,Weight_update
+;.Exit:       rts
+
 T_11244:
 	movea.l	Current_inventory_chardat_ptr,a0
 	move.l	Weight_normal(a0),d2
@@ -961,19 +1333,24 @@ T_1186e:
 	clr.w	Object_name_nr
 .l_118a2:
 	rts
-T_118a4:
+
+; ---- Drop_item (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Drop_item:
+;             Push      Module,DropItem_Mod
+;             rts
+
+Drop_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_118a4
+	bne.b	Drop_item
 	lea.l	DropItem_Mod,a0
 	bsr.w	Push_Module
 	rts
-; ---- TransferItem_DisInit (original source: MAIN/INVENT.ASM)
+; ---- DropItem_DisInit (original source: MAIN/INVENT.ASM)
 DropItem_DisInit:
-TransferItem_DisInit:
 	lea.l	Backpack_area,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
-	move.w	#$0,d0	; CHANGE: was "MesMin 4"
+	move.w	#0,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
@@ -1122,6 +1499,63 @@ DropMItem_Return:
 	move.l	#Do_DropMItem,ReqDo_ptr
 	lea.l	Req_Mod,a0
 	bra.w	Push_Module
+
+; ---- Do_DropMItem (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Do_DropMItem:
+;             Wait_4_unclick
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             lea.l     Neck_place_counter-1(a0),a1          ; Calculate pointers
+;             lea.l     Inv_data-40(a0),a2
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             adda.w    d0,a1
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;             movea.l   Off_screen,a6
+;
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;  a0 - Pointer to character data (.l)
+;;  a1 - Pointer to object slot (.l)
+;;  a2 - Pointer to object data (.l)
+;;  a6 - Pointer to screen base (.l)
+;
+;             moveq.l   #0,d1                ; Get number
+;             move.b    (a1),d1
+;             move.l    ItemW_nr,d2
+;             sub.w     d2,d1                ; Subtract
+;             move.b    d1,(a1)
+;             bne.s     .Some_left           ; None left ?
+;             move.b    Object_slot_number,d0      ; Remove graphic
+;             jsr       INV2_Erase_object
+;             move.w    #16,d0               ; Erase object name
+;             move.w    #58,d1
+;             move.w    #16+176-1,d2
+;             move.w    #58+7-1,d3
+;             move.w    #2,d6
+;             jsr       Draw_box
+;             Update_screen
+;             bra.s     .Exit
+;.Some_left:  cmpi.b    #1,(a1)              ; Remove quantity ?
+;             bne.s     .Exit
+;             move.b    (a2),d0              ; Redraw object
+;             move.b    Object_slot_number,d1
+;             jsr       INV2_Show_object
+;             move.w    #16,d0               ; Erase object name
+;             move.w    #58,d1
+;             move.w    #16+176-1,d2
+;             move.w    #58+7-1,d3
+;             move.w    #2,d6
+;             jsr       Draw_box
+;             Update_screen
+;.Exit:       move.l    ItemW_nr,d0          ; Remove weight
+;             mulu.w    Weight(a2),d0
+;             sub.l     d0,Weight_normal(a0)
+;             jmp       Pop_Module
+;
+;;*****************************************************************************
+;
+;First_add    = 256-8*20                     ; Delay for repeat
+
 Do_DropMItem:
 	btst	#$1,Mouse_button_state
 	bne.b	Do_DropMItem
@@ -1201,7 +1635,7 @@ ItemW_DisInit:
 	moveq.l	#1,d6
 	lea.l	ItemW_L1,a0
 	jsr	Open_window
-	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	move.w	d0,Window_handle
 	movea.l	Off_screen,a6
 	moveq.l	#2,d6
 	moveq.l	#16,d7
@@ -1222,7 +1656,7 @@ ItemW_DisInit:
 	rts	
 ; ---- ItemW_DisExit (original source: MAIN/INVENT.ASM)
 ItemW_DisExit:
-	move.w	B_58256,d0	; CHANGE: was "move.w Window_handle,d0"
+	move.w	Window_handle,d0
 	jsr	Close_window
 	jsr	Copy_screen
 	movea.l	Off_screen,a6
@@ -1296,9 +1730,15 @@ ItemW_Down:
 	move.l	d0,ItemW_nr
 .Exit:
 	rts	
-T_11d6c:
+
+; ---- Use_item (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Use_item:
+;             Push      Module,UseItem_Mod
+;             rts
+
+Use_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_11d6c
+	bne.b	Use_item
 	lea.l	UseItem_Mod,a0
 	bsr.w	Push_Module
 	rts
@@ -1333,6 +1773,146 @@ Use_body_item:
 	bra.s	UseItem_entry
 .Exit:
 	bra.w	Pop_Module
+
+; ---- UseItem_entry (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;UseItem_entry:
+;             Wait_4_unclick
+;             move.b    d0,Object_slot_number      ; Store
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             lea.l     Neck_place_counter-1(a0),a1
+;             adda.w    d0,a1
+;             tst.b     (a1)                 ; Any object in this slot ?
+;             beq       .Exit
+;             lea.l     Inv_data-40(a0),a2
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;  a0 - Pointer to character data (.l)
+;;  a1 - Pointer to object slot (.l)
+;;  a2 - Pointer to object data (.l)
+;
+;; ------------- Check for a Use Item event ---------------------------
+;             move.w    Map_Xcoord,d0        ; Find event
+;             move.w    Map_Ycoord,d1
+;             jsr       Find_event
+;             beq       .No_event            ; Any event ?
+;             cmpi.b    #19,(a5)             ; Use Item event ?
+;             bne       .No_event
+;             move.w    6(a5),d0             ; Correct ID ?
+;             cmp.w     Item_ID(a2),d0
+;             bne       .No_event
+;             jsr       Do_event_item        ; Do it !
+;             btst      #3,Item_stat_bits(a2)      ; Use once ?
+;             beq.s     .Use_more
+;             subq.b    #1,(a1)              ; Remove object
+;             moveq.l   #0,d0
+;             move.w    Weight(a2),d0
+;             sub.l     d0,Weight_normal(a0)
+;             move.b    Object_slot_number,d0      ; Body or backpack ?
+;             cmpi.b    #10,d0
+;             bpl.s     .Destroy
+;             jsr       Remove_boni          ; Remove boni if body item
+;.Destroy:    jsr       Destroy_used_item
+;.Use_more:   jsr       Pop_Module           ; Leave inventory
+;             jsr       Inv21_Exit
+;             rts
+;; ------------- Check if there's a spell in the item -----------------
+;.No_event:   tst.b     Spell_charges(a2)    ; Any magic in this item ?
+;             beq       .No_magic
+;             move.b    Character_class(a0),d1     ; Right class ?
+;             move.w    Class_use(a2),d2
+;             btst      d1,d2
+;             bne.s     .Class_OK
+;             PlusMes   9                    ; Print message {9,+}
+;             bra       .Exit
+;.Class_OK:   lea.l     Spell_dat-124,a3     ; Get pointer to spell data
+;             move.b    Spell_class(a2),d0
+;             ext.w     d0
+;             mulu.w    #120,d0
+;             adda.w    d0,a3
+;             move.b    Spell_number(a2),d0
+;             ext.w     d0
+;             add.w     d0,d0
+;             add.w     d0,d0
+;             adda.w    d0,a3
+;             move.b    (a3),d0              ; Right area ?
+;             move.w    Spell_area_type,d1
+;             btst      d1,d0
+;             bne.s     .Right
+;             movea.l   Textfile_ptr,a1      ; Print message
+;             move.w    #0,WText_nr
+;             move.l    #Code0007Sys,Textfile_ptr
+;             Push      Module,TxtW_Mod
+;             move.l    a1,Textfile_ptr
+;             rts
+;.Right:      moveq.l   #0,d0                ; Do magic !
+;             move.b    Spell_class(a2),d0
+;             move.w    d0,Selected_class
+;             move.b    Spell_number(a2),d0
+;             move.w    d0,Selected_spell
+;             st        Magic_object_flag    ; Signal
+;             jsr       Do_magic
+;             move.l    #Code0001Sys,Textfile_ptr
+;             rts
+;; ------------- Check if it's a special item -------------------------
+;.No_magic:   cmpi.b    #13,1(a2)            ; Is it a special item ?
+;             bne       .No_special_item
+;             move.w    Special_item_flags,d0      ; Get data
+;             move.b    21(a2),d1
+;             subq.b    #1,d1
+;             btst      d1,d0                ; Already used ?
+;             beq.s     .No
+;             PlusMes   23                   ; Print message {23,+}
+;             jmp       Pop_Module
+;.No:         bset      d1,d0                ; Set flag for this item
+;             move.w    d0,Special_item_flags
+;             clr.b     (a1)                 ; Remove item
+;             moveq.l   #0,d0
+;             move.w    Weight(a2),d0
+;             sub.l     d0,Weight_normal(a0)
+;             jsr       Destroy_used_item
+;             PlusMes   18                   ; Print message {18,+}
+;             jmp       Pop_Module
+;; ------------- Check if it's a text scroll --------------------------
+;.No_special_item:
+;             cmpi.b    #7,1(a2)             ; Is it a text scroll ?
+;             bne       .No_text_scroll
+;             lea.l     Codetxt_filename,a0  ; Load textfile
+;             moveq.l   #0,d0
+;             move.b    Misc_1(a2),d0
+;             jsr       Load_subfile
+;             move.l    a0,Codetxt_ptr
+;             move.b    Misc_2(a2),d0        ; Show text
+;             move.w    d0,WText_nr
+;             move.l    a0,Textfile_ptr
+;             lea.l     TxtW_Mod,a0
+;             move.l    #.End_text_scroll,Return_ptr(a0)
+;             jsr       Push_Module
+;             rts
+;.End_text_scroll:
+;             clr.l     TxtW_Mod+Return_ptr  ; Restore stuff
+;             move.l    #Code0001Sys,Textfile_ptr
+;             movea.l   Codetxt_ptr,a0       ; Free memory
+;             jsr       Free_memory
+;             jmp       Pop_Module
+;; ------------- Check if it's a magic disc ---------------------------
+;.No_text_scroll:
+;             cmpi.b    #18,1(a2)            ; Is it a magic disc ?
+;             bne       .Exit
+;             cmpi.b    #1,Current_map_type  ; Are we in 2D wilderness ?
+;             beq.s     .Correct_map_type
+;             PlusMes   16                   ; Print message {16,+}
+;             bra       .Exit
+;.Correct_map_type:
+;             moveq.l   #4,d0                ; Do it!
+;             jsr       Set_new_travel_mode
+;             Pop       Module
+;             Pop       Module
+;             Pop       Module
+;             jmp       Init_display
+;.Exit:       jmp       Pop_Module
+
 UseItem_entry:
 	btst	#$1,Mouse_button_state
 	bne.b	UseItem_entry
@@ -1369,7 +1949,7 @@ UseItem_entry:
 	bsr.w	Destroy_used_item
 .l_11e52:
 	bsr.w	Pop_Module
-	bsr.w	T_10f3a
+	bsr.w	Inv21_Exit
 	rts
 .l_11e5c:
 	tst.b	$e(a2)
@@ -1408,7 +1988,7 @@ Use_item_in_combat:
 	tst.b	Battling
 	beq.b	.l_11ee2
 	bsr.w	Pop_Module
-	bsr.w	T_10f3a
+	bsr.w	Inv21_Exit
 .l_11ee2:
 	moveq	#0,d0
 	move.b	$c(a2),d0
@@ -1501,6 +2081,42 @@ Destroy_used_item:
 	bsr.w	Show_item_destruction
 	movem.l	(sp)+,d0-d3/a3
 	rts	
+
+; ---- Remove_used_magic_item (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Remove_used_magic_item:
+;             movem.l   d0/d1/a0-a2/a6,-(sp)
+;             jsr       Copy_screen
+;             movea.l   Current_inventory_chardat_ptr,a0     ; Initialize registers
+;             lea.l     Neck_place_counter-1(a0),a1
+;             lea.l     Inv_data-40(a0),a2
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             adda.w    d0,a1
+;             mulu.w    #40,d0
+;             adda.w    d0,a2
+;             btst      #2,Item_stat_bits(a2)      ; Multiple ?
+;             bne.s     .Skip
+;             cmpi.b    #$ff,Spell_charges(a2)     ; Infinite charges ?
+;             beq.s     .Go_on
+;             subq.b    #1,Spell_charges(a2) ; One charge less
+;             bne.s     .Go_on
+;.Skip:       moveq.l   #0,d0                ; Remove item
+;             move.w    Weight(a2),d0
+;             sub.l     d0,Weight_normal(a0)
+;             subq.b    #1,(a1)
+;             bne       .More_left
+;             jsr       Destroy_used_item
+;             bra       .Go_on
+;.More_left:  cmpi.b    #1,(a1)              ; Remove quantity ?
+;             bne.s     .Go_on
+;             move.b    (a2),d0              ; Redraw object
+;             move.b    Object_slot_number,d1
+;             movea.l   Off_screen,a6
+;             jsr       INV2_Show_object
+;             Update_screen
+;.Go_on:      movem.l   (sp)+,d0/d1/a0-a2/a6
+;             rts
+
 ; Removes a charge of a magic item or the item itself.
 Remove_used_magic_item:
 	movem.l	d0-d1/a0-a2/a5-a6,-(a7)
@@ -1609,24 +2225,37 @@ Show_item_sparkle:
 	jsr	Copy_screen
 	movem.l	(a7)+,d0-d2/d7/a0-a4/a6
 	rts
-T_121be:
+
+; ---- Pool_gold_INV2 (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Pool_gold_INV2:
+;             movea.l   Current_inventory_chardat_ptr,a0     ; Pool gold
+;             move.w    Gold_coins(a0),d0
+;             move.l    Weight_normal(a0),d1
+;             move.w    Attr_1_normal(a0),d2
+;             add.w     Attr_1_normal_magic(a0),d2
+;             mulu.w    #1000,d2
+;             jsr       Pool_gold
+;             add.w     d0,Gold_coins(a0)    ; Add extra gold
+;             mulu.w    #Gold_weight,d0
+;             add.l     d0,Weight_normal(a0)
+;             rts
+
+Pool_gold_INV2:
 	btst	#$1,Mouse_button_state
-	bne.b	T_121be
+	bne.b	Pool_gold_INV2
 	move.w	#$0,Draw_Cicon
 	jsr	My_vsync
-; ---- Pool_gold_INV2 (original source: MAIN/INVENT.ASM)
-Pool_gold_INV2:
 	movea.l	Current_inventory_chardat_ptr,a0
 	move.w	Gold_coins(a0),d0
 	move.l	Weight_normal(a0),d1
 	move.w	Attr_1_normal(a0),d2
 	add.w	Attr_1_normal_magic(a0),d2
-	mulu.w	#1000,d2
+	mulu.w	#$3e8,d2
 	bsr.w	Pool_gold
 	add.w	d0,Gold_coins(a0)
-	mulu.w	#Gold_weight,d0
+	mulu.w	#$a,d0
 	add.l	d0,Weight_normal(a0)
-	rts	
+	rts
 ; ---- View_item (original source: MAIN/INVENT.ASM)
 View_item:
 	btst	#1,Mouse_button_state
@@ -1695,7 +2324,7 @@ ItemViewW1_DisInit:
 	moveq.l	#1,d6
 	lea.l	ItemView1_L1,a0
 	jsr	Open_window
-	move.w	d0,B_58256	; CHANGE: was "move.w d0,Window_handle"
+	move.w	d0,Window_handle
 	movea.l	Itemdata_ptr,a1
 	move.b	Object_slot_number,d0
 	ext.w	d0
@@ -1871,6 +2500,216 @@ Open_ExtraW:
 	bsr.w	Push_Module
 .Exit:
 	rts	
+
+; ---- ItemViewW2_DisInit (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;ItemViewW2_DisInit:
+;             moveq.l   #15,d0               ; Set print colours
+;             jsr       IG_Set_ink
+;             moveq.l   #2,d0
+;             jsr       IG_Set_paper
+;
+;             moveq.l   #32,d0
+;             moveq.l   #48,d1
+;             moveq.l   #12,d2
+;             moveq.l   #6,d3
+;             moveq.l   #2,d4
+;             moveq.l   #1,d6
+;             suba.l    a0,a0
+;             jsr       Open_window
+;             move.w    d0,View2_handle
+;
+;             movea.l   Itemdata_ptr,a1
+;             move.b    Object_slot_number,d0
+;             ext.w     d0
+;             subq.w    #1,d0
+;             mulu.w    #40,d0
+;             adda.w    d0,a1
+;             movea.l   Off_screen,a6
+;
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64,d1
+;             jsr       IG_Set_cursor
+;             lea.l     LPMax_txt,a0         ; Print "LP-MAX:"
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print LP maximum
+;             moveq.l   #0,d0
+;             move.b    LP_max(a1),d0
+;             tst.b     Cursed               ; Negate if cursed
+;             beq.s     .NoC1
+;             neg.w     d0
+;.NoC1:       moveq.l   #2,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;
+;             move.w    #48+80,d0            ; Set cursor
+;             move.w    #64,d1
+;             jsr       IG_Set_cursor
+;             lea.l     PPMax_txt,a0         ; Print "PP-MAX:"
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print PP maximum
+;             moveq.l   #0,d0
+;             move.b    SP_max(a1),d0
+;             tst.b     Cursed               ; Negate if cursed
+;             beq.s     .NoC2
+;             neg.w     d0
+;.NoC2:       moveq.l   #2,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+7,d1
+;             jsr       IG_Set_cursor
+;             lea.l     MBW_txt,a0           ; Print "M-B-W:"
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print Magic Bonus Weapon
+;             moveq.l   #0,d0
+;             move.b    Weapon_magic_bonus(a1),d0
+;             moveq.l   #2,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;
+;             move.w    #48+80,d0            ; Set cursor
+;             move.w    #64+7,d1
+;             jsr       IG_Set_cursor
+;             lea.l     MBA_txt,a0           ; Print "M-B-A:"
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print PP maximum
+;             moveq.l   #0,d0
+;             move.b    Armour_magic_bonus(a1),d0
+;             moveq.l   #2,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+14,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Attr2_txt,a0         ; Print "ATTRIBUTE"
+;             jsr       IG_Print
+;
+;             tst.b     Attribute(a1)        ; Any attribute changed ?
+;             beq       .No_attr
+;
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+21,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Race_dat+Race_names+30,a2  ; Print attribute name
+;             moveq.l   #0,d0
+;             move.b    Attribute(a1),d0
+;             add.w     d0,d0
+;             move.w    0(a2,d0.w),d0
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0
+;             jsr       IG_Print
+;             lea.l     Tween_txt,a0         ; Print " : "
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print attribute value
+;             moveq.l   #0,d0
+;             move.b    Attribute_normal(a1),d0
+;             tst.b     Cursed               ; Negate if cursed
+;             beq.s     .NoC3
+;             neg.w     d0
+;.NoC3:       moveq.l   #2,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;.No_attr:
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+28,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Skill2_txt,a0        ; Print "SKILL"
+;             jsr       IG_Print
+;
+;             tst.b     Skill(a1)            ; Any skill changed ?
+;             beq       .No_skill
+;
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+35,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Class_dat+Class_names+22,a2          ; Print skill name
+;             moveq.l   #0,d0
+;             move.b    Skill(a1),d0
+;             add.w     d0,d0
+;             move.w    -2(a2,d0.w),d0
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0
+;             jsr       IG_Print
+;             lea.l     Tween_txt,a0         ; Print " : "
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print skill value
+;             moveq.l   #0,d0
+;             move.b    Skill_normal(a1),d0
+;             tst.b     Cursed               ; Negate if cursed
+;             beq.s     .NoC4
+;             neg.w     d0
+;.NoC4:       moveq.l   #2,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;.No_skill:
+;             tst.b     Spell_charges(a1)    ; Any magic ?
+;             bne       .Magic
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+42,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Magic_txt,a0         ; Print "MAGIC"
+;             jsr       IG_Print
+;             bra       .No_magic
+;
+;.Magic:      move.w    #48,d0               ; Set cursor
+;             move.w    #64+42,d1
+;             jsr       IG_Set_cursor
+;             moveq.l   #1,d0                ; Set ink
+;             jsr       IG_Set_ink
+;             lea.l     Spell_dat+Spellclass_names,a2        ; Print spell class name
+;             moveq.l   #0,d0
+;             move.b    Spell_class(a1),d0
+;             add.w     d0,d0
+;             move.w    -2(a2,d0.w),d0
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0
+;             jsr       IG_Print
+;             moveq.l   #15,d0               ; Set ink
+;             jsr       IG_Set_ink
+;
+;             move.w    #48,d0               ; Set cursor
+;             move.w    #64+49,d1
+;             jsr       IG_Set_cursor
+;             lea.l     Spell_dat+Spell_names,a2   ; Print spell name
+;             move.b    Spell_class(a1),d0
+;             subq.w    #1,d0
+;             mulu.w    #60,d0
+;             adda.w    d0,a2
+;             moveq.l   #0,d0
+;             move.b    Spell_number(a1),d0
+;             add.w     d0,d0
+;             move.w    -2(a2,d0.w),d0
+;             jsr       Get_word
+;             lea.l     Line_buffer,a0
+;             jsr       IG_Print
+;             lea.l     Tween2_txt,a0        ; Print " ("
+;             jsr       IG_Print
+;             lea.l     Line_buffer,a0       ; Print spell charges
+;             moveq.l   #0,d0
+;             move.b    Spell_charges(a1),d0
+;             cmpi.b    #$ff,d0
+;             bne.s     .Finite
+;             lea.l     Infinite_charges_txt,a0    ; Print "***"
+;             jsr       IG_Print
+;             bra.s     .Continue
+;.Finite:     moveq.l   #3,d7
+;             movea.l   a0,a3
+;             jsr       LConvert_number
+;             jsr       IG_Print
+;.Continue:   lea.l     Tween3_txt,a0        ; Print ")"
+;             jsr       IG_Print
+;.No_magic:
+;             Update_screen
+;             rts
+
 ItemViewW2_DisInit:
 	moveq	#15,d0
 	jsr	IG_Set_ink
@@ -2080,6 +2919,37 @@ ItemViewW2_DisExit:
 	jsr	Close_window
 	move.l	(sp)+,d0
 	rts	
+
+; ---- Accursed_blink (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Accursed_blink:
+;             tst.b     Cursed               ; Cursed ?
+;             beq.s     .Exit
+;             lea.l     Cursed_txt,a0
+;; ------------- Update colour ----------------------------------------
+;             subq.w    #1,Curse_count       ; Every 4 frames
+;             bne.s     .Skip
+;             move.w    #4,Curse_count
+;             lea.l     .Colours,a1
+;             move.w    Curse_index,d0
+;             addq.w    #1,d0
+;             move.b    0(a1,d0.w),d1
+;             bpl.s     .Not_end             ; End of colour list ?
+;             moveq.l   #0,d0                ; Reset
+;             move.b    (a1),d1
+;.Not_end:    move.w    d0,Curse_index
+;             move.b    d1,1(a0)
+;; ------------- Print text -------------------------------------------
+;.Skip:       movea.l   Off_screen,a6        ; Print "CURSED"
+;             move.w    #48,d0
+;             move.w    #65+56,d1
+;             move.w    #160,d2
+;             jsr       Print_centered_string
+;.Exit:       rts
+;
+;.Colours:    .DC.b 1,5,6,10,10,10,6,5,1,1,1
+;             .DC.b -1
+;             .EVEN
+
 Accursed_blink:
 	tst.b	Cursed
 	beq.b	.l_12924
@@ -2105,32 +2975,41 @@ Accursed_blink:
 	jsr	Print_centered_string
 .l_12924:
 	rts
-T_12926:
+; ---- Double_Pop (original source: MAIN/INVENT.ASM)
+Double_Pop:
 	bsr.w	Pop_Module
 	bra.w	Pop_Module
-T_1292e:
-	move.l	d0,-(a7)
-	move.w	B_58256,d0
+; ---- Window_DisExit (original source: MAIN/INVENT.ASM)
+Window_DisExit:
+	move.l	d0,-(sp)
+	move.w	Window_handle,d0
 	jsr	Close_window
-	move.l	(a7)+,d0
-	rts
-T_12940:
+	move.l	(sp)+,d0
+	rts	
+
+; ---- Transfer_item (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Transfer_item:
+;             lea.l     TransferItem_Mod,a0
+;             jmp       Push_Module
+
+Transfer_item:
 	btst	#$1,Mouse_button_state
-	bne.b	T_12940
+	bne.b	Transfer_item
 	lea.l	TransferItem_Mod,a0
 	bra.w	Push_Module
-T_12954:
+; ---- TransferItem_DisInit (original source: MAIN/INVENT.ASM)
+TransferItem_DisInit:
 	lea.l	Backpack_area,a0
 	jsr	Push_MA
 	movea.l	Off_screen,a6
-	move.w	#$4,d0
+	move.w	#4,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_1297c:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_1297c
-	rts
+	btst	#1,Mouse_button_state
+	bne.s	*-8
+; CHANGE: removed "Wait_4_unclick"
+	rts	
 ; ---- Exit_TransferItem (original source: MAIN/INVENT.ASM)
 Exit_TransferItem:
 	bsr.w	Pop_Module
@@ -2341,75 +3220,89 @@ Inv2_Do_TI:
 	jsr	Copy_screen
 .Exit:
 	bra.w	Pop_Module
-T_12c3e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12c3e
-; ---- Transfer_gold (original source: MAIN/INVENT.ASM)
+
+; ---- Transfer_gold (original source: MAIN/INVENT.ASM) - the shipped program differs, its code follows, not assembled:
+;Transfer_gold:
+;             movea.l   Off_screen,a6        ; Print message {6,-}
+;             MesMin    6
+;             Update_screen
+;             Wait_4_unclick
+;             movea.l   Current_inventory_chardat_ptr,a0
+;             moveq.l   #0,d0                ; Set parameters
+;             move.w    Gold_coins(a0),d0
+;             move.l    d0,Original_number
+;             clr.l     ItemW_nr
+;             Push      Module,TransGold_Mod ; Requester
+;             rts
+
 Transfer_gold:
+	btst	#$1,Mouse_button_state
+	bne.b	Transfer_gold
 	movea.l	Off_screen,a6
-	move.w	#6,d0
+	move.w	#$6,d0
 	jsr	Minus_message
 	jsr	Switch_screen
 	jsr	Copy_screen
-	btst	#1,Mouse_button_state
-	bne.s	*-8
-; CHANGE: removed "Wait_4_unclick"
+.l_12c64:
+	btst	#$1,Mouse_button_state
+	bne.b	.l_12c64
 	movea.l	Current_inventory_chardat_ptr,a0
-	moveq.l	#0,d0
+	moveq	#0,d0
 	move.w	Gold_coins(a0),d0
 	move.l	d0,Original_number
 	clr.l	ItemW_nr
-	st.b	B_587f9	; CHANGE: added
-	lea.l	TransGold_Mod,a0	; CHANGE: added
-	bsr.w	Push_Module	; CHANGE: added
-	sf.b	B_587f9	; CHANGE: added
-	rts	; CHANGE: added
-	moveq	#15,d0	; CHANGE: added
-	jsr	IG_Set_ink	; CHANGE: added
-	moveq	#2,d0	; CHANGE: added
-	jsr	IG_Set_paper	; CHANGE: added
-	moveq	#32,d0	; CHANGE: added
-	moveq	#112,d1	; CHANGE: added
-	moveq	#10,d2	; CHANGE: added
-	moveq	#6,d3	; CHANGE: added
-	moveq	#1,d6	; CHANGE: added
-	lea.l	D_2f90a,a0	; CHANGE: added
-	jsr	Open_window	; CHANGE: added
-	move.w	d0,B_58256	; CHANGE: added
-	movea.l	Off_screen,a6	; CHANGE: added
-	moveq	#2,d6	; CHANGE: added
-	moveq	#16,d7	; CHANGE: added
-	move.w	#$30,d0	; CHANGE: added
-	move.w	#$a0,d1	; CHANGE: added
-	lea.l	D_38060,a0	; CHANGE: added
-	jsr	Blot_unmasked_block	; CHANGE: added
-	move.w	#$30,d0	; CHANGE: added
-	move.w	#$b0,d1	; CHANGE: added
-	lea.l	D_38160,a0	; CHANGE: added
-	jsr	Blot_unmasked_block	; CHANGE: added
-	move.w	#$80,d0	; CHANGE: added
-	move.w	#$b0,d1	; CHANGE: added
-	lea.l	D_39d60,a0	; CHANGE: added
-	jsr	Blot_unmasked_block	; CHANGE: added
-	bsr.w	ItemW_DisUpd	; CHANGE: added
-	tst.b	B_587f9	; CHANGE: added
-	beq.b	.c_12d34	; CHANGE: added
-	move.w	#$80,d0	; CHANGE: added
-	move.w	#$a0,d1	; CHANGE: added
-	moveq	#2,d6	; CHANGE: added
-	moveq	#16,d7	; CHANGE: added
-	lea.l	D_3a160,a0	; CHANGE: added
-	jsr	Blot_unmasked_block	; CHANGE: added
-.c_12d34:
-	move.w	#$31,d0	; CHANGE: added
-	move.w	#$96,d1	; CHANGE: added
-	jsr	IG_Set_cursor	; CHANGE: added
-	moveq	#14,d0	; CHANGE: added
-	lea.l	Code0001Sys,a1	; CHANGE: added
-	jsr	Convert_text_line	; CHANGE: added
-	lea.l	Line_buffer,a0	; CHANGE: was "Push Module,TransGold_Mod"
-	jsr	IG_Print	; CHANGE: was "Push Module,TransGold_Mod"
-	rts	
+	st.b	B_587f9
+	lea.l	TransGold_Mod,a0
+	bsr.w	Push_Module
+	sf.b	B_587f9
+	rts
+T_12c9e:
+	moveq	#15,d0
+	jsr	IG_Set_ink
+	moveq	#2,d0
+	jsr	IG_Set_paper
+	moveq	#32,d0
+	moveq	#112,d1
+	moveq	#10,d2
+	moveq	#6,d3
+	moveq	#1,d6
+	lea.l	D_2f90a,a0
+	jsr	Open_window
+	move.w	d0,Window_handle
+	movea.l	Off_screen,a6
+	moveq	#2,d6
+	moveq	#16,d7
+	move.w	#$30,d0
+	move.w	#$a0,d1
+	lea.l	D_38060,a0
+	jsr	Blot_unmasked_block
+	move.w	#$30,d0
+	move.w	#$b0,d1
+	lea.l	D_38160,a0
+	jsr	Blot_unmasked_block
+	move.w	#$80,d0
+	move.w	#$b0,d1
+	lea.l	D_39d60,a0
+	jsr	Blot_unmasked_block
+	bsr.w	ItemW_DisUpd
+	tst.b	B_587f9
+	beq.b	.l_12d34
+	move.w	#$80,d0
+	move.w	#$a0,d1
+	moveq	#2,d6
+	moveq	#16,d7
+	lea.l	D_3a160,a0
+	jsr	Blot_unmasked_block
+.l_12d34:
+	move.w	#$31,d0
+	move.w	#$96,d1
+	jsr	IG_Set_cursor
+	moveq	#14,d0
+	lea.l	Code0001Sys,a1
+	jsr	Convert_text_line
+	lea.l	Line_buffer,a0
+	jsr	IG_Print
+	rts
 T_12d5e:
 	move.w	#$60,Adding
 	bsr.w	T_12c9e
@@ -2461,301 +3354,300 @@ Do_TransferGold:
 	add.l	d0,Weight_normal(a0)
 	sub.l	d0,Weight_normal(a1)
 	rts	
+; ---- Equip_item (original source: MAIN/INVENT.ASM)
 Equip_item:
-	btst	#$1,Mouse_button_state
-	bne.b	Equip_item
-	tst.l	ItemW_nr
-	beq.b	.l_12e5a
-	move.l	#Code0001Sys,Textfile_ptr
-	move.w	#$18,ReqText_nr
-	move.l	#.l_12e5c,ReqDo_ptr
-	lea.l	Req_Mod,a0
-	bsr.w	Push_Module
-.l_12e5a:
-	rts
-.l_12e5c:
-	movea.l	Current_inventory_chardat_ptr,a1
-	move.l	ItemW_nr,d0
-	sub.w	d0,Gold_coins(a1)
-	mulu.w	#$a,d0
-	sub.l	d0,Weight_normal(a1)
-	bra.w	Pop_Module
-T_12e78:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12e78
-; ---- Transfer_food (original source: MAIN/INVENT.ASM)
-Transfer_food:
-	movea.l	Off_screen,a6
-	move.w	#7,d0
-	jsr	Minus_message
-	jsr	Switch_screen
-	jsr	Copy_screen
 	btst	#1,Mouse_button_state
 	bne.s	*-8
-; CHANGE: removed "Wait_4_unclick"
-	movea.l	Current_inventory_chardat_ptr,a0
-	moveq.l	#0,d0
-	move.w	Food_rations(a0),d0
-	move.l	d0,Original_number
-	clr.l	ItemW_nr
+	tst.l	ItemW_nr	; CHANGE: was "Wait_4_unclick"
+	beq.b	.c_12e5a	; CHANGE: added
+	move.l	#Code0001Sys,Textfile_ptr	; CHANGE: added
+	move.w	#$18,ReqText_nr	; CHANGE: added
+	move.l	#.c_12e5c,ReqDo_ptr	; CHANGE: added
+	lea.l	Req_Mod,a0	; CHANGE: added
+	bsr.w	Push_Module	; CHANGE: added
+.c_12e5a:
+	rts	; CHANGE: added
+.c_12e5c:
+	movea.l	Current_inventory_chardat_ptr,a1	; CHANGE: added
+	move.l	ItemW_nr,d0	; CHANGE: added
+	sub.w	d0,$90(a1)	; CHANGE: added
+	mulu.w	#$a,d0	; CHANGE: added
+	sub.l	d0,$ec(a1)	; CHANGE: added
+	bra.w	Pop_Module	; CHANGE: added
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	Transfer_food	; CHANGE: added
+	movea.l	Off_screen,a6	; CHANGE: added
+	move.w	#$7,d0	; CHANGE: added
+	jsr	Minus_message	; CHANGE: added
+	jsr	Switch_screen	; CHANGE: added
+	jsr	Copy_screen	; CHANGE: added
+.c_12e9e:
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	.c_12e9e	; CHANGE: added
+	movea.l	Current_inventory_chardat_ptr,a0	; CHANGE: added
+	moveq	#0,d0	; CHANGE: added
+	move.w	$92(a0),d0	; CHANGE: added
+	move.l	d0,Original_number	; CHANGE: added
+	clr.l	ItemW_nr	; CHANGE: added
 	st.b	B_587f9	; CHANGE: added
-	lea.l	TransFood_Mod,a0
-	bsr.w	Push_Module
+	lea.l	TransFood_Mod,a0	; CHANGE: added
+	bsr.w	Push_Module	; CHANGE: added
 	sf.b	B_587f9	; CHANGE: added
-	rts	
-T_12ed8:
-	move.w	#$60,Adding
-	bsr.w	T_12c9e
-	movea.l	Off_screen,a6
-	move.w	#$6d,d0
-	moveq	#0,d1
-	bsr.w	INV2_Show_object
-	move.w	#$43,d0
-	move.w	#$82,d1
-	jsr	IG_Set_cursor
-	lea.l	Food_txt,a0
-	jsr	IG_Print
-	jsr	Switch_screen
-	jsr	Copy_screen
-	rts
-T_12f1c:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12f1c
-	bsr.w	Pop_Module
-	move.l	ItemW_nr,d0
-	beq.w	.l_12fca
-	movea.l	Current_inventory_chardat_ptr,a0
-	mulu.w	#$fa,d0
-	lea.l	Chard_ptrs,a1
-	lea.l	Char_status_icons,a4
-	moveq	#0,d6
-	moveq	#1,d7
-.l_12f4e:
-	tst.l	(a1)
-	beq.b	.l_12f84
-	cmpa.l	(a1),a0
-	bne.b	.l_12f5a
-	move.w	d7,d5
-	bra.b	.l_12f84
-.l_12f5a:
-	movea.l	(a1),a2
-	move.w	Attr_1_normal(a2),d1
-	add.w	Attr_1_normal_magic(a2),d1
-	mulu.w	#$3e8,d1
-	sub.l	Weight_normal(a2),d1
-	cmp.l	d0,d1
-	bmi.b	.l_12f84
-	move.w	Food_rations(a2),d1
-	add.w	d0,d1
-	bvs.b	.l_12f84
-	move.w	#$e402,d1
-	and.w	Body_conditions(a2),d1
-	bne.b	.l_12f84
-	bset	d7,d6
-.l_12f84:
-	addq.l	#$4,a1
-	addq.w	#$1,d7
-	cmpi.w	#$7,d7
-	bmi.b	.l_12f4e
-	bmi.b	.l_12f4e
-	move.w	d5,Transferring
-	move.w	d6,Transfer_victims
-	tst.w	d6
-	bne.b	.l_12fac
-	move.w	#$5,d0
-	jsr	Plus_message
-	bra.b	.l_12fca
-.l_12fac:
-	bsr.w	Show_transfer_victims
-	move.l	#.l_12fcc,TIVS_Ptr
-	lea.l	TIVS1_Mod,a0
-	move.w	#$1a,$2c(a0)
-	bsr.w	Push_Module
-.l_12fca:
-	rts
-.l_12fcc:
-	btst	#$1,Mouse_button_state
-	bne.b	.l_12fcc
-	movea.l	Current_inventory_chardat_ptr,a1
-	move.l	ItemW_nr,d0
-	add.w	d0,$92(a0)
-	sub.w	d0,Food_rations(a1)
-	mulu.w	#$fa,d0
-	add.l	d0,$ec(a0)
-	sub.l	d0,Weight_normal(a1)
-	rts
-T_12ff8:
-	btst	#$1,Mouse_button_state
-	bne.b	T_12ff8
-	tst.l	ItemW_nr
-	beq.b	.l_13030
-	move.l	#Code0001Sys,Textfile_ptr
-	move.w	#$19,ReqText_nr
-	move.l	#.l_13032,ReqDo_ptr
-	lea.l	Req_Mod,a0
-	bsr.w	Push_Module
-.l_13030:
-	rts
-.l_13032:
-	movea.l	Current_inventory_chardat_ptr,a1
-	move.l	ItemW_nr,d0
-	sub.w	d0,Food_rations(a1)
-	mulu.w	#$fa,d0
-	sub.l	d0,Weight_normal(a1)
-	bra.w	Pop_Module
-T_1304e:
-	btst	#$1,Mouse_button_state
-	bne.b	T_1304e
+	rts	; CHANGE: added
+	move.w	#$60,Adding	; CHANGE: added
+	bsr.w	T_12c9e	; CHANGE: added
+	movea.l	Off_screen,a6	; CHANGE: added
+	move.w	#$6d,d0	; CHANGE: added
+	moveq	#0,d1	; CHANGE: added
+	bsr.w	INV2_Show_object	; CHANGE: added
+	move.w	#$43,d0	; CHANGE: added
+	move.w	#$82,d1	; CHANGE: added
+	jsr	IG_Set_cursor	; CHANGE: added
+	lea.l	Food_txt,a0	; CHANGE: added
+	jsr	IG_Print	; CHANGE: added
+	jsr	Switch_screen	; CHANGE: added
+	jsr	Copy_screen	; CHANGE: added
+	rts	; CHANGE: added
+.c_12f1c:
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	.c_12f1c	; CHANGE: added
+	bsr.w	Pop_Module	; CHANGE: added
+	move.l	ItemW_nr,d0	; CHANGE: added
+	beq.w	.c_12fca	; CHANGE: added
+	movea.l	Current_inventory_chardat_ptr,a0	; CHANGE: added
+	mulu.w	#$fa,d0	; CHANGE: added
+	lea.l	Chard_ptrs,a1	; CHANGE: added
+	lea.l	Char_status_icons,a4	; CHANGE: added
+	moveq	#0,d6	; CHANGE: added
+	moveq	#1,d7	; CHANGE: added
+.c_12f4e:
+	tst.l	(a1)	; CHANGE: added
+	beq.b	.c_12f84	; CHANGE: added
+	cmpa.l	(a1),a0	; CHANGE: added
+	bne.b	.c_12f5a	; CHANGE: added
+	move.w	d7,d5	; CHANGE: added
+	bra.b	.c_12f84	; CHANGE: added
+.c_12f5a:
+	movea.l	(a1),a2	; CHANGE: added
+	move.w	$48(a2),d1	; CHANGE: added
+	add.w	$9c(a2),d1	; CHANGE: added
+	mulu.w	#$3e8,d1	; CHANGE: added
+	sub.l	$ec(a2),d1	; CHANGE: added
+	cmp.l	d0,d1	; CHANGE: added
+	bmi.b	.c_12f84	; CHANGE: added
+	move.w	$92(a2),d1	; CHANGE: added
+	add.w	d0,d1	; CHANGE: added
+	bvs.b	.c_12f84	; CHANGE: added
+	move.w	#$e402,d1	; CHANGE: added
+	and.w	$3a(a2),d1	; CHANGE: added
+	bne.b	.c_12f84	; CHANGE: added
+	bset	d7,d6	; CHANGE: added
+.c_12f84:
+	addq.l	#$4,a1	; CHANGE: added
+	addq.w	#$1,d7	; CHANGE: added
+	cmpi.w	#$7,d7	; CHANGE: added
+	bmi.b	.c_12f4e	; CHANGE: added
+	bmi.b	.c_12f4e	; CHANGE: added
+	move.w	d5,Transferring	; CHANGE: added
+	move.w	d6,Transfer_victims	; CHANGE: added
+	tst.w	d6	; CHANGE: added
+	bne.b	.c_12fac	; CHANGE: added
+	move.w	#$5,d0	; CHANGE: added
+	jsr	Plus_message	; CHANGE: added
+	bra.b	.c_12fca	; CHANGE: added
+.c_12fac:
+	bsr.w	Show_transfer_victims	; CHANGE: added
+	move.l	#.c_12fcc,TIVS_Ptr	; CHANGE: added
+	lea.l	TIVS1_Mod,a0	; CHANGE: added
+	move.w	#$1a,$2c(a0)	; CHANGE: added
+	bsr.w	Push_Module	; CHANGE: added
+.c_12fca:
+	rts	; CHANGE: added
+.c_12fcc:
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	.c_12fcc	; CHANGE: added
+	movea.l	Current_inventory_chardat_ptr,a1	; CHANGE: added
+	move.l	ItemW_nr,d0	; CHANGE: added
+	add.w	d0,$92(a0)	; CHANGE: added
+	sub.w	d0,$92(a1)	; CHANGE: added
+	mulu.w	#$fa,d0	; CHANGE: added
+	add.l	d0,$ec(a0)	; CHANGE: added
+	sub.l	d0,$ec(a1)	; CHANGE: added
+	rts	; CHANGE: added
+.c_12ff8:
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	.c_12ff8	; CHANGE: added
+	tst.l	ItemW_nr	; CHANGE: added
+	beq.b	.c_13030	; CHANGE: added
+	move.l	#Code0001Sys,Textfile_ptr	; CHANGE: added
+	move.w	#$19,ReqText_nr	; CHANGE: added
+	move.l	#.c_13032,ReqDo_ptr	; CHANGE: added
+	lea.l	Req_Mod,a0	; CHANGE: added
+	bsr.w	Push_Module	; CHANGE: added
+.c_13030:
+	rts	; CHANGE: added
+.c_13032:
+	movea.l	Current_inventory_chardat_ptr,a1	; CHANGE: added
+	move.l	ItemW_nr,d0	; CHANGE: added
+	sub.w	d0,$92(a1)	; CHANGE: added
+	mulu.w	#$fa,d0	; CHANGE: added
+	sub.l	d0,$ec(a1)	; CHANGE: added
+	bra.w	Pop_Module	; CHANGE: added
+.c_1304e:
+	btst	#$1,Mouse_button_state	; CHANGE: added
+	bne.b	.c_1304e	; CHANGE: added
 	tst.b	d0
-	beq.w	.l_13216
+	beq.w	.Exit
 	ext.w	d0
-	addi.w	#$9,d0
+	addi.w	#9,d0
 	movea.l	Current_inventory_chardat_ptr,a0
-	lea.l	$21(a0),a1
+	lea.l	Neck_place_counter-1(a0),a1
 	adda.w	d0,a1
 	tst.b	(a1)
-	beq.w	.l_13216
-	lea.l	$10a(a0),a2
-	moveq	#40,d1
+	beq.w	.Exit
+	lea.l	Inv_data-40(a0),a2
+	moveq.l	#40,d1
 	mulu.w	d0,d1
 	adda.w	d1,a2
 	movea.l	Off_screen,a6
+; CHANGE: removed "cmpi.b #17,Item_type(a2)"
+; CHANGE: removed "beq .Exit"
 	tst.b	Battling
-	beq.b	.l_13098
-	btst	#$4,$18(a2)
-	beq.w	.l_13216
-.l_13098:
-	move.b	$12(a2),d1
-	beq.b	.l_130b0
-	cmpi.b	#$7,d1
-	beq.b	.l_130be
-	lea.l	$21(a0),a3
+	beq.s	.Battle_OK
+	btst	#4,Item_stat_bits(a2)
+	beq.w	.Exit	; CHANGE: was "bne .Exit"
+.Battle_OK:
+	move.b	Item_body_place(a2),d1
+	beq.s	.No_equip
+	cmpi.b	#7,d1
+	beq.s	.Equip_OK
+	lea.l	Neck_place_counter-1(a0),a3
 	ext.w	d1
-	tst.b	(a3,d1.w)
-	beq.b	.l_130be
-.l_130b0:
-	move.w	#$8,d0
+	tst.b	0(a3,d1.w)
+	beq.s	.Equip_OK
+.No_equip:
+	move.w	#8,d0
 	jsr	Plus_message
-	bra.w	.l_13216
-.l_130be:
+	bra.w	.Exit
+.Equip_OK:
 	move.b	Character_class(a0),d1
-	move.w	$1e(a2),d2
+	move.w	Class_use(a2),d2
 	btst	d1,d2
-	bne.b	.l_130d8
-	move.w	#$9,d0
+	bne.s	.Class_OK
+	move.w	#9,d0
 	jsr	Plus_message
-	bra.w	.l_13216
-.l_130d8:
-	move.b	$3(a2),d1
-	beq.b	.l_130f4
-	subq.b	#$1,d1
+	bra.w	.Exit
+.Class_OK:
+	move.b	Sex_use(a2),d1
+	beq.s	.Sex_OK
+	subq.b	#1,d1
 	cmp.b	Character_sex(a0),d1
-	beq.b	.l_130f4
-	move.w	#$a,d0
+	beq.s	.Sex_OK
+	move.w	#10,d0
 	jsr	Plus_message
-	bra.w	.l_13216
-.l_130f4:
-	move.b	$4(a2),d1
-	beq.b	.l_13112
-	moveq	#2,d2
+	bra.w	.Exit
+.Sex_OK:
+	move.b	Hand_use(a2),d1
+	beq.s	.Hands_OK
+	moveq.l	#2,d2
 	sub.b	Hands_occupied(a0),d2
 	cmp.b	d1,d2
-	bpl.b	.l_13112
-	move.w	#$b,d0
+	bpl.s	.Hands_OK
+	move.w	#11,d0
 	jsr	Plus_message
-	bra.w	.l_13216
-.l_13112:
-	move.b	$5(a2),d1
-	beq.b	.l_13130
-	moveq	#2,d2
+	bra.w	.Exit
+.Hands_OK:
+	move.b	Ring_use(a2),d1
+	beq.s	.Fingers_OK
+	moveq.l	#2,d2
 	sub.b	Ringfingers_occupied(a0),d2
 	cmp.b	d1,d2
-	bpl.b	.l_13130
-	move.w	#$c,d0
+	bpl.s	.Fingers_OK
+	move.w	#12,d0
 	jsr	Plus_message
-	bra.w	.l_13216
-.l_13130:
-	lea.l	$21(a0),a3
-	move.b	$12(a2),d1
-	cmpi.b	#$7,d1
-	bne.b	.l_13146
-	tst.b	$7(a3)
-	beq.b	.l_13146
-	addq.b	#$2,d1
-.l_13146:
+	bra.w	.Exit
+.Fingers_OK:
+	lea.l	Neck_place_counter-1(a0),a3
+	move.b	Item_body_place(a2),d1
+	cmpi.b	#7,d1
+	bne.s	.No_ring
+	tst.b	7(a3)
+	beq.s	.No_ring
+	addq.b	#2,d1
+.No_ring:
 	ext.w	d1
 	adda.w	d1,a3
-	lea.l	$10a(a0),a4
-	moveq	#40,d2
+	lea.l	Inv_data-40(a0),a4
+	moveq.l	#40,d2
 	mulu.w	d1,d2
 	adda.w	d2,a4
-	move.b	$4(a2),d2
+	move.b	Hand_use(a2),d2
 	add.b	d2,Hands_occupied(a0)
-	move.b	$5(a2),d2
+	move.b	Ring_use(a2),d2
 	add.b	d2,Ringfingers_occupied(a0)
-	move.b	$13(a2),d2
+	move.b	Weapon_magic_bonus(a2),d2
 	add.b	d2,Magic_bonus_weapon(a0)
-	move.b	$14(a2),d2
+	move.b	Armour_magic_bonus(a2),d2
 	add.b	d2,Magic_bonus_armour(a0)
-	lea.l	$ae(a0),a5
-	move.b	$19(a2),d2
+	lea.l	Skill_1_normal_magic-2(a0),a5
+	move.b	Item_skill_1(a2),d2
 	ext.w	d2
 	add.w	d2,d2
 	adda.w	d2,a5
-	move.b	$1b(a2),d2
+	move.b	Malus_1(a2),d2
 	ext.w	d2
 	sub.w	d2,(a5)
-	lea.l	$ae(a0),a5
-	move.b	$1a(a2),d2
+	lea.l	Skill_1_normal_magic-2(a0),a5
+	move.b	Item_skill_2(a2),d2
 	ext.w	d2
 	add.w	d2,d2
 	adda.w	d2,a5
-	move.b	$1c(a2),d2
+	move.b	Malus_2(a2),d2
 	ext.w	d2
 	sub.w	d2,(a5)
-	btst	#$0,$18(a2)
-	bne.b	.l_131ae
+	btst	#0,Item_stat_bits(a2)
+	bne.s	.Cursed
 	bsr.w	Positive_boni
-	bra.b	.l_131b2
-.l_131ae:
+	bra.s	.Well
+.Cursed:
 	bsr.w	Negative_boni
-.l_131b2:
-	move.b	#$1,(a3)
-	moveq	#19,d7
-.l_131b8:
+.Well:
+	move.b	#1,(a3)
+	moveq.l	#20-1,d7
+.Loop:
 	move.w	(a2)+,(a4)+
-	dbra	d7,.l_131b8
-	lea.l	-$28(a2),a2
-	lea.l	-$28(a4),a4
-	cmpi.b	#$2,$4(a2)
-	bne.b	.l_131e4
-	cmpi.w	#$4,d1
-	bne.b	.l_131e4
-	movem.l	d0-d1,-(a7)
-	moveq	#0,d0
-	moveq	#6,d1
+	dbra	d7,.Loop
+	lea.l	-40(a2),a2
+	lea.l	-40(a4),a4
+	cmpi.b	#2,Hand_use(a2)
+	bne.s	.Go_on
+	cmpi.w	#4,d1
+	bne.s	.Go_on
+	movem.l	d0/d1,-(sp)
+	moveq.l	#0,d0
+	moveq.l	#6,d1
 	bsr.w	INV2_Show_object
-	movem.l	(a7)+,d0-d1
-.l_131e4:
-	subq.b	#$1,(a1)
-	bne.b	.l_131ee
+	movem.l	(sp)+,d0/d1
+.Go_on:
+	subq.b	#1,(a1)
+	bne.s	.Skip
 	bsr.w	INV2_Erase_object
-	bra.b	.l_13204
-.l_131ee:
-	cmpi.b	#$1,(a1)
-	bne.b	.l_13204
-	movem.w	d0-d1,-(a7)
+	bra.s	.Continue
+.Skip:
+	cmpi.b	#1,(a1)
+	bne.s	.Continue
+	movem.w	d0/d1,-(sp)
 	move.b	d0,d1
 	move.b	(a2),d0
 	bsr.w	INV2_Show_object
-	movem.w	(a7)+,d0-d1
-.l_13204:
+	movem.w	(sp)+,d0/d1
+.Continue:
 	move.b	(a4),d0
 	bsr.w	INV2_Show_object
 	jsr	Switch_screen
 	jsr	Copy_screen
-.l_13216:
-	rts
+.Exit:
+	rts	
 ; ---- Unequip_item (original source: MAIN/INVENT.ASM)
 Unequip_item:
 	btst	#1,Mouse_button_state
@@ -3244,43 +4136,28 @@ Remove_boni:
 .Exit:
 	movem.l	(sp)+,d0/d2/a0-a2/a5
 	rts	
-T_13772:
-	btst	#$1,Mouse_button_state
-	bne.b	T_13772
-	sf.b	Magic_object_flag
-	movea.l	Current_active_char_data,a0
-	move.b	Spell_class_counter(a0),d0
-	moveq	#0,d1
-	moveq	#1,d2
-	moveq	#6,d7
-.l_13792:
-	btst	d2,d0
-	beq.b	.l_1379e
-	move.w	d2,Selected_class
-	addq.w	#$1,d1
-.l_1379e:
-	addq.w	#$1,d2
-	dbra	d7,.l_13792
-	move.w	d1,B_58816
-	lea.l	$d0(a0),a0
-	move.w	Selected_class,d0
-	add.w	d0,d0
-	add.w	d0,d0
-	tst.l	-$4(a0,d0.w)
-	beq.b	.l_137da
-	cmpi.w	#$1,d1
-	bne.b	.l_137d0
-	lea.l	SpSelW_Mod,a0
-	bsr.w	Push_Module
-	bra.b	.l_137da
-.l_137d0:
-	lea.l	SCSelW_Mod,a0
-	bsr.w	Push_Module
-.l_137da:
-	rts
 
 	section	data
 
+Inv2_CIL:
+	dc.b	$08,$22,$1e,$20,$1f,$23,$21,$12,$14,$00
+	dc.l	Inv2_Exit
+	dc.l	Drop_item
+	dc.l	Inv21_Exit
+	dc.l	Use_item
+	dc.l	Pool_gold_INV2
+	dc.l	View_item
+	dc.l	Transfer_item
+	dc.l	Transfer_gold
+	dc.l	Transfer_food
+D_2da40:
+	dc.b	$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31
+	dc.b	$02,$00,$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10
+	dc.b	$07,$65,$00,$00,$00,$00,$06,$51,$03,$33,$02,$22,$01,$11,$05,$31
+	dc.b	$04,$21,$01,$24,$02,$36,$06,$10,$03,$10,$05,$41,$03,$40,$04,$51
+	dc.b	$04,$44,$07,$65
+D_2da84:
+	dc.b	$01,$05,$06,$0a,$0a,$0a,$06,$05,$01,$01,$01,$ff
 Skills_name:
 	dc.b	$01,$08,$53,$4b,$49,$4c,$4c,$53,$01,$0f,$00
 D_2da9b:
@@ -4917,7 +5794,7 @@ B_5880e:
 	ds.b	4
 B_58812:
 	ds.b	4
-B_58816:
+Nr_of_spell_classes:
 	ds.b	2
 SCSelW_handle:
 	ds.b	2

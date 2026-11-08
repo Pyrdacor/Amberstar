@@ -2,6 +2,11 @@
 
 	section	text
 
+
+; ---- Combat_ModInit (original source: MAIN/COMBAT.ASM) - the shipped program differs, its code follows, not assembled:
+;Combat_ModInit:
+;             jmp       Init_display
+
 Combat_ModInit:
 	sf.b	B_58aae
 	jsr	T_00194
@@ -374,6 +379,12 @@ T_15dd2:
 	movea.l	(a2),a2
 	move.w	(a7)+,d7
 	rts
+
+; ---- Combat_ModExit (original source: MAIN/COMBAT.ASM) - the shipped program differs, its code follows, not assembled:
+;Combat_ModExit:
+;             jsr       Exit_display
+;             jmp       Pop_Module
+
 Combat_ModExit:
 	bsr.w	Combat_DisExit
 	sf.b	B_58aae
@@ -428,6 +439,15 @@ Combat_ModExit:
 	jsr	Set_map_music
 	jsr	Pop_PA
 	rts
+
+; ---- Combat_DisInit (original source: MAIN/COMBAT.ASM) - the shipped program differs, its code follows, not assembled:
+;Combat_DisInit:
+;             DIAG_ON
+;             PRINT     "Insert combat screen here..."
+;             jsr       Wait_4_key
+;             DIAG_OFF
+;             rts
+
 Combat_DisInit:
 	move.w	#$10,Mesmin_X
 	move.w	#$b1,Mesmin_Y
@@ -1255,6 +1275,11 @@ T_16806:
 	cmpi.w	#$32,B_5891e
 	blt.b	.l_16814
 	bra.b	T_16800
+
+; ---- Combat_DisExit (original source: MAIN/COMBAT.ASM) - the shipped program differs, its code follows, not assembled:
+;Combat_DisExit:
+;             rts
+
 Combat_DisExit:
 	lea.l	Void,a1
 	lea.l	Subfade1,a2
@@ -1296,6 +1321,11 @@ T_16876:
 	jsr	Member_left
 .l_168c6:
 	rts
+
+; ---- Combat_DisUpd (original source: MAIN/COMBAT.ASM) - the shipped program differs, its code follows, not assembled:
+;Combat_DisUpd:
+;             rts
+
 Combat_DisUpd:
 	lea.l	D_2dfce,a0
 	lea.l	T_15d08,a1
@@ -1794,7 +1824,7 @@ T_16f14:
 	bne.w	T_16cc0
 	move.w	#$0,Draw_Cicon
 	jsr	My_vsync
-	bsr.w	T_13772
+	bsr.w	Cast_spell
 	bsr.w	T_16b64
 	rts
 ; Chooses the actions of the monsters (before the party actions are added).
@@ -4786,7 +4816,7 @@ End_of_combat:
 .l_196c2:
 	tst.w	B_58e5e
 	beq.b	.l_196d8
-	jsr	T_01f98
+	jsr	Restore_coords
 	sf.b	B_58e74
 	bra.b	.l_19746
 .l_196d8:
@@ -5478,7 +5508,7 @@ T_1a10c:
 	beq.b	.l_1a13e
 	tst.b	B_58e7a
 	bne.b	.l_1a160
-	jmp	Exit_all
+	jmp	Exit_program
 .l_1a160:
 	movem.l	(a7)+,d0-d7/a0-a6
 	rts
@@ -5528,7 +5558,7 @@ T_1a212:
 	cmpi.b	#$2,Current_map_type
 	bmi.b	.l_1a234
 	jsr	T_0025a
-	jsr	T_0f614
+	jsr	Save_automap
 	jsr	T_00208
 .l_1a234:
 	jsr	ON_Diag_screen
@@ -5767,6 +5797,21 @@ Translate_object_branch:
 .Exit:
 	movem.l	(sp)+,d2/a0
 	rts	
+
+; ---- Push_Root (original source: LAYOUT/OBJFIND.ASM) - the shipped program differs, its code follows, not assembled:
+;Push_Root:
+;             move.l    a1,-(sp)
+;             movea.l   Object_sp,a1
+;             addq.l    #4,a1                ; Increase object sp
+;             cmpa.l    #End_of_object_stack,a1
+;             bmi.s     .Not_full
+;             ERROR     "[ Push_Root ] : Object stack overflow !!!"
+;             bra.s     .Exit
+;.Not_full:   move.l    a0,(a1)              ; Push root
+;             move.l    a1,Object_sp
+;.Exit:       movea.l   (sp)+,a1
+;             rts
+
 Push_Root:
 	move.l	a1,-(a7)
 	movea.l	Object_sp,a1
@@ -5782,6 +5827,20 @@ Push_Root:
 .l_1a592:
 	movea.l	(a7)+,a1
 	rts
+
+; ---- Pop_Root (original source: LAYOUT/OBJFIND.ASM) - the shipped program differs, its code follows, not assembled:
+;Pop_Root:
+;             move.l    a1,-(sp)
+;             movea.l   Object_sp,a1
+;             cmpa.l    #Object_stack,a1
+;             bpl.s     .Not_empty
+;             ERROR     "[ Pop_Root ] : Object stack underflow !!!"
+;             bra.s     .Exit
+;.Not_empty:  subq.l    #4,a1                ; Decrease sp
+;             move.l    a1,Object_sp
+;.Exit:       movea.l   (sp)+,a1
+;             rts
+
 Pop_Root:
 	move.l	a1,-(a7)
 	movea.l	Object_sp,a1
@@ -5796,6 +5855,171 @@ Pop_Root:
 .l_1a5bc:
 	movea.l	(a7)+,a1
 	rts
+
+; ---- Open_window (original source: LAYOUT/WINDOWS.ASM) - the shipped program differs, its code follows, not assembled:
+;Open_window:
+;             movem.l   d1-d7/a0-a2/a6,-(sp)
+;             jsr       Mouse_off
+;; ------------- Allocate memory for window data & drawing buffer -----
+;             move.w    d2,d4                ; Calculate size of window
+;             mulu.w    d3,d4                ; data
+;             lsl.l     #7,d4
+;             addi.l    #Wind_back,d4
+;             move.w    d0,-(sp)             ; Make buffer
+;             move.l    d4,d0
+;             jsr       Allocate_memory
+;             lea.l     (a1),a2
+;             move.w    (sp)+,d0
+;; ------------- Enter window data ------------------------------------
+;             move.w    d0,Wind_X(a2)        ; Enter size & position
+;             move.w    d1,Wind_Y(a2)
+;             move.w    d2,Wind_width(a2)
+;             move.w    d3,Wind_height(a2)
+;             move.l    a0,Wind_branch(a2)
+;             moveq.l   #16,d4               ; Calculate window area
+;             add.w     d0,d4
+;             move.w    d4,Wind_area(a2)     ; Minimum X
+;             moveq.l   #-2,d5
+;             add.w     d2,d5
+;             lsl.w     #4,d5
+;             add.w     d5,d4
+;             subq.w    #1,d4
+;             move.w    d4,Wind_area+2(a2)   ; Maximum X
+;             moveq.l   #16,d4
+;             add.w     d1,d4
+;             move.w    d4,Wind_area+4(a2)   ; Minimum Y
+;             moveq.l   #-2,d5
+;             add.w     d3,d5
+;             lsl.w     #4,d5
+;             add.w     d5,d4
+;             subq.w    #1,d4
+;             move.w    d4,Wind_area+6(a2)   ; Maximum Y
+;             tst.w     d6                   ; Get window icon base
+;             bne.s     .Light
+;             moveq.l   #3,d6                ; Dark window
+;             lea.l     Wind1_icons,a1
+;             bra.s     .Continue
+;.Light:      moveq.l   #2,d6                ; Light window
+;             lea.l     Wind2_icons,a1
+;.Continue:
+;; ------------- REGISTER CONTENTS ------------------------------------
+;;   d0 - Leftmost X-coordinate of window (.w)
+;;   d1 -  Topmost Y-coordinate of window (.w)
+;;   d2 -  Width of window (.w)
+;;   d3 - Height of window (.w)
+;;   d6 - Window colour (.w)
+;;   a1 - Pointer to window icons (.l)
+;;   a2 - Pointer to window data (.l)
+;
+;; ------------- Save background --------------------------------------
+;             move.w    d6,-(sp)
+;             move.w    d2,d6
+;             move.w    d3,d7
+;             lsl.w     #4,d7
+;             subq.w    #8,d7
+;             lea.l     Wind_back(a2),a0
+;             movea.l   Screen_base,a6
+;             jsr       Get2_block
+;             move.w    (sp)+,d6
+;             jsr       Copy_screen
+;; ------------- Draw border of window --------------------------------
+;             lea.l     (a1),a0
+;             movea.l   Off_screen,a6
+;             subq.w    #4,d2                ; Adjust counters
+;             subq.w    #4,d3
+;             move.w    d0,d4                ; Save coordinates
+;             move.w    d1,d5
+;             jsr       Put_masked_block     ; Draw first column
+;             addi.w    #16,d1
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             addi.w    #16,d1
+;             lea.l     128(a0),a0
+;             jsr       Draw_vertical_border
+;             jsr       Put_masked_block
+;             addi.w    #16,d1
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             addi.w    #16,d0               ; Draw second column
+;             exg.l     d1,d5
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             exg.l     d1,d5
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             addi.w    #16,d0               ; Draw middle columns
+;             exg.l     d1,d5
+;             lea.l     128(a0),a0
+;             jsr       Draw_horizontal_border
+;             move.w    d4,d0
+;             addi.w    #32,d0
+;             exg.l     d1,d5
+;             jsr       Draw_horizontal_border
+;             exg.l     d1,d5                ; Draw penultimate column
+;             jsr       Put_masked_block
+;             exg.l     d1,d5
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             addi.w    #16,d0               ; Draw last column
+;             exg.l     d1,d5
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             addi.w    #16,d1
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;             addi.w    #16,d1
+;             lea.l     128(a0),a0
+;             jsr       Draw_vertical_border
+;             jsr       Put_masked_block
+;             addi.w    #16,d1
+;             lea.l     128(a0),a0
+;             jsr       Put_masked_block
+;; ------------- Fill window ------------------------------------------
+;             move.w    Wind_X(a2),d0        ; Get first coordinate pair
+;             move.w    Wind_Y(a2),d1
+;             addi.w    #16,d0
+;             addi.w    #16,d1
+;             addq.w    #2,d2                ; Calculate second coordinate
+;             addq.w    #2,d3                ; pair
+;             lsl.w     #4,d2
+;             lsl.w     #4,d3
+;             add.w     d0,d2
+;             add.w     d1,d3
+;             subq.w    #1,d2
+;             subq.w    #1,d3
+;             jsr       Draw_box
+;             jsr       Switch_screen        ; Display window
+;             jsr       Copy_screen
+;; ------------- Various installations --------------------------------
+;             lea.l     Wind_area(a2),a0     ; No macro !!
+;             jsr       Push_MA
+;             move.l    Wind_branch(a2),d0   ; Translate & install branch
+;             beq.s     .Zero
+;             movea.l   d0,a0
+;             moveq.l   #16,d0
+;             moveq.l   #16,d1
+;             add.w     Wind_X(a2),d0
+;             add.w     Wind_Y(a2),d1
+;             jsr       Translate_object_branch
+;             jsr       Push_Root
+;; ------------- Insert window in list --------------------------------
+;.Zero:       lea.l     Window_list,a0       ; Find window handle
+;             moveq.l   #Max_windows-1,d7
+;.Loop:       tst.l     (a0)+                ; Free slot ?
+;             dbeq      d7,.Loop
+;             tst.w     d7                   ; Found one ?
+;             bpl.s     .No_error
+;             ERROR     "[ Open_window ] : No more windows can be opened !!!"
+;             bra.s     .Exit
+;.No_error:   move.l    a2,-(a0)             ; Insert pointer in slot
+;             suba.l    #Window_list,a0
+;             move.l    a0,d0
+;             lsr.w     #2,d0
+;; ------------- Exit -------------------------------------------------
+;.Exit:       jsr       Mouse_on
+;             movem.l   (sp)+,d1-d7/a0-a2/a6
+;             rts
+
 Open_window:
 	movem.l	d1-d7/a0-a2/a6,-(a7)
 	jsr	Mouse_off
@@ -5973,6 +6197,51 @@ Draw_vertical_border:
 	lea.l	128(a0),a0
 	move.l	(sp)+,d3
 	rts	
+
+; ---- Close_window (original source: LAYOUT/WINDOWS.ASM) - the shipped program differs, its code follows, not assembled:
+;Close_window:
+;             movem.l   d0/d1/d6/d7/a0/a1/a6,-(sp)
+;             jsr       Mouse_off
+;             lea.l     Window_list,a0       ; Get pointer to window data
+;             lsl.w     #2,d0
+;             adda.w    d0,a0
+;             tst.l     (a0)
+;             bne.s     .Ok
+;             ERROR     "[ Close_window ] :  Illegal window handle !!!"
+;             bra       .Exit
+;.Ok:         movea.l   (a0),a1              ; Get pointer
+;             clr.l     (a0)                 ; Clear slot
+;; ------------- Restore background -----------------------------------
+;             move.w    Wind_X(a1),d0
+;             move.w    Wind_Y(a1),d1
+;             move.w    Wind_width(a1),d6
+;             move.w    Wind_height(a1),d7
+;             lsl.w     #4,d7
+;             subq.w    #8,d7
+;             lea.l     Wind_back(a1),a0
+;             movea.l   Off_screen,a6
+;             jsr       Blot_unmasked_block
+;             jsr       Switch_screen
+;             jsr       Copy_screen
+;; ------------- Various de-installations -----------------------------
+;             Pop       MA
+;             move.l    Wind_branch(a1),d0   ; Remove & de-translate branch
+;             beq.s     .Zero
+;             Pop       Root
+;             movea.l   d0,a0
+;             moveq.l   #16,d0
+;             moveq.l   #16,d1
+;             add.w     Wind_X(a1),d0
+;             add.w     Wind_Y(a1),d1
+;             neg.w     d0
+;             neg.w     d1
+;             jsr       Translate_object_branch
+;.Zero:       lea.l     (a1),a0              ; Free memory block
+;             jsr       Free_memory
+;.Exit:       jsr       Mouse_on
+;             movem.l   (sp)+,d0/d1/d6/d7/a0/a1/a6
+;             rts
+
 Close_window:
 	movem.l	d0-d1/d6-d7/a0-a1/a6,-(a7)
 	jsr	Mouse_off
@@ -7004,206 +7273,3 @@ Coso_period_table:
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 T_1b638:
 	dc.b	$00,$00,$00,$00
-T_1b63c:
-	movem.l	d0-d7/a0-a6,-(a7)
-	move.w	sr,-(a7)
-	ori.w	#$700,sr
-	ori.b	#$20,$fffffa09.w
-	move.w	(a7)+,sr
-	move.w	#$f,d0
-	jsr	Push_Mptr
-	move.w	#$19,-(a7)
-	trap	#$1
-	addq.l	#$2,a7
-	cmpi.w	#$2,d0
-	spl.b	B_5d0f1
-	bpl.b	.l_1b686
-	cmpi.w	#$2,$4a6.w
-	seq.b	B_5d0f2
-	move.w	#$0,-(a7)
-	move.w	#$e,-(a7)
-	trap	#$1
-	addq.l	#$4,a7
-	bra.b	.l_1b6a6
-.l_1b686:
-	move.l	#D_5193b,-(a7)
-	move.w	#$3b,-(a7)
-	trap	#$1
-	addq.l	#$6,a7
-	tst.l	d0
-	bpl.b	.l_1b6a6
-	lea.l	D_51950,a1
-	jsr	DI_Error
-	bra.b	.l_1b6c8
-.l_1b6a6:
-	move.w	#$2f,-(a7)
-	trap	#$1
-	addq.l	#$2,a7
-	move.l	d0,B_5d0f8
-	move.w	sr,-(a7)
-	ori.w	#$700,sr
-	andi.b	#$df,$fffffa09.w
-	move.w	(a7)+,sr
-	jsr	Pop_Mptr
-.l_1b6c8:
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
-T_1b6ce:
-	cmpi.w	#$fff3,d0
-	bne.b	.l_1b6dc
-	jsr	T_1a16e
-	bra.b	.l_1b6e2
-.l_1b6dc:
-	jsr	T_1a10c
-.l_1b6e2:
-	rts
-T_1b6e4:
-	movem.l	d0-d7/a0-a6,-(a7)
-	tst.b	B_5d0f1
-	bne.w	T_1b780
-	moveq	#0,d0
-	move.b	(a0),d0
-	lea.l	D_5191d,a0
-	moveq	#0,d7
-	move.b	-$1(a0,d0.w),d7
-T_1b702:
-	move.w	#$8,-(a7)
-	move.l	#D_51933,-(a7)
-	move.w	#$4e,-(a7)
-	trap	#$1
-	addq.l	#$8,a7
-	tst.l	d0
-	bmi.b	.l_1b72a
-	movea.l	B_5d0f8,a0
-	move.b	$24(a0),d0
-	subi.b	#$41,d0
-	cmp.b	d0,d7
-	beq.b	T_1b780
-.l_1b72a:
-	tst.b	B_5d0f2
-	bne.b	T_1b73c
-T_1b732:
-	move.w	d7,d0
-	jsr	T_1a02c
-	bra.b	T_1b702
-T_1b73c:
-	move.b	B_5d0f0,d0
-	eori.b	#$1,d0
-	move.b	d0,B_5d0f0
-	ext.w	d0
-	move.w	d0,-(a7)
-	move.w	#$e,-(a7)
-	trap	#$1
-	addq.l	#$4,a7
-	move.w	#$8,-(a7)
-	move.l	#D_51933,-(a7)
-	move.w	#$4e,-(a7)
-	trap	#$1
-	addq.l	#$8,a7
-	tst.l	d0
-	bmi.b	T_1b732
-	movea.l	B_5d0f8,a0
-	move.b	$24(a0),d0
-	subi.b	#$41,d0
-	cmp.b	d0,d7
-	bne.b	T_1b732
-T_1b780:
-	movem.l	(a7)+,d0-d7/a0-a6
-	rts
-Load_file:
-	movem.l	d0-d7/a1-a6,-(a7)
-	moveq	#0,d6
-	movea.l	a0,a5
-	move.b	(a0)+,d0
-	beq.b	.l_1b7a4
-	moveq	#0,d1
-	jsr	Reallocate_memory
-	cmpa.l	#$0,a0
-	bne.w	.l_1b862
-.l_1b7a4:
-	move.w	sr,-(a7)
-	ori.w	#$700,sr
-	ori.b	#$20,$fffffa09.w
-	move.w	(a7)+,sr
-	move.w	#$f,d0
-	jsr	Push_Mptr
-	movea.l	a5,a0
-	bsr.w	T_1b6e4
-	movea.l	a5,a0
-	addq.l	#$1,a0
-	move.w	#$0,-(a7)
-	move.l	a0,-(a7)
-	move.w	#$4e,-(a7)
-	trap	#$1
-	addq.l	#$8,a7
-	tst.l	d0
-	bpl.b	.l_1b7e0
-	bsr.w	T_1b6ce
-	bra.w	.l_1b868
-.l_1b7e0:
-	movea.l	B_5d0f8,a0
-	move.l	$1a(a0),d7
-	move.b	(a5),d0
-	move.l	d7,d1
-	moveq	#0,d2
-	jsr	File_allocate
-	movea.l	a1,a4
-	movea.l	a5,a0
-	addq.l	#$1,a0
-	move.w	#$0,-(a7)
-	move.l	a0,-(a7)
-	move.w	#$3d,-(a7)
-	trap	#$1
-	addq.l	#$8,a7
-	tst.l	d0
-	bpl.b	.l_1b814
-	bsr.w	T_1b6ce
-	bra.b	.l_1b868
-.l_1b814:
-	move.w	d0,d6
-	movea.l	a4,a0
-	move.l	a0,-(a7)
-	move.l	d7,-(a7)
-	move.w	d6,-(a7)
-	move.w	#$3f,-(a7)
-	trap	#$1
-	lea.l	$c(a7),a7
-	tst.l	d0
-	bpl.b	.l_1b832
-	bsr.w	T_1b6ce
-	bra.b	.l_1b868
-.l_1b832:
-	move.l	d0,B_5d0f4
-	move.w	d6,-(a7)
-	move.w	#$3e,-(a7)
-	trap	#$1
-	addq.l	#$4,a7
-	tst.l	d0
-	bpl.b	.l_1b84c
-	bsr.w	T_1b6ce
-	bra.b	.l_1b868
-.l_1b84c:
-	jsr	Pop_Mptr
-	move.w	sr,-(a7)
-	ori.w	#$700,sr
-	andi.b	#$df,$fffffa09.w
-	move.w	(a7)+,sr
-	movea.l	a4,a0
-.l_1b862:
-	movem.l	(a7)+,d0-d7/a1-a6
-	rts
-.l_1b868:
-	tst.w	d6
-	beq.b	.l_1b876
-	move.w	d6,-(a7)
-	move.w	#$3e,-(a7)
-	trap	#$1
-	addq.l	#$4,a7
-.l_1b876:
-	jsr	Pop_Mptr
-	move.w	sr,-(a7)
-	ori.w	#$700,sr
-	andi.b	#$df,$fffffa09.w
-	move.w	(a7)+,sr
-	movem.l	(a7)+,d0-d7/a1-a6
-	bra.w	Load_file

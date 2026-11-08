@@ -2,6 +2,117 @@
 
 	section	text
 
+; ---- AutoIcon_switch (original source: LAYOUT/LAYOUT.ASM)
+AutoIcon_switch:
+	cmpi.w	#100,AutoIcon_timer
+	bmi.w	ExitAutoIcon
+	clr.w	AutoIcon_timer
+
+; ---- DoAutoIcon (original source: LAYOUT/LAYOUT.ASM) - the shipped program differs, its code follows, not assembled:
+;DoAutoIcon:  movem.l   d0-d3/d6/d7/a0-a3,-(sp)
+;             tst.b     AutoIcon_flag        ; Activated ?
+;             beq       .Exit
+;             lea.l     Chard_ptrs,a0        ; Initialize registers
+;             lea.l     Char_status_icons,a1
+;             lea.l     AutoIcon_counters,a3
+;             moveq.l   #6-1,d7
+;.Loop1:      tst.l     (a0)                 ; Anyone there ?
+;             beq.s     .Next1
+;             movea.l   (a0),a2              ; Get body & mind conditions
+;             move.w    Body_conditions(a2),d1
+;             move.w    #$e000,d2            ; Character dead ?
+;             and.w     d1,d2
+;             bne.s     .Next1
+;             move.w    (a3),d2              ; Load counter
+;             addq.w    #1,d2                ; Increase
+;             cmpi.w    #Nr_AutoIcons,d2     ; Clip
+;             bmi.s     .Ok1
+;             subi.w    #Nr_AutoIcons,d2
+;.Ok1:        moveq.l   #Nr_AutoIcons-1,d6
+;.Loop2:      move.b    .Bit_table(pc,d2.w),d3     ; Condition set ?
+;             btst      d3,d1
+;             bne.s     .Do_it
+;             addq.w    #1,d2                ; Next condition
+;             cmpi.w    #Nr_AutoIcons,d2     ; Clip
+;             bmi.s     .Ok2
+;             subi.w    #Nr_AutoIcons,d2
+;.Ok2:        dbra      d6,.Loop2
+;             clr.b     (a1)                 ; No icon
+;             bra.s     .Next1
+;.Bit_table:  .DC.b 8,9,10,11,12,0,1,2,3,4   ; Bit numbers
+;             .EVEN
+;.Do_it:      move.w    d2,(a3)
+;             addi.w    #10,d2               ; Calculate icon number
+;             move.b    d2,(a1)              ; Set icon
+;.Next1:      addq.l    #4,a0                ; Next character
+;             addq.l    #1,a1
+;             addq.l    #2,a3
+;             dbra      d7,.Loop1
+;.Exit:       movem.l   (sp)+,d0-d3/d6/d7/a0-a3
+
+DoAutoIcon:
+	movem.l	d0-d3/d5-d7/a0-a3,-(a7)
+	tst.b	AutoIcon_flag
+	beq.w	.l_067f4
+	lea.l	Chard_ptrs,a0
+	lea.l	Char_status_icons,a1
+	lea.l	AutoIcon_counters,a3
+	move.b	Overweight,d5
+	moveq	#1,d7
+.l_0678c:
+	tst.l	(a0)
+	beq.b	.l_067e6
+	btst	d7,d5
+	beq.b	.l_0679a
+	move.b	#$14,(a1)
+	bra.b	.l_067e6
+.l_0679a:
+	movea.l	(a0),a2
+	move.w	Body_conditions(a2),d1
+	move.w	#$e000,d2
+	and.w	d1,d2
+	bne.b	.l_067e6
+	move.w	(a3),d2
+	addq.w	#$1,d2
+	cmpi.w	#$a,d2
+	bmi.b	.l_067b6
+	subi.w	#$a,d2
+.l_067b6:
+	moveq	#9,d6
+.l_067b8:
+	move.b	.l_067d4(pc,d2.w),d3
+	btst	d3,d1
+	bne.b	.l_067de
+	addq.w	#$1,d2
+	cmpi.w	#$a,d2
+	bmi.b	.l_067cc
+	subi.w	#$a,d2
+.l_067cc:
+	dbra	d6,.l_067b8
+	clr.b	(a1)
+	bra.b	.l_067e6
+.l_067d4:
+	dc.b	$08,$09,$0a,$0b,$0c,$00,$01,$02,$03,$04
+.l_067de:
+	move.w	d2,(a3)
+	addi.w	#$a,d2
+	move.b	d2,(a1)
+.l_067e6:
+	addq.l	#$4,a0
+	addq.l	#$1,a1
+	addq.l	#$2,a3
+	addq.w	#$1,d7
+	cmpi.w	#$7,d7
+	bmi.b	.l_0678c
+.l_067f4:
+	movem.l	(a7)+,d0-d3/d5-d7/a0-a3
+; ---- ExitAutoIcon (original source: LAYOUT/LAYOUT.ASM)
+ExitAutoIcon:
+	rts	
+; ---- TimeAutoIcon (original source: LAYOUT/LAYOUT.ASM)
+TimeAutoIcon:
+	addq.w	#1,AutoIcon_timer
+	rts	
 ; ---- Show_updated_status_block (original source: LAYOUT/LAYOUT.ASM)
 Show_updated_status_block:
 	tst.b	Updated
@@ -750,9 +861,9 @@ Shadow_data:
 	ds.b	84
 Updated:
 	ds.b	2
-B_5ad8a:
+AutoIcon_counters:
 	ds.b	12
-B_5ad96:
+AutoIcon_timer:
 	ds.b	2
 Input_buffer:
 	ds.b	50

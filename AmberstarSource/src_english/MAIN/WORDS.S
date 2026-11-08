@@ -99,6 +99,39 @@ Erase_message_minus:
 	jsr	Draw_box
 	movem.l	(sp)+,d0-d3/d6
 	rts	
+
+; ---- Init_dictionary (original source: MAIN/WORDS.ASM) - the shipped program differs, its code follows, not assembled:
+;Init_dictionary:
+;             movem.l   d0/d7/a0/a1,-(sp)
+;; ------------- Load dictionary --------------------------------------
+;
+;             move.l    #4000,d0             ; Allocate buffer zone
+;             jsr       Allocate_memory
+;             movea.l   a1,a0
+;             lsr.w     #2,d0
+;             subq.w    #1,d0
+;.Loopy:      clr.l     (a0)+
+;             dbra      d0,.Loopy
+;             move.l    a1,DangerZone
+;
+;             lea.l     Dictionary_filename,a0
+;             jsr       Load_file
+;             move.l    a0,Dictionary_ptr
+;; ------------- Create a list of pointers to every 32nd word ---------
+;             addq.l    #2,a0                ; Skip word
+;             lea.l     Tween_word_indices,a1
+;             move.l    a0,(a1)+             ; Store first pointer
+;             moveq.l   #0,d0
+;.Again:      moveq.l   #32-1,d7
+;.Loop:       move.b    (a0),d0              ; End of dictionary ?
+;             beq.s     .Exit
+;             adda.w    d0,a0                ; Next word
+;             dbra      d7,.Loop
+;             move.l    a0,(a1)+             ; Store pointer
+;             bra.s     .Again
+;.Exit:       movem.l   (sp)+,d0/d7/a0/a1
+;             rts
+
 T_07200:
 	movem.l	d0/d7/a0-a1,-(a7)
 	lea.l	D_1e542,a0
@@ -639,6 +672,18 @@ Exit_Blue_Sky:
 	clr.b	Mouse_click_state
 	movem.l	(sp)+,d0-d7/a0-a6
 	rts	
+
+; ---- Wait_4_user (original source: MAIN/WORDS.ASM) - the shipped program differs, its code follows, not assembled:
+;Wait_4_user:
+;             move.l    d0,-(sp)
+;             Push      Mptr,#16             ; Zzz
+;.Wait:       btst      #1,Mouse_button_state      ; Left mouse button clicked ?
+;             beq.s     .Wait
+;             Wait_4_unclick                 ; Release it
+;             Pop       Mptr                 ; Old mouse
+;             move.l    (sp)+,d0
+;             rts
+
 Wait_4_user:
 	movem.l	a0-a1,-(a7)
 	lea.l	D_26a26,a0
@@ -670,6 +715,55 @@ Scroll_up:
 	jsr	Copy_screen
 	movem.l	(sp)+,d1/a6
 	rts	
+
+; ---- Input_string (original source: MAIN/WORDS.ASM) - the shipped program differs, its code follows, not assembled:
+;Input_string:
+;             movem.l   d0/d1/d7/a0-a2,-(sp)
+;             lea.l     Input_buffer,a1      ; Initialize registers
+;             lea.l     Input_mask_table-32,a2
+;             move.w    d0,d1
+;             moveq.l   #0,d7
+;             lea.l     .FirstCursor(pc),a0  ; Print cursor
+;             jsr       IG_Print
+;.Again:      jsr       Wait_4_key           ; Read a key
+;             cmpi.b    #13,d0               ; Return ?
+;             beq       .Return
+;             swap.w    d0                   ; Backspace ?
+;             cmpi.b    #14,d0
+;             beq       .Backspace
+;             swap.w    d0
+;             cmp.w     d1,d7                ; Too much characters ?
+;             bpl.s     .Again
+;             andi.w    #$00ff,d0            ; Legal character ?
+;             cmpi.w    #32,d0
+;             bmi.s     .Again
+;             move.b    0(a2,d0.w),d0        ; Mask & translate
+;             andi.w    #$00ff,d0
+;             bmi.s     .Again
+;             lea.l     .Output_string(pc),a0      ; Print character
+;             move.b    d0,1(a0)
+;             jsr       IG_Print
+;             move.b    d0,0(a1,d7.w)        ; Store character
+;             addq.w    #1,d7                ; Next character
+;             bra.s     .Again
+;.Backspace:  tst.w     d7                   ; First digit ?
+;             beq       .Again
+;             lea.l     .Backspace_string(pc),a0   ; Print end string
+;             jsr       IG_Print
+;             subq.l    #1,d7                ; Previous digit
+;             bra.s     .Again
+;.Return:     lea.l     .End_string(pc),a0   ; Print end string
+;             jsr       IG_Print
+;             clr.b     0(a1,d7.w)           ; Insert end of word
+;             movem.l   (sp)+,d0/d1/d7/a0-a2
+;             rts
+;
+;.FirstCursor:          .DC.b "_",0
+;.Output_string:        .DC.b 14," _",0
+;.Backspace_string:     .DC.b 14,14,"_ ",14,0
+;.End_string: .DC.b 14," ",0
+;             .EVEN
+
 Input_string:
 	movem.l	d0-d1/d7/a0-a2,-(a7)
 	lea.l	Input_buffer,a1

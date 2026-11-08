@@ -14,13 +14,13 @@ Basic_VblQ:
 	dc.l	Feedb_off
 	dc.l	Feedb_on
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 Basic_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_CIL
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 Basic_Kev:
 	dc.b	$00,$ff,$00,$00,$00,$01,$00,$00
@@ -76,13 +76,13 @@ Map_VblQ:
 	dc.l	Feedb_on
 	dc.l	Draw_mouse
 	dc.l	Realtime_step
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 Map_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
 	dc.l	Reset_mouse
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.l	T_00e80
 	dc.b	$00,$00,$00,$00
@@ -159,7 +159,7 @@ Wait_Mev:
 	dc.b	$00,$00,$00,$00
 D_29816:
 	dc.b	$00,$ff,$00,$00,$00,$39,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$00,$ff,$00,$00,$00,$01,$00,$00
 	dc.l	T_01038
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
@@ -207,9 +207,9 @@ D_29816:
 	dc.b	$ff,$00,$00,$00,$80,$00,$00,$00
 	dc.l	T_01086
 	dc.b	$00,$00,$00,$00,$04,$00,$00,$00,$04,$00,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$08,$00,$00,$00,$08,$00,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$00,$00,$00,$00
 Buffer_Mod:
 	dc.l	Basic_DisUpd
@@ -218,7 +218,7 @@ Buffer_Mod:
 	dc.b	$00,$00,$00,$00
 	dc.l	Basic_Kev
 	dc.b	$00,$00,$00,$00
-	dc.l	Exit_all
+	dc.l	Exit_program
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	Buffer_Mod_ID
 	dc.b	$00,$00,$00,$00,$00,$00
@@ -698,7 +698,7 @@ TxtW_Mod_ID:
 TxtW_Mod_VblQ:
 	dc.l	Erase_mouse
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 TxtW_Mod_Mev:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
@@ -720,7 +720,7 @@ D_2a43e:
 D_2a44e:
 	dc.l	Erase_mouse
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 D_2a45e:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
@@ -735,7 +735,7 @@ TIVS_Mev:
 TIVS_VblQ:
 	dc.l	Erase_mouse
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 TIVS1_Mod:
 	dc.l	TIVS_DisUpd
@@ -755,7 +755,7 @@ TIVS1_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
 	dc.l	Display_quantities
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 TIVS2_Mod:
 	dc.l	TIVS_DisUpd
@@ -881,7 +881,7 @@ Inv2_Mod_ScrQ:
 	dc.l	Update_CIL
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 Inv2_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
@@ -985,7 +985,7 @@ D_2a9be:
 	dc.l	Display_quantities
 	dc.l	T_11814
 	dc.l	T_11870
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_character_info
 	dc.b	$00,$00,$00,$00
 DropItem_Mod:
@@ -994,7 +994,7 @@ DropItem_Mod:
 	dc.l	D_2a9be
 	dc.l	DropItem_Mod_Mev
 	dc.l	DropItem_Mod_Kev
-	dc.l	TransferItem_DisInit
+	dc.l	DropItem_DisInit
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	DropItem_Mod_ID
@@ -1309,7 +1309,7 @@ ItemView1_Mod:
 	dc.l	D_2b120
 	dc.l	D_29816
 	dc.l	ItemViewW1_DisInit
-	dc.l	T_12930
+	dc.l	Window_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	D_2b0fc
 D_2b0f6:
@@ -1320,7 +1320,7 @@ D_2b0fc:
 	dc.b	$41,$2e,$00,$00
 D_2b120:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
-	dc.l	T_12928
+	dc.l	Double_Pop
 	dc.b	$08,$ff,$00,$00,$08,$01,$00,$00
 	dc.l	Open_ExtraW
 	dc.b	$00,$00,$00,$00
@@ -1331,7 +1331,7 @@ D_2b13c:
 	dc.l	D_2b18e
 	dc.l	D_29816
 	dc.l	ItemViewW1_DisInit
-	dc.l	T_12930
+	dc.l	Window_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	D_2b16a
 D_2b164:
@@ -1365,7 +1365,7 @@ ItemView2_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_CIL
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Accursed_blink
 	dc.b	$00,$00,$00,$00
 TransferItem_Mod:
@@ -1374,7 +1374,7 @@ TransferItem_Mod:
 	dc.l	D_2a9be
 	dc.l	TransferItem_Mod_Mev
 	dc.l	TransferItem_Mod_Kev
-	dc.l	T_12956
+	dc.l	TransferItem_DisInit
 	dc.l	Transparent_DisExit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
 	dc.l	TransferItem_Mod_ID
@@ -1657,8 +1657,8 @@ UseItemDoor_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.b	$00,$00,$00,$00
 UseItemDoor_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
@@ -1802,7 +1802,7 @@ OpenedChest_Mod_ScrQ:
 	dc.l	Update_CIL
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 OpenedChest_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
@@ -1835,8 +1835,8 @@ UseItemChest_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.b	$00,$00,$00,$00
 UseItemChest_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
@@ -1867,7 +1867,7 @@ TIChest_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 TIChest_Mod_Mev:
@@ -2281,8 +2281,8 @@ MerchOBJC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
 	dc.l	AutoIcon_switch
+	dc.l	Display2_quantities
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 MerchOBJC_Mod_Mev:
@@ -2347,7 +2347,7 @@ Healer_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.l	Display_Ankh
 	dc.b	$00,$00,$00,$00
@@ -2463,7 +2463,7 @@ Sage_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 Sage_Mod_Mev:
@@ -2623,8 +2623,8 @@ MerchMAGIC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
 	dc.l	AutoIcon_switch
+	dc.l	Display2_quantities
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 MerchMAGIC_Mod_Mev:
@@ -2776,8 +2776,8 @@ SellItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd4_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 SellItem_Mod_Mev:
@@ -2824,8 +2824,8 @@ SellReq_Mod_ID:
 SellReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 SellReq_Mod_Mev:
@@ -2853,8 +2853,8 @@ BuyItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd4_objname_print
 	dc.l	T_0c740
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 BuyItem_Mod_Mev:
@@ -2901,8 +2901,8 @@ BuyReq_Mod_ID:
 BuyReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 BuyReq_Mod_Mev:
@@ -2931,8 +2931,8 @@ TIMOBJC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 TIMOBJC_Mod_Mev:
@@ -3090,7 +3090,7 @@ HealCondReq_Mod_ID:
 HealCondReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Display_Ankh
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -3118,7 +3118,7 @@ RemCurseReq_Mod_ID:
 RemCurseReq_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Display_Ankh
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
@@ -3147,7 +3147,7 @@ RemCurse_Mod_ScrQ:
 	dc.l	Display_quantities
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 ActSel_Mod:
@@ -3168,7 +3168,7 @@ ActSel_Mod_ID:
 ActSel_Mod_VblQ:
 	dc.l	Erase_mouse
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 ActSel_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
@@ -3420,13 +3420,13 @@ Dialogue_Mod_VblQ:
 	dc.l	Feedb_off
 	dc.l	Feedb_on
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 Dialogue_Mod_ScrQ:
 	dc.l	Show_updated_status_block
 	dc.l	Update_CIL
 	dc.l	Update_damage_magic
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
 	dc.b	$00,$00,$00,$00
@@ -3552,7 +3552,7 @@ TIDIA_Mod_ScrQ:
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
 	dc.l	Update_CIL
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 TIDIA_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
@@ -3633,8 +3633,8 @@ ShowItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 ShowItem_Mod_Mev:
@@ -3716,8 +3716,8 @@ GiveItem_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 GiveItem_Mod_Mev:
@@ -3830,7 +3830,7 @@ DIADropItem_Mod_ScrQ:
 	dc.l	T_0ef8c
 	dc.l	T_0efe6
 	dc.l	Update_CIL
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 DIADropItem_Mod_Mev:
 	dc.b	$0f,$ff,$ff,$00,$00,$02,$02,$00
@@ -4135,8 +4135,8 @@ LearnSpell_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 LearnSpell_Mod_Mev:
@@ -4311,7 +4311,7 @@ RemCurse2_Mod_ScrQ:
 	dc.l	Display_quantities
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 RemCurse2_Mod_Mev:
@@ -4387,7 +4387,7 @@ HearTxtW_Mod_ID:
 HearTxtW_Mod_VblQ:
 	dc.l	Erase_mouse
 	dc.l	Draw_mouse
-	dc.l	T_067fa
+	dc.l	TimeAutoIcon
 	dc.b	$00,$00,$00,$00
 HearTxtW_Mod_Mev:
 	dc.b	$04,$00,$00,$00,$04,$00,$00,$00
@@ -4520,9 +4520,9 @@ SaveGame_Mod_ID:
 	dc.b	$53,$61,$76,$65,$20,$67,$61,$6d,$65,$2e,$00,$00
 SaveGame_Mod_Mev:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
-	dc.l	T_0fb38
+	dc.l	Portrait_selected
 	dc.b	$02,$ff,$00,$00,$02,$02,$00,$00
-	dc.l	T_0f9b8
+	dc.l	Do_SaveGame
 	dc.b	$02,$ff,$00,$00,$02,$03,$00,$00
 	dc.l	Exit_SaveGame
 	dc.b	$00,$00,$00,$00
@@ -4562,7 +4562,7 @@ Lore_Mod_ScrQ:
 	dc.l	T_11870
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 Lore_Mod_Mev:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$02,$00
@@ -4648,7 +4648,7 @@ Gunk_Mod_ScrQ:
 	dc.l	Display_quantities
 	dc.l	T_11246
 	dc.l	Update_character_info
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 Gunk_Mod_Mev:
@@ -4840,8 +4840,8 @@ ViewItemMOBJC_Mod_ScrQ:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
+	dc.l	Display2_quantities
 	dc.l	AutoIcon_switch
-	dc.l	T_06752
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 ViewItemMOBJC_Mod_Mev:
@@ -4905,7 +4905,7 @@ D_2fbee:
 	dc.b	$63,$65,$2e,$00
 D_2fc02:
 	dc.b	$02,$ff,$00,$00,$02,$01,$00,$00
-	dc.l	T_00d26
+	dc.l	Death_load_game
 	dc.b	$02,$ff,$00,$00,$02,$02,$00,$00
 	dc.l	Quit_game
 	dc.b	$00,$00,$00,$00
@@ -4928,7 +4928,7 @@ D_2fc66:
 	dc.l	Update_damage_magic
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.l	Update_CIL
 	dc.b	$00,$00,$00,$00
 D_2fc82:
@@ -5264,7 +5264,7 @@ D_3035e:
 	dc.l	Update_CIL
 	dc.l	Upd_objname_print
 	dc.l	Upd_objname_erase
-	dc.l	T_06752
+	dc.l	AutoIcon_switch
 	dc.b	$00,$00,$00,$00
 D_3037a:
 	dc.b	$02,$ff,$ff,$00,$02,$02,$01,$00
@@ -5538,25 +5538,6 @@ D_30952:
 	dc.b	$1d,$38,$1e,$38,$38,$38,$38,$38,$38,$00
 	dc.l	T_10f12
 	dc.b	$00,$00,$00,$00
-	dc.l	T_10b58
+	dc.l	Inv1_Exit
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 	dc.b	$00,$00,$00,$00,$00,$00,$00,$00
-D_30980:
-	dc.b	$08,$22,$1e,$20,$1f,$23,$21,$12,$14,$00
-	dc.l	T_10f4e
-	dc.l	T_118a6
-	dc.l	T_10f3c
-	dc.l	T_11d6e
-	dc.l	T_121c0
-	dc.l	View_item
-	dc.l	T_12942
-	dc.l	T_12c40
-	dc.l	T_12e7a
-D_309ae:
-	dc.b	$00,$00,$00,$00,$07,$50,$03,$33,$02,$22,$01,$11,$07,$42,$06,$31
-	dc.b	$02,$00,$05,$66,$03,$45,$07,$54,$06,$43,$05,$32,$04,$21,$03,$10
-	dc.b	$07,$65,$00,$00,$00,$00,$06,$51,$03,$33,$02,$22,$01,$11,$05,$31
-	dc.b	$04,$21,$01,$24,$02,$36,$06,$10,$03,$10,$05,$41,$03,$40,$04,$51
-	dc.b	$04,$44,$07,$65
-D_309f2:
-	dc.b	$01,$05,$06,$0a,$0a,$0a,$06,$05,$01,$01,$01,$ff
